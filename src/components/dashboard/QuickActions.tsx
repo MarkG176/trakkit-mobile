@@ -31,7 +31,7 @@ export const QuickActions = () => {
           <span className="text-xs">Give Products</span>
         </Button>
         <Button 
-          className="h-14 flex flex-col gap-1 bg-secondary"
+          className="h-14 flex flex-col gap-1"
           onClick={() => navigate('/log-interaction')}
         >
           <MessageSquare size={20} />
