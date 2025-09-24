@@ -1,41 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
+/* Agent Dashboard Design System */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
+    /* Brand Colors */
+    --primary: 186 100% 33%; /* #00A3AD */
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 185 45% 92%; /* #E0F4F5 */
+    
+    /* Status Colors */
+    --success: 122 39% 49%; /* #4CAF50 */
+    --warning: 45 100% 51%; /* #FFC107 */
+    --destructive: 4 90% 58%; /* #F44336 */
+    
+    /* Neutral Colors */
+    --background: 0 0% 100%; /* #FFFFFF */
+    --foreground: 0 0% 20%; /* #333333 */
+    --secondary-foreground: 0 0% 40%; /* #666666 */
+    --muted: 0 0% 97%; /* #F8F8F8 */
+    --muted-foreground: 0 0% 40%; /* #666666 */
+    
+    /* UI Elements */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
+    --card-foreground: 0 0% 20%;
+    --border: 0 0% 80%; /* #CCCCCC */
+    --input: 0 0% 80%;
+    --ring: 186 100% 33%;
+    
+    /* Components */
+    --secondary: 0 0% 97%;
+    --accent: 185 45% 92%;
+    --accent-foreground: 0 0% 20%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
+    --popover-foreground: 0 0% 20%;
+    
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
@@ -101,5 +103,56 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Roboto', sans-serif;
+  }
+}
+
+@layer components {
+  /* Typography Scale */
+  .text-h1 {
+    @apply text-3xl font-bold text-foreground; /* 28px */
+  }
+  
+  .text-h2 {
+    @apply text-xl font-semibold text-foreground; /* 22px */
+  }
+  
+  .text-h3 {
+    @apply text-lg font-medium text-foreground; /* 18px */
+  }
+  
+  .text-body {
+    @apply text-sm font-normal text-foreground; /* 14px */
+  }
+  
+  .text-secondary {
+    @apply text-xs font-normal text-secondary-foreground; /* 12px */
+  }
+  
+  /* Button Variants */
+  .btn-ghost {
+    @apply bg-transparent text-secondary-foreground hover:bg-accent;
+  }
+  
+  /* Performance Cards */
+  .performance-card {
+    @apply bg-card border border-border rounded-lg p-4 shadow-sm;
+  }
+  
+  /* Mobile Bottom Navigation */
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 bg-card border-t border-border;
+  }
+  
+  .bottom-nav-item {
+    @apply flex flex-col items-center justify-center py-2 px-3 text-xs font-medium;
+  }
+  
+  .bottom-nav-item.active {
+    @apply text-primary;
+  }
+  
+  .bottom-nav-item:not(.active) {
+    @apply text-secondary-foreground;
   }
 }
