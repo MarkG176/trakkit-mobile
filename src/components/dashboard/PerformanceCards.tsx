@@ -16,7 +16,7 @@ export const PerformanceCards = ({ data }: PerformanceCardsProps) => {
   
   return (
     <div className="px-4 py-4">
-      <h2 className="text-h3 mb-3">Performance</h2>
+      <h2 className="text-h3 mb-3 text-black">Performance</h2>
       <div className="space-y-4">
         {/* Tasks for Today */}
         <div className="performance-card">
@@ -25,8 +25,8 @@ export const PerformanceCards = ({ data }: PerformanceCardsProps) => {
               <Calendar size={20} className="text-primary" />
             </div>
             <div>
-              <h3 className="text-h3">{data.tasksToday}</h3>
-              <p className="text-secondary">Tasks for Today</p>
+              <h3 className="text-h3 text-black">{data.tasksToday}</h3>
+              <p className="text-secondary text-black">Tasks for Today</p>
             </div>
           </div>
         </div>
@@ -38,8 +38,8 @@ export const PerformanceCards = ({ data }: PerformanceCardsProps) => {
               <CheckCircle size={20} className="text-success" />
             </div>
             <div>
-              <h3 className="text-h3">{data.surveysCompleted}</h3>
-              <p className="text-secondary">Surveys Completed</p>
+              <h3 className="text-h3 text-black">{data.surveysCompleted}</h3>
+              <p className="text-secondary text-black">Surveys Completed</p>
             </div>
           </div>
         </div>
@@ -51,8 +51,8 @@ export const PerformanceCards = ({ data }: PerformanceCardsProps) => {
               <Target size={20} className="text-primary" />
             </div>
             <div className="flex-1">
-              <h3 className="text-h3">{data.salesTarget.current} / {data.salesTarget.target}</h3>
-              <p className="text-secondary">Sales Target</p>
+              <h3 className="text-h3 text-black">{data.salesTarget.current} / {data.salesTarget.target}</h3>
+              <p className="text-secondary text-black">Sales Target</p>
             </div>
           </div>
           <Progress value={salesProgress} className="h-2" />
