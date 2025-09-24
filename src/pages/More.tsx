@@ -2,7 +2,8 @@ import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { User, Settings, HelpCircle, LogOut, BarChart, FileText } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { User, Settings, HelpCircle, LogOut, BarChart, FileText, MessageSquare } from "lucide-react";
 
 export const More = () => {
   const { signOut, user } = useAuth();
@@ -30,12 +31,15 @@ export const More = () => {
       });
     }
   };
+  const navigate = useNavigate();
+
   const menuItems = [
-    { icon: User, label: "Profile", action: () => {} },
-    { icon: BarChart, label: "Reports", action: () => {} },
-    { icon: FileText, label: "Documentation", action: () => {} },
-    { icon: Settings, label: "Settings", action: () => {} },
-    { icon: HelpCircle, label: "Help & Support", action: () => {} },
+    { icon: User, label: "Profile", action: () => navigate("/profile") },
+    { icon: BarChart, label: "Reports", action: () => navigate("/reports") },
+    { icon: FileText, label: "Documentation", action: () => navigate("/documentation") },
+    { icon: Settings, label: "Settings", action: () => navigate("/settings") },
+    { icon: HelpCircle, label: "Help & Support", action: () => navigate("/help-support") },
+    { icon: MessageSquare, label: "Interaction History", action: () => navigate("/interaction-history") },
     { icon: LogOut, label: "Logout", action: handleSignOut, dangerous: true },
   ];
 
