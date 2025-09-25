@@ -1388,6 +1388,42 @@ export type Database = {
           },
         ]
       }
+      reports: {
+        Row: {
+          agent_id: string
+          created_at: string
+          generated_at: string
+          id: string
+          metrics: Json
+          period: string
+          report_date: string
+          report_type: string
+          updated_at: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          generated_at?: string
+          id?: string
+          metrics?: Json
+          period: string
+          report_date?: string
+          report_type?: string
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          generated_at?: string
+          id?: string
+          metrics?: Json
+          period?: string
+          report_date?: string
+          report_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       route_assignments: {
         Row: {
           agent_id: string | null

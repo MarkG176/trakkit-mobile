@@ -6,11 +6,16 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, BarChart, PieChart, TrendingUp, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 export const Reports = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [selectedPeriod, setSelectedPeriod] = useState("this-week");
   const [selectedCategory, setSelectedCategory] = useState("personal");
+  const [isExporting, setIsExporting] = useState(false);
 
   // Mock report data
   const personalData = {
@@ -38,6 +43,96 @@ export const Reports = () => {
       status: "Completed"
     }
   ];
+
+  const handleExportReport = async () => {
+    if (!user) {
+      toast.error("Please sign in to export reports");
+      return;
+    }
+
+    setIsExporting(true);
+
+    try {
+      // Save report to Supabase
+      const reportMetrics = selectedCategory === "personal" 
+        ? {
+            totalActivities: personalData.totalActivities,
+            averageDailyPoints: personalData.averageDailyPoints,
+            successRate: personalData.successRate,
+            activityBreakdown: personalData.activityBreakdown
+          }
+        : {
+            projects: projectData
+          };
+
+      const { data, error } = await supabase
+        .from('reports')
+        .insert({
+          agent_id: user.id,
+          report_type: selectedCategory,
+          period: selectedPeriod,
+          metrics: reportMetrics
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success("Report saved and exported successfully!");
+      
+      // Optional: Download CSV or PDF file
+      const csvContent = selectedCategory === "personal" 
+        ? generatePersonalReportCSV(personalData)
+        : generateProjectReportCSV(projectData);
+      
+      downloadCSV(csvContent, `${selectedCategory}-report-${selectedPeriod}.csv`);
+
+    } catch (error) {
+      console.error("Error saving report:", error);
+      toast.error("Failed to export report. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const generatePersonalReportCSV = (data: typeof personalData) => {
+    const headers = ["Metric", "Value"];
+    const rows = [
+      ["Total Activities", data.totalActivities.toString()],
+      ["Average Daily Points", data.averageDailyPoints.toString()],
+      ["Success Rate", `${data.successRate}%`],
+      ["", ""], // Empty row
+      ["Activity Type", "Count"],
+      ...data.activityBreakdown.map(activity => [activity.type, activity.count.toString()])
+    ];
+    
+    return [headers, ...rows].map(row => row.join(",")).join("\n");
+  };
+
+  const generateProjectReportCSV = (data: typeof projectData) => {
+    const headers = ["Project Name", "Contribution", "Status"];
+    const rows = data.map(project => [
+      project.name,
+      project.contribution,
+      project.status
+    ]);
+    
+    return [headers, ...rows].map(row => row.join(",")).join("\n");
+  };
+
+  const downloadCSV = (content: string, filename: string) => {
+    const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
 
   return (
     <MobileLayout currentPage="more">
@@ -162,9 +257,14 @@ export const Reports = () => {
         )}
 
         {/* Export Button */}
-        <Button className="w-full" variant="outline">
+        <Button 
+          className="w-full" 
+          variant="outline" 
+          onClick={handleExportReport}
+          disabled={isExporting}
+        >
           <Download size={20} className="mr-2" />
-          Export Report
+          {isExporting ? "Exporting..." : "Export Report"}
         </Button>
       </div>
     </MobileLayout>
