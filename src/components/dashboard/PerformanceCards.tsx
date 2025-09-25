@@ -1,5 +1,6 @@
 import { Calendar, CheckCircle, Target } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { Label } from "@/components/ui/label";
 
 interface PerformanceData {
   tasksToday: number;
@@ -24,8 +25,11 @@ export const PerformanceCards = ({ data }: PerformanceCardsProps) => {
             <div className="w-10 h-10 bg-primary-light rounded-lg flex items-center justify-center">
               <Calendar size={20} className="text-primary" />
             </div>
-            <div>
-              <h3 className="text-h3 text-black">{data.tasksToday}</h3>
+            <div className="flex-1">
+              <div className="flex items-center justify-between">
+                <h3 className="text-h3 text-black">{data.tasksToday}</h3>
+                <Label className="text-xs text-muted-foreground bg-primary/10 px-2 py-1 rounded">Remaining</Label>
+              </div>
               <p className="text-sm text-black">Tasks for Today</p>
             </div>
           </div>
@@ -37,8 +41,11 @@ export const PerformanceCards = ({ data }: PerformanceCardsProps) => {
             <div className="w-10 h-10 bg-accent rounded-lg flex items-center justify-center">
               <CheckCircle size={20} className="text-success" />
             </div>
-            <div>
-              <h3 className="text-h3 text-black">{data.surveysCompleted}</h3>
+            <div className="flex-1">
+              <div className="flex items-center justify-between">
+                <h3 className="text-h3 text-black">{data.surveysCompleted}</h3>
+                <Label className="text-xs text-muted-foreground bg-green-500/10 px-2 py-1 rounded">Today</Label>
+              </div>
               <p className="text-sm text-black">Surveys Completed</p>
             </div>
           </div>
@@ -51,7 +58,10 @@ export const PerformanceCards = ({ data }: PerformanceCardsProps) => {
               <Target size={20} className="text-primary" />
             </div>
             <div className="flex-1">
-              <h3 className="text-h3 text-black">{data.salesTarget.current} / {data.salesTarget.target}</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-h3 text-black">{data.salesTarget.current} / {data.salesTarget.target}</h3>
+                <Label className="text-xs text-muted-foreground bg-orange-500/10 px-2 py-1 rounded">{Math.round(salesProgress)}%</Label>
+              </div>
               <p className="text-sm text-black">Sales Target</p>
             </div>
           </div>
