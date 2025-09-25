@@ -26,7 +26,7 @@ export const PerformanceCards = ({ data }: PerformanceCardsProps) => {
             </div>
             <div>
               <h3 className="text-h3 text-black">{data.tasksToday}</h3>
-              <p className="text-secondary text-black">Tasks for Today</p>
+              <p className="text-sm text-black">Tasks for Today</p>
             </div>
           </div>
         </div>
@@ -39,7 +39,7 @@ export const PerformanceCards = ({ data }: PerformanceCardsProps) => {
             </div>
             <div>
               <h3 className="text-h3 text-black">{data.surveysCompleted}</h3>
-              <p className="text-secondary text-black">Surveys Completed</p>
+              <p className="text-sm text-black">Surveys Completed</p>
             </div>
           </div>
         </div>
@@ -52,7 +52,7 @@ export const PerformanceCards = ({ data }: PerformanceCardsProps) => {
             </div>
             <div className="flex-1">
               <h3 className="text-h3 text-black">{data.salesTarget.current} / {data.salesTarget.target}</h3>
-              <p className="text-secondary text-black">Sales Target</p>
+              <p className="text-sm text-black">Sales Target</p>
             </div>
           </div>
           <Progress value={salesProgress} className="h-2" />
