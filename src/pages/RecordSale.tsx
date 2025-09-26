@@ -5,15 +5,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { EngagementModal } from "@/components/EngagementModal";
-import { ArrowLeft, Search, ShoppingCart, Plus, Minus } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { ArrowLeft, Search, ShoppingCart, Plus, Minus, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
+const categories = [
+  { id: "all", name: "All Products" },
+  { id: "coffee", name: "Coffee" },
+  { id: "tea", name: "Tea" },
+  { id: "energy", name: "Energy Drinks" },
+  { id: "merchandise", name: "Merchandise" },
+];
+
 const products = [
-  { id: "1", name: "Premium Coffee Blend", sku: "SKU-PCB-001", price: 24.99 },
-  { id: "2", name: "Organic Green Tea", sku: "SKU-OGT-002", price: 18.50 },
-  { id: "3", name: "Energy Drink Mix", sku: "SKU-EDM-003", price: 12.75 },
-  { id: "4", name: "Herbal Tea Set", sku: "SKU-HTS-004", price: 32.00 },
+  { id: "1", name: "Premium Coffee Blend", sku: "SKU-PCB-001", price: 24.99, category: "coffee" },
+  { id: "2", name: "Organic Green Tea", sku: "SKU-OGT-002", price: 18.50, category: "tea" },
+  { id: "3", name: "Energy Drink Mix", sku: "SKU-EDM-003", price: 12.75, category: "energy" },
+  { id: "4", name: "Herbal Tea Set", sku: "SKU-HTS-004", price: 32.00, category: "tea" },
+  { id: "5", name: "Espresso Blend", sku: "SKU-ESB-005", price: 28.99, category: "coffee" },
+  { id: "6", name: "Energy Boost Plus", sku: "SKU-EBP-006", price: 15.25, category: "energy" },
 ];
 
 interface CartItem {
@@ -27,11 +38,14 @@ export const RecordSale = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [showEngagementModal, setShowEngagementModal] = useState(false);
+  const [showCart, setShowCart] = useState(false);
+  const [showCustomerInfo, setShowCustomerInfo] = useState(false);
 
   const addToCart = (product: typeof products[0]) => {
     const existingItem = cartItems.find(item => item.id === product.id);
@@ -49,6 +63,7 @@ export const RecordSale = () => {
         quantity: 1 
       }]);
     }
+    setShowCart(true);
   };
 
   const updateQuantity = (id: string, newQuantity: number) => {
@@ -83,17 +98,20 @@ export const RecordSale = () => {
     navigate("/");
   };
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.sku.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.sku.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   return (
     <MobileLayout currentPage="dashboard">
+      {/* Header */}
       <div className="bg-primary text-primary-foreground p-4">
-        <div className="flex items-center gap-3 mb-2">
+        <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
@@ -102,147 +120,235 @@ export const RecordSale = () => {
           >
             <ArrowLeft size={20} />
           </Button>
-          <h1 className="text-h1">Record a Sale</h1>
+          <h1 className="text-xl font-semibold">Record a Sale</h1>
         </div>
       </div>
 
-      <div className="flex h-[calc(100vh-140px)]">
-        {/* Left Side - Product Selection */}
-        <div className="flex-1 p-4 border-r">
-          <div className="flex items-center gap-2 mb-4">
-            <ShoppingCart size={20} />
-            <h2 className="text-h3 text-black">Select Products</h2>
-          </div>
-          
-          {/* Search */}
-          <div className="relative mb-4">
+      <div className="flex flex-col h-[calc(100vh-140px)]">
+        {/* Search Bar */}
+        <div className="p-4 bg-background">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={16} />
             <Input
-              placeholder="Search products by name or SKU..."
+              placeholder="Search products..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
           </div>
+        </div>
 
-          {/* Product Grid */}
-          <div className="grid grid-cols-2 gap-3 overflow-y-auto">
+        {/* Category Filters */}
+        <div className="px-4 pb-4 bg-background">
+          <div className="flex gap-2 overflow-x-auto">
+            {categories.map((category) => (
+              <Button
+                key={category.id}
+                variant={selectedCategory === category.id ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedCategory(category.id)}
+                className="whitespace-nowrap"
+              >
+                {category.name}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Product List */}
+        <div className="flex-1 overflow-y-auto px-4 pb-20">
+          <div className="space-y-3">
             {filteredProducts.map((product) => (
-              <Card key={product.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                <CardContent className="p-3">
-                  <div className="aspect-square bg-muted rounded-lg flex items-center justify-center mb-2">
-                    <ShoppingCart size={32} className="text-muted-foreground" />
+              <Card key={product.id} className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex gap-4">
+                    {/* Product Image */}
+                    <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center shrink-0">
+                      <ShoppingCart size={24} className="text-muted-foreground" />
+                    </div>
+                    
+                    {/* Product Info */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-base">{product.name}</h3>
+                      <p className="text-sm text-muted-foreground">{product.sku}</p>
+                      <p className="text-lg font-semibold text-primary">KES {product.price}</p>
+                    </div>
+
+                    {/* Add Button */}
+                    <div className="flex items-center">
+                      <Button
+                        onClick={() => addToCart(product)}
+                        className="bg-primary hover:bg-primary/90"
+                      >
+                        + Add
+                      </Button>
+                    </div>
                   </div>
-                  <h3 className="font-medium text-sm text-black">{product.name}</h3>
-                  <p className="text-xs text-muted-foreground">{product.sku}</p>
-                  <p className="text-sm font-semibold text-primary">KES {product.price}</p>
-                  <Button
-                    size="sm"
-                    className="w-full mt-2"
-                    onClick={() => addToCart(product)}
-                  >
-                    Add to Cart
-                  </Button>
                 </CardContent>
               </Card>
             ))}
           </div>
         </div>
+      </div>
 
-        {/* Right Side - Sale Items & Customer Info */}
-        <div className="w-80 p-4 bg-muted/30">
-          <h2 className="text-h3 mb-4 text-black">Sale Items</h2>
+      {/* Floating Cart Button */}
+      {cartItems.length > 0 && (
+        <div className="fixed bottom-20 right-4 z-50">
+          <Button
+            onClick={() => setShowCart(true)}
+            className="h-14 w-14 rounded-full bg-primary hover:bg-primary/90 shadow-lg"
+            size="icon"
+          >
+            <div className="relative">
+              <ShoppingCart size={24} />
+              <span className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-6 h-6 text-xs flex items-center justify-center">
+                {cartItems.reduce((sum, item) => sum + item.quantity, 0)}
+              </span>
+            </div>
+          </Button>
+        </div>
+      )}
+
+      {/* Persistent Complete Sale Button */}
+      {cartItems.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-40">
+          <Button
+            onClick={() => setShowCart(true)}
+            className="w-full h-14 text-lg bg-primary hover:bg-primary/90"
+          >
+            Complete Sale • KES {totalAmount.toFixed(2)}
+          </Button>
+        </div>
+      )}
+
+      {/* Cart Sheet */}
+      <Sheet open={showCart} onOpenChange={setShowCart}>
+        <SheetContent side="bottom" className="h-[80vh]">
+          <SheetHeader>
+            <SheetTitle className="text-left">Sale Items</SheetTitle>
+            <div className="flex justify-between items-center text-xl font-bold">
+              <span>Total:</span>
+              <span>KES {totalAmount.toFixed(2)}</span>
+            </div>
+          </SheetHeader>
           
-          {/* Cart Items */}
-          <div className="space-y-3 mb-6 max-h-60 overflow-y-auto">
+          <div className="mt-6 space-y-4 overflow-y-auto max-h-[40vh]">
             {cartItems.map((item) => (
-              <div key={item.id} className="flex items-center justify-between bg-background p-3 rounded-lg">
-                <div className="flex-1">
-                  <h4 className="font-medium text-sm text-black">{item.name}</h4>
-                  <p className="text-xs text-muted-foreground">KES {item.price}</p>
+              <div key={item.id} className="flex items-center gap-4 p-4 bg-muted rounded-lg">
+                <div className="w-12 h-12 bg-background rounded-lg flex items-center justify-center">
+                  <ShoppingCart size={16} className="text-muted-foreground" />
                 </div>
+                
+                <div className="flex-1">
+                  <h4 className="font-medium">{item.name}</h4>
+                  <p className="text-sm text-muted-foreground">KES {item.price}</p>
+                </div>
+
                 <div className="flex items-center gap-2">
                   <Button
                     size="icon"
                     variant="outline"
-                    className="h-6 w-6"
+                    className="h-8 w-8"
                     onClick={() => updateQuantity(item.id, item.quantity - 1)}
                   >
                     <Minus size={12} />
                   </Button>
-                  <span className="w-8 text-center text-sm">{item.quantity}</span>
+                  <span className="w-8 text-center font-medium">{item.quantity}</span>
                   <Button
                     size="icon"
                     variant="outline"
-                    className="h-6 w-6"
+                    className="h-8 w-8"
                     onClick={() => updateQuantity(item.id, item.quantity + 1)}
                   >
                     <Plus size={12} />
                   </Button>
                 </div>
-                <p className="text-sm font-semibold ml-2 text-black">
-                  KES {(item.price * item.quantity).toFixed(2)}
-                </p>
+
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 text-destructive"
+                  onClick={() => updateQuantity(item.id, 0)}
+                >
+                  <Trash2 size={16} />
+                </Button>
               </div>
             ))}
           </div>
 
-          {/* Total */}
-          <div className="border-t pt-4 mb-6">
-            <div className="flex justify-between items-center text-lg font-semibold text-black">
-              <span>Total:</span>
-              <span>KES {totalAmount.toFixed(2)}</span>
-            </div>
+          <div className="mt-6 space-y-4">
+            <Button
+              onClick={() => {
+                setShowCart(false);
+                setShowCustomerInfo(true);
+              }}
+              className="w-full h-12 bg-primary hover:bg-primary/90"
+            >
+              Continue to Customer Info
+            </Button>
           </div>
+        </SheetContent>
+      </Sheet>
 
-          {/* Customer Information */}
-          <div className="space-y-4 mb-6">
-            <h3 className="text-h3 text-black">Customer Information (Optional)</h3>
-            
+      {/* Customer Info Sheet */}
+      <Sheet open={showCustomerInfo} onOpenChange={setShowCustomerInfo}>
+        <SheetContent side="bottom" className="h-[70vh]">
+          <SheetHeader>
+            <SheetTitle className="text-left">Customer Information (Optional)</SheetTitle>
+          </SheetHeader>
+          
+          <div className="mt-6 space-y-4">
             <div>
-              <Label htmlFor="customer-name" className="text-sm">Customer Name</Label>
+              <Label htmlFor="customer-name" className="text-sm font-medium">Customer Name</Label>
               <Input
                 id="customer-name"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
                 placeholder="Enter customer name"
-                className="mt-1"
+                className="mt-2"
               />
             </div>
 
             <div>
-              <Label htmlFor="customer-phone" className="text-sm">Phone Number</Label>
+              <Label htmlFor="customer-phone" className="text-sm font-medium">Phone Number</Label>
               <Input
                 id="customer-phone"
                 value={customerPhone}
                 onChange={(e) => setCustomerPhone(e.target.value)}
                 placeholder="Enter phone number"
-                className="mt-1"
+                className="mt-2"
               />
             </div>
 
             <div>
-              <Label htmlFor="customer-email" className="text-sm">Email Address</Label>
+              <Label htmlFor="customer-email" className="text-sm font-medium">Email Address</Label>
               <Input
                 id="customer-email"
                 value={customerEmail}
                 onChange={(e) => setCustomerEmail(e.target.value)}
                 placeholder="Enter email address"
-                className="mt-1"
+                className="mt-2"
               />
             </div>
           </div>
 
-          {/* Complete Sale Button */}
-          <Button
-            onClick={handleCompleteSale}
-            className="w-full h-12 text-lg bg-primary hover:bg-primary/90"
-            disabled={cartItems.length === 0}
-          >
-            Complete Sale • KES {totalAmount.toFixed(2)}
-          </Button>
-        </div>
-      </div>
+          <div className="mt-8 space-y-3">
+            <Button
+              onClick={handleCompleteSale}
+              className="w-full h-12 text-lg bg-primary hover:bg-primary/90"
+            >
+              Complete Sale • KES {totalAmount.toFixed(2)}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowCustomerInfo(false)}
+              className="w-full h-12"
+            >
+              Back to Cart
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <EngagementModal
         isOpen={showEngagementModal}
