@@ -90,99 +90,90 @@ export const GiveProducts = () => {
         <RecordingIndicator isRecording={isRecording} duration={recordingDuration} />
       </div>
 
-      <div className="p-4 space-y-6">
-        {/* Product Selection */}
-        <Card>
-          <CardContent className="p-4">
-            <h2 className="text-h3 mb-4 text-black">Select Product & Quantity</h2>
-            
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="product">Product</Label>
-                <Select value={selectedProduct} onValueChange={setSelectedProduct}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a product" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {products.map((product) => (
-                      <SelectItem key={product.id} value={product.id}>
-                        {product.name}
-                        {product.price > 0 && ` - KES ${product.price}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="quantity">Quantity</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                />
-              </div>
+      <div className="flex h-[calc(100vh-140px)]">
+        {/* Left Side - Product Selection */}
+        <div className="flex-1 p-4 border-r">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-5 h-5 bg-primary rounded flex items-center justify-center">
+              <span className="text-xs text-white">📦</span>
             </div>
-          </CardContent>
-        </Card>
+            <h2 className="text-h3 text-black">Select Product</h2>
+          </div>
+          
+          {/* Search */}
+          <div className="relative mb-4">
+            <Input
+              placeholder="Search products by name or SKU..."
+              value={selectedProduct}
+              onChange={(e) => setSelectedProduct(e.target.value)}
+              className="pl-3"
+            />
+          </div>
 
-        {/* Recipient Information */}
-        <Card>
-          <CardContent className="p-4">
-            <h2 className="text-h3 mb-4 text-black">Recipient Information</h2>
-            
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="recipient-name">Recipient Name *</Label>
-                <Input
-                  id="recipient-name"
-                  value={recipientName}
-                  onChange={(e) => setRecipientName(e.target.value)}
-                  placeholder="Enter recipient name"
-                />
-              </div>
+          {/* Product Grid */}
+          <div className="grid grid-cols-2 gap-4 overflow-y-auto">
+            {products.map((product) => (
+              <Card key={product.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                <CardContent className="p-4">
+                  <div className="aspect-square bg-muted rounded-lg flex items-center justify-center mb-3">
+                    <div className="w-12 h-12 border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center">
+                      <span className="text-2xl">📦</span>
+                    </div>
+                  </div>
+                  <h3 className="font-medium text-sm text-black mb-1">{product.name}</h3>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    SKU: {product.id.padStart(6, '0')}
+                  </p>
+                  <Button
+                    size="sm"
+                    variant={selectedProduct === product.id ? "default" : "outline"}
+                    className="w-full"
+                    onClick={() => setSelectedProduct(product.id)}
+                  >
+                    {selectedProduct === product.id ? "Selected" : "Select"}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
 
-              <div>
-                <Label htmlFor="recipient-phone">Phone Number</Label>
-                <Input
-                  id="recipient-phone"
-                  value={recipientPhone}
-                  onChange={(e) => setRecipientPhone(e.target.value)}
-                  placeholder="Enter phone number"
-                />
-              </div>
+        {/* Right Side - Recipient Information */}
+        <div className="w-80 p-4 bg-muted/30">
+          <h2 className="text-h3 mb-4 text-black">Recipient Information (Optional)</h2>
+          
+          <div className="space-y-4 mb-6">
+            <div>
+              <Label htmlFor="recipient-name" className="text-sm">Recipient Name</Label>
+              <Input
+                id="recipient-name"
+                value={recipientName}
+                onChange={(e) => setRecipientName(e.target.value)}
+                placeholder="Enter recipient's name"
+                className="mt-1"
+              />
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Optional Recording */}
-        <Card>
-          <CardContent className="p-4">
-            <h2 className="text-h3 mb-4 text-black">Optional Recording</h2>
-            
-            <Button
-              variant={isRecording ? "destructive" : "outline"}
-              onClick={isRecording ? stopRecording : startRecording}
-              className="w-full"
-            >
-              {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
-              <span className="ml-2">
-                {isRecording ? "Stop Recording" : "Start Recording Audio"}
-              </span>
-            </Button>
-          </CardContent>
-        </Card>
+            <div>
+              <Label htmlFor="notes" className="text-sm">Notes</Label>
+              <textarea
+                id="notes"
+                rows={4}
+                className="w-full mt-1 px-3 py-2 border border-input bg-background rounded-md text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                placeholder="e.g. Given at Central Park event. Product demo at mall..."
+              />
+            </div>
+          </div>
 
-        {/* Record Giveaway Button */}
-        <Button
-          onClick={handleRecordGiveaway}
-          className="w-full h-12 text-lg"
-          disabled={!selectedProduct || !recipientName}
-        >
-          Record Giveaway
-        </Button>
+          {/* Record Giveaway Button */}
+          <Button
+            onClick={handleRecordGiveaway}
+            className="w-full h-12 text-lg bg-primary hover:bg-primary/90"
+            disabled={!selectedProduct}
+          >
+            Record Giveaway
+          </Button>
+        </div>
       </div>
 
       <EngagementModal
