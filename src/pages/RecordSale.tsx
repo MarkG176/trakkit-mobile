@@ -8,24 +8,8 @@ import { EngagementModal } from "@/components/EngagementModal";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ArrowLeft, Search, ShoppingCart, Plus, Minus, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
-
-const categories = [
-  { id: "all", name: "All Products" },
-  { id: "coffee", name: "Coffee" },
-  { id: "tea", name: "Tea" },
-  { id: "energy", name: "Energy Drinks" },
-  { id: "merchandise", name: "Merchandise" },
-];
-
-const products = [
-  { id: "1", name: "Premium Coffee Blend", sku: "SKU-PCB-001", price: 24.99, category: "coffee" },
-  { id: "2", name: "Organic Green Tea", sku: "SKU-OGT-002", price: 18.50, category: "tea" },
-  { id: "3", name: "Energy Drink Mix", sku: "SKU-EDM-003", price: 12.75, category: "energy" },
-  { id: "4", name: "Herbal Tea Set", sku: "SKU-HTS-004", price: 32.00, category: "tea" },
-  { id: "5", name: "Espresso Blend", sku: "SKU-ESB-005", price: 28.99, category: "coffee" },
-  { id: "6", name: "Energy Boost Plus", sku: "SKU-EBP-006", price: 15.25, category: "energy" },
-];
+import { useProducts } from "@/hooks/useProducts";
+import { useSalesForm } from "@/hooks/useSalesForm";
 
 interface CartItem {
   id: string;
@@ -36,7 +20,8 @@ interface CartItem {
 
 export const RecordSale = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { products, categories, loading: productsLoading } = useProducts();
+  const { submitSale, loading: submitting } = useSalesForm();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -47,7 +32,7 @@ export const RecordSale = () => {
   const [showCart, setShowCart] = useState(false);
   const [showCustomerInfo, setShowCustomerInfo] = useState(false);
 
-  const addToCart = (product: typeof products[0]) => {
+  const addToCart = (product: any) => {
     const existingItem = cartItems.find(item => item.id === product.id);
     if (existingItem) {
       setCartItems(cartItems.map(item => 
@@ -78,24 +63,30 @@ export const RecordSale = () => {
 
   const handleCompleteSale = () => {
     if (cartItems.length === 0) {
-      toast({
-        title: "Empty Cart",
-        description: "Please add items to your cart",
-        variant: "destructive",
-      });
       return;
     }
     
     setShowEngagementModal(true);
   };
 
-  const handleEngagementSave = (engagementData: any) => {
-    // Save sale and engagement data
-    toast({
-      title: "Sale recorded successfully!",
-      description: "+25 points earned. Engagement logged.",
+  const handleEngagementSave = async (engagementData: any) => {
+    const success = await submitSale({
+      items: cartItems.map(item => ({
+        productVariantId: item.id,
+        quantity: item.quantity,
+        price: item.price
+      })),
+      customerName,
+      customerPhone,
+      customerEmail,
+      engagementType: engagementData.engagementType,
+      notes: engagementData.notes,
+      sentiment: engagementData.sentiment
     });
-    navigate("/");
+
+    if (success) {
+      navigate("/");
+    }
   };
 
   const filteredProducts = products.filter(product => {

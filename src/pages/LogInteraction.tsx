@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { RecordingIndicator } from "@/components/RecordingIndicator";
 import { ArrowLeft, Mic, MicOff, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
+import { useInteractionForm } from "@/hooks/useInteractionForm";
 
 const interactionTypes = [
   "General Meeting",
@@ -22,7 +22,7 @@ const interactionTypes = [
 
 export const LogInteraction = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { submitInteraction, loading } = useInteractionForm();
   const [interactionType, setInteractionType] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -47,13 +47,8 @@ export const LogInteraction = () => {
     setRecordingDuration(0);
   };
 
-  const handleSaveInteraction = () => {
+  const handleSaveInteraction = async () => {
     if (!interactionType || !customerName) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
       return;
     }
 
@@ -61,12 +56,17 @@ export const LogInteraction = () => {
       stopRecording();
     }
 
-    // Save interaction data
-    toast({
-      title: "Interaction logged successfully!",
-      description: "+10 points earned.",
+    const success = await submitInteraction({
+      interactionType,
+      customerName,
+      customerPhone,
+      notes,
+      sentiment,
     });
-    navigate("/");
+
+    if (success) {
+      navigate("/");
+    }
   };
 
   return (
@@ -201,9 +201,9 @@ export const LogInteraction = () => {
         <Button
           onClick={handleSaveInteraction}
           className="w-full h-12 text-lg"
-          disabled={!interactionType || !customerName}
+          disabled={!interactionType || !customerName || loading}
         >
-          Save Interaction
+          {loading ? "Saving..." : "Save Interaction"}
         </Button>
       </div>
     </MobileLayout>

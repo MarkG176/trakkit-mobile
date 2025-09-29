@@ -88,11 +88,11 @@ const getInteractionTypeColor = (type: string) => {
     case "sale":
       return "bg-green-100 text-green-800";
     case "survey":
-      return "bg-blue-100 text-blue-800";
+      return "bg-primary-light text-primary";
     case "giveaway":
-      return "bg-purple-100 text-purple-800";
+      return "bg-accent text-accent-foreground";
     case "interaction":
-      return "bg-gray-100 text-gray-800";
+      return "bg-muted text-muted-foreground";
     default:
       return "bg-gray-100 text-gray-800";
   }

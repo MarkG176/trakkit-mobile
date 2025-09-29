@@ -96,29 +96,29 @@ export const Profile = () => {
             <h3 className="text-h3 mb-4 text-black">Performance Snapshot</h3>
             
             <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-3 bg-blue-50 rounded-lg">
-                <Award className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-blue-600">{performanceData.totalPoints}</p>
-                <p className="text-sm text-gray-600">Total Points</p>
+              <div className="text-center p-3 bg-primary-light rounded-lg">
+                <Award className="w-6 h-6 text-primary mx-auto mb-2" />
+                <p className="text-2xl font-bold text-primary">{performanceData.totalPoints}</p>
+                <p className="text-sm text-muted-foreground">Total Points</p>
               </div>
               
-              <div className="text-center p-3 bg-green-50 rounded-lg">
-                <Target className="w-6 h-6 text-green-600 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-green-600">{performanceData.surveysCompleted}</p>
-                <p className="text-sm text-gray-600">Surveys Done</p>
+              <div className="text-center p-3 bg-accent rounded-lg">
+                <Target className="w-6 h-6 text-accent-foreground mx-auto mb-2" />
+                <p className="text-2xl font-bold text-accent-foreground">{performanceData.surveysCompleted}</p>
+                <p className="text-sm text-muted-foreground">Surveys Done</p>
               </div>
               
-              <div className="text-center p-3 bg-purple-50 rounded-lg">
-                <Calendar className="w-6 h-6 text-purple-600 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-purple-600">{performanceData.salesThisMonth}</p>
-                <p className="text-sm text-gray-600">Sales This Month</p>
+              <div className="text-center p-3 bg-muted rounded-lg">
+                <Calendar className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+                <p className="text-2xl font-bold text-foreground">{performanceData.salesThisMonth}</p>
+                <p className="text-sm text-muted-foreground">Sales This Month</p>
               </div>
               
-              <div className="text-center p-3 bg-orange-50 rounded-lg">
-                <Badge className="bg-orange-100 text-orange-800 text-lg px-3 py-1">
+              <div className="text-center p-3 bg-card border rounded-lg">
+                <Badge className="bg-primary text-primary-foreground text-lg px-3 py-1">
                   {performanceData.rank.split(' ')[0]}
                 </Badge>
-                <p className="text-sm text-gray-600 mt-2">Current Rank</p>
+                <p className="text-sm text-muted-foreground mt-2">Current Rank</p>
               </div>
             </div>
           </CardContent>
