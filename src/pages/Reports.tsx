@@ -96,9 +96,8 @@ export const Reports = () => {
           });
         } else {
           const { data: projects } = await supabase
-            .from('projects_view')
+            .from('projects')
             .select('*')
-            .eq('agent_id', user.id)
             .gte('created_at', fromIso)
             .lte('created_at', toIso)
             .limit(10);

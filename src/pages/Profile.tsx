@@ -32,7 +32,7 @@ export const Profile = () => {
         const nowIso = new Date().toISOString();
         const monthStartIso = firstDayOfMonth.toISOString();
 
-        const [{ data: surveys }, { data: sales }, { data: profile }] = await Promise.all([
+        const [{ data: surveys }, { data: sales }, { data: rankData }] = await Promise.all([
           supabase
             .from('interactions')
             .select('*, agent_tasks!inner(*)')
@@ -46,7 +46,7 @@ export const Profile = () => {
             .gte('created_at', monthStartIso)
             .lte('created_at', nowIso),
           supabase
-            .from('agent_profiles')
+            .from('agent_ranks')
             .select('*')
             .eq('agent_id', user.id)
             .single()
@@ -56,9 +56,9 @@ export const Profile = () => {
           totalPoints: (surveys?.length || 0) * 10 + (sales?.length || 0) * 20,
           surveysCompleted: surveys?.length || 0,
           salesThisMonth: sales?.length || 0,
-          rank: profile?.rank || "Agent",
-          teamName: profile?.team_name || "",
-          managerName: profile?.manager_name || ""
+          rank: rankData?.current_rank || "Agent",
+          teamName: "",
+          managerName: ""
         });
       } catch (err) {
         console.error('Failed to load profile data', err);
