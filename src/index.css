@@ -110,19 +110,19 @@
 @layer components {
   /* Typography Scale */
   .text-h1 {
-    @apply text-3xl font-bold text-foreground; /* 28px */
+    @apply text-3xl font-bold; /* 28px */
   }
   
   .text-h2 {
-    @apply text-xl font-semibold text-foreground; /* 22px */
+    @apply text-xl font-semibold; /* 22px */
   }
   
   .text-h3 {
-    @apply text-lg font-medium text-foreground; /* 18px */
+    @apply text-lg font-medium; /* 18px */
   }
   
   .text-body {
-    @apply text-sm font-normal text-foreground; /* 14px */
+    @apply text-sm font-normal; /* 14px */
   }
   
   .text-secondary {
