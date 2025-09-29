@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Dashboard } from "./pages/Dashboard";
+import { AgentDashboard } from "./pages/AgentDashboard";
+import { SupervisorDashboard } from "./pages/SupervisorDashboard";
 import { Surveys } from "./pages/Surveys";
 import { Routes as RoutesPage } from "./pages/Routes";
 import { Inventory } from "./pages/Inventory";
@@ -20,6 +22,7 @@ import { Reports } from "./pages/Reports";
 import { Documentation } from "./pages/Documentation";
 import { Settings } from "./pages/Settings";
 import { HelpSupport } from "./pages/HelpSupport";
+import { RoleBasedRoute } from "./components/RoleBasedRoute";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +40,16 @@ const App = () => (
               <ProtectedRoute>
                 <Dashboard />
               </ProtectedRoute>
+            } />
+            <Route path="/agent" element={
+              <RoleBasedRoute allowedRoles={['agent']} redirectTo="/supervisor">
+                <AgentDashboard />
+              </RoleBasedRoute>
+            } />
+            <Route path="/supervisor" element={
+              <RoleBasedRoute allowedRoles={['supervisor']} redirectTo="/agent">
+                <SupervisorDashboard />
+              </RoleBasedRoute>
             } />
             <Route path="/surveys" element={
               <ProtectedRoute>
