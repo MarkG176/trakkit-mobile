@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,32 +17,108 @@ export const Reports = () => {
   const [selectedCategory, setSelectedCategory] = useState("personal");
   const [isExporting, setIsExporting] = useState(false);
 
-  // Mock report data
-  const personalData = {
-    totalActivities: 23,
-    averageDailyPoints: 45,
-    successRate: 87,
+  const [personalData, setPersonalData] = useState({
+    totalActivities: 0,
+    averageDailyPoints: 0,
+    successRate: 0,
     activityBreakdown: [
-      { type: "Sales", count: 8, color: "bg-green-500" },
-      { type: "Surveys", count: 12, color: "bg-blue-500" },
-      { type: "Giveaways", count: 3, color: "bg-purple-500" }
+      { type: "Sales", count: 0, color: "bg-green-500" },
+      { type: "Surveys", count: 0, color: "bg-blue-500" },
+      { type: "Giveaways", count: 0, color: "bg-purple-500" }
     ]
-  };
+  });
 
-  const projectData = [
-    {
-      id: "1",
-      name: "Solar Energy Initiative",
-      contribution: "15 surveys completed",
-      status: "Active"
-    },
-    {
-      id: "2", 
-      name: "LED Distribution Campaign",
-      contribution: "8 product demonstrations",
-      status: "Completed"
-    }
-  ];
+  const [projectData, setProjectData] = useState<Array<{ id: string; name: string; contribution: string; status: string }>>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchReportData = async () => {
+      if (!user) return;
+      setLoading(true);
+      try {
+        const startOfRange = new Date();
+        const endOfRange = new Date();
+        // Simple ranges; can be expanded to real ranges if needed
+        if (selectedPeriod === "this-week") {
+          const day = startOfRange.getDay();
+          const diffToMonday = (day + 6) % 7; // 0 for Monday
+          startOfRange.setDate(startOfRange.getDate() - diffToMonday);
+          startOfRange.setHours(0,0,0,0);
+          endOfRange.setHours(23,59,59,999);
+        } else if (selectedPeriod === "last-month") {
+          startOfRange.setMonth(startOfRange.getMonth() - 1, 1);
+          startOfRange.setHours(0,0,0,0);
+          endOfRange.setMonth(endOfRange.getMonth(), 0);
+          endOfRange.setHours(23,59,59,999);
+        }
+
+        const fromIso = startOfRange.toISOString();
+        const toIso = endOfRange.toISOString();
+
+        if (selectedCategory === "personal") {
+          const { data: interactionsSales } = await supabase
+            .from('interactions')
+            .select('*, agent_tasks!inner(*)')
+            .eq('agent_tasks.agent_id', user.id)
+            .eq('interaction_type', 'sale')
+            .gte('created_at', fromIso)
+            .lte('created_at', toIso);
+
+          const { data: interactionsSurveys } = await supabase
+            .from('interactions')
+            .select('*, agent_tasks!inner(*)')
+            .eq('agent_tasks.agent_id', user.id)
+            .eq('interaction_type', 'survey')
+            .gte('created_at', fromIso)
+            .lte('created_at', toIso);
+
+          const { data: interactionsGiveaways } = await supabase
+            .from('interactions')
+            .select('*, agent_tasks!inner(*)')
+            .eq('agent_tasks.agent_id', user.id)
+            .eq('interaction_type', 'giveaway')
+            .gte('created_at', fromIso)
+            .lte('created_at', toIso);
+
+          const totalActivities = (interactionsSales?.length || 0) + (interactionsSurveys?.length || 0) + (interactionsGiveaways?.length || 0);
+          const averageDailyPoints = Math.round(totalActivities * 2); // placeholder calculation
+          const successRate = totalActivities > 0 ? Math.round(((interactionsSales?.length || 0) / totalActivities) * 100) : 0;
+
+          setPersonalData({
+            totalActivities,
+            averageDailyPoints,
+            successRate,
+            activityBreakdown: [
+              { type: 'Sales', count: interactionsSales?.length || 0, color: 'bg-green-500' },
+              { type: 'Surveys', count: interactionsSurveys?.length || 0, color: 'bg-blue-500' },
+              { type: 'Giveaways', count: interactionsGiveaways?.length || 0, color: 'bg-purple-500' }
+            ]
+          });
+        } else {
+          const { data: projects } = await supabase
+            .from('projects_view')
+            .select('*')
+            .eq('agent_id', user.id)
+            .gte('created_at', fromIso)
+            .lte('created_at', toIso)
+            .limit(10);
+
+          const formatted = (projects || []).map((p: any) => ({
+            id: p.id,
+            name: p.name || 'Project',
+            contribution: p.contribution_text || '—',
+            status: p.status || 'Active'
+          }));
+          setProjectData(formatted);
+        }
+      } catch (err) {
+        console.error('Failed to fetch report data', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReportData();
+  }, [user, selectedCategory, selectedPeriod]);
 
   const handleExportReport = async () => {
     if (!user) {
@@ -264,7 +340,7 @@ export const Reports = () => {
           disabled={isExporting}
         >
           <Download size={20} className="mr-2" />
-          {isExporting ? "Exporting..." : "Export Report"}
+          {isExporting || loading ? "Exporting..." : "Export Report"}
         </Button>
       </div>
     </MobileLayout>

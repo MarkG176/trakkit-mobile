@@ -1,57 +1,23 @@
+import { useEffect, useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Mic, ShoppingCart, ClipboardList, Gift, MessageSquare, Play } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
-// Mock data for interaction history
-const interactions = [
-  {
-    id: "1",
-    date: "2024-01-15",
-    time: "14:30",
-    type: "sale",
-    clientName: "John Doe",
-    hasRecording: true,
-    points: 25,
-    sentiment: 5,
-    notes: "Customer was very satisfied with the solar panel demonstration"
-  },
-  {
-    id: "2", 
-    date: "2024-01-15",
-    time: "11:45",
-    type: "survey",
-    clientName: "Jane Smith",
-    hasRecording: true,
-    points: 15,
-    sentiment: 4,
-    notes: "Completed customer satisfaction survey"
-  },
-  {
-    id: "3",
-    date: "2024-01-14",
-    time: "16:20",
-    type: "giveaway",
-    clientName: "Mike Johnson",
-    hasRecording: false,
-    points: 8,
-    sentiment: 4,
-    notes: "Distributed sample brochures and LED light demo"
-  },
-  {
-    id: "4",
-    date: "2024-01-14",
-    time: "10:15",
-    type: "interaction",
-    clientName: "Sarah Wilson",
-    hasRecording: true,
-    points: 10,
-    sentiment: 3,
-    notes: "General consultation about solar energy solutions"
-  }
-];
+type InteractionRow = {
+  id: string;
+  created_at?: string;
+  interaction_type: string;
+  client_name?: string;
+  has_recording?: boolean;
+  points?: number;
+  sentiment?: number;
+  notes?: string;
+};
 
 const getInteractionIcon = (type: string) => {
   switch (type) {
@@ -100,6 +66,30 @@ const getInteractionTypeColor = (type: string) => {
 
 export const InteractionHistory = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [interactions, setInteractions] = useState<InteractionRow[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchInteractions = async () => {
+      if (!user) return;
+      setLoading(true);
+      try {
+        const { data } = await supabase
+          .from('interactions')
+          .select('*, agent_tasks!inner(*)')
+          .eq('agent_tasks.agent_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(50);
+        setInteractions((data as any) || []);
+      } catch (err) {
+        console.error('Failed to fetch interactions', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInteractions();
+  }, [user]);
 
   return (
     <MobileLayout currentPage="more">
@@ -124,15 +114,15 @@ export const InteractionHistory = () => {
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0 mt-1">
-                  {getInteractionIcon(interaction.type)}
+                  {getInteractionIcon(interaction.interaction_type)}
                 </div>
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
-                    <Badge className={getInteractionTypeColor(interaction.type)}>
-                      {getInteractionTypeLabel(interaction.type)}
+                    <Badge className={getInteractionTypeColor(interaction.interaction_type)}>
+                      {getInteractionTypeLabel(interaction.interaction_type)}
                     </Badge>
-                    {interaction.hasRecording && (
+                    {interaction.has_recording && (
                       <div className="flex items-center gap-1 text-green-600">
                         <Mic size={14} />
                         <Play size={14} />
@@ -140,12 +130,14 @@ export const InteractionHistory = () => {
                     )}
                   </div>
                   
-                  <h3 className="font-medium text-black mb-1">{interaction.clientName}</h3>
+                  <h3 className="font-medium text-black mb-1">{interaction.client_name || 'Client'}</h3>
                   
                   <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
-                    <span>{interaction.date}</span>
-                    <span>{interaction.time}</span>
-                    <span className="text-blue-600">+{interaction.points} pts</span>
+                    <span>{interaction.created_at ? new Date(interaction.created_at).toLocaleDateString() : ''}</span>
+                    <span>{interaction.created_at ? new Date(interaction.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                    {typeof interaction.points === 'number' && (
+                      <span className="text-blue-600">+{interaction.points} pts</span>
+                    )}
                   </div>
                   
                   {interaction.notes && (
@@ -160,7 +152,7 @@ export const InteractionHistory = () => {
                       <div
                         key={star}
                         className={`w-3 h-3 rounded-full ${
-                          star <= interaction.sentiment
+                          star <= (interaction.sentiment || 0)
                             ? "bg-yellow-400"
                             : "bg-gray-200"
                         }`}
@@ -173,7 +165,7 @@ export const InteractionHistory = () => {
           </Card>
         ))}
 
-        {interactions.length === 0 && (
+        {interactions.length === 0 && !loading && (
           <div className="text-center py-8">
             <MessageSquare size={48} className="mx-auto text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-600 mb-2">No interactions yet</h3>

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,20 +7,65 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Edit2, Award, Target, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Profile = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // Mock performance data
-  const performanceData = {
-    totalPoints: 1250,
-    surveysCompleted: 47,
-    salesThisMonth: 12,
-    rank: "Advanced Agent",
-    teamName: "Solar Team Alpha",
-    managerName: "David Johnson"
-  };
+  const [performanceData, setPerformanceData] = useState({
+    totalPoints: 0,
+    surveysCompleted: 0,
+    salesThisMonth: 0,
+    rank: "",
+    teamName: "",
+    managerName: ""
+  });
+
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      if (!user) return;
+      try {
+        const firstDayOfMonth = new Date();
+        firstDayOfMonth.setDate(1);
+        firstDayOfMonth.setHours(0,0,0,0);
+        const nowIso = new Date().toISOString();
+        const monthStartIso = firstDayOfMonth.toISOString();
+
+        const [{ data: surveys }, { data: sales }, { data: profile }] = await Promise.all([
+          supabase
+            .from('interactions')
+            .select('*, agent_tasks!inner(*)')
+            .eq('agent_tasks.agent_id', user.id)
+            .eq('interaction_type', 'survey'),
+          supabase
+            .from('interactions')
+            .select('*, agent_tasks!inner(*)')
+            .eq('agent_tasks.agent_id', user.id)
+            .eq('interaction_type', 'sale')
+            .gte('created_at', monthStartIso)
+            .lte('created_at', nowIso),
+          supabase
+            .from('agent_profiles')
+            .select('*')
+            .eq('agent_id', user.id)
+            .single()
+        ]);
+
+        setPerformanceData({
+          totalPoints: (surveys?.length || 0) * 10 + (sales?.length || 0) * 20,
+          surveysCompleted: surveys?.length || 0,
+          salesThisMonth: sales?.length || 0,
+          rank: profile?.rank || "Agent",
+          teamName: profile?.team_name || "",
+          managerName: profile?.manager_name || ""
+        });
+      } catch (err) {
+        console.error('Failed to load profile data', err);
+      }
+    };
+    fetchProfileData();
+  }, [user]);
 
   return (
     <MobileLayout currentPage="more">
@@ -74,7 +120,7 @@ export const Profile = () => {
               
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Role:</span>
-                <span className="text-black font-medium">Field Agent</span>
+                <span className="text-black font-medium">{performanceData.rank || 'Field Agent'}</span>
               </div>
               
               <div className="flex justify-between items-center">
