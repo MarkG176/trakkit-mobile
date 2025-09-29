@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signInWithMagicLink = async (email: string) => {
-    const redirectUrl = `${window.location.origin}/`;
+    const redirectUrl = `https://trakkit-desktop.lovable.app/`;
     
     const { error } = await supabase.auth.signInWithOtp({
       email,

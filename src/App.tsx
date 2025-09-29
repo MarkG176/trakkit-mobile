@@ -37,19 +37,19 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/agent" element={
-              <RoleBasedRoute allowedRoles={['agent']} redirectTo="/supervisor">
-                <AgentDashboard />
-              </RoleBasedRoute>
-            } />
-            <Route path="/supervisor" element={
               <RoleBasedRoute allowedRoles={['supervisor']} redirectTo="/agent">
                 <SupervisorDashboard />
               </RoleBasedRoute>
+            } />
+            <Route path="/agent" element={
+              <RoleBasedRoute allowedRoles={['agent']} redirectTo="/">
+                <AgentDashboard />
+              </RoleBasedRoute>
+            } />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
             } />
             <Route path="/surveys" element={
               <ProtectedRoute>
