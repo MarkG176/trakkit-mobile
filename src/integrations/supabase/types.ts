@@ -1283,6 +1283,7 @@ export type Database = {
       }
       project_plans: {
         Row: {
+          activities: Json | null
           agents_required: number | null
           client_name: string
           created_at: string
@@ -1292,6 +1293,8 @@ export type Database = {
           id: string
           phases: Json
           product_focus: string
+          project_name: string | null
+          project_type: string | null
           resource_requirements: Json | null
           sales_target: number
           status: string
@@ -1302,6 +1305,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          activities?: Json | null
           agents_required?: number | null
           client_name: string
           created_at?: string
@@ -1311,6 +1315,8 @@ export type Database = {
           id?: string
           phases?: Json
           product_focus: string
+          project_name?: string | null
+          project_type?: string | null
           resource_requirements?: Json | null
           sales_target: number
           status?: string
@@ -1321,6 +1327,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          activities?: Json | null
           agents_required?: number | null
           client_name?: string
           created_at?: string
@@ -1330,6 +1337,8 @@ export type Database = {
           id?: string
           phases?: Json
           product_focus?: string
+          project_name?: string | null
+          project_type?: string | null
           resource_requirements?: Json | null
           sales_target?: number
           status?: string
@@ -2218,14 +2227,18 @@ export type Database = {
           last_ip_address: unknown | null
           last_login_at: string | null
           last_name: string | null
+          location: string | null
           login_attempts: number | null
           magic_link_sent_at: string | null
           phone_number: string | null
           project_id: string | null
+          rating: number | null
           role: Database["public"]["Enums"]["app_role"]
+          role_title: string | null
           team_leader_id: string | null
           user_id: string
           workspace_id: string | null
+          years_experience: number | null
         }
         Insert: {
           account_locked_until?: string | null
@@ -2243,14 +2256,18 @@ export type Database = {
           last_ip_address?: unknown | null
           last_login_at?: string | null
           last_name?: string | null
+          location?: string | null
           login_attempts?: number | null
           magic_link_sent_at?: string | null
           phone_number?: string | null
           project_id?: string | null
+          rating?: number | null
           role: Database["public"]["Enums"]["app_role"]
+          role_title?: string | null
           team_leader_id?: string | null
           user_id: string
           workspace_id?: string | null
+          years_experience?: number | null
         }
         Update: {
           account_locked_until?: string | null
@@ -2268,14 +2285,18 @@ export type Database = {
           last_ip_address?: unknown | null
           last_login_at?: string | null
           last_name?: string | null
+          location?: string | null
           login_attempts?: number | null
           magic_link_sent_at?: string | null
           phone_number?: string | null
           project_id?: string | null
+          rating?: number | null
           role?: Database["public"]["Enums"]["app_role"]
+          role_title?: string | null
           team_leader_id?: string | null
           user_id?: string
           workspace_id?: string | null
+          years_experience?: number | null
         }
         Relationships: [
           {

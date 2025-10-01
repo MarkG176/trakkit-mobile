@@ -3,8 +3,10 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Users, TrendingUp, Package, MapPin, Clock, Phone } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const SupervisorDashboard = () => {
+  const navigate = useNavigate();
   return (
     <MobileLayout currentPage="dashboard">
       <div className="bg-primary text-primary-foreground p-4">
@@ -106,7 +108,11 @@ export const SupervisorDashboard = () => {
       <div className="px-4 pb-20">
         <h2 className="text-h3 mb-3">Quick Actions</h2>
         <div className="grid grid-cols-2 gap-3">
-          <Button variant="outline" className="h-20 flex-col gap-2">
+          <Button 
+            variant="outline" 
+            className="h-20 flex-col gap-2"
+            onClick={() => navigate('/manage-agents')}
+          >
             <Users size={20} />
             <span className="text-sm">Manage Agents</span>
           </Button>

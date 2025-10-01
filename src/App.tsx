@@ -22,6 +22,7 @@ import { Reports } from "./pages/Reports";
 import { Documentation } from "./pages/Documentation";
 import { Settings } from "./pages/Settings";
 import { HelpSupport } from "./pages/HelpSupport";
+import { ManageAgents } from "./pages/ManageAgents";
 import { RoleBasedRoute } from "./components/RoleBasedRoute";
 import NotFound from "./pages/NotFound";
 
@@ -115,6 +116,11 @@ const App = () => (
               <ProtectedRoute>
                 <HelpSupport />
               </ProtectedRoute>
+            } />
+            <Route path="/manage-agents" element={
+              <RoleBasedRoute allowedRoles={['supervisor']}>
+                <ManageAgents />
+              </RoleBasedRoute>
             } />
             <Route path="*" element={<NotFound />} />
           </Routes>
