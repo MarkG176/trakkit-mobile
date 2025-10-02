@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { User, Settings, HelpCircle, LogOut, BarChart, FileText, MessageSquare } from "lucide-react";
+import { User, Settings, HelpCircle, LogOut, BarChart, FileText, MessageSquare, Bug } from "lucide-react";
 
 export const More = () => {
   const { signOut, user } = useAuth();
@@ -40,6 +40,7 @@ export const More = () => {
     { icon: Settings, label: "Settings", action: () => navigate("/settings") },
     { icon: HelpCircle, label: "Help & Support", action: () => navigate("/help-support") },
     { icon: MessageSquare, label: "Interaction History", action: () => navigate("/interaction-history") },
+    { icon: Bug, label: "Debug Kit", action: () => navigate("/debug-kit") },
     { icon: LogOut, label: "Logout", action: handleSignOut, dangerous: true },
   ];
 

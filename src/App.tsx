@@ -23,6 +23,7 @@ import { Reports } from "./pages/Reports";
 import { Documentation } from "./pages/Documentation";
 import { Settings } from "./pages/Settings";
 import { HelpSupport } from "./pages/HelpSupport";
+import { DebugKit } from "./pages/DebugKit";
 import { ManageAgents } from "./pages/ManageAgents";
 import { SalesActivityList } from "./pages/SalesActivityList";
 import { SurveyActivityList } from "./pages/SurveyActivityList";
@@ -121,6 +122,11 @@ const App = () => (
             <Route path="/help-support" element={
               <ProtectedRoute>
                 <HelpSupport />
+              </ProtectedRoute>
+            } />
+            <Route path="/debug-kit" element={
+              <ProtectedRoute>
+                <DebugKit />
               </ProtectedRoute>
             } />
             <Route path="/manage-agents" element={
