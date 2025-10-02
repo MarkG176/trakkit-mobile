@@ -278,6 +278,51 @@ export type Database = {
           },
         ]
       }
+      agent_status_log: {
+        Row: {
+          agent_id: string
+          assigned_location_lat: number | null
+          assigned_location_lng: number | null
+          check_in_successful: boolean | null
+          created_at: string | null
+          distance_from_assigned: number | null
+          id: string
+          location_lat: number | null
+          location_lng: number | null
+          selfie_url: string | null
+          status: string
+          timestamp: string
+        }
+        Insert: {
+          agent_id: string
+          assigned_location_lat?: number | null
+          assigned_location_lng?: number | null
+          check_in_successful?: boolean | null
+          created_at?: string | null
+          distance_from_assigned?: number | null
+          id?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          selfie_url?: string | null
+          status: string
+          timestamp?: string
+        }
+        Update: {
+          agent_id?: string
+          assigned_location_lat?: number | null
+          assigned_location_lng?: number | null
+          check_in_successful?: boolean | null
+          created_at?: string | null
+          distance_from_assigned?: number | null
+          id?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          selfie_url?: string | null
+          status?: string
+          timestamp?: string
+        }
+        Relationships: []
+      }
       agent_task_inventory: {
         Row: {
           agent_id: string | null

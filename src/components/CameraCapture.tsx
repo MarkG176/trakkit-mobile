@@ -2,6 +2,10 @@ import { useState, useRef } from 'react';
 import { Camera, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useAgentStatus } from '@/hooks/useAgentStatus';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface CameraCaptureProps {
   onCapture?: (imageData: string) => void;
@@ -9,22 +13,119 @@ interface CameraCaptureProps {
 
 export const CameraCapture = ({ onCapture }: CameraCaptureProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { currentStatus, updateStatus } = useAgentStatus();
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   const handleCameraClick = () => {
-    // Trigger the file input which will open the camera
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const uploadToStorage = async (file: File): Promise<string | null> => {
+    if (!user) return null;
+
+    const fileName = `${user.id}/${Date.now()}.jpg`;
+    const { data, error } = await supabase.storage
+      .from('agent-selfies')
+      .upload(fileName, file);
+
+    if (error) {
+      console.error('Upload error:', error);
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('agent-selfies')
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  };
+
+  const getCurrentLocation = (): Promise<{ lat: number; lng: number }> => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation not supported'));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => reject(error),
+        { enableHighAccuracy: true }
+      );
+    });
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const imageData = reader.result as string;
-        onCapture?.(imageData);
-      };
-      reader.readAsDataURL(file);
+    if (!file || !user) return;
+
+    setIsProcessing(true);
+
+    try {
+      // Get current location
+      const location = await getCurrentLocation();
+
+      // Upload selfie
+      const selfieUrl = await uploadToStorage(file);
+
+      if (!selfieUrl) {
+        throw new Error('Failed to upload selfie');
+      }
+
+      // Determine next status based on current status
+      let nextStatus = currentStatus;
+      if (currentStatus === 'checked_out') {
+        nextStatus = 'checked_in';
+      } else if (currentStatus === 'checked_in') {
+        nextStatus = 'lunch';
+      } else if (currentStatus === 'lunch') {
+        nextStatus = 'checked_in';
+      }
+
+      // Update status
+      const result = await updateStatus(nextStatus, selfieUrl, location.lat, location.lng);
+
+      if (result.success) {
+        toast({
+          title: 'Success',
+          description: result.message,
+        });
+
+        // Call the optional onCapture callback
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const imageData = reader.result as string;
+          onCapture?.(imageData);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        toast({
+          title: 'Error',
+          description: result.message,
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to process check-in',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsProcessing(false);
+      // Reset the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -32,10 +133,15 @@ export const CameraCapture = ({ onCapture }: CameraCaptureProps) => {
     <>
       <button
         onClick={handleCameraClick}
-        className="absolute left-1/2 -translate-x-1/2 -top-6 w-14 h-14 bg-primary rounded-full flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors z-50"
+        disabled={isProcessing}
+        className="absolute left-1/2 -translate-x-1/2 -top-6 w-14 h-14 bg-primary rounded-full flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors z-50 disabled:opacity-50 disabled:cursor-not-allowed"
         aria-label="Open Camera"
       >
-        <Camera size={24} className="text-primary-foreground" />
+        {isProcessing ? (
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-foreground" />
+        ) : (
+          <Camera size={24} className="text-primary-foreground" />
+        )}
       </button>
       
       {/* Hidden file input that opens the camera */}
@@ -46,6 +152,7 @@ export const CameraCapture = ({ onCapture }: CameraCaptureProps) => {
         capture="environment"
         onChange={handleFileChange}
         className="hidden"
+        disabled={isProcessing}
       />
     </>
   );

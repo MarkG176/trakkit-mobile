@@ -1,6 +1,8 @@
 import { Home, ClipboardList, Map, Package, MoreHorizontal } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CameraCapture } from "./CameraCapture";
+import { StatusBar } from "./StatusBar";
+import { useAgentStatus } from "@/hooks/useAgentStatus";
 
 interface BottomNavigationProps {
   currentPage: string;
@@ -17,9 +19,13 @@ const navItems = [
 
 export const BottomNavigation = ({ currentPage, onCameraCapture }: BottomNavigationProps) => {
   const navigate = useNavigate();
+  const { currentStatus, loading } = useAgentStatus();
 
   return (
     <div className="bottom-nav relative">
+      <div className="absolute left-4 top-3 z-50">
+        <StatusBar status={currentStatus} loading={loading} />
+      </div>
       <CameraCapture onCapture={onCameraCapture} />
       <div className="flex justify-around items-center h-16">
         {navItems.map((item) => {
