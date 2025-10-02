@@ -136,7 +136,7 @@ export const InteractionHistory = () => {
                     <span>{interaction.created_at ? new Date(interaction.created_at).toLocaleDateString() : ''}</span>
                     <span>{interaction.created_at ? new Date(interaction.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
                     {typeof interaction.points === 'number' && (
-                      <span className="text-blue-600">+{interaction.points} pts</span>
+                    <span className="text-blue-600">+{interaction.points} pts</span>
                     )}
                   </div>
                   

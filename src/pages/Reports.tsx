@@ -88,7 +88,7 @@ export const Reports = () => {
             totalActivities,
             averageDailyPoints,
             successRate,
-            activityBreakdown: [
+    activityBreakdown: [
               { type: 'Sales', count: interactionsSales?.length || 0, color: 'bg-green-500' },
               { type: 'Surveys', count: interactionsSurveys?.length || 0, color: 'bg-blue-500' },
               { type: 'Giveaways', count: interactionsGiveaways?.length || 0, color: 'bg-purple-500' }
