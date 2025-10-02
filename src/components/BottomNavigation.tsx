@@ -1,8 +1,10 @@
 import { Home, ClipboardList, Map, Package, MoreHorizontal } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { CameraCapture } from "./CameraCapture";
 
 interface BottomNavigationProps {
   currentPage: string;
+  onCameraCapture?: (imageData: string) => void;
 }
 
 const navItems = [
@@ -13,11 +15,12 @@ const navItems = [
   { id: "more", label: "More", icon: MoreHorizontal, path: "/more" },
 ];
 
-export const BottomNavigation = ({ currentPage }: BottomNavigationProps) => {
+export const BottomNavigation = ({ currentPage, onCameraCapture }: BottomNavigationProps) => {
   const navigate = useNavigate();
 
   return (
-    <div className="bottom-nav">
+    <div className="bottom-nav relative">
+      <CameraCapture onCapture={onCameraCapture} />
       <div className="flex justify-around items-center h-16">
         {navItems.map((item) => {
           const Icon = item.icon;
