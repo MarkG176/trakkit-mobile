@@ -10,9 +10,10 @@ import { useToast } from '@/hooks/use-toast';
 interface CameraCaptureProps {
   onCapture?: (imageData: string) => void;
   mode?: 'status' | 'general'; // 'status' for check-in/out, 'general' for other uses
+  variant?: 'floating' | 'inline'; // 'floating' for bottom nav, 'inline' for top bar
 }
 
-export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({ onCapture, mode = 'status' }, ref) => {
+export const CameraCapture = ({ onCapture, mode = 'status', variant = 'floating' }: CameraCaptureProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -142,18 +143,24 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
     }
   };
 
+  const buttonClasses = variant === 'floating' 
+    ? "absolute left-1/2 -translate-x-1/2 -top-6 w-14 h-14 bg-primary rounded-full flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors z-50 disabled:opacity-50 disabled:cursor-not-allowed"
+    : "w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
+
+  const iconSize = variant === 'floating' ? 24 : 20;
+
   return (
     <>
       <button
         onClick={handleCameraClick}
         disabled={isProcessing}
-        className="absolute left-1/2 -translate-x-1/2 -top-6 w-14 h-14 bg-primary rounded-full flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors z-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        className={buttonClasses}
         aria-label="Open Camera"
       >
         {isProcessing ? (
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-foreground" />
         ) : (
-          <Camera size={24} className="text-primary-foreground" />
+          <Camera size={iconSize} className="text-primary-foreground" />
         )}
       </button>
       
