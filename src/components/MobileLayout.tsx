@@ -9,23 +9,10 @@ interface MobileLayoutProps {
 }
 
 export const MobileLayout = ({ children, currentPage, onCameraCapture }: MobileLayoutProps) => {
-  const { toast } = useToast();
-
-  const handleCameraCapture = (imageData: string) => {
-    if (onCameraCapture) {
-      onCameraCapture(imageData);
-    } else {
-      toast({
-        title: "Photo captured",
-        description: "Your photo has been captured successfully.",
-      });
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background pb-20">
       {children}
-      <BottomNavigation currentPage={currentPage} onCameraCapture={handleCameraCapture} />
+      <BottomNavigation currentPage={currentPage} />
     </div>
   );
 };

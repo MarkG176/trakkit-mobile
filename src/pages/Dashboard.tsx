@@ -25,9 +25,13 @@ export const Dashboard = () => {
     );
   }
 
+  const handleCameraCapture = (imageData: string) => {
+    // Camera capture is now handled by CameraCapture component in TopBar
+  };
+
   return (
     <MobileLayout currentPage="dashboard">
-      <TopBar agentName={agentName} />
+      <TopBar agentName={agentName} onCameraCapture={handleCameraCapture} />
       <QuickActions />
       <PerformanceCards data={performanceData} />
       <UpcomingSchedule schedule={scheduleData} />
