@@ -4,13 +4,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Users, TrendingUp, Package, MapPin, Clock, Phone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 export const SupervisorDashboard = () => {
   const navigate = useNavigate();
+  const { displayName } = useUserProfile();
+  
   return (
     <MobileLayout currentPage="dashboard">
       <div className="bg-primary text-primary-foreground p-4">
-        <h1 className="text-h1">Supervisor Dashboard</h1>
+        <h1 className="text-h1">Hello, {displayName}!</h1>
         <p className="text-sm opacity-90">Team overview and management</p>
       </div>
 

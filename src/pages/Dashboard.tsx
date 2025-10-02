@@ -4,16 +4,13 @@ import { QuickActions } from "@/components/dashboard/QuickActions";
 import { PerformanceCards } from "@/components/dashboard/PerformanceCards";
 import { UpcomingSchedule } from "@/components/dashboard/UpcomingSchedule";
 import { useDashboardData } from "@/hooks/useDashboardData";
-import { useAuth } from "@/hooks/useAuth";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 export const Dashboard = () => {
-  const { user } = useAuth();
-  const { performanceData, scheduleData, loading } = useDashboardData();
+  const { displayName: agentName, loading: profileLoading } = useUserProfile();
+  const { performanceData, scheduleData, loading: dashboardLoading } = useDashboardData();
   
-  // Extract first name from user's display name or email
-  const agentName = user?.user_metadata?.full_name?.split(' ')[0] || 
-                   user?.email?.split('@')[0] || 
-                   'Agent';
+  const loading = profileLoading || dashboardLoading;
 
   if (loading) {
     return (
