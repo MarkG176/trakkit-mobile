@@ -17,13 +17,8 @@ export const TopBar = ({ agentName, onCameraCapture }: TopBarProps) => {
   
   return (
     <div className="bg-card border-b border-border px-4 py-3">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex flex-col">
-          <span className="text-h3">Hello, {agentName}!</span>
-          <span className="text-secondary">{currentTime}</span>
-        </div>
-        
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col items-center mb-2">
+        <div className="flex items-center gap-2 mb-3">
           <Button 
             variant="ghost" 
             size="icon" 
@@ -39,6 +34,12 @@ export const TopBar = ({ agentName, onCameraCapture }: TopBarProps) => {
             <Bell size={20} className="text-secondary-foreground" />
             <div className="absolute -top-1 -right-1 w-3 h-3 bg-destructive rounded-full"></div>
           </Button>
+        </div>
+        
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-h3">Hello, {agentName}!</span>
+          <span className="text-secondary">•</span>
+          <span className="text-secondary">{currentTime}</span>
         </div>
       </div>
       
