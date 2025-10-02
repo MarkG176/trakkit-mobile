@@ -1,4 +1,4 @@
-import { Bell, Search } from "lucide-react";
+import { Bell, Search, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBar } from "@/components/StatusBar";
 import { CameraCapture } from "@/components/CameraCapture";
@@ -22,6 +22,9 @@ export const TopBar = ({ agentName, onCameraCapture }: TopBarProps) => {
         </div>
         
         <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" className="btn-ghost">
+            <Camera size={20} className="text-secondary-foreground" />
+          </Button>
           <Button variant="ghost" size="icon" className="btn-ghost">
             <Search size={20} className="text-secondary-foreground" />
           </Button>
