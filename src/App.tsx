@@ -30,6 +30,8 @@ import { SurveyActivityList } from "./pages/SurveyActivityList";
 import { GiveawayActivityList } from "./pages/GiveawayActivityList";
 import { ActivityDetail } from "./pages/ActivityDetail";
 import { RoleBasedRoute } from "./components/RoleBasedRoute";
+import PWAInstallPrompt from "./components/PWAInstallPrompt";
+import PWAUpdateNotification from "./components/PWAUpdateNotification";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +44,8 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <InstallPrompt />
+          <PWAInstallPrompt />
+          <PWAUpdateNotification />
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/" element={
