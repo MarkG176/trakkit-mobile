@@ -9,9 +9,10 @@ import { useToast } from '@/hooks/use-toast';
 
 interface CameraCaptureProps {
   onCapture?: (imageData: string) => void;
+  mode?: 'status' | 'general'; // 'status' for check-in/out, 'general' for other uses
 }
 
-export const CameraCapture = ({ onCapture }: CameraCaptureProps) => {
+export const CameraCapture = ({ onCapture, mode = 'status' }: CameraCaptureProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -70,54 +71,63 @@ export const CameraCapture = ({ onCapture }: CameraCaptureProps) => {
     setIsProcessing(true);
 
     try {
-      // Get current location
-      const location = await getCurrentLocation();
+      // Upload to agent-selfies bucket
+      const imageUrl = await uploadToStorage(file);
 
-      // Upload selfie
-      const selfieUrl = await uploadToStorage(file);
-
-      if (!selfieUrl) {
-        throw new Error('Failed to upload selfie');
+      if (!imageUrl) {
+        throw new Error('Failed to upload image');
       }
 
-      // Determine next status based on current status
-      let nextStatus = currentStatus;
-      if (currentStatus === 'checked_out') {
-        nextStatus = 'checked_in';
-      } else if (currentStatus === 'checked_in') {
-        nextStatus = 'lunch';
-      } else if (currentStatus === 'lunch') {
-        nextStatus = 'checked_in';
-      }
+      if (mode === 'status') {
+        // Status mode: Get location and update agent status
+        const location = await getCurrentLocation();
 
-      // Update status
-      const result = await updateStatus(nextStatus, selfieUrl, location.lat, location.lng);
+        // Determine next status based on current status
+        let nextStatus = currentStatus;
+        if (currentStatus === 'checked_out') {
+          nextStatus = 'checked_in';
+        } else if (currentStatus === 'checked_in') {
+          nextStatus = 'lunch';
+        } else if (currentStatus === 'lunch') {
+          nextStatus = 'checked_in';
+        }
 
-      if (result.success) {
-        toast({
-          title: 'Success',
-          description: result.message,
-        });
+        // Update status with selfie
+        const result = await updateStatus(nextStatus, imageUrl, location.lat, location.lng);
 
-        // Call the optional onCapture callback
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const imageData = reader.result as string;
-          onCapture?.(imageData);
-        };
-        reader.readAsDataURL(file);
+        if (result.success) {
+          toast({
+            title: 'Success',
+            description: result.message,
+          });
+        } else {
+          toast({
+            title: 'Error',
+            description: result.message,
+            variant: 'destructive',
+          });
+        }
       } else {
+        // General mode: Just upload and notify
         toast({
-          title: 'Error',
-          description: result.message,
-          variant: 'destructive',
+          title: 'Photo captured',
+          description: 'Image uploaded successfully to agent-selfies bucket',
         });
       }
+
+      // Call the optional onCapture callback with image data
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const imageData = reader.result as string;
+        onCapture?.(imageData);
+      };
+      reader.readAsDataURL(file);
+
     } catch (error) {
       console.error('Error:', error);
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to process check-in',
+        description: error instanceof Error ? error.message : 'Failed to process image',
         variant: 'destructive',
       });
     } finally {

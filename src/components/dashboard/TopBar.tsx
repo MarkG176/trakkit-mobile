@@ -34,7 +34,7 @@ export const TopBar = ({ agentName, onCameraCapture }: TopBarProps) => {
       
       <div className="flex items-center justify-between gap-3">
         <StatusBar status={currentStatus} loading={loading} />
-        <CameraCapture onCapture={onCameraCapture} />
+        <CameraCapture mode="general" onCapture={onCameraCapture} />
       </div>
     </div>
   );

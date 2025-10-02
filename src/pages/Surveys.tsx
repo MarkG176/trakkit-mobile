@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
+import { TopBar } from "@/components/dashboard/TopBar";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +9,7 @@ import { EngagementModal } from "@/components/EngagementModal";
 import { ArrowLeft, ArrowRight, Mic, MicOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 interface Survey {
   id: string;
@@ -100,7 +102,15 @@ const surveyData: Survey[] = [
 export const Surveys = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { displayName: agentName } = useUserProfile();
   const [activeSurvey, setActiveSurvey] = useState<Survey | null>(null);
+  
+  const handleCameraCapture = (imageData: string) => {
+    toast({
+      title: "Photo captured",
+      description: "Survey photo captured successfully!",
+    });
+  };
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [showEngagementModal, setShowEngagementModal] = useState(false);
@@ -366,6 +376,7 @@ export const Surveys = () => {
 
   return (
     <MobileLayout currentPage="surveys">
+      <TopBar agentName={agentName} onCameraCapture={handleCameraCapture} />
       <div className="bg-primary text-primary-foreground p-4">
         <div className="flex items-center gap-3 mb-2">
           <Button
