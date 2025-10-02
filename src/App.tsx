@@ -24,6 +24,10 @@ import { Documentation } from "./pages/Documentation";
 import { Settings } from "./pages/Settings";
 import { HelpSupport } from "./pages/HelpSupport";
 import { ManageAgents } from "./pages/ManageAgents";
+import { SalesActivityList } from "./pages/SalesActivityList";
+import { SurveyActivityList } from "./pages/SurveyActivityList";
+import { GiveawayActivityList } from "./pages/GiveawayActivityList";
+import { ActivityDetail } from "./pages/ActivityDetail";
 import { RoleBasedRoute } from "./components/RoleBasedRoute";
 import NotFound from "./pages/NotFound";
 
@@ -123,6 +127,26 @@ const App = () => (
               <RoleBasedRoute allowedRoles={['supervisor']}>
                 <ManageAgents />
               </RoleBasedRoute>
+            } />
+            <Route path="/sales-activities" element={
+              <ProtectedRoute>
+                <SalesActivityList />
+              </ProtectedRoute>
+            } />
+            <Route path="/survey-activities" element={
+              <ProtectedRoute>
+                <SurveyActivityList />
+              </ProtectedRoute>
+            } />
+            <Route path="/giveaway-activities" element={
+              <ProtectedRoute>
+                <GiveawayActivityList />
+              </ProtectedRoute>
+            } />
+            <Route path="/activity-detail/:activityId" element={
+              <ProtectedRoute>
+                <ActivityDetail />
+              </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />
           </Routes>

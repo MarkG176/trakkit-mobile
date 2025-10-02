@@ -298,7 +298,16 @@ export const Reports = () => {
                 
                 <div className="space-y-3">
                   {personalData.activityBreakdown.map((activity, index) => (
-                    <div key={index} className="flex items-center justify-between">
+                    <div 
+                      key={index} 
+                      className="flex items-center justify-between cursor-pointer hover:bg-muted/50 p-2 rounded transition-colors"
+                      onClick={() => {
+                        const route = activity.type === 'Sales' ? '/sales-activities' : 
+                                     activity.type === 'Surveys' ? '/survey-activities' : 
+                                     '/giveaway-activities';
+                        navigate(route);
+                      }}
+                    >
                       <div className="flex items-center gap-3">
                         <div className={`w-4 h-4 rounded ${activity.color}`}></div>
                         <span className="text-black">{activity.type}</span>
