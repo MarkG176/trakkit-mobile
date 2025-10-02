@@ -13,7 +13,7 @@ interface CameraCaptureProps {
   variant?: 'floating' | 'inline'; // 'floating' for bottom nav, 'inline' for top bar
 }
 
-export const CameraCapture = ({ onCapture, mode = 'status', variant = 'floating' }: CameraCaptureProps) => {
+export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({ onCapture, mode = 'status', variant = 'floating' }, ref) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -177,3 +177,5 @@ export const CameraCapture = ({ onCapture, mode = 'status', variant = 'floating'
     </>
   );
 });
+
+CameraCapture.displayName = 'CameraCapture';
