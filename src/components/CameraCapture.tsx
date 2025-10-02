@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, forwardRef, useImperativeHandle } from 'react';
 import { Camera, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -12,13 +12,16 @@ interface CameraCaptureProps {
   mode?: 'status' | 'general'; // 'status' for check-in/out, 'general' for other uses
 }
 
-export const CameraCapture = ({ onCapture, mode = 'status' }: CameraCaptureProps) => {
+export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({ onCapture, mode = 'status' }, ref) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { currentStatus, updateStatus } = useAgentStatus();
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Expose the file input ref to parent component
+  useImperativeHandle(ref, () => fileInputRef.current!);
 
   const handleCameraClick = () => {
     fileInputRef.current?.click();
@@ -166,4 +169,4 @@ export const CameraCapture = ({ onCapture, mode = 'status' }: CameraCaptureProps
       />
     </>
   );
-};
+});

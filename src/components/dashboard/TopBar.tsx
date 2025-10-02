@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { StatusBar } from "@/components/StatusBar";
 import { CameraCapture } from "@/components/CameraCapture";
 import { useAgentStatus } from "@/hooks/useAgentStatus";
+import { useRef } from "react";
 
 interface TopBarProps {
   agentName: string;
@@ -12,6 +13,7 @@ interface TopBarProps {
 export const TopBar = ({ agentName, onCameraCapture }: TopBarProps) => {
   const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const { currentStatus, loading } = useAgentStatus();
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   
   return (
     <div className="bg-card border-b border-border px-4 py-3">
@@ -22,7 +24,12 @@ export const TopBar = ({ agentName, onCameraCapture }: TopBarProps) => {
         </div>
         
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="btn-ghost">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="btn-ghost"
+            onClick={() => cameraInputRef.current?.click()}
+          >
             <Camera size={20} className="text-secondary-foreground" />
           </Button>
           <Button variant="ghost" size="icon" className="btn-ghost">
@@ -37,7 +44,7 @@ export const TopBar = ({ agentName, onCameraCapture }: TopBarProps) => {
       
       <div className="flex items-center justify-between gap-3">
         <StatusBar status={currentStatus} loading={loading} />
-        <CameraCapture mode="general" onCapture={onCameraCapture} />
+        <CameraCapture mode="general" onCapture={onCameraCapture} ref={cameraInputRef} />
       </div>
     </div>
   );
