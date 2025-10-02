@@ -15,7 +15,7 @@ export const TopBar = ({ agentName, onCameraCapture }: TopBarProps) => {
   
   return (
     <div className="bg-card border-b border-border px-4 py-3">
-      <div className="flex items-center justify-between mb-2">
+      <flex items-center gap-3">
         <div className="flex flex-col">
           <span className="text-h3">Hello, {agentName}!</span>
           <span className="text-secondary">{currentTime}</span>
