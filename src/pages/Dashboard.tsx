@@ -3,12 +3,17 @@ import { TopBar } from "@/components/dashboard/TopBar";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { PerformanceCards } from "@/components/dashboard/PerformanceCards";
 import { UpcomingSchedule } from "@/components/dashboard/UpcomingSchedule";
+import { CheckInOutDialog } from "@/components/dashboard/CheckInOutDialog";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Clock } from "lucide-react";
 
 export const Dashboard = () => {
   const { displayName: agentName, loading: profileLoading } = useUserProfile();
   const { performanceData, scheduleData, loading: dashboardLoading } = useDashboardData();
+  const [isCheckInDialogOpen, setIsCheckInDialogOpen] = useState(false);
   
   const loading = profileLoading || dashboardLoading;
 
@@ -34,7 +39,23 @@ export const Dashboard = () => {
       <TopBar agentName={agentName} onCameraCapture={handleCameraCapture} />
       <QuickActions />
       <PerformanceCards data={performanceData} />
+      
+      <div className="px-4 py-4">
+        <Button 
+          className="w-full h-14 flex items-center justify-center gap-2"
+          onClick={() => setIsCheckInDialogOpen(true)}
+        >
+          <Clock size={20} />
+          <span>Check In/Out</span>
+        </Button>
+      </div>
+
       <UpcomingSchedule schedule={scheduleData} />
+
+      <CheckInOutDialog 
+        isOpen={isCheckInDialogOpen} 
+        onClose={() => setIsCheckInDialogOpen(false)} 
+      />
     </MobileLayout>
   );
 };
