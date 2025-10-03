@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, BarChart, PieChart, TrendingUp, Download, Calendar, Clock } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowLeft, BarChart, PieChart, TrendingUp, Download, Calendar, Clock, Upload, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -33,6 +34,9 @@ export const Reports = () => {
 
   const [projectData, setProjectData] = useState<Array<{ id: string; name: string; contribution: string; status: string }>>([]);
   const [loading, setLoading] = useState(false);
+  const [reportNotes, setReportNotes] = useState("");
+  const [reportImages, setReportImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchReportData = async () => {
@@ -122,6 +126,20 @@ export const Reports = () => {
     fetchReportData();
   }, [user, selectedCategory, selectedPeriod]);
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      setReportImages(prev => [...prev, ...files]);
+      const newPreviews = files.map(file => URL.createObjectURL(file));
+      setImagePreviews(prev => [...prev, ...newPreviews]);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setReportImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleExportReport = async () => {
     if (!user) {
       toast.error("Please sign in to export reports");
@@ -134,15 +152,35 @@ export const Reports = () => {
       if (selectedCategory === "attendance") {
         toast.success("Attendance report feature coming soon!");
       } else {
+        // Upload images if any
+        const imageUrls: string[] = [];
+        for (const image of reportImages) {
+          const fileName = `${user.id}/${Date.now()}-${image.name}`;
+          const { data, error } = await supabase.storage
+            .from('product-images')
+            .upload(fileName, image);
+          
+          if (!error && data) {
+            const { data: { publicUrl } } = supabase.storage
+              .from('product-images')
+              .getPublicUrl(fileName);
+            imageUrls.push(publicUrl);
+          }
+        }
+
         const reportMetrics = selectedCategory === "personal" 
           ? {
               totalActivities: personalData.totalActivities,
               averageDailyPoints: personalData.averageDailyPoints,
               successRate: personalData.successRate,
-              activityBreakdown: personalData.activityBreakdown
+              activityBreakdown: personalData.activityBreakdown,
+              notes: reportNotes,
+              images: imageUrls
             }
           : {
-              projects: projectData
+              projects: projectData,
+              notes: reportNotes,
+              images: imageUrls
             };
 
         const { error } = await supabase
@@ -163,6 +201,11 @@ export const Reports = () => {
         
         downloadTXT(txtContent, `${selectedCategory}-report-${selectedPeriod}.txt`);
         toast.success("Report saved and exported successfully!");
+        
+        // Reset form
+        setReportNotes("");
+        setReportImages([]);
+        setImagePreviews([]);
       }
 
     } catch (error) {
@@ -426,6 +469,64 @@ export const Reports = () => {
             ))}
           </div>
         )}
+
+        {/* Notes Section */}
+        <Card>
+          <CardContent className="p-4">
+            <h3 className="text-h3 mb-4 text-black">Report Notes</h3>
+            <Textarea
+              placeholder="Add any additional notes or observations about this report..."
+              value={reportNotes}
+              onChange={(e) => setReportNotes(e.target.value)}
+              className="min-h-[100px]"
+            />
+          </CardContent>
+        </Card>
+
+        {/* Image Upload Section */}
+        <Card>
+          <CardContent className="p-4">
+            <h3 className="text-h3 mb-4 text-black">Attach Images</h3>
+            
+            {imagePreviews.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                {imagePreviews.map((preview, index) => (
+                  <div key={index} className="relative">
+                    <img 
+                      src={preview} 
+                      alt={`Upload ${index + 1}`}
+                      className="w-full h-24 object-cover rounded-lg"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6"
+                      onClick={() => removeImage(index)}
+                    >
+                      <X size={14} />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <label htmlFor="image-upload">
+              <div className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors">
+                <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Click to upload images</p>
+                <p className="text-xs text-muted-foreground mt-1">PNG, JPG up to 10MB</p>
+              </div>
+            </label>
+            <input
+              id="image-upload"
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handleImageUpload}
+            />
+          </CardContent>
+        </Card>
 
         {/* Export Button */}
         <Button 
