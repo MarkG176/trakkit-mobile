@@ -127,6 +127,8 @@ export const Routes = () => {
         selectedStoreData.store_long
       );
 
+      const inRange = distance <= 100;
+
       const { error } = await supabase
         .from('agent_status_log')
         .insert({
@@ -137,14 +139,23 @@ export const Routes = () => {
           assigned_location_lat: selectedStoreData.store_lat,
           assigned_location_lng: selectedStoreData.store_long,
           distance_from_assigned: distance,
+          in_range: inRange,
         });
 
       if (error) throw error;
 
-      toast({
-        title: "Location set successfully",
-        description: `Your assigned location is ${selectedStoreData.store_name}. Distance: ${(distance / 1000).toFixed(2)} km`,
-      });
+      if (!inRange) {
+        toast({
+          title: "Out of Range",
+          description: `You are ${Math.round(distance)}m from ${selectedStoreData.store_name}. Please move within 100m to check in.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Location set successfully",
+          description: `Your assigned location is ${selectedStoreData.store_name}. You are ${Math.round(distance)}m from the store.`,
+        });
+      }
 
       setSelectedStore("all");
     } catch (error: any) {

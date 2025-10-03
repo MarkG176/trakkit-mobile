@@ -287,6 +287,7 @@ export type Database = {
           created_at: string | null
           distance_from_assigned: number | null
           id: string
+          in_range: boolean | null
           location_lat: number | null
           location_lng: number | null
           selfie_url: string | null
@@ -301,6 +302,7 @@ export type Database = {
           created_at?: string | null
           distance_from_assigned?: number | null
           id?: string
+          in_range?: boolean | null
           location_lat?: number | null
           location_lng?: number | null
           selfie_url?: string | null
@@ -315,6 +317,7 @@ export type Database = {
           created_at?: string | null
           distance_from_assigned?: number | null
           id?: string
+          in_range?: boolean | null
           location_lat?: number | null
           location_lng?: number | null
           selfie_url?: string | null

@@ -113,6 +113,8 @@ export const useAgentStatus = () => {
     let distance: number | null = null;
     let checkInSuccessful: boolean | null = null;
 
+    let inRange: boolean | null = null;
+    
     if (newStatus === 'checked_in' && assignedLocation) {
       distance = calculateDistance(
         currentLat,
@@ -120,7 +122,8 @@ export const useAgentStatus = () => {
         assignedLocation.lat,
         assignedLocation.lng
       );
-      checkInSuccessful = distance <= 100; // Within 100 meters
+      inRange = distance <= 100;
+      checkInSuccessful = inRange; // Within 100 meters
 
       if (!checkInSuccessful) {
         return {
@@ -128,6 +131,15 @@ export const useAgentStatus = () => {
           message: `Check-in failed. You are ${Math.round(distance)}m away from your assigned location. Must be within 100m.`,
         };
       }
+    } else if (assignedLocation) {
+      // Calculate range for other status changes
+      distance = calculateDistance(
+        currentLat,
+        currentLng,
+        assignedLocation.lat,
+        assignedLocation.lng
+      );
+      inRange = distance <= 100;
     }
 
     try {
@@ -141,6 +153,7 @@ export const useAgentStatus = () => {
         distance_from_assigned: distance,
         selfie_url: selfieUrl,
         check_in_successful: checkInSuccessful,
+        in_range: inRange,
       });
 
       if (error) throw error;
