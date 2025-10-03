@@ -182,14 +182,20 @@ export const CheckInOutDialog = ({ isOpen, onClose }: CheckInOutDialogProps) => 
         };
       });
 
-      const { error } = await supabase
+      // Insert into daily_sales_tracking (no task required)
+      const { error: salesError } = await supabase
         .from('daily_sales_tracking')
         .insert(salesData);
 
-      if (error) throw error;
+      if (salesError) {
+        console.error("Error in daily_sales_tracking:", salesError);
+        throw salesError;
+      }
+
+      toast.success(`${sales.length} sale(s) recorded successfully`);
     } catch (error) {
       console.error("Error recording sales:", error);
-      toast.error("Sales recorded but failed to save to tracking");
+      toast.error("Failed to save sales tracking");
     }
   };
 
