@@ -178,18 +178,18 @@ export const RecordAttendanceForm = () => {
         )}
       </CardContent>
 
-      <CameraCapture 
-        isOpen={showCamera}
-        onClose={() => setShowCamera(false)}
-        onCapture={(imageData) => {
-          toast({
-            title: 'Photo Captured',
-            description: 'Selfie saved successfully',
-          });
-          setShowCamera(false);
-        }}
-        title="Take Selfie"
-      />
+      {showCamera && (
+        <CameraCapture 
+          onCapture={(imageData) => {
+            toast({
+              title: 'Photo Captured',
+              description: 'Selfie saved successfully',
+            });
+            setShowCamera(false);
+          }}
+          mode="status"
+        />
+      )}
     </Card>
   );
 };

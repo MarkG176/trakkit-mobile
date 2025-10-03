@@ -10,13 +10,11 @@ import { ArrowLeft, BarChart, PieChart, TrendingUp, Download, Calendar, Clock } 
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useAgentReports } from "@/hooks/useAgentReports";
 import { toast } from "sonner";
 
 export const Reports = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { generateReport, downloadReport, loading: reportLoading } = useAgentReports();
   const [selectedPeriod, setSelectedPeriod] = useState("this-week");
   const [selectedCategory, setSelectedCategory] = useState("personal");
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -135,15 +133,7 @@ export const Reports = () => {
     try {
       if (selectedCategory === "attendance") {
         // Generate and download attendance report
-        const reportDate = new Date(selectedDate);
-        const reportData = await generateReport(reportDate);
-        
-        if (reportData) {
-          downloadReport(reportData, reportDate);
-          toast.success("Attendance report downloaded successfully!");
-        } else {
-          toast.error("Failed to generate attendance report");
-        }
+        toast.success("Attendance report feature coming soon!");
       } else {
         // Save report to Supabase
         const reportMetrics = selectedCategory === "personal" 
@@ -422,10 +412,10 @@ export const Reports = () => {
           className="w-full" 
           variant="outline" 
           onClick={handleExportReport}
-          disabled={isExporting || reportLoading}
+          disabled={isExporting}
         >
           <Download size={20} className="mr-2" />
-          {isExporting || reportLoading ? "Generating..." : 
+          {isExporting ? "Generating..." : 
            selectedCategory === "attendance" ? "Download Attendance Report" : "Export Report"}
         </Button>
       </div>

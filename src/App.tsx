@@ -29,6 +29,7 @@ import { SalesActivityList } from "./pages/SalesActivityList";
 import { SurveyActivityList } from "./pages/SurveyActivityList";
 import { GiveawayActivityList } from "./pages/GiveawayActivityList";
 import { ActivityDetail } from "./pages/ActivityDetail";
+import { Activity } from "./pages/Activity";
 import { RoleBasedRoute } from "./components/RoleBasedRoute";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import PWAUpdateNotification from "./components/PWAUpdateNotification";
@@ -156,6 +157,11 @@ const App = () => (
             <Route path="/activity-detail/:activityId" element={
               <ProtectedRoute>
                 <ActivityDetail />
+              </ProtectedRoute>
+            } />
+            <Route path="/activity" element={
+              <ProtectedRoute>
+                <Activity />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />
