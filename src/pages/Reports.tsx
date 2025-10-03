@@ -132,10 +132,8 @@ export const Reports = () => {
 
     try {
       if (selectedCategory === "attendance") {
-        // Generate and download attendance report
         toast.success("Attendance report feature coming soon!");
       } else {
-        // Save report to Supabase
         const reportMetrics = selectedCategory === "personal" 
           ? {
               totalActivities: personalData.totalActivities,
@@ -147,27 +145,24 @@ export const Reports = () => {
               projects: projectData
             };
 
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('reports')
           .insert({
             agent_id: user.id,
             report_type: selectedCategory,
             period: selectedPeriod,
             metrics: reportMetrics
-          })
-          .select()
-          .single();
+          });
 
         if (error) throw error;
 
+        // Generate TXT content
+        const txtContent = selectedCategory === "personal" 
+          ? generatePersonalReportTXT(personalData)
+          : generateProjectReportTXT(projectData);
+        
+        downloadTXT(txtContent, `${selectedCategory}-report-${selectedPeriod}.txt`);
         toast.success("Report saved and exported successfully!");
-        
-        // Optional: Download CSV or PDF file
-        const csvContent = selectedCategory === "personal" 
-          ? generatePersonalReportCSV(personalData)
-          : generateProjectReportCSV(projectData);
-        
-        downloadCSV(csvContent, `${selectedCategory}-report-${selectedPeriod}.csv`);
       }
 
     } catch (error) {
@@ -178,33 +173,57 @@ export const Reports = () => {
     }
   };
 
-  const generatePersonalReportCSV = (data: typeof personalData) => {
-    const headers = ["Metric", "Value"];
-    const rows = [
-      ["Total Activities", data.totalActivities.toString()],
-      ["Average Daily Points", data.averageDailyPoints.toString()],
-      ["Success Rate", `${data.successRate}%`],
-      ["", ""], // Empty row
-      ["Activity Type", "Count"],
-      ...data.activityBreakdown.map(activity => [activity.type, activity.count.toString()])
-    ];
+  const generatePersonalReportTXT = (data: typeof personalData) => {
+    let content = `==============================================\n`;
+    content += `         PERSONAL PERFORMANCE REPORT\n`;
+    content += `==============================================\n\n`;
+    content += `Generated: ${new Date().toLocaleString()}\n`;
+    content += `Period: ${selectedPeriod.toUpperCase()}\n`;
+    content += `Agent: ${user?.email || 'N/A'}\n\n`;
     
-    return [headers, ...rows].map(row => row.join(",")).join("\n");
+    content += `SUMMARY METRICS\n`;
+    content += `----------------------------------------------\n`;
+    content += `Total Activities:        ${data.totalActivities}\n`;
+    content += `Average Daily Points:    ${data.averageDailyPoints}\n`;
+    content += `Success Rate:            ${data.successRate}%\n\n`;
+
+    content += `ACTIVITY BREAKDOWN\n`;
+    content += `----------------------------------------------\n`;
+    data.activityBreakdown.forEach(activity => {
+      content += `${activity.type}:${' '.repeat(20 - activity.type.length)}${activity.count}\n`;
+    });
+
+    content += `\n==============================================\n`;
+    content += `           END OF REPORT\n`;
+    content += `==============================================\n`;
+    
+    return content;
   };
 
-  const generateProjectReportCSV = (data: typeof projectData) => {
-    const headers = ["Project Name", "Contribution", "Status"];
-    const rows = data.map(project => [
-      project.name,
-      project.contribution,
-      project.status
-    ]);
+  const generateProjectReportTXT = (data: typeof projectData) => {
+    let content = `==============================================\n`;
+    content += `            PROJECT REPORT\n`;
+    content += `==============================================\n\n`;
+    content += `Generated: ${new Date().toLocaleString()}\n`;
+    content += `Period: ${selectedPeriod.toUpperCase()}\n\n`;
     
-    return [headers, ...rows].map(row => row.join(",")).join("\n");
+    data.forEach((project, index) => {
+      content += `PROJECT ${index + 1}\n`;
+      content += `----------------------------------------------\n`;
+      content += `Name:          ${project.name}\n`;
+      content += `Contribution:  ${project.contribution}\n`;
+      content += `Status:        ${project.status}\n\n`;
+    });
+
+    content += `==============================================\n`;
+    content += `           END OF REPORT\n`;
+    content += `==============================================\n`;
+    
+    return content;
   };
 
-  const downloadCSV = (content: string, filename: string) => {
-    const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+  const downloadTXT = (content: string, filename: string) => {
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8;" });
     const link = document.createElement("a");
     if (link.download !== undefined) {
       const url = URL.createObjectURL(blob);
@@ -275,6 +294,7 @@ export const Reports = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="daily">Daily</SelectItem>
                       <SelectItem value="this-week">This Week</SelectItem>
                       <SelectItem value="last-month">Last Month</SelectItem>
                       <SelectItem value="custom">Custom Range</SelectItem>

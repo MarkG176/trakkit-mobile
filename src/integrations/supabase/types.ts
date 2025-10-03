@@ -432,6 +432,42 @@ export type Database = {
           },
         ]
       }
+      agent_work_segments: {
+        Row: {
+          agent_id: string
+          created_at: string | null
+          duration_minutes: number | null
+          id: string
+          segment_end: string | null
+          segment_start: string
+          segment_type: string
+          updated_at: string | null
+          work_date: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string | null
+          duration_minutes?: number | null
+          id?: string
+          segment_end?: string | null
+          segment_start: string
+          segment_type: string
+          updated_at?: string | null
+          work_date: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string | null
+          duration_minutes?: number | null
+          id?: string
+          segment_end?: string | null
+          segment_start?: string
+          segment_type?: string
+          updated_at?: string | null
+          work_date?: string
+        }
+        Relationships: []
+      }
       analytics_metrics: {
         Row: {
           created_at: string | null
@@ -624,6 +660,50 @@ export type Database = {
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_sales_tracking: {
+        Row: {
+          agent_id: string
+          created_at: string | null
+          id: string
+          product_variant_id: string
+          quantity_sold: number
+          recorded_at: string
+          status_event: string
+          total_value: number
+          work_date: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string | null
+          id?: string
+          product_variant_id: string
+          quantity_sold?: number
+          recorded_at?: string
+          status_event: string
+          total_value?: number
+          work_date?: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string | null
+          id?: string
+          product_variant_id?: string
+          quantity_sold?: number
+          recorded_at?: string
+          status_event?: string
+          total_value?: number
+          work_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_sales_tracking_product_variant_id_fkey"
+            columns: ["product_variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
             referencedColumns: ["id"]
           },
         ]
@@ -2379,6 +2459,18 @@ export type Database = {
       }
     }
     Views: {
+      agent_daily_work_summary: {
+        Row: {
+          agent_id: string | null
+          last_updated: string | null
+          net_work_minutes: number | null
+          total_lunch_minutes: number | null
+          total_segments: number | null
+          total_work_minutes: number | null
+          work_date: string | null
+        }
+        Relationships: []
+      }
       agent_tasks_view: {
         Row: {
           address: string | null
@@ -2430,6 +2522,10 @@ export type Database = {
       }
       archive_agent_account: {
         Args: { agent_user_id: string; reason?: string }
+        Returns: undefined
+      }
+      calculate_and_store_work_summary: {
+        Args: { p_agent_id: string; p_work_date: string }
         Returns: undefined
       }
       calculate_daily_kpis: {
@@ -2506,6 +2602,24 @@ export type Database = {
           status: string
           survey_type: string
           updated_at: string
+        }[]
+      }
+      get_agent_work_summary: {
+        Args: {
+          p_agent_id?: string
+          p_end_date?: string
+          p_start_date?: string
+        }
+        Returns: {
+          agent_id: string
+          check_in_time: string
+          check_out_time: string
+          lunch_duration_minutes: number
+          lunch_end_time: string
+          lunch_start_time: string
+          net_work_minutes: number
+          total_work_minutes: number
+          work_date: string
         }[]
       }
       get_current_user_role_direct: {
