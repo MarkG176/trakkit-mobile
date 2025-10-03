@@ -20,7 +20,23 @@ export const BottomNavigation = ({ currentPage }: BottomNavigationProps) => {
   return (
     <div className="bottom-nav">
       <div className="flex justify-around items-center h-16">
-...
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = currentPage === item.id;
+          
+          return (
+            <button
+              key={item.id}
+              onClick={() => navigate(item.path)}
+              className={`flex flex-col items-center justify-center gap-1 flex-1 h-full transition-colors ${
+                isActive ? "text-primary" : "text-secondary-foreground"
+              }`}
+            >
+              <Icon size={20} />
+              <span className="text-xs">{item.label}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
