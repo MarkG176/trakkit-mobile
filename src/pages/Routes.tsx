@@ -1,10 +1,10 @@
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
-import { MapPin, Plus, Edit, Share2, Clock, Users } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 
 interface Store {
@@ -15,53 +15,14 @@ interface Store {
   store_long: number;
 }
 
-interface Route {
-  id: string;
-  name: string;
-  assignedAgent: string;
-  status: "active" | "completed" | "planning";
-  stops: number;
-  duration: string;
-  distance: string;
-}
 
 export const Routes = () => {
   const [stores, setStores] = useState<Store[]>([]);
   const [selectedCounty, setSelectedCounty] = useState<string>("all");
   const [selectedStore, setSelectedStore] = useState<string>("all");
-  const [selectedDate, setSelectedDate] = useState<string>("today");
   const [counties, setCounties] = useState<string[]>([]);
-
-  // Mock route data
-  const [routes] = useState<Route[]>([
-    {
-      id: "1",
-      name: "Downtown Sales Loop - Mon",
-      assignedAgent: "Sarah J.",
-      status: "active",
-      stops: 5,
-      duration: "3 hours",
-      distance: "25 km"
-    },
-    {
-      id: "2",
-      name: "Westlands Route",
-      assignedAgent: "John D.",
-      status: "planning",
-      stops: 8,
-      duration: "4 hours",
-      distance: "32 km"
-    },
-    {
-      id: "3",
-      name: "Eastleigh Morning Shift",
-      assignedAgent: "Mary K.",
-      status: "completed",
-      stops: 6,
-      duration: "2.5 hours",
-      distance: "18 km"
-    }
-  ]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchStores();
@@ -88,12 +49,113 @@ export const Routes = () => {
     ? stores 
     : stores.filter(store => store.county === selectedCounty);
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case "active": return "default";
-      case "completed": return "secondary";
-      case "planning": return "outline";
-      default: return "outline";
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371e3; // Earth's radius in meters
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // Distance in meters
+  };
+
+  const getCurrentLocation = (): Promise<{ latitude: number; longitude: number }> => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation is not supported'));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        (error) => {
+          reject(error);
+        }
+      );
+    });
+  };
+
+  const handleSubmit = async () => {
+    if (selectedStore === "all") {
+      toast({
+        title: "Select a store",
+        description: "Please select a specific store to set as your location.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Not authenticated",
+          description: "Please log in to set your location.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const currentLocation = await getCurrentLocation();
+      const selectedStoreData = stores.find(s => s.id === selectedStore);
+
+      if (!selectedStoreData) {
+        toast({
+          title: "Store not found",
+          description: "The selected store could not be found.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const distance = calculateDistance(
+        currentLocation.latitude,
+        currentLocation.longitude,
+        selectedStoreData.store_lat,
+        selectedStoreData.store_long
+      );
+
+      const { error } = await supabase
+        .from('agent_status_log')
+        .insert({
+          agent_id: user.id,
+          status: 'set_location',
+          location_lat: currentLocation.latitude,
+          location_lng: currentLocation.longitude,
+          assigned_location_lat: selectedStoreData.store_lat,
+          assigned_location_lng: selectedStoreData.store_long,
+          distance_from_assigned: distance,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Location set successfully",
+        description: `Your assigned location is ${selectedStoreData.store_name}. Distance: ${(distance / 1000).toFixed(2)} km`,
+      });
+
+      setSelectedStore("all");
+    } catch (error: any) {
+      console.error('Error setting location:', error);
+      toast({
+        title: "Error setting location",
+        description: error.message || "Failed to set your location. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -113,14 +175,18 @@ export const Routes = () => {
             <p className="text-xs text-muted-foreground mt-1">Routes and agent locations will display here</p>
           </div>
         </div>
-        
-        {/* Filter overlay on map */}
-        <div className="absolute top-4 right-4 bg-card/95 backdrop-blur-sm rounded-lg border border-border p-3 shadow-lg min-w-[200px]">
-          <div className="space-y-2">
+      </div>
+
+      {/* Location Selection Form */}
+      <div className="px-4 pb-20">
+        <Card className="p-4">
+          <h2 className="text-h2 mb-4">Set Your Assigned Location</h2>
+          
+          <div className="space-y-4">
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">County</label>
+              <label className="text-sm font-medium text-foreground mb-2 block">County</label>
               <Select value={selectedCounty} onValueChange={setSelectedCounty}>
-                <SelectTrigger className="h-8 text-sm">
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -133,91 +199,29 @@ export const Routes = () => {
             </div>
             
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Store</label>
+              <label className="text-sm font-medium text-foreground mb-2 block">Store</label>
               <Select value={selectedStore} onValueChange={setSelectedStore}>
-                <SelectTrigger className="h-8 text-sm">
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Stores</SelectItem>
+                  <SelectItem value="all">Select a store</SelectItem>
                   {filteredStores.map(store => (
                     <SelectItem key={store.id} value={store.id}>{store.store_name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Period</label>
-              <Select value={selectedDate} onValueChange={setSelectedDate}>
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="week">This Week</SelectItem>
-                  <SelectItem value="month">This Month</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+
+            <Button 
+              onClick={handleSubmit} 
+              disabled={isSubmitting || selectedStore === "all"}
+              className="w-full"
+            >
+              {isSubmitting ? "Setting Location..." : "Submit Location"}
+            </Button>
           </div>
-        </div>
-      </div>
-
-      {/* Routes Section */}
-      <div className="px-4 pb-20">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-h2">Active Routes</h2>
-          <Button size="sm" className="flex items-center gap-2">
-            <Plus size={16} />
-            Add Route
-          </Button>
-        </div>
-
-        <div className="space-y-3">
-          {routes.map((route) => (
-            <Card key={route.id} className="p-4">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-foreground mb-1">{route.name}</h3>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Users size={14} />
-                    <span>Assigned to {route.assignedAgent}</span>
-                  </div>
-                </div>
-                <Badge variant={getStatusBadgeVariant(route.status)}>
-                  {route.status}
-                </Badge>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2 mb-3 text-sm">
-                <div className="flex items-center gap-1 text-muted-foreground">
-                  <MapPin size={14} />
-                  <span>{route.stops} stops</span>
-                </div>
-                <div className="flex items-center gap-1 text-muted-foreground">
-                  <Clock size={14} />
-                  <span>{route.duration}</span>
-                </div>
-                <div className="text-muted-foreground">
-                  {route.distance}
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1">
-                  View Details
-                </Button>
-                <Button variant="ghost" size="sm">
-                  <Edit size={16} />
-                </Button>
-                <Button variant="ghost" size="sm">
-                  <Share2 size={16} />
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
+        </Card>
       </div>
     </MobileLayout>
   );
