@@ -4,17 +4,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, BarChart, PieChart, TrendingUp, Download } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, BarChart, PieChart, TrendingUp, Download, Calendar, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAgentReports } from "@/hooks/useAgentReports";
 import { toast } from "sonner";
 
 export const Reports = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { generateReport, downloadReport, loading: reportLoading } = useAgentReports();
   const [selectedPeriod, setSelectedPeriod] = useState("this-week");
   const [selectedCategory, setSelectedCategory] = useState("personal");
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [isExporting, setIsExporting] = useState(false);
 
   const [personalData, setPersonalData] = useState({
@@ -128,39 +133,52 @@ export const Reports = () => {
     setIsExporting(true);
 
     try {
-      // Save report to Supabase
-      const reportMetrics = selectedCategory === "personal" 
-        ? {
-            totalActivities: personalData.totalActivities,
-            averageDailyPoints: personalData.averageDailyPoints,
-            successRate: personalData.successRate,
-            activityBreakdown: personalData.activityBreakdown
-          }
-        : {
-            projects: projectData
-          };
+      if (selectedCategory === "attendance") {
+        // Generate and download attendance report
+        const reportDate = new Date(selectedDate);
+        const reportData = await generateReport(reportDate);
+        
+        if (reportData) {
+          downloadReport(reportData, reportDate);
+          toast.success("Attendance report downloaded successfully!");
+        } else {
+          toast.error("Failed to generate attendance report");
+        }
+      } else {
+        // Save report to Supabase
+        const reportMetrics = selectedCategory === "personal" 
+          ? {
+              totalActivities: personalData.totalActivities,
+              averageDailyPoints: personalData.averageDailyPoints,
+              successRate: personalData.successRate,
+              activityBreakdown: personalData.activityBreakdown
+            }
+          : {
+              projects: projectData
+            };
 
-      const { data, error } = await supabase
-        .from('reports')
-        .insert({
-          agent_id: user.id,
-          report_type: selectedCategory,
-          period: selectedPeriod,
-          metrics: reportMetrics
-        })
-        .select()
-        .single();
+        const { data, error } = await supabase
+          .from('reports')
+          .insert({
+            agent_id: user.id,
+            report_type: selectedCategory,
+            period: selectedPeriod,
+            metrics: reportMetrics
+          })
+          .select()
+          .single();
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast.success("Report saved and exported successfully!");
-      
-      // Optional: Download CSV or PDF file
-      const csvContent = selectedCategory === "personal" 
-        ? generatePersonalReportCSV(personalData)
-        : generateProjectReportCSV(projectData);
-      
-      downloadCSV(csvContent, `${selectedCategory}-report-${selectedPeriod}.csv`);
+        toast.success("Report saved and exported successfully!");
+        
+        // Optional: Download CSV or PDF file
+        const csvContent = selectedCategory === "personal" 
+          ? generatePersonalReportCSV(personalData)
+          : generateProjectReportCSV(projectData);
+        
+        downloadCSV(csvContent, `${selectedCategory}-report-${selectedPeriod}.csv`);
+      }
 
     } catch (error) {
       console.error("Error saving report:", error);
@@ -241,28 +259,87 @@ export const Reports = () => {
                   <SelectContent>
                     <SelectItem value="personal">Personal Performance</SelectItem>
                     <SelectItem value="project">Project Reports</SelectItem>
+                    <SelectItem value="attendance">Attendance Report</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
-              <div>
-                <label className="text-sm text-gray-600 mb-2 block">Time Period</label>
-                <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="this-week">This Week</SelectItem>
-                    <SelectItem value="last-month">Last Month</SelectItem>
-                    <SelectItem value="custom">Custom Range</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {selectedCategory === "attendance" ? (
+                <div>
+                  <Label htmlFor="report-date" className="text-sm text-gray-600 mb-2 block">
+                    Report Date
+                  </Label>
+                  <Input
+                    id="report-date"
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="text-sm text-gray-600 mb-2 block">Time Period</label>
+                  <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="this-week">This Week</SelectItem>
+                      <SelectItem value="last-month">Last Month</SelectItem>
+                      <SelectItem value="custom">Custom Range</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        {selectedCategory === "personal" ? (
+        {selectedCategory === "attendance" ? (
+          /* Attendance Report */
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <Clock className="h-5 w-5 text-blue-600" />
+                <h3 className="text-h3 text-black">Attendance Report</h3>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-600 mb-2">
+                    <strong>Selected Date:</strong> {new Date(selectedDate).toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    This report will include your work hours, start time, lunch breaks, and end time for the selected date.
+                  </p>
+                </div>
+                
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <Calendar className="h-5 w-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-blue-900 mb-1">Report Contents</h4>
+                      <ul className="text-sm text-blue-800 space-y-1">
+                        <li>• Agent name and report date</li>
+                        <li>• Start time (check-in)</li>
+                        <li>• Lunch start and end times</li>
+                        <li>• End time (check-out)</li>
+                        <li>• Total hours worked</li>
+                        <li>• Work hours vs lunch duration</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : selectedCategory === "personal" ? (
           <>
             {/* Summary Cards */}
             <div className="grid grid-cols-3 gap-3">
@@ -345,10 +422,11 @@ export const Reports = () => {
           className="w-full" 
           variant="outline" 
           onClick={handleExportReport}
-          disabled={isExporting}
+          disabled={isExporting || reportLoading}
         >
           <Download size={20} className="mr-2" />
-          {isExporting || loading ? "Exporting..." : "Export Report"}
+          {isExporting || reportLoading ? "Generating..." : 
+           selectedCategory === "attendance" ? "Download Attendance Report" : "Export Report"}
         </Button>
       </div>
     </MobileLayout>
