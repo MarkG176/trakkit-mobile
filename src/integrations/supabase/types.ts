@@ -1917,6 +1917,39 @@ export type Database = {
           },
         ]
       }
+      stores: {
+        Row: {
+          county: string
+          created_at: string | null
+          id: string
+          products: Json
+          store_lat: number
+          store_long: number
+          store_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          county: string
+          created_at?: string | null
+          id?: string
+          products?: Json
+          store_lat: number
+          store_long: number
+          store_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          county?: string
+          created_at?: string | null
+          id?: string
+          products?: Json
+          store_lat?: number
+          store_long?: number
+          store_name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       survey_answers: {
         Row: {
           answer_number: number | null
