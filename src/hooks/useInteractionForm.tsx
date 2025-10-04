@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
+import { workspaceService } from '@/services/workspaceService';
 
 interface InteractionFormData {
   interactionType: string;
@@ -67,18 +68,19 @@ export const useInteractionForm = () => {
 
       if (error) throw error;
 
-      // Award points for logging interaction
+      // Award points for logging interaction with workspace context
       await supabase
         .from('agent_actions')
-        .insert({
+        .insert(workspaceService.ensureWorkspaceContext({
           agent_id: user.id,
           action_type: 'interaction_logged',
           points_earned: 10,
           action_data: {
             interaction_type: formData.interactionType,
-            customer_name: formData.customerName
+            customer_name: formData.customerName,
+            project: workspaceService.getProjectName()
           }
-        });
+        }));
 
       toast({
         title: "Interaction logged successfully!",

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { calculateDistance, debugDistanceCalculation } from '@/utils/distanceCalculator';
+import { workspaceService } from '@/services/workspaceService';
+import { useAgentActions } from './useAgentActions';
 
 export type AgentStatus = 'checked_out' | 'checked_in' | 'lunch';
 
@@ -17,6 +19,7 @@ interface StatusLog {
 
 export const useAgentStatus = () => {
   const { user } = useAuth();
+  const { recordStatusChange } = useAgentActions();
   const [currentStatus, setCurrentStatus] = useState<AgentStatus>('checked_out');
   const [loading, setLoading] = useState(true);
   const [assignedLocation, setAssignedLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -144,6 +147,19 @@ export const useAgentStatus = () => {
       });
 
       if (error) throw error;
+
+      // Record agent action for status change
+      await recordStatusChange(
+        user.id,
+        newStatus,
+        { lat: currentLat, lng: currentLng },
+        {
+          distance_from_assigned: distance,
+          in_range: inRange,
+          check_in_successful: checkInSuccessful,
+          assigned_location: assignedLocation
+        }
+      );
 
       setCurrentStatus(newStatus);
       return { success: true, message: `Successfully ${newStatus.replace('_', ' ')}` };

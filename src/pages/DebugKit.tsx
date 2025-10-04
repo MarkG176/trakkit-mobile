@@ -6,6 +6,7 @@ import { useLiveLocation } from "@/hooks/useLiveLocation";
 import { toast } from "sonner";
 import { MobileLayout } from "@/components/MobileLayout";
 import { GoogleMapsStatus } from "@/components/GoogleMapsStatus";
+import { WorkspaceContext } from "@/components/WorkspaceContext";
 
 export const DebugKit = () => {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -166,6 +167,9 @@ export const DebugKit = () => {
 
         {/* Google Maps API Status */}
         <GoogleMapsStatus />
+
+        {/* Workspace Context */}
+        <WorkspaceContext />
 
         {/* Note: CameraCapture component would need to be created or imported */}
         {/* <CameraCapture

@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { calculateGoogleMapsDistance, getGoogleMapsApiKey, setGoogleMapsApiKey } from "@/utils/googleMapsDistance";
+import { useAgentActions } from "@/hooks/useAgentActions";
 
 interface Store {
   id: string;
@@ -30,6 +31,7 @@ export const Routes = () => {
   const [googleMapsApiKey, setGoogleMapsApiKeyState] = useState<string>('');
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const { toast } = useToast();
+  const { recordLocationSet } = useAgentActions();
 
   useEffect(() => {
     fetchStores();
@@ -225,6 +227,20 @@ export const Routes = () => {
           title: "Location set successfully",
           description: `Your assigned location is ${selectedStoreData.store_name}. You are ${Math.round(distance)}m from the store.`,
         });
+
+        // Record location setting action
+        await recordLocationSet(
+          user.id,
+          { lat: userLocation.latitude, lng: userLocation.longitude },
+          selectedStoreData.store_name,
+          {
+            distance_from_store: distance,
+            store_coordinates: {
+              lat: selectedStoreData.store_lat,
+              lng: selectedStoreData.store_long
+            }
+          }
+        );
       }
 
       setSelectedStore("all");

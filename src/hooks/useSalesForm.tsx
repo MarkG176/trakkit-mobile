@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
+import { workspaceService } from '@/services/workspaceService';
 
 interface SaleItem {
   productVariantId: string;
@@ -80,10 +81,10 @@ export const useSalesForm = () => {
             }
           });
 
-        // Update inventory
+        // Update inventory with workspace context
         await supabase
           .from('inventory_transactions')
-          .insert({
+          .insert(workspaceService.ensureWorkspaceContext({
             agent_id: user.id,
             product_id: item.productVariantId,
             qty: -item.quantity, // Negative for sale
@@ -93,23 +94,24 @@ export const useSalesForm = () => {
               task_id: currentTask.id,
               sale_value: item.price * item.quantity
             }
-          });
+          }));
       }
 
-      // Award points for sale
+      // Award points for sale with workspace context
       const pointsEarned = Math.floor(totalValue / 10) * 5; // 5 points per 10 currency units
       await supabase
         .from('agent_actions')
-        .insert({
+        .insert(workspaceService.ensureWorkspaceContext({
           agent_id: user.id,
           action_type: 'sale_recorded',
           points_earned: Math.max(pointsEarned, 25), // Minimum 25 points
           action_data: {
             total_value: totalValue,
             customer_name: formData.customerName,
-            items_count: formData.items.length
+            items_count: formData.items.length,
+            project: workspaceService.getProjectName()
           }
-        });
+        }));
 
       toast({
         title: "Sale recorded successfully!",
