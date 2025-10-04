@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { calculateDistance, debugDistanceCalculation } from '@/utils/distanceCalculator';
 
 export type AgentStatus = 'checked_out' | 'checked_in' | 'lunch';
 
@@ -87,20 +88,6 @@ export const useAgentStatus = () => {
     }
   };
 
-  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-    const R = 6371e3; // Earth's radius in meters
-    const φ1 = (lat1 * Math.PI) / 180;
-    const φ2 = (lat2 * Math.PI) / 180;
-    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
-    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
-
-    const a =
-      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    return R * c; // Distance in meters
-  };
 
   const updateStatus = async (
     newStatus: AgentStatus,
@@ -125,6 +112,15 @@ export const useAgentStatus = () => {
       inRange = distance <= 500;
       checkInSuccessful = inRange; // Within 500 meters
 
+      // Debug logging for check-in distance calculation
+      debugDistanceCalculation(
+        currentLat,
+        currentLng,
+        assignedLocation.lat,
+        assignedLocation.lng,
+        `Check-in (${newStatus})`
+      );
+
       if (!checkInSuccessful) {
         return {
           success: false,
@@ -140,6 +136,15 @@ export const useAgentStatus = () => {
         assignedLocation.lng
       );
       inRange = distance <= 500;
+      
+      // Debug logging for other status changes
+      debugDistanceCalculation(
+        currentLat,
+        currentLng,
+        assignedLocation.lat,
+        assignedLocation.lng,
+        `Status change (${newStatus})`
+      );
     }
 
     try {

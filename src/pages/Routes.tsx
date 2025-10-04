@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
+import { calculateDistance, formatDistance, debugDistanceCalculation } from "@/utils/distanceCalculator";
 
 interface Store {
   id: string;
@@ -82,36 +83,6 @@ export const Routes = () => {
     ? stores 
     : stores.filter(store => store.county === selectedCounty);
 
-  const getStoreDistance = (store: Store): number | null => {
-    if (!currentLocation) return null;
-    return calculateDistance(
-      currentLocation.latitude,
-      currentLocation.longitude,
-      store.store_lat,
-      store.store_long
-    );
-  };
-
-  const formatDistance = (distance: number | null): string => {
-    if (distance === null) return '';
-    if (distance < 1000) return `${Math.round(distance)}m`;
-    return `${(distance / 1000).toFixed(1)}km`;
-  };
-
-  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-    const R = 6371e3; // Earth's radius in meters
-    const φ1 = lat1 * Math.PI / 180;
-    const φ2 = lat2 * Math.PI / 180;
-    const Δφ = (lat2 - lat1) * Math.PI / 180;
-    const Δλ = (lon2 - lon1) * Math.PI / 180;
-
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    return R * c; // Distance in meters
-  };
 
   const getCurrentLocation = (): Promise<{ latitude: number; longitude: number }> => {
     return new Promise((resolve, reject) => {
@@ -179,12 +150,14 @@ export const Routes = () => {
         selectedStoreData.store_long
       );
 
-      console.log('Distance calculation:', {
-        userLocation,
-        storeLocation: { lat: selectedStoreData.store_lat, lng: selectedStoreData.store_long },
-        distanceInMeters: distance,
-        distanceInKm: (distance / 1000).toFixed(2)
-      });
+      // Enhanced debug logging
+      debugDistanceCalculation(
+        userLocation.latitude,
+        userLocation.longitude,
+        selectedStoreData.store_lat,
+        selectedStoreData.store_long,
+        'Set Location'
+      );
 
       const inRange = distance <= 100;
 
@@ -298,14 +271,11 @@ export const Routes = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Select a store</SelectItem>
-                  {filteredStores.map(store => {
-                    const distance = getStoreDistance(store);
-                    return (
-                      <SelectItem key={store.id} value={store.id}>
-                        {store.store_name} {distance !== null ? `- ${formatDistance(distance)}` : ''}
-                      </SelectItem>
-                    );
-                  })}
+                  {filteredStores.map(store => (
+                    <SelectItem key={store.id} value={store.id}>
+                      {store.store_name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
