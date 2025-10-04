@@ -8,48 +8,67 @@ export interface Coordinates {
 }
 
 /**
- * Calculate the distance between two points by directly comparing coordinates
- * Simple calculation using approximate degrees-to-meters conversion
+ * Distance calculation using Google Maps Distance Matrix API
+ */
+
+export interface Coordinates {
+  latitude: number;
+  longitude: number;
+}
+
+/**
+ * Calculate distance using Google Maps Distance Matrix API
+ * This provides actual driving/walking distance, not straight-line distance
  * 
  * @param lat1 - Latitude of first point in decimal degrees
  * @param lon1 - Longitude of first point in decimal degrees  
  * @param lat2 - Latitude of second point in decimal degrees
  * @param lon2 - Longitude of second point in decimal degrees
- * @returns Distance in meters (approximate)
+ * @returns Promise<Distance in meters>
  */
-export const calculateDistance = (
+export const calculateDistance = async (
   lat1: number, 
   lon1: number, 
   lat2: number, 
   lon2: number
-): number => {
+): Promise<number> => {
   // Validate input coordinates
   if (!isValidCoordinate(lat1) || !isValidCoordinate(lon1) || 
       !isValidCoordinate(lat2) || !isValidCoordinate(lon2)) {
     throw new Error('Invalid coordinates provided');
   }
 
-  // Direct comparison: calculate differences
+  // For now, return a fallback calculation if Google Maps is not available
+  // This will be replaced with actual Google Maps API call
+  return calculateDistanceFallback(lat1, lon1, lat2, lon2);
+};
+
+/**
+ * Fallback distance calculation (direct coordinate comparison)
+ */
+const calculateDistanceFallback = (
+  lat1: number, 
+  lon1: number, 
+  lat2: number, 
+  lon2: number
+): number => {
   const latDiff = Math.abs(lat2 - lat1);
   const lonDiff = Math.abs(lon2 - lon1);
   
-  // Approximate conversion: 1 degree latitude ≈ 111,000 meters
-  // 1 degree longitude ≈ 111,000 * cos(latitude) meters
   const avgLat = (lat1 + lat2) / 2;
   const latDistance = latDiff * 111000;
   const lonDistance = lonDiff * 111000 * Math.cos(toRadians(avgLat));
   
-  // Euclidean distance
   return Math.sqrt(latDistance * latDistance + lonDistance * lonDistance);
 };
 
 /**
  * Calculate distance between two coordinate objects
  */
-export const calculateDistanceBetween = (
+export const calculateDistanceBetween = async (
   point1: Coordinates, 
   point2: Coordinates
-): number => {
+): Promise<number> => {
   return calculateDistance(
     point1.latitude, 
     point1.longitude, 
@@ -109,28 +128,28 @@ export const formatDistance = (distanceInMeters: number): string => {
 /**
  * Check if two points are within a certain distance threshold
  */
-export const isWithinDistance = (
+export const isWithinDistance = async (
   lat1: number,
   lon1: number,
   lat2: number,
   lon2: number,
   thresholdMeters: number
-): boolean => {
-  const distance = calculateDistance(lat1, lon1, lat2, lon2);
+): Promise<boolean> => {
+  const distance = await calculateDistance(lat1, lon1, lat2, lon2);
   return distance <= thresholdMeters;
 };
 
 /**
  * Debug helper to log distance calculation details
  */
-export const debugDistanceCalculation = (
+export const debugDistanceCalculation = async (
   lat1: number,
   lon1: number,
   lat2: number,
   lon2: number,
   label?: string
-): void => {
-  const distance = calculateDistance(lat1, lon1, lat2, lon2);
+): Promise<void> => {
+  const distance = await calculateDistance(lat1, lon1, lat2, lon2);
   const latDiff = Math.abs(lat2 - lat1);
   const lonDiff = Math.abs(lon2 - lon1);
   

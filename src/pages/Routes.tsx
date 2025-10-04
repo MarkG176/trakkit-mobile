@@ -2,11 +2,12 @@ import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { MapPin } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
-import { calculateDistance, formatDistance, debugDistanceCalculation } from "@/utils/distanceCalculator";
+import { calculateGoogleMapsDistance, getGoogleMapsApiKey, setGoogleMapsApiKey } from "@/utils/googleMapsDistance";
 
 interface Store {
   id: string;
@@ -26,11 +27,21 @@ export const Routes = () => {
   const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [googleMapsApiKey, setGoogleMapsApiKeyState] = useState<string>('');
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchStores();
     requestLocation();
+    
+    // Check if API key is already stored
+    const storedKey = getGoogleMapsApiKey();
+    if (storedKey) {
+      setGoogleMapsApiKeyState(storedKey);
+    } else {
+      setShowApiKeyInput(true);
+    }
   }, []);
 
   const requestLocation = () => {
@@ -100,9 +111,25 @@ export const Routes = () => {
         },
         (error) => {
           reject(error);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
         }
       );
     });
+  };
+
+  const handleApiKeySave = () => {
+    if (googleMapsApiKey.trim()) {
+      setGoogleMapsApiKey(googleMapsApiKey);
+      setShowApiKeyInput(false);
+      toast({
+        title: "API Key Saved",
+        description: "Google Maps API key has been saved successfully.",
+      });
+    }
   };
 
   const handleSubmit = async () => {
@@ -112,6 +139,16 @@ export const Routes = () => {
         description: "Please select a specific store to set as your location.",
         variant: "destructive",
       });
+      return;
+    }
+
+    if (!googleMapsApiKey) {
+      toast({
+        title: "API Key Required",
+        description: "Please enter your Google Maps API key first.",
+        variant: "destructive",
+      });
+      setShowApiKeyInput(true);
       return;
     }
 
@@ -143,21 +180,22 @@ export const Routes = () => {
         return;
       }
 
-      const distance = calculateDistance(
-        userLocation.latitude,
-        userLocation.longitude,
-        selectedStoreData.store_lat,
-        selectedStoreData.store_long
-      );
-
-      // Enhanced debug logging
-      debugDistanceCalculation(
+      // Calculate distance using Google Maps API
+      const { distance, duration } = await calculateGoogleMapsDistance(
         userLocation.latitude,
         userLocation.longitude,
         selectedStoreData.store_lat,
         selectedStoreData.store_long,
-        'Set Location'
+        googleMapsApiKey
       );
+
+      console.log('Google Maps Distance Calculation:', {
+        origin: { lat: userLocation.latitude, lng: userLocation.longitude },
+        destination: { lat: selectedStoreData.store_lat, lng: selectedStoreData.store_long },
+        distance: `${distance}m (${(distance / 1000).toFixed(2)}km)`,
+        duration: `${duration}s (${Math.round(duration / 60)} minutes)`,
+        store: selectedStoreData.store_name
+      });
 
       const inRange = distance <= 100;
 
@@ -224,6 +262,37 @@ export const Routes = () => {
       <div className="px-4 pb-20">
         <Card className="p-4">
           <h2 className="text-h2 mb-4">Set Your Assigned Location</h2>
+          
+          {/* Google Maps API Key Input */}
+          {showApiKeyInput && (
+            <div className="mb-4 p-4 bg-accent rounded-lg border border-border">
+              <p className="text-sm font-medium text-foreground mb-2">Google Maps API Key Required</p>
+              <p className="text-xs text-muted-foreground mb-3">
+                Enter your Google Maps API key to calculate accurate distances. 
+                Get your API key from{' '}
+                <a 
+                  href="https://console.cloud.google.com/google/maps-apis" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-primary underline"
+                >
+                  Google Cloud Console
+                </a>
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  placeholder="Enter API Key"
+                  value={googleMapsApiKey}
+                  onChange={(e) => setGoogleMapsApiKeyState(e.target.value)}
+                  className="flex-1"
+                />
+                <Button onClick={handleApiKeySave} size="sm">
+                  Save
+                </Button>
+              </div>
+            </div>
+          )}
           
           {/* Current Location Display */}
           <div className="mb-4 p-3 bg-muted rounded-lg">
