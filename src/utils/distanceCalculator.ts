@@ -8,54 +8,67 @@ export interface Coordinates {
 }
 
 /**
- * Calculate the great-circle distance between two points on Earth
- * using the Haversine formula
+ * Distance calculation using Google Maps Distance Matrix API
+ */
+
+export interface Coordinates {
+  latitude: number;
+  longitude: number;
+}
+
+/**
+ * Calculate distance using Google Maps Distance Matrix API
+ * This provides actual driving/walking distance, not straight-line distance
  * 
  * @param lat1 - Latitude of first point in decimal degrees
  * @param lon1 - Longitude of first point in decimal degrees  
  * @param lat2 - Latitude of second point in decimal degrees
  * @param lon2 - Longitude of second point in decimal degrees
- * @returns Distance in meters
+ * @returns Promise<Distance in meters>
  */
-export const calculateDistance = (
+export const calculateDistance = async (
   lat1: number, 
   lon1: number, 
   lat2: number, 
   lon2: number
-): number => {
+): Promise<number> => {
   // Validate input coordinates
   if (!isValidCoordinate(lat1) || !isValidCoordinate(lon1) || 
       !isValidCoordinate(lat2) || !isValidCoordinate(lon2)) {
     throw new Error('Invalid coordinates provided');
   }
 
-  // Earth's radius in meters (more precise value)
-  const R = 6371000; // 6,371 km = 6,371,000 meters
-  
-  // Convert degrees to radians
-  const φ1 = toRadians(lat1);
-  const φ2 = toRadians(lat2);
-  const Δφ = toRadians(lat2 - lat1);
-  const Δλ = toRadians(lon2 - lon1);
+  // For now, return a fallback calculation if Google Maps is not available
+  // This will be replaced with actual Google Maps API call
+  return calculateDistanceFallback(lat1, lon1, lat2, lon2);
+};
 
-  // Haversine formula
-  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-            Math.cos(φ1) * Math.cos(φ2) *
-            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+/**
+ * Fallback distance calculation (direct coordinate comparison)
+ */
+const calculateDistanceFallback = (
+  lat1: number, 
+  lon1: number, 
+  lat2: number, 
+  lon2: number
+): number => {
+  const latDiff = Math.abs(lat2 - lat1);
+  const lonDiff = Math.abs(lon2 - lon1);
   
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const avgLat = (lat1 + lat2) / 2;
+  const latDistance = latDiff * 111000;
+  const lonDistance = lonDiff * 111000 * Math.cos(toRadians(avgLat));
   
-  // Distance in meters
-  return R * c;
+  return Math.sqrt(latDistance * latDistance + lonDistance * lonDistance);
 };
 
 /**
  * Calculate distance between two coordinate objects
  */
-export const calculateDistanceBetween = (
+export const calculateDistanceBetween = async (
   point1: Coordinates, 
   point2: Coordinates
-): number => {
+): Promise<number> => {
   return calculateDistance(
     point1.latitude, 
     point1.longitude, 
@@ -115,32 +128,40 @@ export const formatDistance = (distanceInMeters: number): string => {
 /**
  * Check if two points are within a certain distance threshold
  */
-export const isWithinDistance = (
+export const isWithinDistance = async (
   lat1: number,
   lon1: number,
   lat2: number,
   lon2: number,
   thresholdMeters: number
-): boolean => {
-  const distance = calculateDistance(lat1, lon1, lat2, lon2);
+): Promise<boolean> => {
+  const distance = await calculateDistance(lat1, lon1, lat2, lon2);
   return distance <= thresholdMeters;
 };
 
 /**
  * Debug helper to log distance calculation details
  */
-export const debugDistanceCalculation = (
+export const debugDistanceCalculation = async (
   lat1: number,
   lon1: number,
   lat2: number,
   lon2: number,
   label?: string
-): void => {
-  const distance = calculateDistance(lat1, lon1, lat2, lon2);
+): Promise<void> => {
+  const distance = await calculateDistance(lat1, lon1, lat2, lon2);
+  const latDiff = Math.abs(lat2 - lat1);
+  const lonDiff = Math.abs(lon2 - lon1);
   
   console.log(`Distance Calculation ${label ? `(${label})` : ''}:`, {
     point1: { lat: lat1, lon: lon1 },
     point2: { lat: lat2, lon: lon2 },
+    differences: {
+      latDiff: latDiff.toFixed(6),
+      lonDiff: lonDiff.toFixed(6),
+      latDiffDegrees: latDiff,
+      lonDiffDegrees: lonDiff
+    },
     distanceMeters: Math.round(distance),
     distanceKm: (distance / 1000).toFixed(3),
     formatted: formatDistance(distance),

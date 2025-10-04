@@ -69,19 +69,6 @@ export const Reports = () => {
     setSubmitting(true);
 
     try {
-      // Get workspace_id from user_roles
-      const { data: userRole } = await supabase
-        .from('user_roles')
-        .select('workspace_id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!userRole?.workspace_id) {
-        toast.error("Workspace not found");
-        setSubmitting(false);
-        return;
-      }
-
       // Submit to daily_sales_tracking
       const { error } = await supabase
         .from('daily_sales_tracking')
@@ -91,7 +78,6 @@ export const Reports = () => {
           quantity_sold: 1,
           total_value: amountNum,
           status_event: 'sale',
-          workspace_id: userRole.workspace_id,
           work_date: new Date().toISOString().split('T')[0]
         });
 

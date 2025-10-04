@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { calculateDistance, debugDistanceCalculation } from '@/utils/distanceCalculator';
-import { googleMapsService } from '@/services/googleMapsService';
 
 export type AgentStatus = 'checked_out' | 'checked_in' | 'lunch';
 
@@ -100,99 +99,34 @@ export const useAgentStatus = () => {
 
     let distance: number | null = null;
     let checkInSuccessful: boolean | null = null;
-
     let inRange: boolean | null = null;
     
-    if (newStatus === 'checked_in' && assignedLocation) {
-      try {
-        console.log('🌍 Using Google Maps API for check-in distance validation...');
-        const googleResult = await googleMapsService.calculateDistanceWithFallback(
-          currentLat,
-          currentLng,
-          assignedLocation.lat,
-          assignedLocation.lng
-        );
-
-        distance = googleResult.distanceMeters;
-        inRange = distance <= 500;
-        checkInSuccessful = inRange; // Within 500 meters
-
-        console.log('✅ Check-in distance validation:', {
-          distanceMeters: distance,
-          distanceText: googleResult.distanceText,
-          durationText: googleResult.durationText,
-          inRange,
-          status: googleResult.status
-        });
-
-      } catch (error) {
-        console.warn('⚠️ Google Maps failed for check-in, using Haversine fallback:', error);
-        
-        // Fallback to Haversine formula
-        distance = calculateDistance(
-          currentLat,
-          currentLng,
-          assignedLocation.lat,
-          assignedLocation.lng
-        );
-        inRange = distance <= 500;
+    // Only validate distance if an assigned location exists
+    if (assignedLocation) {
+      distance = await calculateDistance(
+        currentLat,
+        currentLng,
+        assignedLocation.lat,
+        assignedLocation.lng
+      );
+      inRange = distance <= 500;
+      
+      // For check-in, set success based on distance
+      if (newStatus === 'checked_in') {
         checkInSuccessful = inRange;
-
-        // Debug logging for fallback
-        debugDistanceCalculation(
-          currentLat,
-          currentLng,
-          assignedLocation.lat,
-          assignedLocation.lng,
-          `Check-in (${newStatus}) - Haversine Fallback`
-        );
       }
 
-      if (!checkInSuccessful) {
-        return {
-          success: false,
-          message: `Check-in failed. You are ${Math.round(distance)}m away from your assigned location. Must be within 500m.`,
-        };
-      }
-    } else if (assignedLocation) {
-      // Calculate range for other status changes using Google Maps with fallback
-      try {
-        const googleResult = await googleMapsService.calculateDistanceWithFallback(
-          currentLat,
-          currentLng,
-          assignedLocation.lat,
-          assignedLocation.lng
-        );
-        distance = googleResult.distanceMeters;
-        inRange = distance <= 500;
-        
-        console.log('✅ Status change distance validation:', {
-          distanceMeters: distance,
-          distanceText: googleResult.distanceText,
-          inRange,
-          status: googleResult.status
-        });
-        
-      } catch (error) {
-        console.warn('⚠️ Google Maps failed for status change, using Haversine fallback:', error);
-        
-        distance = calculateDistance(
-          currentLat,
-          currentLng,
-          assignedLocation.lat,
-          assignedLocation.lng
-        );
-        inRange = distance <= 500;
-        
-        // Debug logging for fallback
-        debugDistanceCalculation(
-          currentLat,
-          currentLng,
-          assignedLocation.lat,
-          assignedLocation.lng,
-          `Status change (${newStatus}) - Haversine Fallback`
-        );
-      }
+      // Debug logging
+      await debugDistanceCalculation(
+        currentLat,
+        currentLng,
+        assignedLocation.lat,
+        assignedLocation.lng,
+        `${newStatus} status change`
+      );
+    } else if (newStatus === 'checked_in') {
+      // Allow check-in without assigned location
+      checkInSuccessful = true;
     }
 
     try {
