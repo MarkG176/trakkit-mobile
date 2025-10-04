@@ -8,14 +8,14 @@ export interface Coordinates {
 }
 
 /**
- * Calculate the great-circle distance between two points on Earth
- * using the Haversine formula
+ * Calculate the distance between two points by directly comparing coordinates
+ * Simple calculation using approximate degrees-to-meters conversion
  * 
  * @param lat1 - Latitude of first point in decimal degrees
  * @param lon1 - Longitude of first point in decimal degrees  
  * @param lat2 - Latitude of second point in decimal degrees
  * @param lon2 - Longitude of second point in decimal degrees
- * @returns Distance in meters
+ * @returns Distance in meters (approximate)
  */
 export const calculateDistance = (
   lat1: number, 
@@ -29,24 +29,18 @@ export const calculateDistance = (
     throw new Error('Invalid coordinates provided');
   }
 
-  // Earth's radius in meters (more precise value)
-  const R = 6371000; // 6,371 km = 6,371,000 meters
+  // Direct comparison: calculate differences
+  const latDiff = Math.abs(lat2 - lat1);
+  const lonDiff = Math.abs(lon2 - lon1);
   
-  // Convert degrees to radians
-  const φ1 = toRadians(lat1);
-  const φ2 = toRadians(lat2);
-  const Δφ = toRadians(lat2 - lat1);
-  const Δλ = toRadians(lon2 - lon1);
-
-  // Haversine formula
-  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-            Math.cos(φ1) * Math.cos(φ2) *
-            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  // Approximate conversion: 1 degree latitude ≈ 111,000 meters
+  // 1 degree longitude ≈ 111,000 * cos(latitude) meters
+  const avgLat = (lat1 + lat2) / 2;
+  const latDistance = latDiff * 111000;
+  const lonDistance = lonDiff * 111000 * Math.cos(toRadians(avgLat));
   
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  
-  // Distance in meters
-  return R * c;
+  // Euclidean distance
+  return Math.sqrt(latDistance * latDistance + lonDistance * lonDistance);
 };
 
 /**
@@ -137,10 +131,18 @@ export const debugDistanceCalculation = (
   label?: string
 ): void => {
   const distance = calculateDistance(lat1, lon1, lat2, lon2);
+  const latDiff = Math.abs(lat2 - lat1);
+  const lonDiff = Math.abs(lon2 - lon1);
   
   console.log(`Distance Calculation ${label ? `(${label})` : ''}:`, {
     point1: { lat: lat1, lon: lon1 },
     point2: { lat: lat2, lon: lon2 },
+    differences: {
+      latDiff: latDiff.toFixed(6),
+      lonDiff: lonDiff.toFixed(6),
+      latDiffDegrees: latDiff,
+      lonDiffDegrees: lonDiff
+    },
     distanceMeters: Math.round(distance),
     distanceKm: (distance / 1000).toFixed(3),
     formatted: formatDistance(distance),
