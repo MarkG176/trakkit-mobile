@@ -41,9 +41,13 @@ export const calculateGoogleMapsDistance = async (
   lat1: number,
   lon1: number,
   lat2: number,
-  lon2: number,
-  apiKey: string
+  lon2: number
 ): Promise<{ distance: number; duration: number }> => {
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('Google Maps API key not configured');
+  }
   try {
     // Initialize Google Maps if not already loaded
     if (!isGoogleMapsLoaded) {
