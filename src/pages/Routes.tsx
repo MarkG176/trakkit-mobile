@@ -22,11 +22,44 @@ export const Routes = () => {
   const [selectedStore, setSelectedStore] = useState<string>("all");
   const [counties, setCounties] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchStores();
+    requestLocation();
   }, []);
+
+  const requestLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setIsLoadingLocation(true);
+    setLocationError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setCurrentLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+        setIsLoadingLocation(false);
+      },
+      (error) => {
+        setLocationError(error.message);
+        setIsLoadingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  };
 
   const fetchStores = async () => {
     const { data, error } = await supabase
@@ -48,6 +81,22 @@ export const Routes = () => {
   const filteredStores = selectedCounty === "all" 
     ? stores 
     : stores.filter(store => store.county === selectedCounty);
+
+  const getStoreDistance = (store: Store): number | null => {
+    if (!currentLocation) return null;
+    return calculateDistance(
+      currentLocation.latitude,
+      currentLocation.longitude,
+      store.store_lat,
+      store.store_long
+    );
+  };
+
+  const formatDistance = (distance: number | null): string => {
+    if (distance === null) return '';
+    if (distance < 1000) return `${Math.round(distance)}m`;
+    return `${(distance / 1000).toFixed(1)}km`;
+  };
 
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
     const R = 6371e3; // Earth's radius in meters
@@ -108,7 +157,10 @@ export const Routes = () => {
         return;
       }
 
-      const currentLocation = await getCurrentLocation();
+      let userLocation = currentLocation;
+      if (!userLocation) {
+        userLocation = await getCurrentLocation();
+      }
       const selectedStoreData = stores.find(s => s.id === selectedStore);
 
       if (!selectedStoreData) {
@@ -121,11 +173,18 @@ export const Routes = () => {
       }
 
       const distance = calculateDistance(
-        currentLocation.latitude,
-        currentLocation.longitude,
+        userLocation.latitude,
+        userLocation.longitude,
         selectedStoreData.store_lat,
         selectedStoreData.store_long
       );
+
+      console.log('Distance calculation:', {
+        userLocation,
+        storeLocation: { lat: selectedStoreData.store_lat, lng: selectedStoreData.store_long },
+        distanceInMeters: distance,
+        distanceInKm: (distance / 1000).toFixed(2)
+      });
 
       const inRange = distance <= 100;
 
@@ -134,8 +193,8 @@ export const Routes = () => {
         .insert({
           agent_id: user.id,
           status: 'set_location',
-          location_lat: currentLocation.latitude,
-          location_lng: currentLocation.longitude,
+          location_lat: userLocation.latitude,
+          location_lng: userLocation.longitude,
           assigned_location_lat: selectedStoreData.store_lat,
           assigned_location_lng: selectedStoreData.store_long,
           distance_from_assigned: distance,
@@ -193,6 +252,28 @@ export const Routes = () => {
         <Card className="p-4">
           <h2 className="text-h2 mb-4">Set Your Assigned Location</h2>
           
+          {/* Current Location Display */}
+          <div className="mb-4 p-3 bg-muted rounded-lg">
+            <p className="text-sm font-medium text-foreground mb-2">Current Location</p>
+            {isLoadingLocation && (
+              <p className="text-xs text-muted-foreground">Getting your location...</p>
+            )}
+            {locationError && (
+              <div>
+                <p className="text-xs text-destructive mb-2">{locationError}</p>
+                <Button size="sm" variant="outline" onClick={requestLocation}>
+                  Retry
+                </Button>
+              </div>
+            )}
+            {currentLocation && !isLoadingLocation && (
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p>Latitude: {currentLocation.latitude.toFixed(6)}</p>
+                <p>Longitude: {currentLocation.longitude.toFixed(6)}</p>
+              </div>
+            )}
+          </div>
+          
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium text-foreground mb-2 block">County</label>
@@ -217,9 +298,14 @@ export const Routes = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Select a store</SelectItem>
-                  {filteredStores.map(store => (
-                    <SelectItem key={store.id} value={store.id}>{store.store_name}</SelectItem>
-                  ))}
+                  {filteredStores.map(store => {
+                    const distance = getStoreDistance(store);
+                    return (
+                      <SelectItem key={store.id} value={store.id}>
+                        {store.store_name} {distance !== null ? `- ${formatDistance(distance)}` : ''}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
