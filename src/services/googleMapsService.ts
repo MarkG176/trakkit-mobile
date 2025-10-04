@@ -144,7 +144,7 @@ class GoogleMapsService {
       
       // Fallback to Haversine formula
       const { calculateDistance } = await import('@/utils/distanceCalculator');
-      const haversineDistance = calculateDistance(originLat, originLng, destinationLat, destinationLng);
+      const haversineDistance = await calculateDistance(originLat, originLng, destinationLat, destinationLng);
       
       return {
         distanceMeters: Math.round(haversineDistance),
