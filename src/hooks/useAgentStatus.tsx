@@ -103,7 +103,7 @@ export const useAgentStatus = () => {
     let inRange: boolean | null = null;
     
     if (newStatus === 'checked_in' && assignedLocation) {
-      distance = calculateDistance(
+      distance = await calculateDistance(
         currentLat,
         currentLng,
         assignedLocation.lat,
@@ -113,7 +113,7 @@ export const useAgentStatus = () => {
       checkInSuccessful = inRange; // Within 500 meters
 
       // Debug logging for check-in distance calculation
-      debugDistanceCalculation(
+      await debugDistanceCalculation(
         currentLat,
         currentLng,
         assignedLocation.lat,
@@ -129,7 +129,7 @@ export const useAgentStatus = () => {
       }
     } else if (assignedLocation) {
       // Calculate range for other status changes
-      distance = calculateDistance(
+      distance = await calculateDistance(
         currentLat,
         currentLng,
         assignedLocation.lat,
@@ -138,7 +138,7 @@ export const useAgentStatus = () => {
       inRange = distance <= 500;
       
       // Debug logging for other status changes
-      debugDistanceCalculation(
+      await debugDistanceCalculation(
         currentLat,
         currentLng,
         assignedLocation.lat,
