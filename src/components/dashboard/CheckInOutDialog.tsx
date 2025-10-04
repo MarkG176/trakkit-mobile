@@ -147,8 +147,6 @@ export const CheckInOutDialog = ({ isOpen, onClose }: CheckInOutDialogProps) => 
         setStatus("");
         setSelectedFile(null);
         setShowSalesForm(false);
-      } else {
-        toast.error(result.message);
       }
     } catch (error) {
       console.error("Error during check-in/out:", error);
