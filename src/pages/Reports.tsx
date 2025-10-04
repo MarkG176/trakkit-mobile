@@ -35,45 +35,15 @@ export const Reports = () => {
       setLoading(true);
       
       try {
-        // Get user's project from user_roles
-        const { data: userRole } = await supabase
-          .from('user_roles')
-          .select('project_id')
-          .eq('user_id', user.id)
-          .single();
+        // Fetch all product variants
+        const { data: variants, error } = await supabase
+          .from('product_variants')
+          .select('id, name, price')
+          .order('name');
 
-        if (!userRole?.project_id) {
-          setLoading(false);
-          return;
-        }
+        if (error) throw error;
 
-        // Get project to find product focus
-        const { data: project } = await supabase
-          .from('project_plans')
-          .select('product_focus')
-          .eq('id', userRole.project_id)
-          .single();
-
-        if (!project?.product_focus) {
-          setLoading(false);
-          return;
-        }
-
-        // Get product variants for the product focus
-        const { data: product } = await supabase
-          .from('products')
-          .select('id')
-          .eq('name', project.product_focus)
-          .single();
-
-        if (product) {
-          const { data: variants } = await supabase
-            .from('product_variants')
-            .select('id, name, price')
-            .eq('product_id', product.id);
-
-          setProductVariants(variants || []);
-        }
+        setProductVariants(variants || []);
       } catch (err) {
         console.error('Failed to fetch product variants', err);
       } finally {
