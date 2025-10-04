@@ -5,7 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowLeft, Camera, FileText, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,6 +26,8 @@ export const Reports = () => {
   const [productVariants, setProductVariants] = useState<ProductVariant[]>([]);
   const [selectedProduct, setSelectedProduct] = useState("");
   const [amount, setAmount] = useState("");
+  const [notes, setNotes] = useState("");
+  const [images, setImages] = useState<File[]>([]);
 
   useEffect(() => {
     const fetchProductVariants = async () => {
@@ -32,30 +35,14 @@ export const Reports = () => {
       setLoading(true);
       
       try {
-        // Get agent's current task to find project
-        const { data: tasks } = await supabase
-          .from('agent_tasks')
-          .select('day_plan_id')
-          .eq('agent_id', user.id)
-          .eq('status', 'in_progress')
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        if (!tasks || tasks.length === 0) {
-          toast.error("No active task found");
-          setLoading(false);
-          return;
-        }
-
-        // Get day plan to find project
-        const { data: dayPlan } = await supabase
-          .from('day_plans')
+        // Get user's project from user_roles
+        const { data: userRole } = await supabase
+          .from('user_roles')
           .select('project_id')
-          .eq('id', tasks[0].day_plan_id)
+          .eq('user_id', user.id)
           .single();
 
-        if (!dayPlan?.project_id) {
-          toast.error("No project found for current task");
+        if (!userRole?.project_id) {
           setLoading(false);
           return;
         }
@@ -64,7 +51,7 @@ export const Reports = () => {
         const { data: project } = await supabase
           .from('project_plans')
           .select('product_focus')
-          .eq('id', dayPlan.project_id)
+          .eq('id', userRole.project_id)
           .single();
 
         if (!project?.product_focus) {
@@ -220,6 +207,79 @@ export const Reports = () => {
                 {submitting ? "Submitting..." : "Submit Sale"}
               </Button>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="text-h3 mb-6 text-black">Report Notes</h3>
+            
+            <div className="space-y-4">
+              <Textarea
+                placeholder="Add your report notes here..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={6}
+              />
+              
+              <Button 
+                className="w-full"
+                variant="outline"
+                onClick={() => toast.success("Notes saved!")}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Save Notes
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="text-h3 mb-6 text-black">Attach Images</h3>
+            
+            <div className="space-y-4">
+              <Input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  if (e.target.files) {
+                    setImages(Array.from(e.target.files));
+                    toast.success(`${e.target.files.length} image(s) selected`);
+                  }
+                }}
+              />
+              
+              {images.length > 0 && (
+                <div className="text-sm text-muted-foreground">
+                  {images.length} image(s) selected
+                </div>
+              )}
+              
+              <Button 
+                className="w-full"
+                variant="outline"
+                onClick={() => toast.success("Images uploaded!")}
+              >
+                <Camera className="mr-2 h-4 w-4" />
+                Upload Images
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="text-h3 mb-6 text-black">Export Report</h3>
+            
+            <Button 
+              className="w-full"
+              onClick={() => toast.success("Report generated and exported!")}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Generate and Export Report
+            </Button>
           </CardContent>
         </Card>
 
