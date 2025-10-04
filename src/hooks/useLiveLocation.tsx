@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Geolocation } from '@capacitor/geolocation';
 
 interface Position {
   latitude: number;
@@ -17,7 +18,7 @@ export const useLiveLocation = (enabled: boolean = false) => {
     if (!enabled) {
       // Clear any existing watch
       if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
+        Geolocation.clearWatch({ id: watchIdRef.current.toString() });
         watchIdRef.current = null;
       }
       setPosition(null);
@@ -25,63 +26,76 @@ export const useLiveLocation = (enabled: boolean = false) => {
       return;
     }
 
-    if (!navigator.geolocation) {
-      setError('Geolocation is not supported by this browser');
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
-    const successCallback = (pos: GeolocationPosition) => {
-      setPosition({
-        latitude: pos.coords.latitude,
-        longitude: pos.coords.longitude,
-        accuracy: pos.coords.accuracy,
-        timestamp: pos.timestamp,
-      });
-      setLoading(false);
-      setError(null);
-    };
+    const startTracking = async () => {
+      try {
+        // Request permissions
+        const permission = await Geolocation.checkPermissions();
+        if (permission.location !== 'granted') {
+          const requested = await Geolocation.requestPermissions();
+          if (requested.location !== 'granted') {
+            setError('Location access denied by user');
+            setLoading(false);
+            return;
+          }
+        }
 
-    const errorCallback = (err: GeolocationPositionError) => {
-      let errorMessage = 'Unknown error occurred';
-      
-      switch (err.code) {
-        case err.PERMISSION_DENIED:
-          errorMessage = 'Location access denied by user';
-          break;
-        case err.POSITION_UNAVAILABLE:
-          errorMessage = 'Location information is unavailable';
-          break;
-        case err.TIMEOUT:
-          errorMessage = 'Location request timed out';
-          break;
+        // Get initial position
+        const initialPosition = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000,
+        });
+
+        setPosition({
+          latitude: initialPosition.coords.latitude,
+          longitude: initialPosition.coords.longitude,
+          accuracy: initialPosition.coords.accuracy,
+          timestamp: initialPosition.timestamp,
+        });
+        setLoading(false);
+        setError(null);
+
+        // Start watching position for live updates
+        const watchId = await Geolocation.watchPosition(
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000,
+          },
+          (position, err) => {
+            if (err) {
+              setError(err.message || 'Location tracking error');
+              setLoading(false);
+              return;
+            }
+
+            if (position) {
+              setPosition({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+                timestamp: position.timestamp,
+              });
+              setError(null);
+            }
+          }
+        );
+
+        watchIdRef.current = parseInt(watchId);
+      } catch (error: any) {
+        setError(error.message || 'Failed to access location');
+        setLoading(false);
       }
-      
-      setError(errorMessage);
-      setLoading(false);
     };
 
-    const options: PositionOptions = {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 60000, // 1 minute
-    };
-
-    // Get initial position
-    navigator.geolocation.getCurrentPosition(successCallback, errorCallback, options);
-
-    // Start watching position for live updates
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      successCallback,
-      errorCallback,
-      options
-    );
+    startTracking();
 
     return () => {
       if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
+        Geolocation.clearWatch({ id: watchIdRef.current.toString() });
         watchIdRef.current = null;
       }
     };
