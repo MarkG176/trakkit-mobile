@@ -99,36 +99,10 @@ export const useAgentStatus = () => {
 
     let distance: number | null = null;
     let checkInSuccessful: boolean | null = null;
-
     let inRange: boolean | null = null;
     
-    if (newStatus === 'checked_in' && assignedLocation) {
-      distance = await calculateDistance(
-        currentLat,
-        currentLng,
-        assignedLocation.lat,
-        assignedLocation.lng
-      );
-      inRange = distance <= 500;
-      checkInSuccessful = inRange; // Within 500 meters
-
-      // Debug logging for check-in distance calculation
-      await debugDistanceCalculation(
-        currentLat,
-        currentLng,
-        assignedLocation.lat,
-        assignedLocation.lng,
-        `Check-in (${newStatus})`
-      );
-
-      if (!checkInSuccessful) {
-        return {
-          success: false,
-          message: `Check-in failed. You are ${Math.round(distance)}m away from your assigned location. Must be within 500m.`,
-        };
-      }
-    } else if (assignedLocation) {
-      // Calculate range for other status changes
+    // Only validate distance if an assigned location exists
+    if (assignedLocation) {
       distance = await calculateDistance(
         currentLat,
         currentLng,
@@ -137,14 +111,22 @@ export const useAgentStatus = () => {
       );
       inRange = distance <= 500;
       
-      // Debug logging for other status changes
+      // For check-in, set success based on distance
+      if (newStatus === 'checked_in') {
+        checkInSuccessful = inRange;
+      }
+
+      // Debug logging
       await debugDistanceCalculation(
         currentLat,
         currentLng,
         assignedLocation.lat,
         assignedLocation.lng,
-        `Status change (${newStatus})`
+        `${newStatus} status change`
       );
+    } else if (newStatus === 'checked_in') {
+      // Allow check-in without assigned location
+      checkInSuccessful = true;
     }
 
     try {
