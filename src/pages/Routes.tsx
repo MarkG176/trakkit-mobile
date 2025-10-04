@@ -22,61 +22,11 @@ export const Routes = () => {
   const [selectedStore, setSelectedStore] = useState<string>("all");
   const [counties, setCounties] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [locationError, setLocationError] = useState<string | null>(null);
-  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchStores();
-    requestLocation();
   }, []);
-
-  const requestLocation = () => {
-    if (!navigator.geolocation) {
-      setLocationError('Geolocation is not supported by your device');
-      return;
-    }
-
-    setIsLoadingLocation(true);
-    setLocationError(null);
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setCurrentLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-        setIsLoadingLocation(false);
-      },
-      (error) => {
-        let errorMessage = 'Unable to retrieve location';
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = 'Location access denied. Please enable GPS permissions.';
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Location information unavailable';
-            break;
-          case error.TIMEOUT:
-            errorMessage = 'Location request timed out';
-            break;
-        }
-        setLocationError(errorMessage);
-        setIsLoadingLocation(false);
-        toast({
-          title: "Location Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 60000,
-      }
-    );
-  };
 
   const fetchStores = async () => {
     const { data, error } = await supabase
@@ -99,24 +49,6 @@ export const Routes = () => {
     ? stores 
     : stores.filter(store => store.county === selectedCounty);
 
-  const getStoreDistance = (store: Store): number | null => {
-    if (!currentLocation) return null;
-    return calculateDistance(
-      currentLocation.latitude,
-      currentLocation.longitude,
-      store.store_lat,
-      store.store_long
-    );
-  };
-
-  const formatDistance = (distance: number | null): string => {
-    if (distance === null) return '';
-    if (distance < 1000) {
-      return `${Math.round(distance)}m`;
-    }
-    return `${(distance / 1000).toFixed(1)}km`;
-  };
-
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
     const R = 6371e3; // Earth's radius in meters
     const φ1 = lat1 * Math.PI / 180;
@@ -132,6 +64,26 @@ export const Routes = () => {
     return R * c; // Distance in meters
   };
 
+  const getCurrentLocation = (): Promise<{ latitude: number; longitude: number }> => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation is not supported'));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        (error) => {
+          reject(error);
+        }
+      );
+    });
+  };
 
   const handleSubmit = async () => {
     if (selectedStore === "all") {
@@ -156,15 +108,7 @@ export const Routes = () => {
         return;
       }
 
-      if (!currentLocation) {
-        toast({
-          title: "Location unavailable",
-          description: "Unable to get your current location. Please enable GPS.",
-          variant: "destructive",
-        });
-        return;
-      }
-
+      const currentLocation = await getCurrentLocation();
       const selectedStoreData = stores.find(s => s.id === selectedStore);
 
       if (!selectedStoreData) {
@@ -249,35 +193,6 @@ export const Routes = () => {
         <Card className="p-4">
           <h2 className="text-h2 mb-4">Set Your Assigned Location</h2>
           
-          {/* Current Location Display */}
-          <div className="mb-4 p-3 bg-muted rounded-lg">
-            <div className="flex items-center gap-2 mb-1">
-              <MapPin size={16} className="text-primary" />
-              <span className="text-sm font-medium">Current Location</span>
-            </div>
-            {isLoadingLocation && (
-              <p className="text-sm text-muted-foreground">Requesting GPS access...</p>
-            )}
-            {locationError && (
-              <div>
-                <p className="text-sm text-destructive">{locationError}</p>
-                <Button 
-                  onClick={requestLocation} 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-2"
-                >
-                  Retry
-                </Button>
-              </div>
-            )}
-            {currentLocation && !isLoadingLocation && (
-              <p className="text-sm text-muted-foreground">
-                {currentLocation.latitude.toFixed(6)}, {currentLocation.longitude.toFixed(6)}
-              </p>
-            )}
-          </div>
-          
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium text-foreground mb-2 block">County</label>
@@ -302,15 +217,9 @@ export const Routes = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Select a store</SelectItem>
-                  {filteredStores.map(store => {
-                    const distance = getStoreDistance(store);
-                    return (
-                      <SelectItem key={store.id} value={store.id}>
-                        {store.store_name}
-                        {distance !== null && ` - ${formatDistance(distance)}`}
-                      </SelectItem>
-                    );
-                  })}
+                  {filteredStores.map(store => (
+                    <SelectItem key={store.id} value={store.id}>{store.store_name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
