@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { calculateDistance, formatDistance, debugDistanceCalculation } from "@/utils/distanceCalculator";
+import { googleMapsService } from "@/services/googleMapsService";
 
 interface Store {
   id: string;
@@ -143,21 +144,53 @@ export const Routes = () => {
         return;
       }
 
-      const distance = calculateDistance(
-        userLocation.latitude,
-        userLocation.longitude,
-        selectedStoreData.store_lat,
-        selectedStoreData.store_long
-      );
+      // Calculate distance using Google Maps API with fallback to Haversine
+      let distance: number;
+      let distanceText: string;
+      let durationText: string;
 
-      // Enhanced debug logging
-      debugDistanceCalculation(
-        userLocation.latitude,
-        userLocation.longitude,
-        selectedStoreData.store_lat,
-        selectedStoreData.store_long,
-        'Set Location'
-      );
+      try {
+        console.log('🌍 Using Google Maps API for distance calculation...');
+        const googleResult = await googleMapsService.calculateDistanceWithFallback(
+          userLocation.latitude,
+          userLocation.longitude,
+          selectedStoreData.store_lat,
+          selectedStoreData.store_long
+        );
+
+        distance = googleResult.distanceMeters;
+        distanceText = googleResult.distanceText;
+        durationText = googleResult.durationText;
+
+        console.log('✅ Google Maps distance result:', {
+          distanceMeters: distance,
+          distanceText,
+          durationText,
+          status: googleResult.status
+        });
+
+      } catch (error) {
+        console.warn('⚠️ Google Maps failed, using Haversine fallback:', error);
+        
+        // Fallback to Haversine formula
+        distance = calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          selectedStoreData.store_lat,
+          selectedStoreData.store_long
+        );
+        distanceText = formatDistance(distance);
+        durationText = 'Not available';
+
+        // Enhanced debug logging for fallback
+        debugDistanceCalculation(
+          userLocation.latitude,
+          userLocation.longitude,
+          selectedStoreData.store_lat,
+          selectedStoreData.store_long,
+          'Set Location (Haversine Fallback)'
+        );
+      }
 
       const inRange = distance <= 100;
 
@@ -179,13 +212,13 @@ export const Routes = () => {
       if (!inRange) {
         toast({
           title: "Out of Range",
-          description: `You are ${Math.round(distance)}m from ${selectedStoreData.store_name}. Please move within 100m to check in.`,
+          description: `You are ${distanceText} from ${selectedStoreData.store_name}. Please move within 100m to check in.`,
           variant: "destructive",
         });
       } else {
         toast({
           title: "Location set successfully",
-          description: `Your assigned location is ${selectedStoreData.store_name}. You are ${Math.round(distance)}m from the store.`,
+          description: `Your assigned location is ${selectedStoreData.store_name}. Distance: ${distanceText}${durationText !== 'Not available' ? ` (${durationText})` : ''}.`,
         });
       }
 

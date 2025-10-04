@@ -5,6 +5,7 @@ import { Camera, Mic, MapPin, StopCircle } from "lucide-react";
 import { useLiveLocation } from "@/hooks/useLiveLocation";
 import { toast } from "sonner";
 import { MobileLayout } from "@/components/MobileLayout";
+import { GoogleMapsStatus } from "@/components/GoogleMapsStatus";
 
 export const DebugKit = () => {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -162,6 +163,9 @@ export const DebugKit = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Google Maps API Status */}
+        <GoogleMapsStatus />
 
         {/* Note: CameraCapture component would need to be created or imported */}
         {/* <CameraCapture

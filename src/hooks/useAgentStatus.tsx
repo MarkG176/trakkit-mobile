@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { calculateDistance, debugDistanceCalculation } from '@/utils/distanceCalculator';
+import { googleMapsService } from '@/services/googleMapsService';
 
 export type AgentStatus = 'checked_out' | 'checked_in' | 'lunch';
 
@@ -103,23 +104,49 @@ export const useAgentStatus = () => {
     let inRange: boolean | null = null;
     
     if (newStatus === 'checked_in' && assignedLocation) {
-      distance = calculateDistance(
-        currentLat,
-        currentLng,
-        assignedLocation.lat,
-        assignedLocation.lng
-      );
-      inRange = distance <= 500;
-      checkInSuccessful = inRange; // Within 500 meters
+      try {
+        console.log('🌍 Using Google Maps API for check-in distance validation...');
+        const googleResult = await googleMapsService.calculateDistanceWithFallback(
+          currentLat,
+          currentLng,
+          assignedLocation.lat,
+          assignedLocation.lng
+        );
 
-      // Debug logging for check-in distance calculation
-      debugDistanceCalculation(
-        currentLat,
-        currentLng,
-        assignedLocation.lat,
-        assignedLocation.lng,
-        `Check-in (${newStatus})`
-      );
+        distance = googleResult.distanceMeters;
+        inRange = distance <= 500;
+        checkInSuccessful = inRange; // Within 500 meters
+
+        console.log('✅ Check-in distance validation:', {
+          distanceMeters: distance,
+          distanceText: googleResult.distanceText,
+          durationText: googleResult.durationText,
+          inRange,
+          status: googleResult.status
+        });
+
+      } catch (error) {
+        console.warn('⚠️ Google Maps failed for check-in, using Haversine fallback:', error);
+        
+        // Fallback to Haversine formula
+        distance = calculateDistance(
+          currentLat,
+          currentLng,
+          assignedLocation.lat,
+          assignedLocation.lng
+        );
+        inRange = distance <= 500;
+        checkInSuccessful = inRange;
+
+        // Debug logging for fallback
+        debugDistanceCalculation(
+          currentLat,
+          currentLng,
+          assignedLocation.lat,
+          assignedLocation.lng,
+          `Check-in (${newStatus}) - Haversine Fallback`
+        );
+      }
 
       if (!checkInSuccessful) {
         return {
@@ -128,23 +155,44 @@ export const useAgentStatus = () => {
         };
       }
     } else if (assignedLocation) {
-      // Calculate range for other status changes
-      distance = calculateDistance(
-        currentLat,
-        currentLng,
-        assignedLocation.lat,
-        assignedLocation.lng
-      );
-      inRange = distance <= 500;
-      
-      // Debug logging for other status changes
-      debugDistanceCalculation(
-        currentLat,
-        currentLng,
-        assignedLocation.lat,
-        assignedLocation.lng,
-        `Status change (${newStatus})`
-      );
+      // Calculate range for other status changes using Google Maps with fallback
+      try {
+        const googleResult = await googleMapsService.calculateDistanceWithFallback(
+          currentLat,
+          currentLng,
+          assignedLocation.lat,
+          assignedLocation.lng
+        );
+        distance = googleResult.distanceMeters;
+        inRange = distance <= 500;
+        
+        console.log('✅ Status change distance validation:', {
+          distanceMeters: distance,
+          distanceText: googleResult.distanceText,
+          inRange,
+          status: googleResult.status
+        });
+        
+      } catch (error) {
+        console.warn('⚠️ Google Maps failed for status change, using Haversine fallback:', error);
+        
+        distance = calculateDistance(
+          currentLat,
+          currentLng,
+          assignedLocation.lat,
+          assignedLocation.lng
+        );
+        inRange = distance <= 500;
+        
+        // Debug logging for fallback
+        debugDistanceCalculation(
+          currentLat,
+          currentLng,
+          assignedLocation.lat,
+          assignedLocation.lng,
+          `Status change (${newStatus}) - Haversine Fallback`
+        );
+      }
     }
 
     try {
