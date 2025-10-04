@@ -122,13 +122,13 @@ export const useAgentStatus = () => {
         assignedLocation.lat,
         assignedLocation.lng
       );
-      inRange = distance <= 100;
-      checkInSuccessful = inRange; // Within 100 meters
+      inRange = distance <= 500;
+      checkInSuccessful = inRange; // Within 500 meters
 
       if (!checkInSuccessful) {
         return {
           success: false,
-          message: `Check-in failed. You are ${Math.round(distance)}m away from your assigned location. Must be within 100m.`,
+          message: `Check-in failed. You are ${Math.round(distance)}m away from your assigned location. Must be within 500m.`,
         };
       }
     } else if (assignedLocation) {
@@ -139,7 +139,7 @@ export const useAgentStatus = () => {
         assignedLocation.lat,
         assignedLocation.lng
       );
-      inRange = distance <= 100;
+      inRange = distance <= 500;
     }
 
     try {
