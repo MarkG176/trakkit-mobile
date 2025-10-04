@@ -161,7 +161,7 @@ export const Reports = () => {
       <div className="p-4 space-y-6">
         <Card>
           <CardContent className="p-6">
-            <h3 className="text-h3 mb-6 text-black">Record Sale</h3>
+            <h3 className="text-h3 mb-6 text-black">Report Daily Sales</h3>
             
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
