@@ -182,22 +182,40 @@ export const Routes = () => {
         return;
       }
 
-      // Calculate distance using Google Maps API
-      const { distance, duration } = await calculateGoogleMapsDistance(
-        userLocation.latitude,
-        userLocation.longitude,
+      // Round device location to 2 decimal places for calculation
+      const roundedUserLat = Math.round(userLocation.latitude * 100) / 100;
+      const roundedUserLng = Math.round(userLocation.longitude * 100) / 100;
+
+      console.log('📍 Location coordinates:', {
+        original: { lat: userLocation.latitude, lng: userLocation.longitude },
+        rounded: { lat: roundedUserLat, lng: roundedUserLng },
+        store: { lat: selectedStoreData.store_lat, lng: selectedStoreData.store_long }
+      });
+
+      // Calculate distance using Haversine formula with rounded coordinates
+      const distance = calculateDistance(
+        roundedUserLat,
+        roundedUserLng,
         selectedStoreData.store_lat,
-        selectedStoreData.store_long,
-        googleMapsApiKey
+        selectedStoreData.store_long
       );
 
-      console.log('Google Maps Distance Calculation:', {
-        origin: { lat: userLocation.latitude, lng: userLocation.longitude },
-        destination: { lat: selectedStoreData.store_lat, lng: selectedStoreData.store_long },
-        distance: `${distance}m (${(distance / 1000).toFixed(2)}km)`,
-        duration: `${duration}s (${Math.round(duration / 60)} minutes)`,
+      console.log('✅ Haversine distance calculation:', {
+        distanceMeters: Math.round(distance),
+        distanceText: formatDistance(distance),
+        roundedCoords: { lat: roundedUserLat, lng: roundedUserLng },
+        storeCoords: { lat: selectedStoreData.store_lat, lng: selectedStoreData.store_long },
         store: selectedStoreData.store_name
       });
+
+      // Enhanced debug logging
+      debugDistanceCalculation(
+        roundedUserLat,
+        roundedUserLng,
+        selectedStoreData.store_lat,
+        selectedStoreData.store_long,
+        'Set Location (Haversine with Rounded Coords)'
+      );
 
       const inRange = distance <= 100;
 
