@@ -37,7 +37,7 @@ export const DistanceDebugger: React.FC = () => {
 
     try {
       // Haversine calculation
-      const haversineDistance = calculateDistance(
+      const haversineDistance = await calculateDistance(
         lat,
         lng,
         CLEANSHELF_COORDS.latitude,
@@ -60,8 +60,12 @@ export const DistanceDebugger: React.FC = () => {
       }
 
       // Enhanced debug logging
-      debugCoordinates('Device Location', lat, lng, CLEANSHELF_COORDS);
-      debugDistanceCalculation(
+      debugCoordinates('Device Location', lat, lng, {
+        lat: CLEANSHELF_COORDS.latitude,
+        lng: CLEANSHELF_COORDS.longitude,
+        name: CLEANSHELF_COORDS.name
+      });
+      await debugDistanceCalculation(
         lat,
         lng,
         CLEANSHELF_COORDS.latitude,
