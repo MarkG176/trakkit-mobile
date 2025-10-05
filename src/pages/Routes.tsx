@@ -182,29 +182,36 @@ export const Routes = () => {
         return;
       }
 
-      // Round device location to 2 decimal places for calculation
-      const roundedUserLat = Math.round(userLocation.latitude * 100) / 100;
-      const roundedUserLng = Math.round(userLocation.longitude * 100) / 100;
+      // Round both device and store locations to 1 decimal place for calculation
+      const roundedUserLat = Math.round(userLocation.latitude * 10) / 10;
+      const roundedUserLng = Math.round(userLocation.longitude * 10) / 10;
+      const roundedStoreLat = Math.round(selectedStoreData.store_lat * 10) / 10;
+      const roundedStoreLng = Math.round(selectedStoreData.store_long * 10) / 10;
 
       console.log('📍 Location coordinates:', {
-        original: { lat: userLocation.latitude, lng: userLocation.longitude },
-        rounded: { lat: roundedUserLat, lng: roundedUserLng },
-        store: { lat: selectedStoreData.store_lat, lng: selectedStoreData.store_long }
+        original: { 
+          user: { lat: userLocation.latitude, lng: userLocation.longitude },
+          store: { lat: selectedStoreData.store_lat, lng: selectedStoreData.store_long }
+        },
+        rounded: { 
+          user: { lat: roundedUserLat, lng: roundedUserLng },
+          store: { lat: roundedStoreLat, lng: roundedStoreLng }
+        }
       });
 
       // Calculate distance using Haversine formula with rounded coordinates
       const distance = calculateDistance(
         roundedUserLat,
         roundedUserLng,
-        selectedStoreData.store_lat,
-        selectedStoreData.store_long
+        roundedStoreLat,
+        roundedStoreLng
       );
 
       console.log('✅ Haversine distance calculation:', {
         distanceMeters: Math.round(distance),
         distanceText: formatDistance(distance),
-        roundedCoords: { lat: roundedUserLat, lng: roundedUserLng },
-        storeCoords: { lat: selectedStoreData.store_lat, lng: selectedStoreData.store_long },
+        roundedUserCoords: { lat: roundedUserLat, lng: roundedUserLng },
+        roundedStoreCoords: { lat: roundedStoreLat, lng: roundedStoreLng },
         store: selectedStoreData.store_name
       });
 
@@ -212,9 +219,9 @@ export const Routes = () => {
       debugDistanceCalculation(
         roundedUserLat,
         roundedUserLng,
-        selectedStoreData.store_lat,
-        selectedStoreData.store_long,
-        'Set Location (Haversine with Rounded Coords)'
+        roundedStoreLat,
+        roundedStoreLng,
+        'Set Location (Haversine with 1dp Rounded Coords)'
       );
 
       const inRange = distance <= 100;

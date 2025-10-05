@@ -73,22 +73,29 @@ export const DebugKit = () => {
       const store = stores.find(s => s.id === selectedStore);
       if (!store) return;
 
-      // Round device location to 2 decimal places for calculation
-      const roundedLat = Math.round(position.latitude * 100) / 100;
-      const roundedLng = Math.round(position.longitude * 100) / 100;
+      // Round both device and store locations to 1 decimal place for calculation
+      const roundedLat = Math.round(position.latitude * 10) / 10;
+      const roundedLng = Math.round(position.longitude * 10) / 10;
+      const roundedStoreLat = Math.round(store.store_lat * 10) / 10;
+      const roundedStoreLng = Math.round(store.store_long * 10) / 10;
 
       console.log('📍 Debug Kit coordinates:', {
-        original: { lat: position.latitude, lng: position.longitude },
-        rounded: { lat: roundedLat, lng: roundedLng },
-        store: { lat: store.store_lat, lng: store.store_long }
+        original: { 
+          device: { lat: position.latitude, lng: position.longitude },
+          store: { lat: store.store_lat, lng: store.store_long }
+        },
+        rounded: { 
+          device: { lat: roundedLat, lng: roundedLng },
+          store: { lat: roundedStoreLat, lng: roundedStoreLng }
+        }
       });
 
       // Use Haversine formula for distance calculation with rounded coordinates
       const distance = calculateDistance(
         roundedLat,
         roundedLng,
-        store.store_lat,
-        store.store_long
+        roundedStoreLat,
+        roundedStoreLng
       );
 
       setStoreDistance(distance);
@@ -97,9 +104,9 @@ export const DebugKit = () => {
       debugDistanceCalculation(
         roundedLat,
         roundedLng,
-        store.store_lat,
-        store.store_long,
-        `Debug Kit - ${store.store_name} (Rounded Coords)`
+        roundedStoreLat,
+        roundedStoreLng,
+        `Debug Kit - ${store.store_name} (1dp Rounded Coords)`
       );
 
       toast.success(`Distance calculated: ${formatDistance(distance)}`);
@@ -243,8 +250,8 @@ export const DebugKit = () => {
                           <p className="font-mono">{position.longitude.toFixed(6)}</p>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Rounded (2dp):</span>
-                          <p className="font-mono">{(Math.round(position.latitude * 100) / 100).toFixed(2)}, {(Math.round(position.longitude * 100) / 100).toFixed(2)}</p>
+                          <span className="text-muted-foreground">Rounded (1dp):</span>
+                          <p className="font-mono">{(Math.round(position.latitude * 10) / 10).toFixed(1)}, {(Math.round(position.longitude * 10) / 10).toFixed(1)}</p>
                         </div>
                         <div>
                           <span className="text-muted-foreground">Accuracy:</span>
@@ -285,7 +292,7 @@ export const DebugKit = () => {
                             </span>
                           </div>
                           <div className="text-xs text-muted-foreground mt-1">
-                            Using Haversine formula with 2 decimal place precision
+                            Using Haversine formula with 1 decimal place precision
                           </div>
                         </div>
                       )}
