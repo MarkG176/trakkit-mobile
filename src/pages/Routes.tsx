@@ -8,7 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { useAgentActions } from "@/hooks/useAgentActions";
-import { calculateDistance, formatDistance, debugDistanceCalculation } from "@/utils/distanceCalculator";
+import { calculateGoogleMapsDistance } from "@/utils/googleMapsDistance";
+import { formatDistance, debugDistanceCalculation } from "@/utils/distanceCalculator";
 
 interface Store {
   id: string;
@@ -151,40 +152,29 @@ export const Routes = () => {
         return;
       }
 
-      // Round device location to 2 decimal places for calculation
-      const roundedUserLat = Math.round(userLocation.latitude * 100) / 100;
-      const roundedUserLng = Math.round(userLocation.longitude * 100) / 100;
-
       console.log('📍 Location coordinates:', {
-        original: { lat: userLocation.latitude, lng: userLocation.longitude },
-        rounded: { lat: roundedUserLat, lng: roundedUserLng },
+        device: { lat: userLocation.latitude, lng: userLocation.longitude },
         store: { lat: selectedStoreData.store_lat, lng: selectedStoreData.store_long }
       });
 
-      // Calculate distance using Haversine formula with rounded coordinates
-      const distance = await calculateDistance(
-        roundedUserLat,
-        roundedUserLng,
+      // Calculate distance using Google Maps Distance Matrix API
+      const result = await calculateGoogleMapsDistance(
+        userLocation.latitude,
+        userLocation.longitude,
         selectedStoreData.store_lat,
         selectedStoreData.store_long
       );
 
-      console.log('✅ Haversine distance calculation:', {
+      const distance = result.distance; // Distance in meters
+
+      console.log('✅ Google Maps distance calculation:', {
         distanceMeters: Math.round(distance),
         distanceText: formatDistance(distance),
-        roundedCoords: { lat: roundedUserLat, lng: roundedUserLng },
+        durationSeconds: result.duration,
+        deviceCoords: { lat: userLocation.latitude, lng: userLocation.longitude },
         storeCoords: { lat: selectedStoreData.store_lat, lng: selectedStoreData.store_long },
         store: selectedStoreData.store_name
       });
-
-      // Enhanced debug logging
-      await debugDistanceCalculation(
-        roundedUserLat,
-        roundedUserLng,
-        selectedStoreData.store_lat,
-        selectedStoreData.store_long,
-        'Set Location (Haversine with Rounded Coords)'
-      );
 
       const inRange = distance <= 100;
 
