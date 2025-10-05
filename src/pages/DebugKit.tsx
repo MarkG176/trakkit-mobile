@@ -91,7 +91,7 @@ export const DebugKit = () => {
       });
 
       // Use Haversine formula for distance calculation with rounded coordinates
-      const distance = calculateDistance(
+      const distance = await calculateDistance(
         roundedLat,
         roundedLng,
         roundedStoreLat,
@@ -101,7 +101,7 @@ export const DebugKit = () => {
       setStoreDistance(distance);
 
       // Debug logging
-      debugDistanceCalculation(
+      await debugDistanceCalculation(
         roundedLat,
         roundedLng,
         roundedStoreLat,
