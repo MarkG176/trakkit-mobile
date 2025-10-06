@@ -1,4 +1,4 @@
-import { Home, ClipboardList, Map, Package, MoreHorizontal, Clock } from "lucide-react";
+import { Home, ClipboardList, Map, Package, MoreHorizontal, Clipboard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface BottomNavigationProps {
@@ -7,7 +7,7 @@ interface BottomNavigationProps {
 
 const navItems = [
   { id: "dashboard", label: "Dashboard", icon: Home, path: "/" },
-  { id: "activity", label: "Activity", icon: Clock, path: "/activity" },
+  { id: "reports", label: "Reports", icon: Clipboard, path: "/reports" },
   { id: "surveys", label: "Surveys", icon: ClipboardList, path: "/surveys" },
   { id: "routes", label: "Routes", icon: Map, path: "/routes" },
   { id: "inventory", label: "Inventory", icon: Package, path: "/inventory" },
