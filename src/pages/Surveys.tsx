@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { TopBar } from "@/components/dashboard/TopBar";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,24 @@ import { ArrowLeft, ArrowRight, Mic, MicOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { useAgentActions } from "@/hooks/useAgentActions";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+
+interface SurveyTemplate {
+  id: string;
+  title: string;
+  description: string | null;
+  target_department: string | null;
+  status: string | null;
+  estimated_duration_minutes: number | null;
+  questions: any[];
+  is_published: boolean | null;
+  start_date: string | null;
+  end_date: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
 
 interface Survey {
   id: string;
@@ -26,84 +44,106 @@ interface Survey {
   currentQuestion: number;
 }
 
-const surveyData: Survey[] = [
-  { 
-    id: "1", 
-    name: "Q1 Customer Satisfaction Survey", 
-    description: "Evaluate customer satisfaction with our products and services during Q1",
-    category: "Customer Experience", 
-    categoryColor: "bg-green-100 text-green-800",
-    duration: "15 min",
-    questions: 4,
-    totalQuestions: 4,
-    points: 15,
-    responses: 1247,
-    progress: 0,
-    currentQuestion: 1
-  },
-  { 
-    id: "2", 
-    name: "Brand Awareness Study", 
-    description: "Assess consumer awareness and perception of our brand in the market",
-    category: "Market Research", 
-    categoryColor: "bg-orange-100 text-orange-800",
-    duration: "10 min",
-    questions: 12,
-    totalQuestions: 12,
-    points: 20,
-    responses: 892,
-    progress: 0,
-    currentQuestion: 1
-  },
-  { 
-    id: "3", 
-    name: "Product Feature Preference", 
-    description: "Understand customer preferences and value their most customers value most",
-    category: "Product Development", 
-    categoryColor: "bg-blue-100 text-blue-800",
-    duration: "8 min",
-    questions: 6,
-    totalQuestions: 6,
-    points: 15,
-    responses: 344,
-    progress: 0,
-    currentQuestion: 1
-  },
-  { 
-    id: "4", 
-    name: "Shopping Behavior Analysis", 
-    description: "Learn about customer shopping patterns and preferences",
-    category: "Consumer Behavior", 
-    categoryColor: "bg-purple-100 text-purple-800",
-    duration: "20 min",
-    questions: 15,
-    totalQuestions: 15,
-    points: 25,
-    responses: 456,
-    progress: 0,
-    currentQuestion: 1
-  },
-  { 
-    id: "5", 
-    name: "Service Quality Assessment", 
-    description: "Measure the quality of our customer service interactions",
-    category: "Service Excellence", 
-    categoryColor: "bg-yellow-100 text-yellow-800",
-    duration: "12 min",
-    questions: 10,
-    totalQuestions: 10,
-    points: 18,
-    responses: 723,
-    progress: 0,
-    currentQuestion: 1
-  }
-];
+// Helper function to get category color based on target department
+const getCategoryColor = (department: string | null): string => {
+  const colorMap: { [key: string]: string } = {
+    'Customer Service': 'bg-green-100 text-green-800',
+    'Marketing': 'bg-orange-100 text-orange-800',
+    'Product Development': 'bg-blue-100 text-blue-800',
+    'Sales': 'bg-purple-100 text-purple-800',
+    'Research': 'bg-yellow-100 text-yellow-800',
+    'Operations': 'bg-red-100 text-red-800',
+    'Quality Assurance': 'bg-indigo-100 text-indigo-800',
+  };
+  return colorMap[department || ''] || 'bg-gray-100 text-gray-800';
+};
+
+// Helper function to calculate points based on questions and duration
+const calculatePoints = (questions: any[], duration: number | null): number => {
+  const questionCount = questions?.length || 0;
+  const durationMinutes = duration || 10;
+  return Math.max(5, Math.min(30, questionCount * 2 + Math.floor(durationMinutes / 5)));
+};
 
 export const Surveys = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { displayName: agentName } = useUserProfile();
+  const { user } = useAuth();
+  const { recordSurvey } = useAgentActions();
+  const [surveys, setSurveys] = useState<Survey[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeSurvey, setActiveSurvey] = useState<Survey | null>(null);
+  const [surveyResponses, setSurveyResponses] = useState<{ [questionId: string]: any }>({});
+  const [surveyStartTime, setSurveyStartTime] = useState<Date | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetchSurveyTemplates();
+  }, []);
+
+  const fetchSurveyTemplates = async () => {
+    try {
+      setLoading(true);
+      
+      const { data: surveyTemplates, error } = await supabase
+        .from('survey_templates')
+        .select('*')
+        .eq('is_published', true)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching survey templates:', error);
+        toast({
+          title: "Error loading surveys",
+          description: "Could not load available surveys.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (surveyTemplates) {
+        // Fetch response counts for each survey
+        const surveysWithResponses = await Promise.all(
+          surveyTemplates.map(async (template: SurveyTemplate) => {
+            const { count: responseCount } = await supabase
+              .from('survey_responses')
+              .select('*', { count: 'exact', head: true })
+              .eq('survey_template_id', template.id);
+
+            return {
+              id: template.id,
+              name: template.title,
+              description: template.description || 'No description available',
+              category: template.target_department || 'General',
+              categoryColor: getCategoryColor(template.target_department),
+              duration: template.estimated_duration_minutes 
+                ? `${template.estimated_duration_minutes} min` 
+                : '10 min',
+              questions: Array.isArray(template.questions) ? template.questions.length : 0,
+              totalQuestions: Array.isArray(template.questions) ? template.questions.length : 0,
+              points: calculatePoints(template.questions, template.estimated_duration_minutes),
+              responses: responseCount || 0,
+              progress: 0,
+              currentQuestion: 1
+            };
+          })
+        );
+
+        setSurveys(surveysWithResponses);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while loading surveys.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   
   const handleCameraCapture = (imageData: string) => {
     toast({
@@ -134,6 +174,8 @@ export const Surveys = () => {
 
   const handleStartSurvey = (survey: Survey) => {
     setActiveSurvey(survey);
+    setSurveyResponses({});
+    setSurveyStartTime(new Date());
     setShowPreSurvey(true);
   };
 
@@ -144,6 +186,13 @@ export const Surveys = () => {
     }
   };
 
+  const handleAnswerChange = (questionId: string, answer: any) => {
+    setSurveyResponses(prev => ({
+      ...prev,
+      [questionId]: answer
+    }));
+  };
+
   const handleSubmitSurvey = () => {
     if (isRecording) {
       stopRecording();
@@ -151,13 +200,136 @@ export const Surveys = () => {
     setShowEngagementModal(true);
   };
 
+  const submitSurveyResponse = async (engagementData: any) => {
+    if (!user || !activeSurvey) {
+      toast({
+        title: "Error",
+        description: "Unable to submit survey. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      // Get current location if available
+      let location = null;
+      if (navigator.geolocation) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
+              timeout: 5000,
+              maximumAge: 0
+            });
+          });
+          location = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+        } catch (error) {
+          console.log('Location not available:', error);
+        }
+      }
+
+      // Calculate survey duration
+      const endTime = new Date();
+      const durationSeconds = surveyStartTime 
+        ? Math.floor((endTime.getTime() - surveyStartTime.getTime()) / 1000)
+        : 0;
+
+      // Get the current user's active task
+      const { data: currentTask } = await supabase
+        .from('agent_tasks')
+        .select('id')
+        .eq('agent_id', user.id)
+        .eq('status', 'pending')
+        .single();
+
+      // Create interaction record
+      const { data: interaction, error: interactionError } = await supabase
+        .from('interactions')
+        .insert({
+          task_id: currentTask?.id,
+          interaction_type: 'survey',
+          customer_name: engagementData.customerName || null,
+          customer_phone: engagementData.customerPhone || null,
+          outcome: 'completed',
+          quantity_sold: 0,
+          metadata: {
+            survey_template_id: activeSurvey.id,
+            engagement_type: engagementData.engagementType,
+            notes: engagementData.notes,
+            sentiment: engagementData.sentiment,
+            recording_duration: recordingDuration
+          }
+        })
+        .select()
+        .single();
+
+      if (interactionError) {
+        throw interactionError;
+      }
+
+      // Save survey response to survey_responses table
+      const { error: surveyResponseError } = await supabase
+        .from('survey_responses')
+        .insert({
+          agent_id: user.id,
+          survey_template_id: activeSurvey.id,
+          interaction_id: interaction.id,
+          responses: surveyResponses,
+          started_at: surveyStartTime?.toISOString(),
+          completed_at: endTime.toISOString(),
+          duration_seconds: durationSeconds,
+          completion_time_seconds: durationSeconds,
+          is_completed: true,
+          completion_status: 'completed',
+          location_lat: location?.lat || null,
+          location_lng: location?.lng || null
+        });
+
+      if (surveyResponseError) {
+        throw surveyResponseError;
+      }
+
+      // Record survey action for points
+      await recordSurvey(user.id, activeSurvey.name, {
+        survey_template_id: activeSurvey.id,
+        duration_seconds: durationSeconds,
+        questions_answered: Object.keys(surveyResponses).length,
+        interaction_id: interaction.id
+      });
+
+      toast({
+        title: "Survey completed!",
+        description: `+${activeSurvey.points} points earned. Survey responses saved.`,
+      });
+
+      // Reset state
+      setActiveSurvey(null);
+      setSurveyResponses({});
+      setSurveyStartTime(null);
+      setShowEngagementModal(false);
+      
+      // Refresh surveys to update response counts
+      fetchSurveyTemplates();
+
+    } catch (error) {
+      console.error('Error submitting survey:', error);
+      toast({
+        title: "Error submitting survey",
+        description: "Failed to save survey responses. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleEngagementSave = (engagementData: any) => {
-    toast({
-      title: "Survey completed!",
-      description: "+15 points earned. Engagement logged.",
-    });
-    setActiveSurvey(null);
-    setShowEngagementModal(false);
+    submitSurveyResponse(engagementData);
   };
 
   // Pre-survey prompt
@@ -242,64 +414,76 @@ export const Surveys = () => {
         </div>
 
         <div className="p-4 space-y-6">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-start gap-2 mb-4">
-                <span className="w-6 h-6 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center text-sm font-medium">1</span>
-                <div className="flex-1">
-                  <h2 className="text-h3 text-black mb-1">How would you rate your overall satisfaction with our service?</h2>
-                  <span className="inline-block bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">Required</span>
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                <label className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-accent cursor-pointer">
-                  <input type="radio" name="satisfaction" value="very-satisfied" className="text-primary" />
-                  <span>Very Satisfied</span>
-                </label>
-                <label className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-accent cursor-pointer">
-                  <input type="radio" name="satisfaction" value="satisfied" className="text-primary" />
-                  <span>Satisfied</span>
-                </label>
-                <label className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-accent cursor-pointer">
-                  <input type="radio" name="satisfaction" value="neutral" className="text-primary" />
-                  <span>Neutral</span>
-                </label>
-                <label className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-accent cursor-pointer">
-                  <input type="radio" name="satisfaction" value="dissatisfied" className="text-primary" />
-                  <span>Dissatisfied</span>
-                </label>
-                <label className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-accent cursor-pointer">
-                  <input type="radio" name="satisfaction" value="very-dissatisfied" className="text-primary" />
-                  <span>Very Dissatisfied</span>
-                </label>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Question 2 */}
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-start gap-2 mb-4">
-                <span className="w-6 h-6 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center text-sm font-medium">2</span>
-                <div className="flex-1">
-                  <h2 className="text-h3 text-black mb-1">On a scale of 1-5, how likely are you to recommend our service to others?</h2>
-                  <span className="inline-block bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">Required</span>
-                </div>
-              </div>
-              
-              <div className="flex justify-center space-x-4">
-                {[1, 2, 3, 4, 5].map((rating) => (
-                  <label key={rating} className="flex flex-col items-center cursor-pointer">
-                    <div className="w-12 h-12 border-2 rounded-full flex items-center justify-center hover:bg-accent transition-colors">
-                      <input type="radio" name="recommendation" value={rating} className="sr-only" />
-                      <span className="text-lg font-semibold">{rating}</span>
+          {activeSurvey && surveys.find(s => s.id === activeSurvey.id) && (() => {
+            const surveyTemplate = surveys.find(s => s.id === activeSurvey.id);
+            const questions = surveyTemplate?.questions || [];
+            
+            return questions.map((question: any, index: number) => (
+              <Card key={question.id}>
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-2 mb-4">
+                    <span className="w-6 h-6 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center text-sm font-medium">
+                      {index + 1}
+                    </span>
+                    <div className="flex-1">
+                      <h2 className="text-h3 text-black mb-1">{question.question}</h2>
+                      {question.required && (
+                        <span className="inline-block bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">
+                          Required
+                        </span>
+                      )}
                     </div>
-                  </label>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {question.type === 'rating' && question.options && (
+                      question.options.map((option: string, optionIndex: number) => (
+                        <label key={optionIndex} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-accent cursor-pointer">
+                          <input 
+                            type="radio" 
+                            name={question.id} 
+                            value={option}
+                            checked={surveyResponses[question.id] === option}
+                            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                            className="text-primary" 
+                          />
+                          <span>{option}</span>
+                        </label>
+                      ))
+                    )}
+                    
+                    {question.type === 'multiple_choice' && question.options && (
+                      question.options.map((option: string, optionIndex: number) => (
+                        <label key={optionIndex} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-accent cursor-pointer">
+                          <input 
+                            type="radio" 
+                            name={question.id} 
+                            value={option}
+                            checked={surveyResponses[question.id] === option}
+                            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                            className="text-primary" 
+                          />
+                          <span>{option}</span>
+                        </label>
+                      ))
+                    )}
+                    
+                    {question.type === 'text' && (
+                      <textarea
+                        name={question.id}
+                        value={surveyResponses[question.id] || ''}
+                        onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                        placeholder="Enter your response..."
+                        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        rows={4}
+                      />
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ));
+          })()}
+
 
           {/* Question 3 */}
           <Card>
@@ -393,7 +577,20 @@ export const Surveys = () => {
       </div>
 
       <div className="p-4 space-y-4">
-        {surveyData.map((survey) => (
+        {loading ? (
+          <div className="flex items-center justify-center h-32">
+            <div className="text-muted-foreground">Loading surveys...</div>
+          </div>
+        ) : surveys.length === 0 ? (
+          <div className="flex items-center justify-center h-32">
+            <div className="text-muted-foreground text-center">
+              <div className="text-2xl mb-2">📋</div>
+              <div>No surveys available</div>
+              <div className="text-sm">Check back later for new surveys</div>
+            </div>
+          </div>
+        ) : (
+          surveys.map((survey) => (
           <Card key={survey.id} className="survey-card cursor-pointer hover:shadow-md transition-shadow">
             <CardContent className="p-4">
               <div className="flex items-start justify-between mb-3">
@@ -422,7 +619,8 @@ export const Surveys = () => {
               </Button>
             </CardContent>
           </Card>
-        ))}
+          ))
+        )}
         
         {/* Survey Tips */}
         <Card className="bg-blue-50 border-blue-200">

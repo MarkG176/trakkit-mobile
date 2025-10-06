@@ -1,8 +1,9 @@
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
-import { MapPin } from "lucide-react";
+import { MapPin, Plus } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -29,6 +30,10 @@ export const Routes = () => {
   const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [showAddLocationForm, setShowAddLocationForm] = useState(false);
+  const [newStoreName, setNewStoreName] = useState("");
+  const [newStoreCounty, setNewStoreCounty] = useState("");
+  const [isSubmittingStore, setIsSubmittingStore] = useState(false);
   const { toast } = useToast();
   const { recordLocationSet } = useAgentActions();
 
@@ -114,6 +119,67 @@ export const Routes = () => {
     });
   };
 
+
+  const handleAddLocation = async () => {
+    if (!newStoreName.trim() || !newStoreCounty.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in both store name and county.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!currentLocation) {
+      toast({
+        title: "Location Required",
+        description: "Please enable location access to add a new store.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsSubmittingStore(true);
+
+      const { error } = await supabase
+        .from('stores')
+        .insert({
+          store_name: newStoreName.trim(),
+          county: newStoreCounty.trim(),
+          store_lat: currentLocation.latitude,
+          store_long: currentLocation.longitude,
+          products: [] // Empty products array for new store
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Location Added Successfully!",
+        description: `${newStoreName} has been added to the stores database.`,
+      });
+
+      // Reset form
+      setNewStoreName("");
+      setNewStoreCounty("");
+      setShowAddLocationForm(false);
+
+      // Refresh stores list
+      await fetchStores();
+
+    } catch (error: any) {
+      console.error('Error adding store:', error);
+      toast({
+        title: "Error adding location",
+        description: error.message || "Failed to add the new store. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingStore(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (selectedStore === "all") {
@@ -340,6 +406,90 @@ export const Routes = () => {
               {isSubmitting ? "Setting Location..." : "Submit Location"}
             </Button>
           </div>
+        </Card>
+
+        {/* Add Location Form */}
+        <Card className="p-4 mt-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Plus size={20} className="text-primary" />
+            <h2 className="text-h2">Add Location</h2>
+          </div>
+          
+          {!showAddLocationForm ? (
+            <Button 
+              onClick={() => setShowAddLocationForm(true)}
+              variant="outline"
+              className="w-full"
+            >
+              <Plus size={16} className="mr-2" />
+              Add New Store Location
+            </Button>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="store-name" className="text-sm font-medium text-foreground mb-2 block">
+                  Store Name
+                </Label>
+                <Input
+                  id="store-name"
+                  value={newStoreName}
+                  onChange={(e) => setNewStoreName(e.target.value)}
+                  placeholder="Enter store name"
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="store-county" className="text-sm font-medium text-foreground mb-2 block">
+                  County
+                </Label>
+                <Input
+                  id="store-county"
+                  value={newStoreCounty}
+                  onChange={(e) => setNewStoreCounty(e.target.value)}
+                  placeholder="Enter county name"
+                  className="w-full"
+                />
+              </div>
+
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm font-medium text-foreground mb-2">Location Coordinates</p>
+                {currentLocation ? (
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <p>Latitude: {currentLocation.latitude.toFixed(6)}</p>
+                    <p>Longitude: {currentLocation.longitude.toFixed(6)}</p>
+                    <p className="text-green-600">✓ Using current location</p>
+                  </div>
+                ) : (
+                  <div className="text-xs text-muted-foreground">
+                    <p className="text-orange-600">⚠ Location not available</p>
+                    <p>Please enable location access to add a store</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowAddLocationForm(false);
+                    setNewStoreName("");
+                    setNewStoreCounty("");
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleAddLocation}
+                  disabled={isSubmittingStore || !currentLocation}
+                  className="flex-1"
+                >
+                  {isSubmittingStore ? "Adding..." : "Add Store"}
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
       </div>
     </MobileLayout>

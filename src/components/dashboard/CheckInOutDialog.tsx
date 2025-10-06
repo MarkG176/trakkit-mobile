@@ -78,15 +78,21 @@ export const CheckInOutDialog = ({ isOpen, onClose }: CheckInOutDialogProps) => 
   };
 
   const uploadToStorage = async (file: File): Promise<string> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
     const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}.${fileExt}`;
+    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
     const filePath = `${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('agent-selfies')
       .upload(filePath, file);
 
-    if (uploadError) throw uploadError;
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      throw uploadError;
+    }
 
     const { data: { publicUrl } } = supabase.storage
       .from('agent-selfies')
@@ -127,7 +133,17 @@ export const CheckInOutDialog = ({ isOpen, onClose }: CheckInOutDialogProps) => 
 
     try {
       const location = await getCurrentLocation();
-      const selfieUrl = await uploadToStorage(selectedFile!);
+      
+      // Upload selfie first
+      let selfieUrl: string | null = null;
+      try {
+        selfieUrl = await uploadToStorage(selectedFile!);
+        console.log('✅ Selfie uploaded successfully:', selfieUrl);
+      } catch (uploadError) {
+        console.error('❌ Selfie upload failed:', uploadError);
+        toast.error("Failed to upload selfie. Please try again.");
+        return;
+      }
       
       const result = await updateStatus(
         status as AgentStatus,
@@ -147,6 +163,8 @@ export const CheckInOutDialog = ({ isOpen, onClose }: CheckInOutDialogProps) => 
         setStatus("");
         setSelectedFile(null);
         setShowSalesForm(false);
+      } else {
+        toast.error(result.message || "Failed to update status");
       }
     } catch (error) {
       console.error("Error during check-in/out:", error);
