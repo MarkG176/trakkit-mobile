@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 
 interface TopBarProps {
   onCameraCapture?: (imageData: string) => void;
@@ -46,7 +47,7 @@ export const TopBar = ({ onCameraCapture }: TopBarProps) => {
 
   return (
     <div className="bg-card border-b border-border px-4 py-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-3">
         <div>
           <span className="text-h3">Hello, {displayName}!</span>
         </div>
@@ -60,6 +61,14 @@ export const TopBar = ({ onCameraCapture }: TopBarProps) => {
           <MapPin size={16} />
           Set Location
         </Button>
+      </div>
+      
+      {/* Workspace Switcher */}
+      <div className="flex items-center justify-between">
+        <WorkspaceSwitcher onWorkspaceChange={() => {
+          // Refresh the page to load new workspace data
+          window.location.reload();
+        }} />
       </div>
     </div>
   );
