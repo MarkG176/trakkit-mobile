@@ -244,7 +244,16 @@ export const RecordSale = () => {
                   >
                     <Minus size={12} />
                   </Button>
-                  <span className="w-8 text-center font-medium">{item.quantity}</span>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={item.quantity}
+                    onChange={(e) => {
+                      const newQty = parseInt(e.target.value) || 1;
+                      updateQuantity(item.id, newQty);
+                    }}
+                    className="w-16 h-8 text-center p-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
                   <Button
                     size="icon"
                     variant="outline"
