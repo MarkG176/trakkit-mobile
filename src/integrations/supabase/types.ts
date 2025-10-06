@@ -768,6 +768,69 @@ export type Database = {
           },
         ]
       }
+      giveaways: {
+        Row: {
+          agent_id: string
+          created_at: string
+          customer_interest_level: string | null
+          engagement_duration: number | null
+          engagement_quality: string | null
+          follow_up_required: boolean | null
+          id: string
+          is_deleted: boolean | null
+          location_lat: number | null
+          location_lng: number | null
+          notes: string | null
+          products_given: Json
+          recipient_name: string | null
+          recipient_phone: string | null
+          recorded_at: string
+          total_items: number
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          customer_interest_level?: string | null
+          engagement_duration?: number | null
+          engagement_quality?: string | null
+          follow_up_required?: boolean | null
+          id?: string
+          is_deleted?: boolean | null
+          location_lat?: number | null
+          location_lng?: number | null
+          notes?: string | null
+          products_given?: Json
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          recorded_at?: string
+          total_items?: number
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          customer_interest_level?: string | null
+          engagement_duration?: number | null
+          engagement_quality?: string | null
+          follow_up_required?: boolean | null
+          id?: string
+          is_deleted?: boolean | null
+          location_lat?: number | null
+          location_lng?: number | null
+          notes?: string | null
+          products_given?: Json
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          recorded_at?: string
+          total_items?: number
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
       interactions: {
         Row: {
           contact_method: string | null
@@ -1431,6 +1494,7 @@ export type Database = {
           team_leaders: string[] | null
           total_doors_target: number | null
           updated_at: string
+          workspace: string | null
         }
         Insert: {
           activities?: Json | null
@@ -1453,6 +1517,7 @@ export type Database = {
           team_leaders?: string[] | null
           total_doors_target?: number | null
           updated_at?: string
+          workspace?: string | null
         }
         Update: {
           activities?: Json | null
@@ -1475,8 +1540,17 @@ export type Database = {
           team_leaders?: string[] | null
           total_doors_target?: number | null
           updated_at?: string
+          workspace?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "project_plans_workspace_fkey"
+            columns: ["workspace"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       projects: {
         Row: {
@@ -2299,18 +2373,21 @@ export type Database = {
           created_at: string
           id: string
           team_id: string | null
+          workspace: string | null
         }
         Insert: {
           agent_id?: string | null
           created_at?: string
           id?: string
           team_id?: string | null
+          workspace?: string | null
         }
         Update: {
           agent_id?: string | null
           created_at?: string
           id?: string
           team_id?: string | null
+          workspace?: string | null
         }
         Relationships: [
           {
@@ -2325,6 +2402,13 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_members_workspace_fkey"
+            columns: ["workspace"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -2856,7 +2940,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "supervisor" | "agent"
+      app_role: "supervisor" | "agent" | "client"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2984,7 +3068,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["supervisor", "agent"],
+      app_role: ["supervisor", "agent", "client"],
     },
   },
 } as const
