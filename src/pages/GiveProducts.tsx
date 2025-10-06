@@ -200,15 +200,53 @@ export const GiveProducts = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Here you would save the giveaway data to Supabase
-      // This includes selectedProducts, recipientName, notes, and engagementData
-      console.log('Giveaway data to save:', {
-        selectedProducts,
-        recipientName,
-        recipientPhone,
-        notes,
-        engagementData
-      });
+      // Get current location if available
+      let location = { latitude: null, longitude: null };
+      if (navigator.geolocation) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject);
+          });
+          location = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          };
+        } catch (error) {
+          console.log('Could not get location:', error);
+        }
+      }
+
+      // Prepare products data
+      const productsGiven = selectedProducts.map(product => ({
+        product_variant_id: product.productVariantId,
+        product_name: product.name,
+        quantity: product.quantity
+      }));
+
+      const totalItems = selectedProducts.reduce((sum, p) => sum + p.quantity, 0);
+
+      // Save to giveaways table
+      const { error } = await supabase
+        .from('giveaways')
+        .insert({
+          agent_id: user.id,
+          products_given: productsGiven,
+          total_items: totalItems,
+          recipient_name: recipientName || null,
+          recipient_phone: recipientPhone || null,
+          notes: notes || null,
+          engagement_quality: engagementData.quality || null,
+          engagement_duration: engagementData.duration || null,
+          customer_interest_level: engagementData.interestLevel || null,
+          follow_up_required: engagementData.followUpRequired || false,
+          location_lat: location.latitude,
+          location_lng: location.longitude,
+        });
+
+      if (error) {
+        console.error('Error saving giveaway:', error);
+        throw error;
+      }
 
       toast({
         title: "Giveaway recorded successfully!",
