@@ -31,28 +31,19 @@ export const useInteractionForm = () => {
     try {
       setLoading(true);
 
-      // Get the current user's active task
+      // Get the current user's active task (optional)
       const { data: currentTask } = await supabase
         .from('agent_tasks')
         .select('id')
         .eq('agent_id', user.id)
         .eq('status', 'pending')
-        .single();
-
-      if (!currentTask) {
-        toast({
-          title: "No Active Task",
-          description: "You need an active task to log interactions",
-          variant: "destructive",
-        });
-        return false;
-      }
+        .maybeSingle();
 
       // Insert the interaction
       const { error } = await supabase
         .from('interactions')
         .insert({
-          task_id: currentTask.id,
+          task_id: currentTask?.id || null,
           interaction_type: 'general',
           customer_name: formData.customerName,
           customer_phone: formData.customerPhone,

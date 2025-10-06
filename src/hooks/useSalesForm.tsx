@@ -38,22 +38,13 @@ export const useSalesForm = () => {
     try {
       setLoading(true);
 
-      // Get the current user's active task
+      // Get the current user's active task (optional)
       const { data: currentTask } = await supabase
         .from('agent_tasks')
         .select('id')
         .eq('agent_id', user.id)
         .eq('status', 'pending')
-        .single();
-
-      if (!currentTask) {
-        toast({
-          title: "No Active Task",
-          description: "You need an active task to record sales",
-          variant: "destructive",
-        });
-        return false;
-      }
+        .maybeSingle();
 
       const totalValue = formData.items.reduce(
         (sum, item) => sum + (item.price * item.quantity), 
@@ -65,7 +56,7 @@ export const useSalesForm = () => {
         await supabase
           .from('interactions')
           .insert({
-            task_id: currentTask.id,
+            task_id: currentTask?.id || null,
             interaction_type: 'sale',
             customer_name: formData.customerName,
             customer_phone: formData.customerPhone,
@@ -91,7 +82,7 @@ export const useSalesForm = () => {
             type: 'sale',
             reference: `Sale to ${formData.customerName || 'Customer'}`,
             metadata: {
-              task_id: currentTask.id,
+              task_id: currentTask?.id || null,
               sale_value: item.price * item.quantity
             }
           }));
