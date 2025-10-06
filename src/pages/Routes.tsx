@@ -37,15 +37,6 @@ export const Routes = () => {
     fetchStores();
     requestLocation();
     
-    // Check if API key is already stored
-    const storedKey = getGoogleMapsApiKey();
-    if (storedKey) {
-      setGoogleMapsApiKeyState(storedKey);
-    } else {
-      setShowApiKeyInput(true);
-    }
-  }, []);
-
   const requestLocation = () => {
     if (!navigator.geolocation) {
       setLocationError('Geolocation is not supported by your browser');
