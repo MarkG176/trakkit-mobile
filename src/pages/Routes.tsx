@@ -7,7 +7,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
-import { calculateGoogleMapsDistance, getGoogleMapsApiKey, setGoogleMapsApiKey } from "@/utils/googleMapsDistance";
+import { calculateGoogleMapsDistance } from "@/utils/googleMapsDistance";
+import { calculateDistance, formatDistance, debugDistanceCalculation } from "@/utils/distanceCalculator";
 import { useAgentActions } from "@/hooks/useAgentActions";
 
 interface Store {
@@ -28,15 +29,14 @@ export const Routes = () => {
   const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
-  const [googleMapsApiKey, setGoogleMapsApiKeyState] = useState<string>('');
-  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const { toast } = useToast();
   const { recordLocationSet } = useAgentActions();
 
   useEffect(() => {
     fetchStores();
     requestLocation();
-    
+  }, []);
+
   const requestLocation = () => {
     if (!navigator.geolocation) {
       setLocationError('Geolocation is not supported by your browser');
@@ -114,16 +114,6 @@ export const Routes = () => {
     });
   };
 
-  const handleApiKeySave = () => {
-    if (googleMapsApiKey.trim()) {
-      setGoogleMapsApiKey(googleMapsApiKey);
-      setShowApiKeyInput(false);
-      toast({
-        title: "API Key Saved",
-        description: "Google Maps API key has been saved successfully.",
-      });
-    }
-  };
 
   const handleSubmit = async () => {
     if (selectedStore === "all") {
@@ -135,15 +125,6 @@ export const Routes = () => {
       return;
     }
 
-    if (!googleMapsApiKey) {
-      toast({
-        title: "API Key Required",
-        description: "Please enter your Google Maps API key first.",
-        variant: "destructive",
-      });
-      setShowApiKeyInput(true);
-      return;
-    }
 
     setIsSubmitting(true);
 
@@ -191,7 +172,7 @@ export const Routes = () => {
       });
 
       // Calculate distance using Haversine formula with rounded coordinates
-      const distance = calculateDistance(
+      const distance = await calculateDistance(
         roundedUserLat,
         roundedUserLng,
         roundedStoreLat,
@@ -207,7 +188,7 @@ export const Routes = () => {
       });
 
       // Enhanced debug logging
-      debugDistanceCalculation(
+      await debugDistanceCalculation(
         roundedUserLat,
         roundedUserLng,
         roundedStoreLat,
@@ -295,36 +276,6 @@ export const Routes = () => {
         <Card className="p-4">
           <h2 className="text-h2 mb-4">Set Your Assigned Location</h2>
           
-          {/* Google Maps API Key Input */}
-          {showApiKeyInput && (
-            <div className="mb-4 p-4 bg-accent rounded-lg border border-border">
-              <p className="text-sm font-medium text-foreground mb-2">Google Maps API Key Required</p>
-              <p className="text-xs text-muted-foreground mb-3">
-                Enter your Google Maps API key to calculate accurate distances. 
-                Get your API key from{' '}
-                <a 
-                  href="https://console.cloud.google.com/google/maps-apis" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-primary underline"
-                >
-                  Google Cloud Console
-                </a>
-              </p>
-              <div className="flex gap-2">
-                <Input
-                  type="text"
-                  placeholder="Enter API Key"
-                  value={googleMapsApiKey}
-                  onChange={(e) => setGoogleMapsApiKeyState(e.target.value)}
-                  className="flex-1"
-                />
-                <Button onClick={handleApiKeySave} size="sm">
-                  Save
-                </Button>
-              </div>
-            </div>
-          )}
           
           {/* Current Location Display */}
           <div className="mb-4 p-3 bg-muted rounded-lg">

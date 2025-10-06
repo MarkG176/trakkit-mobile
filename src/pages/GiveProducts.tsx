@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { RecordingIndicator } from "@/components/RecordingIndicator";
 import { EngagementModal } from "@/components/EngagementModal";
-import { ArrowLeft, Mic, MicOff } from "lucide-react";
+import { ArrowLeft, Mic, MicOff, Plus, Minus, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,16 +28,25 @@ interface InventoryItem {
   };
 }
 
+interface SelectedProduct {
+  id: string;
+  name: string;
+  quantity: number;
+  maxQuantity: number;
+  productVariantId: string;
+}
+
 export const GiveProducts = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [selectedProduct, setSelectedProduct] = useState("");
-  const [quantity, setQuantity] = useState("1");
+  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
   const [recipientName, setRecipientName] = useState("");
   const [recipientPhone, setRecipientPhone] = useState("");
+  const [notes, setNotes] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [showEngagementModal, setShowEngagementModal] = useState(false);
+  const [showRecipientModal, setShowRecipientModal] = useState(false);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -117,21 +126,58 @@ export const GiveProducts = () => {
     setRecordingDuration(0);
   };
 
-  const handleRecordGiveaway = () => {
-    if (!selectedProduct) {
-      toast({
-        title: "Missing Information",
-        description: "Please select a product to give away",
-        variant: "destructive",
-      });
-      return;
+  const addProduct = (item: InventoryItem) => {
+    const existingProduct = selectedProducts.find(p => p.id === item.id);
+    
+    if (existingProduct) {
+      if (existingProduct.quantity < existingProduct.maxQuantity) {
+        setSelectedProducts(prev => 
+          prev.map(p => 
+            p.id === item.id 
+              ? { ...p, quantity: p.quantity + 1 }
+              : p
+          )
+        );
+      }
+    } else {
+      setSelectedProducts(prev => [...prev, {
+        id: item.id,
+        name: item.products.name,
+        quantity: 1,
+        maxQuantity: item.amount_issued,
+        productVariantId: item.product_variant_id
+      }]);
     }
+  };
 
-    const selectedItem = inventory.find(item => item.id === selectedProduct);
-    if (selectedItem && selectedItem.amount_issued <= 0) {
+  const removeProduct = (itemId: string) => {
+    const existingProduct = selectedProducts.find(p => p.id === itemId);
+    
+    if (existingProduct) {
+      if (existingProduct.quantity > 1) {
+        setSelectedProducts(prev => 
+          prev.map(p => 
+            p.id === itemId 
+              ? { ...p, quantity: p.quantity - 1 }
+              : p
+          )
+        );
+      } else {
+        setSelectedProducts(prev => prev.filter(p => p.id !== itemId));
+      }
+    }
+  };
+
+  const getProductQuantity = (itemId: string) => {
+    const product = selectedProducts.find(p => p.id === itemId);
+    return product ? product.quantity : 0;
+  };
+
+  const handleRecordGiveaway = () => {
+    if (selectedProducts.length === 0) {
       toast({
-        title: "Out of Stock",
-        description: "This product is not available in your inventory",
+        title: "No Products Selected",
+        description: "Please select at least one product to give away",
         variant: "destructive",
       });
       return;
@@ -141,19 +187,44 @@ export const GiveProducts = () => {
       stopRecording();
     }
     
+    setShowRecipientModal(true);
+  };
+
+  const handleRecipientSubmit = () => {
+    setShowRecipientModal(false);
     setShowEngagementModal(true);
   };
 
-  const handleEngagementSave = (engagementData: any) => {
-    toast({
-      title: "Giveaway recorded successfully!",
-      description: "+8 points earned. Engagement logged.",
-    });
-    navigate("/");
+  const handleEngagementSave = async (engagementData: any) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Here you would save the giveaway data to Supabase
+      // This includes selectedProducts, recipientName, notes, and engagementData
+      console.log('Giveaway data to save:', {
+        selectedProducts,
+        recipientName,
+        recipientPhone,
+        notes,
+        engagementData
+      });
+
+      toast({
+        title: "Giveaway recorded successfully!",
+        description: "+8 points earned. Engagement logged.",
+      });
+      navigate("/");
+    } catch (error) {
+      console.error('Error saving giveaway:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save giveaway data.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const selectedProductData = inventory.find(item => item.id === selectedProduct);
-  
   // Filter inventory based on search term
   const filteredInventory = inventory.filter(item =>
     item.products.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -179,118 +250,185 @@ export const GiveProducts = () => {
         <RecordingIndicator isRecording={isRecording} duration={recordingDuration} />
       </div>
 
-      <div className="flex h-[calc(100vh-140px)]">
-        {/* Left Side - Product Selection */}
-        <div className="flex-1 p-4 border-r">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-5 h-5 bg-primary rounded flex items-center justify-center">
-              <span className="text-xs text-white">📦</span>
-            </div>
-            <h2 className="text-h3 text-black">Select Product</h2>
-          </div>
-          
-          {/* Search */}
-          <div className="relative mb-4">
-            <Input
-              placeholder="Search products by name or SKU..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-3"
-            />
-          </div>
-
-          {/* Product Grid */}
-          {loading ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="text-muted-foreground">Loading inventory...</div>
-            </div>
-          ) : filteredInventory.length === 0 ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="text-muted-foreground text-center">
-                <div className="text-2xl mb-2">📦</div>
-                <div>
-                  {inventory.length === 0 
-                    ? "No products in your inventory" 
-                    : "No products match your search"}
-                </div>
-                <div className="text-sm">
-                  {inventory.length === 0 
-                    ? "Contact your supervisor to get products assigned" 
-                    : "Try adjusting your search terms"}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-4 overflow-y-auto">
-              {filteredInventory.map((item) => (
-                <Card key={item.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="aspect-square bg-muted rounded-lg flex items-center justify-center mb-3">
-                      <div className="w-12 h-12 border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center">
-                        <span className="text-2xl">📦</span>
-                      </div>
-                    </div>
-                    <h3 className="font-medium text-sm text-black mb-1">{item.products.name}</h3>
-                    <p className="text-xs text-muted-foreground mb-1">
-                      SKU: {item.product_variant_id.slice(0, 8)}
-                    </p>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      Available: {item.amount_issued}
-                    </p>
-                    <Button
-                      size="sm"
-                      variant={selectedProduct === item.id ? "default" : "outline"}
-                      className="w-full"
-                      onClick={() => setSelectedProduct(item.id)}
-                      disabled={item.amount_issued <= 0}
-                    >
-                      {selectedProduct === item.id ? "Selected" : 
-                       item.amount_issued <= 0 ? "Out of Stock" : "Select"}
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Right Side - Recipient Information */}
-        <div className="w-80 p-4 bg-muted/30">
-          <h2 className="text-h3 mb-4 text-black">Recipient Information (Optional)</h2>
-          
-          <div className="space-y-4 mb-6">
-            <div>
-              <Label htmlFor="recipient-name" className="text-sm">Recipient Name</Label>
-              <Input
-                id="recipient-name"
-                value={recipientName}
-                onChange={(e) => setRecipientName(e.target.value)}
-                placeholder="Enter recipient's name"
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="notes" className="text-sm">Notes</Label>
-              <textarea
-                id="notes"
-                rows={4}
-                className="w-full mt-1 px-3 py-2 border border-input bg-background rounded-md text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                placeholder="e.g. Given at Central Park event. Product demo at mall..."
-              />
-            </div>
-          </div>
-
-          {/* Record Giveaway Button */}
-          <Button
-            onClick={handleRecordGiveaway}
-            className="w-full h-12 text-lg bg-primary hover:bg-primary/90"
-            disabled={!selectedProduct}
-          >
-            Record Giveaway
-          </Button>
+      {/* Search Bar */}
+      <div className="p-4 border-b">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={16} />
+          <Input
+            placeholder="Search products by name or SKU..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
         </div>
       </div>
+
+      {/* Selected Products Summary */}
+      {selectedProducts.length > 0 && (
+        <div className="p-4 bg-muted/30 border-b">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-medium text-sm">Selected Products</h3>
+            <span className="text-xs text-muted-foreground">
+              {selectedProducts.reduce((sum, p) => sum + p.quantity, 0)} items
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {selectedProducts.map((product) => (
+              <div key={product.id} className="flex items-center gap-1 bg-primary text-primary-foreground px-2 py-1 rounded-full text-xs">
+                <span>{product.name}</span>
+                <span className="font-medium">×{product.quantity}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Product Grid */}
+      <div className="p-4">
+        {loading ? (
+          <div className="flex items-center justify-center h-32">
+            <div className="text-muted-foreground">Loading inventory...</div>
+          </div>
+        ) : filteredInventory.length === 0 ? (
+          <div className="flex items-center justify-center h-32">
+            <div className="text-muted-foreground text-center">
+              <div className="text-2xl mb-2">📦</div>
+              <div>
+                {inventory.length === 0 
+                  ? "No products in your inventory" 
+                  : "No products match your search"}
+              </div>
+              <div className="text-sm">
+                {inventory.length === 0 
+                  ? "Contact your supervisor to get products assigned" 
+                  : "Try adjusting your search terms"}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 gap-3">
+            {filteredInventory.map((item) => {
+              const quantity = getProductQuantity(item.id);
+              const isSelected = quantity > 0;
+              
+              return (
+                <div key={item.id} className="flex flex-col items-center">
+                  <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center mb-2 relative">
+                    <span className="text-2xl">📦</span>
+                    {isSelected && (
+                      <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                        {quantity}
+                      </div>
+                    )}
+                  </div>
+                  <h3 className="font-medium text-xs text-center mb-1 line-clamp-2">{item.products.name}</h3>
+                  <p className="text-xs text-muted-foreground mb-2 text-center">
+                    Available: {item.amount_issued}
+                  </p>
+                  
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-6 h-6 p-0"
+                      onClick={() => removeProduct(item.id)}
+                      disabled={quantity === 0}
+                    >
+                      <Minus size={12} />
+                    </Button>
+                    <span className="text-xs font-medium min-w-[20px] text-center">
+                      {quantity}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-6 h-6 p-0"
+                      onClick={() => addProduct(item)}
+                      disabled={quantity >= item.amount_issued}
+                    >
+                      <Plus size={12} />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Bottom Action Button */}
+      <div className="p-4 border-t bg-background">
+        <Button
+          onClick={handleRecordGiveaway}
+          className="w-full h-12 text-lg"
+          disabled={selectedProducts.length === 0}
+        >
+          {selectedProducts.length === 0 
+            ? "Select Products to Give Away" 
+            : `Record Giveaway (${selectedProducts.reduce((sum, p) => sum + p.quantity, 0)} items)`}
+        </Button>
+      </div>
+
+      {/* Recipient Information Modal */}
+      {showRecipientModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-end z-50">
+          <div className="bg-background w-full rounded-t-lg p-6 max-h-[80vh] overflow-y-auto">
+            <h2 className="text-h2 mb-4">Recipient Information (Optional)</h2>
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <Label htmlFor="recipient-name" className="text-sm">Recipient Name</Label>
+                <Input
+                  id="recipient-name"
+                  value={recipientName}
+                  onChange={(e) => setRecipientName(e.target.value)}
+                  placeholder="Enter recipient's name"
+                  className="mt-1"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="recipient-phone" className="text-sm">Phone Number</Label>
+                <Input
+                  id="recipient-phone"
+                  value={recipientPhone}
+                  onChange={(e) => setRecipientPhone(e.target.value)}
+                  placeholder="Enter recipient's phone number"
+                  className="mt-1"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="notes" className="text-sm">Notes</Label>
+                <textarea
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={4}
+                  className="w-full mt-1 px-3 py-2 border border-input bg-background rounded-md text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  placeholder="e.g. Given at Central Park event. Product demo at mall..."
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowRecipientModal(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleRecipientSubmit}
+                className="flex-1"
+              >
+                Continue
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <EngagementModal
         isOpen={showEngagementModal}
