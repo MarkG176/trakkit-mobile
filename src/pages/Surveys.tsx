@@ -106,7 +106,7 @@ export const Surveys = () => {
       if (surveyTemplates) {
         // Fetch response counts for each survey
         const surveysWithResponses = await Promise.all(
-          surveyTemplates.map(async (template: SurveyTemplate) => {
+          surveyTemplates.map(async (template) => {
             const { count: responseCount } = await supabase
               .from('survey_responses')
               .select('*', { count: 'exact', head: true })
@@ -123,7 +123,7 @@ export const Surveys = () => {
                 : '10 min',
               questions: Array.isArray(template.questions) ? template.questions.length : 0,
               totalQuestions: Array.isArray(template.questions) ? template.questions.length : 0,
-              points: calculatePoints(template.questions, template.estimated_duration_minutes),
+              points: calculatePoints(Array.isArray(template.questions) ? template.questions : [], template.estimated_duration_minutes),
               responses: responseCount || 0,
               progress: 0,
               currentQuestion: 1
@@ -416,7 +416,7 @@ export const Surveys = () => {
         <div className="p-4 space-y-6">
           {activeSurvey && surveys.find(s => s.id === activeSurvey.id) && (() => {
             const surveyTemplate = surveys.find(s => s.id === activeSurvey.id);
-            const questions = surveyTemplate?.questions || [];
+            const questions = Array.isArray(surveyTemplate?.questions) ? surveyTemplate.questions : [];
             
             return questions.map((question: any, index: number) => (
               <Card key={question.id}>
