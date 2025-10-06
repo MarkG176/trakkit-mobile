@@ -63,41 +63,8 @@ class WorkspaceService {
       return;
     }
 
-    try {
-      const { data, error } = await supabase
-        .from('user_workspaces')
-        .select(`
-          id,
-          user_id,
-          workspace_id,
-          role,
-          joined_at,
-          workspaces:workspace_id (
-            id,
-            name,
-            description,
-            created_at,
-            updated_at
-          )
-        `)
-        .eq('user_id', this.user.id);
-
-      if (error) {
-        console.error('Error loading user workspaces:', error);
-        return;
-      }
-
-      this.userWorkspaces = data || [];
-      
-      // If current workspace is not accessible, switch to first available
-      if (this.currentWorkspaceId && !this.hasWorkspaceAccess(this.currentWorkspaceId)) {
-        if (this.userWorkspaces.length > 0) {
-          await this.setCurrentWorkspace(this.userWorkspaces[0].workspace_id);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading user workspaces:', error);
-    }
+    // Temporarily disabled - workspace table not yet created
+    this.userWorkspaces = [];
   }
 
   /**
