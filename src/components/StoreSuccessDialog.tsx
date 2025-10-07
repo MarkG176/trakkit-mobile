@@ -1,15 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart, Gift, MessageSquare, ClipboardList, Star, Plus, Minus, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 
 interface StoreSuccessDialogProps {
   open: boolean;
@@ -55,13 +54,14 @@ interface InventoryItem {
 
 export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty }: StoreSuccessDialogProps) => {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [activeAction, setActiveAction] = useState<ActionType>(null);
   const [loading, setLoading] = useState(false);
 
   // Survey state
   const [selectedSurvey, setSelectedSurvey] = useState("");
   const [surveys, setSurveys] = useState<any[]>([]);
+  const [surveyQuestions, setSurveyQuestions] = useState<any[]>([]);
+  const [surveyResponses, setSurveyResponses] = useState<{ [questionId: string]: any }>({});
 
   // Sale state
   const [productVariantId, setProductVariantId] = useState("");
@@ -83,8 +83,20 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
     
     // Load data based on action
     if (action === "survey") {
-      const { data } = await supabase.from('survey_templates').select('*');
-      setSurveys(data || []);
+      const { data } = await supabase
+        .from('survey_templates')
+        .select('*')
+        .eq('is_published', true)
+        .eq('status', 'active');
+      
+      const publishedSurveys = data || [];
+      setSurveys(publishedSurveys);
+      
+      // Auto-open if only one survey
+      if (publishedSurveys.length === 1) {
+        setSelectedSurvey(publishedSurveys[0].id);
+        setSurveyQuestions(Array.isArray(publishedSurveys[0].questions) ? publishedSurveys[0].questions : []);
+      }
     } else if (action === "sale") {
       const { data } = await supabase.from('product_variants').select('*, product:product_id(name, category)');
       setProducts(data || []);
@@ -115,6 +127,21 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
     }
   };
 
+  const handleSurveySelect = (surveyId: string) => {
+    setSelectedSurvey(surveyId);
+    const survey = surveys.find(s => s.id === surveyId);
+    if (survey) {
+      setSurveyQuestions(Array.isArray(survey.questions) ? survey.questions : []);
+    }
+  };
+
+  const handleAnswerChange = (questionId: string, answer: any) => {
+    setSurveyResponses(prev => ({
+      ...prev,
+      [questionId]: answer
+    }));
+  };
+
   const handleSubmitSurvey = async () => {
     if (!selectedSurvey) return;
     
@@ -125,27 +152,52 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
 
       const location = await getCurrentLocation();
 
-      const { error } = await supabase.from('interactions').insert({
-        task_id: null,
-        interaction_type: 'survey',
-        survey_template_id: selectedSurvey,
-        customer_name: storeName,
-        outcome: 'completed',
-        quantity_sold: 0,
-        latitude: location.latitude,
-        longitude: location.longitude,
-        timestamp: new Date().toISOString()
-      } as any);
+      // Create interaction record
+      const { data: interaction, error: interactionError } = await supabase
+        .from('interactions')
+        .insert({
+          task_id: null,
+          interaction_type: 'survey',
+          survey_template_id: selectedSurvey,
+          customer_name: storeName,
+          outcome: 'completed',
+          quantity_sold: 0,
+          latitude: location.latitude,
+          longitude: location.longitude,
+          timestamp: new Date().toISOString()
+        } as any)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (interactionError) throw interactionError;
+
+      // Save survey responses
+      const { error: surveyResponseError } = await supabase
+        .from('survey_responses')
+        .insert({
+          agent_id: user.id,
+          survey_template_id: selectedSurvey,
+          interaction_id: interaction.id,
+          responses: surveyResponses,
+          started_at: new Date().toISOString(),
+          completed_at: new Date().toISOString(),
+          is_completed: true,
+          completion_status: 'completed',
+          location_lat: location.latitude,
+          location_lng: location.longitude
+        });
+
+      if (surveyResponseError) throw surveyResponseError;
 
       toast({
-        title: "Survey Logged",
-        description: "Survey has been recorded successfully.",
+        title: "Survey Completed",
+        description: "Survey responses have been recorded successfully.",
       });
       
-      onOpenChange(false);
-      navigate("/");
+      // Reset and close
+      setActiveAction(null);
+      setSurveyResponses({});
+      setSurveyQuestions([]);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -218,8 +270,10 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
         description: "Sale has been recorded successfully.",
       });
       
-      onOpenChange(false);
-      navigate("/");
+      // Reset and return to actions
+      setActiveAction(null);
+      setProductVariantId("");
+      setQuantity("");
     } catch (error: any) {
       toast({
         title: "Error",
@@ -263,8 +317,10 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
         description: "Giveaway has been recorded successfully.",
       });
       
-      onOpenChange(false);
-      navigate("/");
+      // Reset and return to actions
+      setActiveAction(null);
+      setSelectedProducts([]);
+      setGiveawayNotes("");
     } catch (error: any) {
       toast({
         title: "Error",
@@ -305,8 +361,11 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
         description: "Interaction has been recorded successfully.",
       });
       
-      onOpenChange(false);
-      navigate("/");
+      // Reset and return to actions
+      setActiveAction(null);
+      setInteractionType("");
+      setInteractionNotes("");
+      setSentiment(0);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -383,24 +442,78 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
       case "survey":
         return (
           <div className="space-y-4 mt-4">
-            <div>
-              <Label>Select Survey</Label>
-              <Select value={selectedSurvey} onValueChange={setSelectedSurvey}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a survey" />
-                </SelectTrigger>
-                <SelectContent>
-                  {surveys.map((survey) => (
-                    <SelectItem key={survey.id} value={survey.id}>
-                      {survey.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button onClick={handleSubmitSurvey} disabled={!selectedSurvey || loading} className="w-full">
-              {loading ? "Submitting..." : "Submit Survey"}
-            </Button>
+            {surveys.length > 1 && !surveyQuestions.length && (
+              <div>
+                <Label>Select Survey</Label>
+                <Select value={selectedSurvey} onValueChange={handleSurveySelect}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a survey" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {surveys.map((survey) => (
+                      <SelectItem key={survey.id} value={survey.id}>
+                        {survey.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
+            {surveyQuestions.length > 0 && (
+              <div className="space-y-4">
+                {surveyQuestions.map((question: any, index: number) => (
+                  <Card key={question.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-2 mb-3">
+                        <span className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-sm font-medium">
+                          {index + 1}
+                        </span>
+                        <div className="flex-1">
+                          <h3 className="font-medium mb-1">{question.question}</h3>
+                          {question.required && (
+                            <span className="inline-block bg-destructive/10 text-destructive px-2 py-0.5 rounded text-xs font-medium">
+                              Required
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2 ml-8">
+                        {(question.type === 'rating' || question.type === 'multiple_choice') && question.options && (
+                          question.options.map((option: string, optionIndex: number) => (
+                            <label key={optionIndex} className="flex items-center space-x-2 p-2 border rounded hover:bg-accent cursor-pointer">
+                              <input 
+                                type="radio" 
+                                name={question.id} 
+                                value={option}
+                                checked={surveyResponses[question.id] === option}
+                                onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                                className="text-primary" 
+                              />
+                              <span className="text-sm">{option}</span>
+                            </label>
+                          ))
+                        )}
+                        
+                        {question.type === 'text' && (
+                          <Textarea
+                            value={surveyResponses[question.id] || ''}
+                            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                            placeholder="Enter your response..."
+                            rows={3}
+                          />
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                
+                <Button onClick={handleSubmitSurvey} disabled={loading} className="w-full">
+                  {loading ? "Submitting..." : "Submit Survey"}
+                </Button>
+              </div>
+            )}
           </div>
         );
 
