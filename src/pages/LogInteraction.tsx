@@ -92,15 +92,12 @@ export const LogInteraction = () => {
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="visit">Visit</SelectItem>
-                    <SelectItem value="call">Call</SelectItem>
-                    <SelectItem value="note">Note</SelectItem>
-                    <SelectItem value="photo">Photo</SelectItem>
-                    <SelectItem value="survey">Survey</SelectItem>
-                    <SelectItem value="sale">Sale</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                    <SelectItem value="not_answered">Not Answered</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="other">General Meeting</SelectItem>
+                    <SelectItem value="call">Consultation</SelectItem>
+                    <SelectItem value="note">Information Sharing</SelectItem>
+                    <SelectItem value="call">Follow-up Call</SelectItem>
+                    <SelectItem value="visit">Site Visit</SelectItem>
+                    <SelectItem value="survey">Customer Feedback</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
