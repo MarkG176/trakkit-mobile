@@ -173,7 +173,7 @@ export const GiveProducts = () => {
     return product ? product.quantity : 0;
   };
 
-  const handleRecordGiveaway = () => {
+  const handleRecordGiveaway = async () => {
     if (selectedProducts.length === 0) {
       toast({
         title: "No Products Selected",
@@ -187,15 +187,7 @@ export const GiveProducts = () => {
       stopRecording();
     }
     
-    setShowRecipientModal(true);
-  };
-
-  const handleRecipientSubmit = () => {
-    setShowRecipientModal(false);
-    setShowEngagementModal(true);
-  };
-
-  const handleEngagementSave = async (engagementData: any) => {
+    // Submit directly without engagement modal
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -235,10 +227,6 @@ export const GiveProducts = () => {
           recipient_name: recipientName || null,
           recipient_phone: recipientPhone || null,
           notes: notes || null,
-          engagement_quality: engagementData.quality || null,
-          engagement_duration: engagementData.duration || null,
-          customer_interest_level: engagementData.interestLevel || null,
-          follow_up_required: engagementData.followUpRequired || false,
           location_lat: location.latitude,
           location_lng: location.longitude,
         });
@@ -250,7 +238,7 @@ export const GiveProducts = () => {
 
       toast({
         title: "Giveaway recorded successfully!",
-        description: "+8 points earned. Engagement logged.",
+        description: "+8 points earned.",
       });
       navigate("/");
     } catch (error) {
@@ -262,6 +250,7 @@ export const GiveProducts = () => {
       });
     }
   };
+
 
   // Filter inventory based on search term
   const filteredInventory = inventory.filter(item =>
@@ -407,73 +396,6 @@ export const GiveProducts = () => {
         </Button>
       </div>
 
-      {/* Recipient Information Modal */}
-      {showRecipientModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-end z-50">
-          <div className="bg-background w-full rounded-t-lg p-6 max-h-[80vh] overflow-y-auto">
-            <h2 className="text-h2 mb-4">Recipient Information (Optional)</h2>
-            
-            <div className="space-y-4 mb-6">
-              <div>
-                <Label htmlFor="recipient-name" className="text-sm">Recipient Name</Label>
-                <Input
-                  id="recipient-name"
-                  value={recipientName}
-                  onChange={(e) => setRecipientName(e.target.value)}
-                  placeholder="Enter recipient's name"
-                  className="mt-1"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="recipient-phone" className="text-sm">Phone Number</Label>
-                <Input
-                  id="recipient-phone"
-                  value={recipientPhone}
-                  onChange={(e) => setRecipientPhone(e.target.value)}
-                  placeholder="Enter recipient's phone number"
-                  className="mt-1"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="notes" className="text-sm">Notes</Label>
-                <textarea
-                  id="notes"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={4}
-                  className="w-full mt-1 px-3 py-2 border border-input bg-background rounded-md text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  placeholder="e.g. Given at Central Park event. Product demo at mall..."
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setShowRecipientModal(false)}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleRecipientSubmit}
-                className="flex-1"
-              >
-                Continue
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <EngagementModal
-        isOpen={showEngagementModal}
-        onClose={() => setShowEngagementModal(false)}
-        onSave={handleEngagementSave}
-        activityType="giveaway"
-      />
     </MobileLayout>
   );
 };

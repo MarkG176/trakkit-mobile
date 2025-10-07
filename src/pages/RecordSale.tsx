@@ -61,12 +61,29 @@ export const RecordSale = () => {
     }
   };
 
-  const handleCompleteSale = () => {
+  const handleCompleteSale = async () => {
     if (cartItems.length === 0) {
       return;
     }
     
-    setShowEngagementModal(true);
+    // Submit sale directly without engagement modal
+    const success = await submitSale({
+      items: cartItems.map(item => ({
+        productVariantId: item.id,
+        quantity: item.quantity,
+        price: item.price
+      })),
+      customerName,
+      customerPhone,
+      customerEmail,
+      engagementType: 'direct',
+      notes: '',
+      sentiment: 0
+    });
+
+    if (success) {
+      navigate("/");
+    }
   };
 
   const handleEngagementSave = async (engagementData: any) => {
@@ -320,16 +337,6 @@ export const RecordSale = () => {
               />
             </div>
 
-            <div>
-              <Label htmlFor="customer-email" className="text-sm font-medium">Email Address</Label>
-              <Input
-                id="customer-email"
-                value={customerEmail}
-                onChange={(e) => setCustomerEmail(e.target.value)}
-                placeholder="Enter email address"
-                className="mt-2"
-              />
-            </div>
           </div>
 
           <div className="mt-8 space-y-3">
@@ -350,12 +357,6 @@ export const RecordSale = () => {
         </SheetContent>
       </Sheet>
 
-      <EngagementModal
-        isOpen={showEngagementModal}
-        onClose={() => setShowEngagementModal(false)}
-        onSave={handleEngagementSave}
-        activityType="sale"
-      />
     </MobileLayout>
   );
 };

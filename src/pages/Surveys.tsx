@@ -82,6 +82,13 @@ export const Surveys = () => {
     fetchSurveyTemplates();
   }, []);
 
+  // Auto-open survey if only one exists
+  useEffect(() => {
+    if (!loading && surveys.length === 1 && !activeSurvey) {
+      handleStartSurvey(surveys[0]);
+    }
+  }, [surveys, loading]);
+
   const fetchSurveyTemplates = async () => {
     try {
       setLoading(true);
@@ -193,11 +200,12 @@ export const Surveys = () => {
     }));
   };
 
-  const handleSubmitSurvey = () => {
+  const handleSubmitSurvey = async () => {
     if (isRecording) {
       stopRecording();
     }
-    setShowEngagementModal(true);
+    // Submit directly without engagement modal
+    await submitSurveyResponse({});
   };
 
   const submitSurveyResponse = async (engagementData: any) => {
@@ -253,15 +261,10 @@ export const Surveys = () => {
         .insert({
           task_id: currentTask?.id,
           interaction_type: 'survey',
-          customer_name: engagementData.customerName || null,
-          customer_phone: engagementData.customerPhone || null,
           outcome: 'completed',
           quantity_sold: 0,
           metadata: {
             survey_template_id: activeSurvey.id,
-            engagement_type: engagementData.engagementType,
-            notes: engagementData.notes,
-            sentiment: engagementData.sentiment,
             recording_duration: recordingDuration
           }
         })
@@ -307,14 +310,12 @@ export const Surveys = () => {
         description: `+${activeSurvey.points} points earned. Survey responses saved.`,
       });
 
-      // Reset state
+      // Reset state and navigate back
       setActiveSurvey(null);
       setSurveyResponses({});
       setSurveyStartTime(null);
-      setShowEngagementModal(false);
       
-      // Refresh surveys to update response counts
-      fetchSurveyTemplates();
+      navigate("/");
 
     } catch (error) {
       console.error('Error submitting survey:', error);
@@ -328,9 +329,6 @@ export const Surveys = () => {
     }
   };
 
-  const handleEngagementSave = (engagementData: any) => {
-    submitSurveyResponse(engagementData);
-  };
 
   // Pre-survey prompt
   if (showPreSurvey && activeSurvey) {
@@ -548,12 +546,6 @@ export const Surveys = () => {
           </div>
         </div>
 
-        <EngagementModal
-          isOpen={showEngagementModal}
-          onClose={() => setShowEngagementModal(false)}
-          onSave={handleEngagementSave}
-          activityType="survey"
-        />
       </MobileLayout>
     );
   }
@@ -622,22 +614,6 @@ export const Surveys = () => {
           ))
         )}
         
-        {/* Survey Tips */}
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                💡
-              </div>
-              <div>
-                <h4 className="font-semibold text-blue-900 mb-1">Survey Tips</h4>
-                <p className="text-sm text-blue-800">
-                  Answer honestly and thoughtfully to provide valuable insights. Your responses help improve our products and services.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </MobileLayout>
   );

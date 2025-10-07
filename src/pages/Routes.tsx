@@ -326,16 +326,6 @@ export const Routes = () => {
         <p className="text-sm opacity-90">Manage and optimize your routes</p>
       </div>
 
-      {/* Interactive Map Placeholder */}
-      <div className="relative h-64 bg-muted m-4 rounded-lg overflow-hidden border border-border">
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-accent to-muted">
-          <div className="text-center">
-            <MapPin size={48} className="text-primary mx-auto mb-3 opacity-60" />
-            <p className="text-base font-medium text-foreground">Interactive Route Map</p>
-            <p className="text-xs text-muted-foreground mt-1">Routes and agent locations will display here</p>
-          </div>
-        </div>
-      </div>
 
       {/* Location Selection Form */}
       <div className="px-4 pb-20">
