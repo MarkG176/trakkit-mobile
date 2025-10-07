@@ -19,14 +19,6 @@ interface StoreSuccessDialogProps {
 
 type ActionType = null | "survey" | "sale" | "giveaway" | "interaction";
 
-const interactionTypes = [
-  "General Meeting",
-  "Consultation",
-  "Information Sharing",
-  "Follow-up Call",
-  "Site Visit",
-  "Customer Feedback"
-];
 
 interface SelectedProduct {
   id: string;
@@ -74,7 +66,6 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
   const [giveawayNotes, setGiveawayNotes] = useState("");
 
   // Interaction state
-  const [interactionType, setInteractionType] = useState("");
   const [interactionNotes, setInteractionNotes] = useState("");
   const [sentiment, setSentiment] = useState(0);
 
@@ -341,8 +332,6 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
   };
 
   const handleSubmitInteraction = async () => {
-    if (!interactionType) return;
-    
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -352,11 +341,15 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
 
       const { error } = await supabase.from('interactions').insert({
         task_id: null,
-        interaction_type: interactionType,
+        interaction_type: 'Engaged',
         customer_name: storeName,
         outcome: 'completed',
         quantity_sold: 0,
-        metadata: { notes: interactionNotes, sentiment },
+        metadata: { 
+          notes: interactionNotes || `Automatic engagement log for ${storeName}`, 
+          sentiment: sentiment || 5,
+          store_county: storeCounty
+        },
         latitude: location.latitude,
         longitude: location.longitude,
         timestamp: new Date().toISOString()
@@ -365,13 +358,12 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
       if (error) throw error;
 
       toast({
-        title: "Interaction Logged",
-        description: "Interaction has been recorded successfully.",
+        title: "Engagement Logged",
+        description: "Engagement interaction has been recorded successfully.",
       });
       
       // Reset and return to actions
       setActiveAction(null);
-      setInteractionType("");
       setInteractionNotes("");
       setSentiment(0);
     } catch (error: any) {
@@ -613,32 +605,23 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
       case "interaction":
         return (
           <div className="space-y-4 mt-4">
-            <div>
-              <Label>Interaction Type</Label>
-              <Select value={interactionType} onValueChange={setInteractionType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {interactionTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800 font-medium">Automatic Engagement Log</p>
+              <p className="text-xs text-blue-600 mt-1">
+                This will automatically log an "Engaged" interaction for {storeName}
+              </p>
             </div>
             <div>
-              <Label>Notes</Label>
+              <Label>Additional Notes (Optional)</Label>
               <Textarea
                 value={interactionNotes}
                 onChange={(e) => setInteractionNotes(e.target.value)}
-                placeholder="Add details..."
+                placeholder="Add any additional details about the engagement..."
                 rows={3}
               />
             </div>
             <div>
-              <Label>Customer Sentiment</Label>
+              <Label>Customer Sentiment (Optional)</Label>
               <div className="flex gap-1 mt-2">
                 {[1, 2, 3, 4, 5].map((rating) => (
                   <button
@@ -658,8 +641,8 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
                 ))}
               </div>
             </div>
-            <Button onClick={handleSubmitInteraction} disabled={!interactionType || loading} className="w-full">
-              {loading ? "Saving..." : "Save Interaction"}
+            <Button onClick={handleSubmitInteraction} disabled={loading} className="w-full">
+              {loading ? "Logging Engagement..." : "Log Engagement"}
             </Button>
           </div>
         );
