@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { calculateGoogleMapsDistance } from "@/utils/googleMapsDistance";
 import { calculateDistance, formatDistance, debugDistanceCalculation } from "@/utils/distanceCalculator";
 import { useAgentActions } from "@/hooks/useAgentActions";
+import { StoreSuccessDialog } from "@/components/StoreSuccessDialog";
 
 interface Store {
   id: string;
@@ -34,6 +35,8 @@ export const Routes = () => {
   const [newStoreName, setNewStoreName] = useState("");
   const [newStoreCounty, setNewStoreCounty] = useState("");
   const [isSubmittingStore, setIsSubmittingStore] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [addedStore, setAddedStore] = useState<{ name: string; county: string } | null>(null);
   const { toast } = useToast();
   const { recordLocationSet } = useAgentActions();
 
@@ -156,10 +159,12 @@ export const Routes = () => {
         throw error;
       }
 
-      toast({
-        title: "Location Added Successfully!",
-        description: `${newStoreName} has been added to the stores database.`,
+      // Store the added store info and show success dialog
+      setAddedStore({
+        name: newStoreName.trim(),
+        county: newStoreCounty.trim()
       });
+      setShowSuccessDialog(true);
 
       // Reset form
       setNewStoreName("");
@@ -482,6 +487,15 @@ export const Routes = () => {
           )}
         </Card>
       </div>
+
+      {addedStore && (
+        <StoreSuccessDialog
+          open={showSuccessDialog}
+          onOpenChange={setShowSuccessDialog}
+          storeName={addedStore.name}
+          storeCounty={addedStore.county}
+        />
+      )}
     </MobileLayout>
   );
 };
