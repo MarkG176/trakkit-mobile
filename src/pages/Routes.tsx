@@ -34,6 +34,16 @@ export const Routes = () => {
   const [showAddLocationForm, setShowAddLocationForm] = useState(false);
   const [newStoreName, setNewStoreName] = useState("");
   const [newStoreCounty, setNewStoreCounty] = useState("");
+
+  // Load last selected county from localStorage on mount
+  useEffect(() => {
+    const lastCounty = localStorage.getItem('lastSelectedCounty');
+    if (lastCounty && counties.includes(lastCounty)) {
+      setNewStoreCounty(lastCounty);
+    } else if (counties.length > 0 && !newStoreCounty) {
+      setNewStoreCounty(counties[0]);
+    }
+  }, [counties]);
   const [isSubmittingStore, setIsSubmittingStore] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [addedStore, setAddedStore] = useState<{ name: string; county: string } | null>(null);
@@ -145,6 +155,9 @@ export const Routes = () => {
     try {
       setIsSubmittingStore(true);
 
+      // Save selected county to localStorage
+      localStorage.setItem('lastSelectedCounty', newStoreCounty.trim());
+
       const { error } = await supabase
         .from('stores')
         .insert({
@@ -168,7 +181,7 @@ export const Routes = () => {
 
       // Reset form
       setNewStoreName("");
-      setNewStoreCounty("");
+      // Don't reset county - keep the last selected value
       setShowAddLocationForm(false);
 
       // Refresh stores list
@@ -438,13 +451,16 @@ export const Routes = () => {
                 <Label htmlFor="store-county" className="text-sm font-medium text-foreground mb-2 block">
                   County
                 </Label>
-                <Input
-                  id="store-county"
-                  value={newStoreCounty}
-                  onChange={(e) => setNewStoreCounty(e.target.value)}
-                  placeholder="Enter county name"
-                  className="w-full"
-                />
+                <Select value={newStoreCounty} onValueChange={setNewStoreCounty}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select county" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {counties.map(county => (
+                      <SelectItem key={county} value={county}>{county}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="p-3 bg-muted rounded-lg">
