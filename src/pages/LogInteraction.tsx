@@ -14,6 +14,7 @@ import { useInteractionForm } from "@/hooks/useInteractionForm";
 export const LogInteraction = () => {
   const navigate = useNavigate();
   const { submitInteraction, loading } = useInteractionForm();
+  const [interactionType, setInteractionType] = useState("visit");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [notes, setNotes] = useState("");
@@ -47,7 +48,7 @@ export const LogInteraction = () => {
     }
 
     const success = await submitInteraction({
-      interactionType: "visit",
+      interactionType,
       customerName,
       customerPhone,
       notes,
@@ -84,6 +85,26 @@ export const LogInteraction = () => {
             <h2 className="text-h3 mb-4 text-black">Interaction Details</h2>
             
             <div className="space-y-4">
+              <div>
+                <Label htmlFor="interaction-type">Interaction Type</Label>
+                <Select value={interactionType} onValueChange={setInteractionType}>
+                  <SelectTrigger id="interaction-type">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="visit">Visit</SelectItem>
+                    <SelectItem value="call">Call</SelectItem>
+                    <SelectItem value="note">Note</SelectItem>
+                    <SelectItem value="photo">Photo</SelectItem>
+                    <SelectItem value="survey">Survey</SelectItem>
+                    <SelectItem value="sale">Sale</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                    <SelectItem value="not_answered">Not Answered</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div>
                 <Label htmlFor="notes">Interaction Notes</Label>
                 <Textarea
