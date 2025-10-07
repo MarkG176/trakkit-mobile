@@ -94,8 +94,12 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
       
       // Auto-open if only one survey
       if (publishedSurveys.length === 1) {
+        console.log('Auto-opening survey:', publishedSurveys[0]);
+        console.log('Survey questions:', publishedSurveys[0].questions);
         setSelectedSurvey(publishedSurveys[0].id);
-        setSurveyQuestions(Array.isArray(publishedSurveys[0].questions) ? publishedSurveys[0].questions : []);
+        const questions = Array.isArray(publishedSurveys[0].questions) ? publishedSurveys[0].questions : [];
+        console.log('Setting questions:', questions);
+        setSurveyQuestions(questions);
       }
     } else if (action === "sale") {
       const { data } = await supabase.from('product_variants').select('*, product:product_id(name, category)');
@@ -131,7 +135,11 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
     setSelectedSurvey(surveyId);
     const survey = surveys.find(s => s.id === surveyId);
     if (survey) {
-      setSurveyQuestions(Array.isArray(survey.questions) ? survey.questions : []);
+      console.log('Survey data:', survey);
+      console.log('Survey questions:', survey.questions);
+      const questions = Array.isArray(survey.questions) ? survey.questions : [];
+      console.log('Parsed questions:', questions);
+      setSurveyQuestions(questions);
     }
   };
 
@@ -463,14 +471,14 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
             {surveyQuestions.length > 0 && (
               <div className="space-y-4">
                 {surveyQuestions.map((question: any, index: number) => (
-                  <Card key={question.id}>
+                  <Card key={question.id || index}>
                     <CardContent className="p-4">
                       <div className="flex items-start gap-2 mb-3">
                         <span className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-sm font-medium">
                           {index + 1}
                         </span>
                         <div className="flex-1">
-                          <h3 className="font-medium mb-1">{question.question}</h3>
+                          <h3 className="font-medium mb-1 text-foreground">{question.question || question.text || 'Question'}</h3>
                           {question.required && (
                             <span className="inline-block bg-destructive/10 text-destructive px-2 py-0.5 rounded text-xs font-medium">
                               Required
