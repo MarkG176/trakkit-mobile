@@ -341,7 +341,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
 
       const { error } = await supabase.from('interactions').insert({
         task_id: null,
-        interaction_type: 'Engaged',
+        interaction_type: 'other',
         customer_name: storeName,
         outcome: 'completed',
         quantity_sold: 0,
