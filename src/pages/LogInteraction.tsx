@@ -3,7 +3,7 @@ import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { RecordingIndicator } from "@/components/RecordingIndicator";
@@ -86,20 +86,33 @@ export const LogInteraction = () => {
             
             <div className="space-y-4">
               <div>
-                <Label htmlFor="interaction-type">Interaction Type</Label>
-                <Select value={interactionType} onValueChange={setInteractionType}>
-                  <SelectTrigger id="interaction-type">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="other">General Meeting</SelectItem>
-                    <SelectItem value="call">Consultation</SelectItem>
-                    <SelectItem value="note">Information Sharing</SelectItem>
-                    <SelectItem value="call">Follow-up Call</SelectItem>
-                    <SelectItem value="visit">Site Visit</SelectItem>
-                    <SelectItem value="survey">Customer Feedback</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label className="mb-3 block">Interaction Type</Label>
+                <RadioGroup value={interactionType} onValueChange={setInteractionType}>
+                  <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent cursor-pointer">
+                    <RadioGroupItem value="other" id="other" />
+                    <Label htmlFor="other" className="flex-1 cursor-pointer">General Meeting</Label>
+                  </div>
+                  <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent cursor-pointer">
+                    <RadioGroupItem value="call" id="call" />
+                    <Label htmlFor="call" className="flex-1 cursor-pointer">Consultation</Label>
+                  </div>
+                  <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent cursor-pointer">
+                    <RadioGroupItem value="note" id="note" />
+                    <Label htmlFor="note" className="flex-1 cursor-pointer">Information Sharing</Label>
+                  </div>
+                  <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent cursor-pointer">
+                    <RadioGroupItem value="call" id="followup" />
+                    <Label htmlFor="followup" className="flex-1 cursor-pointer">Follow-up Call</Label>
+                  </div>
+                  <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent cursor-pointer">
+                    <RadioGroupItem value="visit" id="visit" />
+                    <Label htmlFor="visit" className="flex-1 cursor-pointer">Site Visit</Label>
+                  </div>
+                  <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent cursor-pointer">
+                    <RadioGroupItem value="survey" id="survey" />
+                    <Label htmlFor="survey" className="flex-1 cursor-pointer">Customer Feedback</Label>
+                  </div>
+                </RadioGroup>
               </div>
 
               <div>
