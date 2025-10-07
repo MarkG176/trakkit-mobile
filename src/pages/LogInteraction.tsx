@@ -3,7 +3,6 @@ import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { RecordingIndicator } from "@/components/RecordingIndicator";
@@ -14,7 +13,6 @@ import { useInteractionForm } from "@/hooks/useInteractionForm";
 export const LogInteraction = () => {
   const navigate = useNavigate();
   const { submitInteraction, loading } = useInteractionForm();
-  const [interactionType, setInteractionType] = useState("visit");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [notes, setNotes] = useState("");
@@ -48,7 +46,7 @@ export const LogInteraction = () => {
     }
 
     const success = await submitInteraction({
-      interactionType,
+      interactionType: "engaged",
       customerName,
       customerPhone,
       notes,
@@ -79,39 +77,20 @@ export const LogInteraction = () => {
       </div>
 
       <div className="p-4 space-y-6">
-        {/* Interaction Type */}
+        {/* Interaction Details */}
         <Card>
           <CardContent className="p-4">
             <h2 className="text-h3 mb-4 text-black">Interaction Details</h2>
             
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="interaction-type">Interaction Type</Label>
-                <Select value={interactionType} onValueChange={setInteractionType}>
-                  <SelectTrigger id="interaction-type">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="other">General Meeting</SelectItem>
-                    <SelectItem value="call">Consultation</SelectItem>
-                    <SelectItem value="note">Information Sharing</SelectItem>
-                    <SelectItem value="call">Follow-up Call</SelectItem>
-                    <SelectItem value="visit">Site Visit</SelectItem>
-                    <SelectItem value="survey">Customer Feedback</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="notes">Interaction Notes</Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Add details about the interaction..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={3}
-                />
-              </div>
+            <div>
+              <Label htmlFor="notes">Interaction Notes</Label>
+              <Textarea
+                id="notes"
+                placeholder="Add details about the interaction..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={3}
+              />
             </div>
           </CardContent>
         </Card>
