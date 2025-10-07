@@ -47,7 +47,7 @@ export const LogInteraction = () => {
     }
 
     const success = await submitInteraction({
-      interactionType: "Engaged",
+      interactionType: "visit",
       customerName,
       customerPhone,
       notes,
