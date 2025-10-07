@@ -89,6 +89,7 @@ export const Surveys = () => {
       const { data: surveyTemplates, error } = await supabase
         .from('survey_templates')
         .select('*')
+        .eq('is_published', true)
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
