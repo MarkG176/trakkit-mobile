@@ -11,19 +11,9 @@ import { ArrowLeft, Mic, MicOff, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useInteractionForm } from "@/hooks/useInteractionForm";
 
-const interactionTypes = [
-  "General Meeting",
-  "Consultation", 
-  "Information Sharing",
-  "Follow-up Call",
-  "Site Visit",
-  "Customer Feedback"
-];
-
 export const LogInteraction = () => {
   const navigate = useNavigate();
   const { submitInteraction, loading } = useInteractionForm();
-  const [interactionType, setInteractionType] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [notes, setNotes] = useState("");
@@ -48,7 +38,7 @@ export const LogInteraction = () => {
   };
 
   const handleSaveInteraction = async () => {
-    if (!interactionType || !customerName) {
+    if (!customerName) {
       return;
     }
 
@@ -57,7 +47,7 @@ export const LogInteraction = () => {
     }
 
     const success = await submitInteraction({
-      interactionType,
+      interactionType: "Engaged",
       customerName,
       customerPhone,
       notes,
@@ -94,22 +84,6 @@ export const LogInteraction = () => {
             <h2 className="text-h3 mb-4 text-black">Interaction Details</h2>
             
             <div className="space-y-4">
-              <div>
-                <Label htmlFor="interaction-type">Interaction Type *</Label>
-                <Select value={interactionType} onValueChange={setInteractionType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select interaction type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {interactionTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div>
                 <Label htmlFor="notes">Interaction Notes</Label>
                 <Textarea
@@ -201,7 +175,7 @@ export const LogInteraction = () => {
         <Button
           onClick={handleSaveInteraction}
           className="w-full h-12 text-lg"
-          disabled={!interactionType || !customerName || loading}
+          disabled={!customerName || loading}
         >
           {loading ? "Saving..." : "Save Interaction"}
         </Button>
