@@ -667,6 +667,103 @@ export type Database = {
           },
         ]
       }
+      customer_purchases: {
+        Row: {
+          agent_id: string
+          created_at: string | null
+          customer_id: string
+          id: string
+          location_lat: number | null
+          location_lng: number | null
+          product_variant_id: string | null
+          purchase_date: string | null
+          quantity: number
+          store_id: string | null
+          total_value: number
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string | null
+          customer_id: string
+          id?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          product_variant_id?: string | null
+          purchase_date?: string | null
+          quantity?: number
+          store_id?: string | null
+          total_value?: number
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string | null
+          customer_id?: string
+          id?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          product_variant_id?: string | null
+          purchase_date?: string | null
+          quantity?: number
+          store_id?: string | null
+          total_value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_purchases_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_purchases_product_variant_id_fkey"
+            columns: ["product_variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_purchases_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          county: string | null
+          created_at: string | null
+          id: string
+          location_lat: number | null
+          location_lng: number | null
+          name: string
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          county?: string | null
+          created_at?: string | null
+          id?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          name: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          county?: string | null
+          created_at?: string | null
+          id?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          name?: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       daily_sales_tracking: {
         Row: {
           agent_id: string
@@ -2553,6 +2650,88 @@ export type Database = {
           },
         ]
       }
+      user_workspaces: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          role: string
+          updated_at: string | null
+          user_id: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          role: string
+          updated_at?: string | null
+          user_id?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          role?: string
+          updated_at?: string | null
+          user_id?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_workspaces_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_invitations: {
+        Row: {
+          created_at: string | null
+          email: string
+          expires_at: string | null
+          id: string
+          invited_by: string | null
+          role: string
+          status: string | null
+          updated_at: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          expires_at?: string | null
+          id?: string
+          invited_by?: string | null
+          role: string
+          status?: string | null
+          updated_at?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          expires_at?: string | null
+          id?: string
+          invited_by?: string | null
+          role?: string
+          status?: string | null
+          updated_at?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_invitations_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workspaces: {
         Row: {
           created_at: string | null
@@ -2912,6 +3091,10 @@ export type Database = {
       }
       safe_upsert_user_role: {
         Args: { new_role: string; user_uuid: string }
+        Returns: undefined
+      }
+      set_current_workspace_id: {
+        Args: { workspace_id: string }
         Returns: undefined
       }
       set_safe_search_path: {

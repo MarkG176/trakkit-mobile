@@ -40,12 +40,13 @@ export const Dashboard = () => {
         <RecordAttendanceForm />
       </div>
 
+      <QuickActions />
+      
       {/* Work Hours Card */}
       <div className="px-4 pb-4">
         <WorkHoursCard />
       </div>
-
-      <QuickActions />
+      
       <PerformanceCards data={performanceData} />
       <UpcomingSchedule schedule={scheduleData} />
     </MobileLayout>

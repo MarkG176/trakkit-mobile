@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { EngagementModal } from "@/components/EngagementModal";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ArrowLeft, Search, ShoppingCart, Plus, Minus, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useProducts } from "@/hooks/useProducts";
 import { useSalesForm } from "@/hooks/useSalesForm";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface CartItem {
   id: string;
@@ -22,13 +23,13 @@ export const RecordSale = () => {
   const navigate = useNavigate();
   const { products, categories, loading: productsLoading } = useProducts();
   const { submitSale, loading: submitting } = useSalesForm();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
-  const [showEngagementModal, setShowEngagementModal] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [showCustomerInfo, setShowCustomerInfo] = useState(false);
 
@@ -66,23 +67,101 @@ export const RecordSale = () => {
       return;
     }
     
-    // Submit sale directly without engagement modal
-    const success = await submitSale({
-      items: cartItems.map(item => ({
-        productVariantId: item.id,
-        quantity: item.quantity,
-        price: item.price
-      })),
-      customerName,
-      customerPhone,
-      customerEmail,
-      engagementType: 'direct',
-      notes: '',
-      sentiment: 0
-    });
+    try {
+      // Get current location
+      let location = { latitude: null, longitude: null };
+      if (navigator.geolocation) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
+              timeout: 5000,
+              maximumAge: 0
+            });
+          });
+          location = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          };
+        } catch (error) {
+          console.log('Could not get location:', error);
+        }
+      }
 
-    if (success) {
-      navigate("/");
+      // Create or update customer record if customer info provided
+      let customerId = null;
+      if (customerName && customerPhone) {
+        const { data: existingCustomer } = await supabase
+          .from('customers')
+          .select('id')
+          .eq('phone', customerPhone)
+          .maybeSingle();
+
+        if (existingCustomer) {
+          // Update existing customer
+          await supabase
+            .from('customers')
+            .update({
+              name: customerName,
+              location_lat: location.latitude,
+              location_lng: location.longitude,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingCustomer.id);
+          customerId = existingCustomer.id;
+        } else {
+          // Create new customer
+          const { data: newCustomer } = await supabase
+            .from('customers')
+            .insert({
+              name: customerName,
+              phone: customerPhone,
+              location_lat: location.latitude,
+              location_lng: location.longitude
+            })
+            .select()
+            .single();
+          customerId = newCustomer?.id;
+        }
+      }
+
+      // Submit sale with customer tracking
+      const success = await submitSale({
+        items: cartItems.map(item => ({
+          productVariantId: item.id,
+          quantity: item.quantity,
+          price: item.price
+        })),
+        customerName,
+        customerPhone,
+        customerEmail,
+        engagementType: 'direct',
+        notes: '',
+        sentiment: 0
+      });
+
+      // Record customer purchases if customer was created
+      if (success && customerId) {
+        for (const item of cartItems) {
+          await supabase
+            .from('customer_purchases')
+            .insert({
+              customer_id: customerId,
+              agent_id: user?.id,
+              product_variant_id: item.id,
+              quantity: item.quantity,
+              total_value: item.price * item.quantity,
+              location_lat: location.latitude,
+              location_lng: location.longitude
+            });
+        }
+      }
+
+      if (success) {
+        navigate("/");
+      }
+    } catch (error) {
+      console.error('Error completing sale:', error);
     }
   };
 
@@ -307,11 +386,10 @@ export const RecordSale = () => {
         </SheetContent>
       </Sheet>
 
-      {/* Customer Info Sheet */}
       <Sheet open={showCustomerInfo} onOpenChange={setShowCustomerInfo}>
-        <SheetContent side="bottom" className="h-[70vh]">
+        <SheetContent side="bottom" className="h-[60vh]">
           <SheetHeader>
-            <SheetTitle className="text-left">Customer Information (Optional)</SheetTitle>
+            <SheetTitle className="text-left">Customer Information</SheetTitle>
           </SheetHeader>
           
           <div className="mt-6 space-y-4">
