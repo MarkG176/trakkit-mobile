@@ -9,12 +9,14 @@ interface InventoryItem {
   id: string;
   product_variant_id: string;
   amount_issued: number;
-  product_variant: {
+  task_id: string;
+  products: any;
+  product_variants: {
     id: string;
     name: string;
     sku: string;
     price: number;
-  };
+  } | null;
 }
 
 export const Inventory = () => {
@@ -46,7 +48,9 @@ export const Inventory = () => {
           id,
           product_variant_id,
           amount_issued,
-          product_variant:product_variants!agent_task_inventory_product_variant_id_fkey (
+          task_id,
+          products,
+          product_variants (
             id,
             name,
             sku,
@@ -102,7 +106,7 @@ export const Inventory = () => {
               >
                 <ArrowLeft size={20} />
               </Button>
-              <h1 className="text-lg font-medium">{selectedProduct.product_variant.name}</h1>
+              <h1 className="text-lg font-medium">{selectedProduct.product_variants?.name || 'Product'}</h1>
             </div>
           </div>
 
@@ -117,7 +121,7 @@ export const Inventory = () => {
             <div className="performance-card mb-4">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-body text-secondary-foreground">SKU</span>
-                <span className="text-h3 font-medium">{selectedProduct.product_variant.sku}</span>
+                <span className="text-h3 font-medium">{selectedProduct.product_variants?.sku || 'N/A'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-body text-secondary-foreground">Stock Available</span>
@@ -134,14 +138,15 @@ export const Inventory = () => {
             <div className="performance-card mb-4">
               <div className="flex items-center justify-between">
                 <span className="text-body">Unit Price</span>
-                <span className="text-h3">KES {selectedProduct.product_variant.price}</span>
+                <span className="text-h3">KES {selectedProduct.product_variants?.price || 0}</span>
               </div>
             </div>
 
             {/* Product Info */}
             <div className="performance-card mb-6">
               <h3 className="text-h3 mb-2">Product Details</h3>
-              <p className="text-body text-secondary-foreground">SKU: {selectedProduct.product_variant.sku}</p>
+              <p className="text-body text-secondary-foreground">SKU: {selectedProduct.product_variants?.sku || 'N/A'}</p>
+              <p className="text-body text-secondary-foreground mt-2">Amount Issued: {selectedProduct.amount_issued}</p>
             </div>
 
             {/* Actions */}
@@ -189,13 +194,13 @@ export const Inventory = () => {
                   </div>
                   
                   <div className="flex-1">
-                    <h3 className="text-h3 mb-1">{item.product_variant.name}</h3>
+                    <h3 className="text-h3 mb-1">{item.product_variants?.name || 'Product'}</h3>
                     <div className="flex items-center gap-2 mb-2">
-                      <p className="text-secondary text-xs font-medium">{item.product_variant.sku}</p>
+                      <p className="text-secondary text-xs font-medium">{item.product_variants?.sku || 'N/A'}</p>
                     </div>
                     
                     <div className="flex items-center justify-between">
-                      <span className="text-body font-medium">KES {item.product_variant.price}</span>
+                      <span className="text-body font-medium">KES {item.product_variants?.price || 0}</span>
                       <div className="flex items-center gap-1">
                         <span className={`text-sm font-medium ${
                           item.amount_issued < 5 ? "text-destructive" : 
