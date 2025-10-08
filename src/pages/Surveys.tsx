@@ -126,6 +126,8 @@ export const Surveys = () => {
             
             console.log(`🔍 Survey "${template.title}" - Raw questions type:`, typeof template.questions);
             console.log(`🔍 Survey "${template.title}" - Raw questions value:`, template.questions);
+            console.log(`🔍 Survey "${template.title}" - Raw questions constructor:`, template.questions?.constructor?.name);
+            console.log(`🔍 Survey "${template.title}" - Is Array:`, Array.isArray(template.questions));
             
             if (Array.isArray(template.questions)) {
               // Already an array
@@ -156,6 +158,19 @@ export const Surveys = () => {
             }
 
             console.log(`📋 Final questions array for "${template.title}":`, questionsArray);
+            
+            // Debug each individual question
+            questionsArray.forEach((q, i) => {
+              console.log(`   Question ${i + 1} structure:`, {
+                id: q.id,
+                type: q.type,
+                text: q.text,
+                question: q.question,
+                required: q.required,
+                options: q.options,
+                allKeys: Object.keys(q)
+              });
+            });
 
             return {
               id: template.id,
@@ -456,7 +471,13 @@ export const Surveys = () => {
               console.log(`🎯 Rendering question ${index + 1}:`, question);
               console.log(`   - question.text: "${question.text}"`);
               console.log(`   - question.question: "${question.question}"`);
-              console.log(`   - Final text: "${question.text || question.question || 'NO TEXT'}"`);
+              console.log(`   - question.title: "${question.title}"`);
+              console.log(`   - question.label: "${question.label}"`);
+              console.log(`   - All question keys:`, Object.keys(question));
+              console.log(`   - Question type: "${question.type}"`);
+              console.log(`   - Question options:`, question.options);
+              console.log(`   - Question required:`, question.required);
+              console.log(`   - Final text: "${question.text || question.question || question.title || question.label || 'NO TEXT'}"`);
               
               return (
                 <Card key={question.id}>
@@ -466,7 +487,13 @@ export const Surveys = () => {
                         {index + 1}
                       </span>
                       <div className="flex-1">
-                        <h2 className="text-h3 text-black mb-1">{question.text || question.question || `Question ${index + 1}`}</h2>
+                        <h2 className="text-h3 text-black mb-1">
+                          {question.text || question.question || question.title || question.label || `Question ${index + 1}`}
+                        </h2>
+                        {/* Temporary debug display */}
+                        <div className="text-xs text-gray-500 mt-2 p-2 bg-gray-100 rounded">
+                          <strong>DEBUG:</strong> Raw question data: {JSON.stringify(question, null, 2)}
+                        </div>
                         {question.required && (
                           <span className="inline-block bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">
                             Required
