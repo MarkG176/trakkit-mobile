@@ -482,56 +482,6 @@ export const Surveys = () => {
             ));
           })()}
 
-
-          {/* Question 3 */}
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-start gap-2 mb-4">
-                <span className="w-6 h-6 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center text-sm font-medium">3</span>
-                <div className="flex-1">
-                  <h2 className="text-h3 text-black mb-1">Which of our services have you used recently?</h2>
-                  <span className="inline-block bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">Required</span>
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                {[
-                  "Online Shopping",
-                  "In-Store Purchase", 
-                  "Customer Support",
-                  "Delivery Service",
-                  "Returns/Exchange"
-                ].map((service) => (
-                  <label key={service} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-accent cursor-pointer">
-                    <input type="checkbox" name="services" value={service} className="text-primary" />
-                    <span>{service}</span>
-                  </label>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Question 4 */}
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-start gap-2 mb-4">
-                <span className="w-6 h-6 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center text-sm font-medium">4</span>
-                <div className="flex-1">
-                  <h2 className="text-h3 text-black mb-1">What is your age range?</h2>
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                {["18-25", "26-35", "36-45", "46-55", "56+"].map((ageRange) => (
-                  <label key={ageRange} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-accent cursor-pointer">
-                    <input type="radio" name="age" value={ageRange} className="text-primary" />
-                    <span>{ageRange}</span>
-                  </label>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
           <div className="flex gap-3">
             <Button variant="outline" className="flex-1">
               Previous
