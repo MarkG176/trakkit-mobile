@@ -12,6 +12,7 @@ interface InventoryItem {
   products: {
     product_id: string;
     name: string;
+    sku: string;
     price: number;
     product: {
       name: string;
@@ -53,6 +54,7 @@ export const Inventory = () => {
           products:product_variant_id (
             product_id,
             name,
+            sku,
             price,
             product:product_id (
               name,
@@ -121,15 +123,21 @@ export const Inventory = () => {
               <Package size={64} className="text-primary" />
             </div>
 
-            {/* Stock Status */}
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-h3">Stock Available</span>
-              <span className={`text-h2 font-bold ${
-                selectedProduct.amount_issued < 5 ? "text-destructive" : 
-                selectedProduct.amount_issued < 10 ? "text-warning" : "text-success"
-              }`}>
-                {selectedProduct.amount_issued} units
-              </span>
+            {/* SKU and Stock Status */}
+            <div className="performance-card mb-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-body text-secondary-foreground">SKU</span>
+                <span className="text-h3 font-medium">{selectedProduct.products.sku}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-body text-secondary-foreground">Stock Available</span>
+                <span className={`text-h3 font-bold ${
+                  selectedProduct.amount_issued < 5 ? "text-destructive" : 
+                  selectedProduct.amount_issued < 10 ? "text-warning" : "text-success"
+                }`}>
+                  {selectedProduct.amount_issued} units
+                </span>
+              </div>
             </div>
 
             {/* Price */}
@@ -197,7 +205,11 @@ export const Inventory = () => {
                   
                   <div className="flex-1">
                     <h3 className="text-h3 mb-1">{item.products.product.name}</h3>
-                    <p className="text-secondary text-xs mb-2">{item.products.product.category}</p>
+                    <div className="flex items-center gap-2 mb-2">
+                      <p className="text-secondary text-xs">{item.products.product.category}</p>
+                      <span className="text-secondary text-xs">•</span>
+                      <p className="text-secondary text-xs font-medium">{item.products.sku}</p>
+                    </div>
                     
                     <div className="flex items-center justify-between">
                       <span className="text-body font-medium">${item.products.price}</span>
