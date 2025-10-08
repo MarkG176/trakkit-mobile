@@ -24,10 +24,21 @@ export const useProducts = () => {
     try {
       setLoading(true);
       
-      // Fetch product variants directly - they have all needed fields
+      // Fetch products with their variants
       const { data: productVariants, error } = await supabase
         .from('product_variants')
-        .select('*');
+        .select(`
+          id,
+          name,
+          sku,
+          price,
+          product:products(
+            name,
+            category,
+            brand,
+            description
+          )
+        `);
 
       if (error) throw error;
 
@@ -37,9 +48,9 @@ export const useProducts = () => {
           name: variant.name,
           sku: variant.sku || '',
           price: variant.price || 0,
-          category: 'general',
-          brand: undefined,
-          description: undefined
+          category: variant.product?.category || 'general',
+          brand: variant.product?.brand,
+          description: variant.product?.description
         }));
 
         setProducts(formattedProducts);

@@ -9,14 +9,17 @@ interface InventoryItem {
   id: string;
   product_variant_id: string;
   amount_issued: number;
-  task_id: string;
-  products: any;
-  product_variants: {
-    id: string;
+  products: {
+    product_id: string;
     name: string;
     sku: string;
     price: number;
-  } | null;
+    product: {
+      name: string;
+      description: string;
+      category: string;
+    };
+  };
 }
 
 export const Inventory = () => {
@@ -48,13 +51,16 @@ export const Inventory = () => {
           id,
           product_variant_id,
           amount_issued,
-          task_id,
-          products,
-          product_variants (
-            id,
+          products:product_variant_id (
+            product_id,
             name,
             sku,
-            price
+            price,
+            product:product_id (
+              name,
+              description,
+              category
+            )
           )
         `)
         .eq('agent_id', user.id)
@@ -106,7 +112,7 @@ export const Inventory = () => {
               >
                 <ArrowLeft size={20} />
               </Button>
-              <h1 className="text-lg font-medium">{selectedProduct.product_variants?.name || 'Product'}</h1>
+              <h1 className="text-lg font-medium">{selectedProduct.products.product.name}</h1>
             </div>
           </div>
 
@@ -121,7 +127,7 @@ export const Inventory = () => {
             <div className="performance-card mb-4">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-body text-secondary-foreground">SKU</span>
-                <span className="text-h3 font-medium">{selectedProduct.product_variants?.sku || 'N/A'}</span>
+                <span className="text-h3 font-medium">{selectedProduct.products.sku}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-body text-secondary-foreground">Stock Available</span>
@@ -138,15 +144,19 @@ export const Inventory = () => {
             <div className="performance-card mb-4">
               <div className="flex items-center justify-between">
                 <span className="text-body">Unit Price</span>
-                <span className="text-h3">KES {selectedProduct.product_variants?.price || 0}</span>
+                <span className="text-h3">${selectedProduct.products.price}</span>
               </div>
             </div>
 
-            {/* Product Info */}
+            {/* Description */}
             <div className="performance-card mb-6">
-              <h3 className="text-h3 mb-2">Product Details</h3>
-              <p className="text-body text-secondary-foreground">SKU: {selectedProduct.product_variants?.sku || 'N/A'}</p>
-              <p className="text-body text-secondary-foreground mt-2">Amount Issued: {selectedProduct.amount_issued}</p>
+              <h3 className="text-h3 mb-2">Description</h3>
+              <p className="text-body text-secondary-foreground">{selectedProduct.products.product.description}</p>
+              <div className="mt-3">
+                <span className="inline-block bg-accent text-accent-foreground px-3 py-1 rounded-full text-xs">
+                  {selectedProduct.products.product.category}
+                </span>
+              </div>
             </div>
 
             {/* Actions */}
@@ -194,13 +204,15 @@ export const Inventory = () => {
                   </div>
                   
                   <div className="flex-1">
-                    <h3 className="text-h3 mb-1">{item.product_variants?.name || 'Product'}</h3>
+                    <h3 className="text-h3 mb-1">{item.products.product.name}</h3>
                     <div className="flex items-center gap-2 mb-2">
-                      <p className="text-secondary text-xs font-medium">{item.product_variants?.sku || 'N/A'}</p>
+                      <p className="text-secondary text-xs">{item.products.product.category}</p>
+                      <span className="text-secondary text-xs">•</span>
+                      <p className="text-secondary text-xs font-medium">{item.products.sku}</p>
                     </div>
                     
                     <div className="flex items-center justify-between">
-                      <span className="text-body font-medium">KES {item.product_variants?.price || 0}</span>
+                      <span className="text-body font-medium">${item.products.price}</span>
                       <div className="flex items-center gap-1">
                         <span className={`text-sm font-medium ${
                           item.amount_issued < 5 ? "text-destructive" : 
