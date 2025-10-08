@@ -421,7 +421,7 @@ export const Surveys = () => {
                       {index + 1}
                     </span>
                     <div className="flex-1">
-                      <h2 className="text-h3 text-black mb-1">{question.question}</h2>
+                      <h2 className="text-h3 text-black mb-1">{question.text || question.question}</h2>
                       {question.required && (
                         <span className="inline-block bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">
                           Required
