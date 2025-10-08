@@ -110,6 +110,8 @@ export const Surveys = () => {
         return;
       }
 
+      console.log('📊 Raw survey templates from DB:', surveyTemplates);
+
       if (surveyTemplates) {
         // Fetch response counts for each survey
         const surveysWithResponses = await Promise.all(
@@ -118,6 +120,42 @@ export const Surveys = () => {
               .from('survey_responses')
               .select('*', { count: 'exact', head: true })
               .eq('survey_template_id', template.id);
+
+            // Parse questions properly - handle JSONB data from Supabase
+            let questionsArray: any[] = [];
+            
+            console.log(`🔍 Survey "${template.title}" - Raw questions type:`, typeof template.questions);
+            console.log(`🔍 Survey "${template.title}" - Raw questions value:`, template.questions);
+            
+            if (Array.isArray(template.questions)) {
+              // Already an array
+              questionsArray = template.questions;
+              console.log(`✅ Questions are already an array with ${questionsArray.length} items`);
+            } else if (typeof template.questions === 'string') {
+              // JSON string that needs parsing
+              try {
+                questionsArray = JSON.parse(template.questions);
+                console.log(`✅ Parsed questions from JSON string: ${questionsArray.length} items`);
+              } catch (e) {
+                console.error('❌ Error parsing questions JSON string:', e);
+                questionsArray = [];
+              }
+            } else if (template.questions && typeof template.questions === 'object') {
+              // JSONB object - might need to extract values or it might already be the array
+              if (template.questions.constructor === Object) {
+                // It's a plain object, try to get values
+                questionsArray = Object.values(template.questions);
+                console.log(`✅ Extracted questions from object: ${questionsArray.length} items`);
+              } else {
+                questionsArray = [];
+                console.log(`⚠️ Unknown object type for questions`);
+              }
+            } else {
+              console.log(`⚠️ Questions is null or undefined`);
+              questionsArray = [];
+            }
+
+            console.log(`📋 Final questions array for "${template.title}":`, questionsArray);
 
             return {
               id: template.id,
@@ -128,9 +166,9 @@ export const Surveys = () => {
               duration: template.estimated_duration_minutes 
                 ? `${template.estimated_duration_minutes} min` 
                 : '10 min',
-              questions: Array.isArray(template.questions) ? template.questions : [],
-              totalQuestions: Array.isArray(template.questions) ? template.questions.length : 0,
-              points: calculatePoints(Array.isArray(template.questions) ? template.questions : [], template.estimated_duration_minutes),
+              questions: questionsArray,
+              totalQuestions: questionsArray.length,
+              points: calculatePoints(questionsArray, template.estimated_duration_minutes),
               responses: responseCount || 0,
               progress: 0,
               currentQuestion: 1
@@ -138,6 +176,7 @@ export const Surveys = () => {
           })
         );
 
+        console.log('✅ Final transformed surveys:', surveysWithResponses);
         setSurveys(surveysWithResponses);
       }
     } catch (error) {
@@ -413,22 +452,28 @@ export const Surveys = () => {
 
         <div className="p-4 space-y-6">
           {activeSurvey?.questions && activeSurvey.questions.length > 0 ? (
-            activeSurvey.questions.map((question: any, index: number) => (
-              <Card key={question.id}>
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-2 mb-4">
-                    <span className="w-6 h-6 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center text-sm font-medium">
-                      {index + 1}
-                    </span>
-                    <div className="flex-1">
-                      <h2 className="text-h3 text-black mb-1">{question.text || question.question}</h2>
-                      {question.required && (
-                        <span className="inline-block bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">
-                          Required
-                        </span>
-                      )}
+            activeSurvey.questions.map((question: any, index: number) => {
+              console.log(`🎯 Rendering question ${index + 1}:`, question);
+              console.log(`   - question.text: "${question.text}"`);
+              console.log(`   - question.question: "${question.question}"`);
+              console.log(`   - Final text: "${question.text || question.question || 'NO TEXT'}"`);
+              
+              return (
+                <Card key={question.id}>
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-2 mb-4">
+                      <span className="w-6 h-6 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center text-sm font-medium">
+                        {index + 1}
+                      </span>
+                      <div className="flex-1">
+                        <h2 className="text-h3 text-black mb-1">{question.text || question.question || `Question ${index + 1}`}</h2>
+                        {question.required && (
+                          <span className="inline-block bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">
+                            Required
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
                   
                   <div className="space-y-3">
                     {question.type === 'rating' && question.options && (
@@ -476,7 +521,8 @@ export const Surveys = () => {
                   </div>
                 </CardContent>
               </Card>
-            ))
+              );
+            })
           ) : (
             <Card>
               <CardContent className="p-6 text-center">
