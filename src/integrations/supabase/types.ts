@@ -2093,6 +2093,7 @@ export type Database = {
       }
       stores: {
         Row: {
+          contact: string | null
           county: string
           created_at: string | null
           id: string
@@ -2103,6 +2104,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          contact?: string | null
           county: string
           created_at?: string | null
           id?: string
@@ -2113,6 +2115,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          contact?: string | null
           county?: string
           created_at?: string | null
           id?: string

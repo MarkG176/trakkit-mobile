@@ -19,6 +19,7 @@ interface Store {
   county: string;
   store_lat: number;
   store_long: number;
+  contact?: string;
 }
 
 
@@ -34,6 +35,7 @@ export const Routes = () => {
   const [showAddLocationForm, setShowAddLocationForm] = useState(false);
   const [newStoreName, setNewStoreName] = useState("");
   const [newStoreCounty, setNewStoreCounty] = useState("");
+  const [newStoreContact, setNewStoreContact] = useState("");
 
   // Load last selected county from localStorage on mount
   useEffect(() => {
@@ -165,6 +167,7 @@ export const Routes = () => {
           county: newStoreCounty.trim(),
           store_lat: currentLocation.latitude,
           store_long: currentLocation.longitude,
+          contact: newStoreContact.trim() || null,
           products: [] // Empty products array for new store
         });
 
@@ -181,6 +184,7 @@ export const Routes = () => {
 
       // Reset form
       setNewStoreName("");
+      setNewStoreContact("");
       // Don't reset county - keep the last selected value
       setShowAddLocationForm(false);
 
@@ -463,6 +467,20 @@ export const Routes = () => {
                 </Select>
               </div>
 
+              <div>
+                <Label htmlFor="store-contact" className="text-sm font-medium text-foreground mb-2 block">
+                  Contact Number
+                </Label>
+                <Input
+                  id="store-contact"
+                  type="tel"
+                  value={newStoreContact}
+                  onChange={(e) => setNewStoreContact(e.target.value)}
+                  placeholder="Enter contact number"
+                  className="w-full"
+                />
+              </div>
+
               <div className="p-3 bg-muted rounded-lg">
                 <p className="text-sm font-medium text-foreground mb-2">Location Coordinates</p>
                 {currentLocation ? (
@@ -486,6 +504,7 @@ export const Routes = () => {
                     setShowAddLocationForm(false);
                     setNewStoreName("");
                     setNewStoreCounty("");
+                    setNewStoreContact("");
                   }}
                   className="flex-1"
                 >
