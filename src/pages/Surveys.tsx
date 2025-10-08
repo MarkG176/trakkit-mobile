@@ -36,7 +36,7 @@ interface Survey {
   category: string;
   categoryColor: string;
   duration: string;
-  questions: number;
+  questions: any[];
   totalQuestions: number;
   points: number;
   responses: number;
@@ -128,7 +128,7 @@ export const Surveys = () => {
               duration: template.estimated_duration_minutes 
                 ? `${template.estimated_duration_minutes} min` 
                 : '10 min',
-              questions: Array.isArray(template.questions) ? template.questions.length : 0,
+              questions: Array.isArray(template.questions) ? template.questions : [],
               totalQuestions: Array.isArray(template.questions) ? template.questions.length : 0,
               points: calculatePoints(Array.isArray(template.questions) ? template.questions : [], template.estimated_duration_minutes),
               responses: responseCount || 0,
@@ -412,11 +412,8 @@ export const Surveys = () => {
         </div>
 
         <div className="p-4 space-y-6">
-          {activeSurvey && surveys.find(s => s.id === activeSurvey.id) && (() => {
-            const surveyTemplate = surveys.find(s => s.id === activeSurvey.id);
-            const questions = Array.isArray(surveyTemplate?.questions) ? surveyTemplate.questions : [];
-            
-            return questions.map((question: any, index: number) => (
+          {activeSurvey?.questions && activeSurvey.questions.length > 0 ? (
+            activeSurvey.questions.map((question: any, index: number) => (
               <Card key={question.id}>
                 <CardContent className="p-6">
                   <div className="flex items-start gap-2 mb-4">
@@ -479,8 +476,14 @@ export const Surveys = () => {
                   </div>
                 </CardContent>
               </Card>
-            ));
-          })()}
+            ))
+          ) : (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p className="text-muted-foreground">No questions available for this survey.</p>
+              </CardContent>
+            </Card>
+          )}
 
           <div className="flex gap-3">
             <Button variant="outline" className="flex-1">
@@ -548,7 +551,7 @@ export const Surveys = () => {
               
               <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
                 <span>⏱️ {survey.duration}</span>
-                <span>❓ {survey.questions} questions</span>
+                <span>❓ {survey.totalQuestions} questions</span>
                 <span>🏆 {survey.points} points</span>
                 <span>📊 {survey.responses} responses</span>
               </div>
