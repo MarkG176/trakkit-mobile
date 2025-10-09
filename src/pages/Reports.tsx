@@ -96,6 +96,72 @@ export const Reports = () => {
     }
   };
 
+  const handleSaveNotes = async () => {
+    if (!user || !notes.trim()) {
+      toast.error("Please enter some notes");
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const { error } = await supabase
+        .from('notes')
+        .insert({
+          agent_id: user.id,
+          content: notes,
+          note_type: 'report',
+        });
+
+      if (error) throw error;
+
+      toast.success("Notes saved!");
+      setNotes("");
+    } catch (error) {
+      console.error("Error saving notes:", error);
+      toast.error("Failed to save notes. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleUploadImages = async () => {
+    if (!user || images.length === 0) {
+      toast.error("Please select images to upload");
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const uploadPromises = images.map(async (image) => {
+        const fileExt = image.name.split('.').pop();
+        const fileName = `${user.id}-${Date.now()}-${Math.random()}.${fileExt}`;
+        const filePath = `Capwell/${fileName}`;
+
+        const { error } = await supabase.storage
+          .from('agent-selfies')
+          .upload(filePath, image, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (error) throw error;
+        return filePath;
+      });
+
+      await Promise.all(uploadPromises);
+
+      toast.success("Images uploaded successfully!");
+      setImages([]);
+    } catch (error) {
+      console.error("Error uploading images:", error);
+      toast.error("Failed to upload images. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <MobileLayout currentPage="more">
       <div className="bg-primary text-primary-foreground p-4">
@@ -181,10 +247,11 @@ export const Reports = () => {
               <Button 
                 className="w-full"
                 variant="outline"
-                onClick={() => toast.success("Notes saved!")}
+                onClick={handleSaveNotes}
+                disabled={submitting || !notes.trim()}
               >
                 <FileText className="mr-2 h-4 w-4" />
-                Save Notes
+                {submitting ? "Saving..." : "Save Notes"}
               </Button>
             </div>
           </CardContent>
@@ -216,10 +283,11 @@ export const Reports = () => {
               <Button 
                 className="w-full"
                 variant="outline"
-                onClick={() => toast.success("Images uploaded!")}
+                onClick={handleUploadImages}
+                disabled={submitting || images.length === 0}
               >
                 <Camera className="mr-2 h-4 w-4" />
-                Upload Images
+                {submitting ? "Uploading..." : "Upload Images"}
               </Button>
             </div>
           </CardContent>
