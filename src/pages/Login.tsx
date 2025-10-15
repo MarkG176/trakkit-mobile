@@ -14,7 +14,7 @@ export const Login = () => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isEmailSent, setIsEmailSent] = useState(false);
-  const { signInWithMagicLink, user } = useAuth();
+  const { signInWithMagicLink, user, loading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -24,6 +24,15 @@ export const Login = () => {
       navigate('/', { replace: true });
     }
   }, [user, navigate]);
+
+  // Show loading while checking auth state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
