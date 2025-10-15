@@ -8,13 +8,9 @@ import { useAuth } from "@/hooks/useAuth";
 export const Dashboard = () => {
   const { user } = useAuth();
 
-  const handleCameraCapture = (imageData: string) => {
-    // Camera capture is now handled by CameraCapture component in TopBar
-  };
-
   return (
     <MobileLayout currentPage="dashboard">
-      <TopBar onCameraCapture={handleCameraCapture} />
+      <TopBar />
       
       {/* Record Attendance Form */}
       <div className="px-4 py-4 flex justify-center">

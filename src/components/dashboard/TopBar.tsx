@@ -6,11 +6,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 
-interface TopBarProps {
-  onCameraCapture?: (imageData: string) => void;
-}
-
-export const TopBar = ({ onCameraCapture }: TopBarProps) => {
+export const TopBar = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState<string>("");
