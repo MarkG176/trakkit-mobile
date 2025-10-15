@@ -30,6 +30,22 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user]);
 
+  // Continuously monitor workspace changes
+  useEffect(() => {
+    if (!user) return;
+
+    const interval = setInterval(() => {
+      if (workspaceService.isInitialized()) {
+        const serviceWorkspaceId = workspaceService.getCurrentWorkspaceId();
+        if (serviceWorkspaceId !== currentWorkspaceId) {
+          updateWorkspaceState();
+        }
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [user, currentWorkspaceId]);
+
   const updateWorkspaceState = () => {
     setCurrentWorkspaceId(workspaceService.getCurrentWorkspaceId());
     setCurrentProjectId(workspaceService.getCurrentProjectId());

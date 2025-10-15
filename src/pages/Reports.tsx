@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { workspaceService } from "@/services/workspaceService";
 import { toast } from "sonner";
 
 interface ProductVariant {
@@ -104,7 +105,18 @@ export const Reports = () => {
       return;
     }
 
-    if (!currentWorkspaceId) {
+    // Debug workspace context
+    console.log("🔍 Debug workspace context:", {
+      currentWorkspaceId,
+      user: user?.id,
+      workspaceServiceInitialized: workspaceService.isInitialized(),
+      workspaceServiceCurrentId: workspaceService.getCurrentWorkspaceId()
+    });
+
+    // Fallback: try to get workspace from service directly if context is null
+    const workspaceId = currentWorkspaceId || workspaceService.getCurrentWorkspaceId();
+    
+    if (!workspaceId) {
       toast.error("No workspace selected. Please select a workspace first.");
       return;
     }
@@ -117,7 +129,7 @@ export const Reports = () => {
         .from('notes')
         .insert({
           agent_id: user.id,
-          workspace_id: currentWorkspaceId,
+          workspace_id: workspaceId,
           content: notes,
           note_type: 'report',
           metadata: {
