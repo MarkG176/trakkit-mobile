@@ -49,6 +49,12 @@ class WorkspaceService {
    * Initialize the workspace service with user data
    */
   async initialize(user: User): Promise<void> {
+    // Prevent re-initialization if already initialized with the same user
+    if (this.initialized && this.user?.id === user.id) {
+      console.log('🏢 Workspace service already initialized for user:', user.id);
+      return;
+    }
+
     this.user = user;
     await this.loadUserWorkspaces();
     this.initialized = true;
@@ -62,6 +68,9 @@ class WorkspaceService {
       console.warn('No user provided to load workspaces');
       return;
     }
+
+    // Store current workspace to preserve it during refresh
+    const previousWorkspaceId = this.currentWorkspaceId;
 
     try {
       const { data, error } = await supabase
@@ -100,12 +109,15 @@ class WorkspaceService {
         workspace: item.workspace as Workspace
       }));
 
-      // If no workspace is currently set, set the first one as default
-      if (!this.currentWorkspaceId && this.userWorkspaces.length > 0) {
+      // Preserve current workspace if it still exists in user's workspaces
+      if (previousWorkspaceId && this.userWorkspaces.some(w => w.workspace_id === previousWorkspaceId)) {
+        this.currentWorkspaceId = previousWorkspaceId;
+        console.log('🏢 Preserving current workspace:', this.getWorkspaceName());
+        await this.loadProjectsForWorkspace(this.currentWorkspaceId);
+      } else if (!this.currentWorkspaceId && this.userWorkspaces.length > 0) {
+        // Only set default if no workspace was previously set
         this.currentWorkspaceId = this.userWorkspaces[0].workspace_id;
         console.log('🏢 Default workspace set to:', this.userWorkspaces[0].workspace.name);
-        
-        // Load projects for the default workspace
         await this.loadProjectsForWorkspace(this.currentWorkspaceId);
       } else if (this.currentWorkspaceId && this.userWorkspaces.length > 0) {
         // If workspace is already set, just ensure projects are loaded

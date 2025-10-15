@@ -10,6 +10,7 @@ import { ArrowLeft, Camera, FileText, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { toast } from "sonner";
 
 interface ProductVariant {
@@ -21,6 +22,7 @@ interface ProductVariant {
 export const Reports = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { currentWorkspaceId } = useWorkspace();
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [productVariants, setProductVariants] = useState<ProductVariant[]>([]);
@@ -102,28 +104,20 @@ export const Reports = () => {
       return;
     }
 
+    if (!currentWorkspaceId) {
+      toast.error("No workspace selected. Please select a workspace first.");
+      return;
+    }
+
     setSubmitting(true);
 
     try {
-      // Get the current workspace_id from user_workspaces
-      const { data: workspaceData, error: workspaceError } = await supabase
-        .from('user_workspaces')
-        .select('workspace_id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (workspaceError) {
-        console.error("Workspace query error:", workspaceError);
-        toast.error("No workspace found. Please contact support.");
-        return;
-      }
-
-      // Insert notes with proper fields (after migration is applied)
+      // Insert notes with proper fields using workspace context
       const { error } = await supabase
         .from('notes')
         .insert({
           agent_id: user.id,
-          workspace_id: workspaceData.workspace_id,
+          workspace_id: currentWorkspaceId,
           content: notes,
           note_type: 'report',
           metadata: {
