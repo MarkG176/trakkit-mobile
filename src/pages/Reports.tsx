@@ -105,12 +105,20 @@ export const Reports = () => {
     setSubmitting(true);
 
     try {
+      // Get the current workspace_id
+      const { data: workspaceData } = await supabase
+        .from('user_workspaces')
+        .select('workspace_id')
+        .eq('user_id', user.id)
+        .single();
+
       const { error } = await supabase
         .from('notes')
         .insert({
           agent_id: user.id,
           content: notes,
           note_type: 'report',
+          workspace_id: workspaceData?.workspace_id,
         });
 
       if (error) throw error;
