@@ -107,6 +107,10 @@ class WorkspaceService {
         
         // Load projects for the default workspace
         await this.loadProjectsForWorkspace(this.currentWorkspaceId);
+      } else if (this.currentWorkspaceId && this.userWorkspaces.length > 0) {
+        // If workspace is already set, just ensure projects are loaded
+        console.log('🏢 Workspace already set, maintaining:', this.getWorkspaceName());
+        await this.loadProjectsForWorkspace(this.currentWorkspaceId);
       }
     } catch (error) {
       console.error('Error loading user workspaces:', error);
