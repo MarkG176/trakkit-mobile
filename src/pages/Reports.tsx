@@ -158,8 +158,9 @@ export const Reports = () => {
     try {
       const uploadPromises = images.map(async (image) => {
         const fileExt = image.name.split('.').pop();
-        const fileName = `${user.id}-${Date.now()}-${Math.random()}.${fileExt}`;
-        const filePath = `Capwell/${fileName}`;
+        const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
+        // Fix: Use user ID as first folder to match RLS policy
+        const filePath = `${user.id}/Capwell/${fileName}`;
 
         const { error } = await supabase.storage
           .from('agent-selfies')
@@ -168,7 +169,10 @@ export const Reports = () => {
             upsert: false
           });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Upload error for', filePath, ':', error);
+          throw error;
+        }
         return filePath;
       });
 
