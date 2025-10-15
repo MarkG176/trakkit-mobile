@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useAgentActions } from "@/hooks/useAgentActions";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { supabase } from "@/integrations/supabase/client";
 
 interface SurveyTemplate {
@@ -70,6 +71,7 @@ export const Surveys = () => {
   const { toast } = useToast();
   const { displayName: agentName } = useUserProfile();
   const { user } = useAuth();
+  const { currentWorkspaceId } = useWorkspace();
   const { recordSurvey } = useAgentActions();
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [loading, setLoading] = useState(true);

@@ -125,7 +125,18 @@ export const Reports = () => {
 
     try {
       // Insert notes with proper fields using workspace context
-      const { error } = await supabase
+      console.log("🔍 Inserting note with data:", {
+        agent_id: user.id,
+        workspace_id: workspaceId,
+        content: notes,
+        note_type: 'report',
+        metadata: {
+          source: 'reports_page',
+          created_via: 'mobile_app'
+        }
+      });
+
+      const { data, error } = await supabase
         .from('notes')
         .insert({
           agent_id: user.id,
@@ -136,13 +147,15 @@ export const Reports = () => {
             source: 'reports_page',
             created_via: 'mobile_app'
           }
-        });
+        })
+        .select();
 
       if (error) {
         console.error("Notes insert error:", error);
         throw error;
       }
 
+      console.log("✅ Note inserted successfully:", data);
       toast.success("Notes saved!");
       setNotes("");
     } catch (error) {

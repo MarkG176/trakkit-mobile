@@ -7,11 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Edit2, Award, Target, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Profile = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { currentWorkspaceId } = useWorkspace();
 
   const [performanceData, setPerformanceData] = useState({
     totalPoints: 0,

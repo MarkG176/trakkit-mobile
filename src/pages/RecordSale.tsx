@@ -11,6 +11,7 @@ import { useProducts } from "@/hooks/useProducts";
 import { useSalesForm } from "@/hooks/useSalesForm";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface CartItem {
   id: string;
@@ -24,6 +25,7 @@ export const RecordSale = () => {
   const { products, categories, loading: productsLoading } = useProducts();
   const { submitSale, loading: submitting } = useSalesForm();
   const { user } = useAuth();
+  const { currentWorkspaceId } = useWorkspace();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [cartItems, setCartItems] = useState<CartItem[]>([]);

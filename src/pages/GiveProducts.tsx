@@ -10,6 +10,7 @@ import { EngagementModal } from "@/components/EngagementModal";
 import { ArrowLeft, Mic, MicOff, Plus, Minus, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { supabase } from "@/integrations/supabase/client";
 
 interface InventoryItem {
@@ -39,6 +40,7 @@ interface SelectedProduct {
 export const GiveProducts = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { currentWorkspaceId } = useWorkspace();
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
   const [recipientName, setRecipientName] = useState("");
   const [recipientPhone, setRecipientPhone] = useState("");

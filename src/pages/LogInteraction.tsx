@@ -9,10 +9,12 @@ import { RecordingIndicator } from "@/components/RecordingIndicator";
 import { ArrowLeft, Mic, MicOff, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useInteractionForm } from "@/hooks/useInteractionForm";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 export const LogInteraction = () => {
   const navigate = useNavigate();
   const { submitInteraction, loading } = useInteractionForm();
+  const { currentWorkspaceId } = useWorkspace();
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [notes, setNotes] = useState("");
