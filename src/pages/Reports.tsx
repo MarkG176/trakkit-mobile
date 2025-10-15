@@ -105,12 +105,19 @@ export const Reports = () => {
     setSubmitting(true);
 
     try {
-      // Get the current workspace_id
-      const { data: workspaceData } = await supabase
+      // Get the current workspace_id from user_workspaces
+      const { data: workspaceData, error: workspaceError } = await supabase
         .from('user_workspaces')
         .select('workspace_id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
+
+      if (workspaceError) throw workspaceError;
+
+      if (!workspaceData?.workspace_id) {
+        toast.error("No workspace found. Please contact support.");
+        return;
+      }
 
       const { error } = await supabase
         .from('notes')
@@ -118,7 +125,7 @@ export const Reports = () => {
           agent_id: user.id,
           content: notes,
           note_type: 'report',
-          workspace_id: workspaceData?.workspace_id,
+          workspace_id: workspaceData.workspace_id,
         });
 
       if (error) throw error;
