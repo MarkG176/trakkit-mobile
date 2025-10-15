@@ -267,6 +267,7 @@ export const Reports = () => {
               </div>
 
               <Button 
+                type="button"
                 onClick={handleSubmitSale} 
                 disabled={submitting || loading || !selectedProduct || !amount}
                 className="w-full"
@@ -290,6 +291,7 @@ export const Reports = () => {
               />
               
               <Button 
+                type="button"
                 className="w-full"
                 variant="outline"
                 onClick={handleSaveNotes}
@@ -326,6 +328,7 @@ export const Reports = () => {
               )}
               
               <Button 
+                type="button"
                 className="w-full"
                 variant="outline"
                 onClick={handleUploadImages}
@@ -343,6 +346,7 @@ export const Reports = () => {
             <h3 className="text-h3 mb-6 text-black">Export Report</h3>
             
             <Button 
+              type="button"
               className="w-full"
               onClick={() => toast.success("Report generated and exported!")}
             >
