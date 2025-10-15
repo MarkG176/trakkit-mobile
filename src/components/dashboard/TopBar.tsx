@@ -65,9 +65,10 @@ export const TopBar = ({ onCameraCapture }: TopBarProps) => {
       
       {/* Workspace Switcher */}
       <div className="flex items-center justify-between">
-        <WorkspaceSwitcher onWorkspaceChange={() => {
-          // Refresh the page to load new workspace data
-          window.location.reload();
+        <WorkspaceSwitcher onWorkspaceChange={(workspaceId) => {
+          // Workspace context will automatically update via useWorkspace hook
+          // No need to reload the page - React state management handles this
+          console.log('Workspace changed to:', workspaceId);
         }} />
       </div>
     </div>

@@ -22,6 +22,18 @@ export const WorkspaceSwitcher = ({ onWorkspaceChange, className }: WorkspaceSwi
     loadWorkspaces();
   }, []);
 
+  // Listen for workspace changes from other components
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const currentId = workspaceService.getCurrentWorkspaceId();
+      if (currentId !== currentWorkspaceId) {
+        setCurrentWorkspaceId(currentId);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [currentWorkspaceId]);
+
   const loadWorkspaces = async () => {
     try {
       setLoading(true);
