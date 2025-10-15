@@ -110,25 +110,32 @@ export const Reports = () => {
         .from('user_workspaces')
         .select('workspace_id')
         .eq('user_id', user.id)
-        .maybeSingle();
+        .single();
 
-      if (workspaceError) throw workspaceError;
-
-      if (!workspaceData?.workspace_id) {
+      if (workspaceError) {
+        console.error("Workspace query error:", workspaceError);
         toast.error("No workspace found. Please contact support.");
         return;
       }
 
+      // Insert notes with proper fields (after migration is applied)
       const { error } = await supabase
         .from('notes')
         .insert({
           agent_id: user.id,
+          workspace_id: workspaceData.workspace_id,
           content: notes,
           note_type: 'report',
-          workspace_id: workspaceData.workspace_id,
+          metadata: {
+            source: 'reports_page',
+            created_via: 'mobile_app'
+          }
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Notes insert error:", error);
+        throw error;
+      }
 
       toast.success("Notes saved!");
       setNotes("");
