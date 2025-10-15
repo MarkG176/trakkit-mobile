@@ -40,9 +40,9 @@ class WorkspaceService {
   private initialized: boolean = false;
 
   constructor() {
-    // Initialize with Capwell workspace by default for backward compatibility
-    this.currentWorkspaceId = 'capwell-workspace-id';
-    this.currentProjectId = 'capwell-project-id';
+    // Will be initialized when user logs in
+    this.currentWorkspaceId = null;
+    this.currentProjectId = null;
   }
 
   /**
@@ -63,8 +63,55 @@ class WorkspaceService {
       return;
     }
 
-    // Temporarily disabled - workspace table not yet created
-    this.userWorkspaces = [];
+    try {
+      const { data, error } = await supabase
+        .from('user_workspaces')
+        .select(`
+          id,
+          user_id,
+          workspace_id,
+          role,
+          created_at,
+          workspace:workspaces (
+            id,
+            name,
+            description,
+            created_at,
+            updated_at
+          )
+        `)
+        .eq('user_id', this.user.id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error loading user workspaces:', error);
+        this.userWorkspaces = [];
+        return;
+      }
+
+      // Transform the data to match UserWorkspace interface
+      this.userWorkspaces = (data || []).map(item => ({
+        id: item.id,
+        user_id: item.user_id,
+        workspace_id: item.workspace_id,
+        role: item.role as 'admin' | 'member' | 'viewer',
+        joined_at: item.created_at,
+        workspace: item.workspace as Workspace
+      }));
+
+      // If no workspace is currently set, set the first one as default
+      if (!this.currentWorkspaceId && this.userWorkspaces.length > 0) {
+        this.currentWorkspaceId = this.userWorkspaces[0].workspace_id;
+        console.log('🏢 Default workspace set to:', this.userWorkspaces[0].workspace.name);
+        
+        // Load projects for the default workspace
+        await this.loadProjectsForWorkspace(this.currentWorkspaceId);
+      }
+    } catch (error) {
+      console.error('Error loading user workspaces:', error);
+      this.userWorkspaces = [];
+    }
   }
 
   /**
@@ -240,33 +287,55 @@ class WorkspaceService {
   }
 
   /**
-   * Check if we're using Capwell workspace
+   * Check if we're using Capwell workspace (legacy support)
    */
   isCapwellWorkspace(): boolean {
-    return this.currentWorkspaceId === 'capwell-workspace-id';
+    // Check if workspace name contains 'Capwell'
+    const currentWorkspace = this.userWorkspaces.find(
+      uw => uw.workspace_id === this.currentWorkspaceId
+    );
+    return currentWorkspace?.workspace.name.toLowerCase().includes('capwell') || false;
   }
 
   /**
    * Get workspace name
    */
   getWorkspaceName(): string {
-    switch (this.currentWorkspaceId) {
-      case 'capwell-workspace-id':
-        return 'Capwell';
-      default:
-        return 'Unknown Workspace';
-    }
+    if (!this.currentWorkspaceId) return 'No Workspace';
+    
+    const userWorkspace = this.userWorkspaces.find(
+      uw => uw.workspace_id === this.currentWorkspaceId
+    );
+    
+    return userWorkspace?.workspace.name || 'Unknown Workspace';
   }
 
   /**
    * Get project name
    */
   getProjectName(): string {
-    switch (this.currentProjectId) {
-      case 'capwell-project-id':
-        return 'Capwell Instore Activation';
-      default:
-        return 'Unknown Project';
+    // Return a simple name, async fetch will be handled separately if needed
+    return 'Current Project';
+  }
+  
+  /**
+   * Get project name async
+   */
+  async getProjectNameAsync(): Promise<string> {
+    if (!this.currentProjectId) return 'No Project';
+    
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('name')
+        .eq('id', this.currentProjectId)
+        .single();
+      
+      if (error) throw error;
+      return data?.name || 'Unknown Project';
+    } catch (error) {
+      console.error('Error fetching project name:', error);
+      return 'Unknown Project';
     }
   }
 

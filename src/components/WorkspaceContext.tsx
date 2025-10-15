@@ -61,7 +61,7 @@ export const WorkspaceContext = () => {
               <span className="text-sm font-medium">Project:</span>
               <Badge variant="outline" className="flex items-center gap-1">
                 <Users className="h-3 w-3" />
-                {workspaceService.getProjectName()}
+                {workspaceService.getCurrentProjectId() ? 'Active Project' : 'No Project'}
               </Badge>
             </div>
             <div className="text-xs font-mono text-muted-foreground">
