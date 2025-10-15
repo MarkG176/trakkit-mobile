@@ -280,11 +280,11 @@ export const Reports = () => {
 
         <Card>
           <CardContent className="p-6">
-            <h3 className="text-h3 mb-6 text-black">Report Notes</h3>
+            <h3 className="text-h3 mb-6 text-black">Notes</h3>
             
             <div className="space-y-4">
               <Textarea
-                placeholder="Add your report notes here..."
+                placeholder="Add your notes here..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={6}
