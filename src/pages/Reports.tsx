@@ -105,15 +105,6 @@ export const Reports = () => {
       return;
     }
 
-    // Debug workspace context
-    console.log("🔍 Debug workspace context:", {
-      currentWorkspaceId,
-      user: user?.id,
-      workspaceServiceInitialized: workspaceService.isInitialized(),
-      workspaceServiceCurrentId: workspaceService.getCurrentWorkspaceId()
-    });
-
-    // Fallback: try to get workspace from service directly if context is null
     const workspaceId = currentWorkspaceId || workspaceService.getCurrentWorkspaceId();
     
     if (!workspaceId) {
@@ -124,29 +115,12 @@ export const Reports = () => {
     setSubmitting(true);
 
     try {
-      // Insert notes with proper fields using workspace context
-      console.log("🔍 Inserting note with data:", {
-        agent_id: user.id,
-        workspace_id: workspaceId,
-        content: notes,
-        note_type: 'report',
-        metadata: {
-          source: 'reports_page',
-          created_via: 'mobile_app'
-        }
-      });
-
       const { data, error } = await supabase
         .from('notes')
         .insert({
           agent_id: user.id,
           workspace_id: workspaceId,
-          content: notes,
-          note_type: 'report',
-          metadata: {
-            source: 'reports_page',
-            created_via: 'mobile_app'
-          }
+          content: notes
         })
         .select();
 
