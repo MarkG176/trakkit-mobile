@@ -58,7 +58,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/" element={
               <RoleBasedRoute allowedRoles={['supervisor']} redirectTo="/agent">
-                <SupervisorDashboard />
+                <AgentTracking />
               </RoleBasedRoute>
             } />
             <Route path="/agent" element={
