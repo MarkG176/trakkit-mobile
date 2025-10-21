@@ -8,6 +8,7 @@ import { TrendingUp, Trophy, Target, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 
 interface AgentPerformance {
   id: string;
@@ -131,6 +132,10 @@ export const PerformanceSnapshot = () => {
             </TabsTrigger>
           </TabsList>
         </Tabs>
+        
+        <div className="mt-3">
+          <WorkspaceSwitcher onWorkspaceChange={fetchAgentPerformance} />
+        </div>
       </div>
 
       <div className="p-4">

@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 
 interface ProductSummary {
   productId: string;
@@ -88,6 +89,10 @@ export const InventoryManagement = () => {
           <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
             <Package className="w-6 h-6" />
           </div>
+        </div>
+        
+        <div className="mt-3">
+          <WorkspaceSwitcher onWorkspaceChange={fetchProductSummary} />
         </div>
       </div>
 

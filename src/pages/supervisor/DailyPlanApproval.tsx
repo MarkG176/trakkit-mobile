@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 
 interface DayPlan {
   id: string;
@@ -84,6 +85,10 @@ export const DailyPlanApproval = () => {
           <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
             <Calendar className="w-6 h-6" />
           </div>
+        </div>
+        
+        <div className="mt-3">
+          <WorkspaceSwitcher onWorkspaceChange={fetchPendingPlans} />
         </div>
       </div>
 

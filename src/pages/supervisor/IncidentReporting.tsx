@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertTriangle, Plus, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import {
   Select,
   SelectContent,
@@ -131,6 +132,10 @@ export const IncidentReporting = () => {
           <Plus className="w-4 h-4 mr-2" />
           Report New Incident
         </Button>
+        
+        <div className="mt-3">
+          <WorkspaceSwitcher onWorkspaceChange={() => {}} />
+        </div>
       </div>
 
       <div className="p-4">

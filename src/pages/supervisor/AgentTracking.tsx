@@ -8,6 +8,7 @@ import { MapPin, Users, Search, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 
 interface AgentStatus {
   id: string;
@@ -153,6 +154,10 @@ export const AgentTracking = () => {
               className="pl-10 bg-white/90"
             />
           </div>
+        </div>
+        
+        <div className="mt-3">
+          <WorkspaceSwitcher onWorkspaceChange={fetchAgentStatuses} />
         </div>
       </div>
 
