@@ -3,46 +3,214 @@ import { SupervisorMobileLayout } from "@/components/SupervisorMobileLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, TrendingUp, Package, MapPin, Clock, Trophy, Calendar, AlertTriangle } from "lucide-react";
+import { Users, TrendingUp, Package, MapPin, Clock, Trophy, Calendar, AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
+
+interface AgentStatus {
+  id: string;
+  name: string;
+  email: string;
+  status: string;
+  location: { lat: number; lng: number } | null;
+  lastUpdate: string;
+  batteryLevel: number;
+  todayStats: {
+    sales: number;
+    surveys: number;
+  };
+}
 
 export const SupervisorDashboard = () => {
   const navigate = useNavigate();
   const { displayName } = useUserProfile();
   const { toast } = useToast();
+  const { currentWorkspaceId } = useWorkspace();
   const [stats, setStats] = useState({
     totalAgents: 0,
     activeAgents: 0,
     todaySales: 0,
     pendingApprovals: 0,
   });
+  const [agentStatuses, setAgentStatuses] = useState<AgentStatus[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchDashboardStats();
-  }, []);
+    if (currentWorkspaceId) {
+      fetchDashboardStats();
+    }
+  }, [currentWorkspaceId]);
 
   const fetchDashboardStats = async () => {
+    if (!currentWorkspaceId) return;
+    
     try {
-      // Simplified stats - using placeholder values
-      setStats({
-        totalAgents: 12,
-        activeAgents: 8,
-        todaySales: 24,
-        pendingApprovals: 3,
+      setLoading(true);
+      const today = new Date().toISOString().split('T')[0];
+
+      // Fetch total agents in workspace
+      const { data: workspaceAgents, error: agentsError } = await supabase
+        .from('user_roles')
+        .select('user_id, display_name, email, role')
+        .eq('workspace_id', currentWorkspaceId)
+        .eq('role', 'agent')
+        .eq('is_active', true);
+
+      if (agentsError) throw agentsError;
+
+      // Fetch agent status logs for today
+      const agentIds = workspaceAgents?.map(agent => agent.user_id) || [];
+      const { data: statusLogs, error: statusError } = await supabase
+        .from('agent_status_log')
+        .select('agent_id, status, timestamp, location_lat, location_lng')
+        .in('agent_id', agentIds)
+        .gte('timestamp', `${today}T00:00:00`)
+        .order('timestamp', { ascending: false });
+
+      if (statusError) throw statusError;
+
+      // Get latest status for each agent
+      const agentStatusMap = new Map();
+      statusLogs?.forEach(log => {
+        if (!agentStatusMap.has(log.agent_id)) {
+          agentStatusMap.set(log.agent_id, log);
+        }
       });
+
+      // Fetch battery status
+      const { data: batteryStatus, error: batteryError } = await supabase
+        .from('agent_battery_status')
+        .select('agent_id, battery_level, location_lat, location_lng')
+        .in('agent_id', agentIds)
+        .order('updated_at', { ascending: false });
+
+      if (batteryError) throw batteryError;
+
+      // Get latest battery status for each agent
+      const batteryStatusMap = new Map();
+      batteryStatus?.forEach(battery => {
+        if (!batteryStatusMap.has(battery.agent_id)) {
+          batteryStatusMap.set(battery.agent_id, battery);
+        }
+      });
+
+      // Fetch today's sales data
+      const { data: salesData, error: salesError } = await supabase
+        .from('daily_sales_tracking')
+        .select('agent_id, quantity_sold, total_value')
+        .in('agent_id', agentIds)
+        .eq('work_date', today);
+
+      if (salesError) throw salesError;
+
+      // Fetch pending day plans
+      const { data: pendingPlans, error: plansError } = await supabase
+        .from('day_plans')
+        .select('id')
+        .eq('workspace_id', currentWorkspaceId)
+        .eq('status', 'pending');
+
+      if (plansError) throw plansError;
+
+      // Calculate stats
+      const totalAgents = workspaceAgents?.length || 0;
+      const activeAgents = Array.from(agentStatusMap.values())
+        .filter(log => log.status === 'checked_in').length;
+      const todaySales = salesData?.reduce((sum, sale) => sum + sale.quantity_sold, 0) || 0;
+      const pendingApprovals = pendingPlans?.length || 0;
+
+      setStats({
+        totalAgents,
+        activeAgents,
+        todaySales,
+        pendingApprovals,
+      });
+
+      // Build agent statuses for display
+      const agentStatuses: AgentStatus[] = workspaceAgents?.map(agent => {
+        const statusLog = agentStatusMap.get(agent.user_id);
+        const batteryData = batteryStatusMap.get(agent.user_id);
+        const agentSales = salesData?.filter(sale => sale.agent_id === agent.user_id) || [];
+        
+        // Use location from status log first, then from battery status
+        let location = null;
+        if (statusLog?.location_lat && statusLog?.location_lng) {
+          location = { lat: statusLog.location_lat, lng: statusLog.location_lng };
+        } else if (batteryData?.location_lat && batteryData?.location_lng) {
+          location = { lat: batteryData.location_lat, lng: batteryData.location_lng };
+        }
+        
+        return {
+          id: agent.user_id,
+          name: agent.display_name || agent.email || 'Unknown Agent',
+          email: agent.email || '',
+          status: statusLog?.status || 'unknown',
+          location,
+          lastUpdate: statusLog?.timestamp ? new Date(statusLog.timestamp).toLocaleTimeString() : 'Never',
+          batteryLevel: batteryData?.battery_level || 0,
+          todayStats: {
+            sales: agentSales.reduce((sum, sale) => sum + sale.quantity_sold, 0),
+            surveys: 0, // Could be enhanced with survey data
+          },
+        };
+      }) || [];
+
+      setAgentStatuses(agentStatuses);
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load dashboard data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
   
+  if (loading) {
+    return (
+      <SupervisorMobileLayout currentPage="dashboard">
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </SupervisorMobileLayout>
+    );
+  }
+
   return (
     <SupervisorMobileLayout currentPage="dashboard">
       <div className="bg-primary text-primary-foreground p-4">
-        <h1 className="text-2xl font-bold">Hello, {displayName}!</h1>
-        <p className="text-sm opacity-90">Team overview and management</p>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-2xl font-bold">Hello, {displayName}!</h1>
+            <p className="text-sm opacity-90">Team overview and management</p>
+          </div>
+          <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
+            <Users className="w-6 h-6" />
+          </div>
+        </div>
+        
+        <div className="mt-4 flex items-center justify-between">
+          <WorkspaceSwitcher 
+            onWorkspaceChange={() => fetchDashboardStats()}
+            className="text-primary-foreground"
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => fetchDashboardStats()}
+            disabled={loading}
+            className="text-primary-foreground hover:bg-white/20"
+            title="Refresh dashboard data"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
       </div>
 
       {/* Team Overview Cards */}
@@ -100,38 +268,62 @@ export const SupervisorDashboard = () => {
       <div className="px-4 pb-4">
         <h2 className="text-h3 mb-3">Agent Status</h2>
         <div className="space-y-3">
-          {[
-            { name: "John Doe", status: "active", location: "Route A", lastUpdate: "2 min ago" },
-            { name: "Jane Smith", status: "active", location: "Route B", lastUpdate: "5 min ago" },
-            { name: "Mike Johnson", status: "break", location: "Office", lastUpdate: "15 min ago" },
-            { name: "Sarah Wilson", status: "active", location: "Route C", lastUpdate: "1 min ago" },
-          ].map((agent, index) => (
-            <Card key={index} className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-accent rounded-full flex items-center justify-center">
-                    <span className="text-sm font-medium">{agent.name.split(' ').map(n => n[0]).join('')}</span>
+          {agentStatuses.length > 0 ? (
+            agentStatuses.slice(0, 4).map((agent) => (
+              <Card key={agent.id} className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-accent rounded-full flex items-center justify-center">
+                      <span className="text-sm font-medium">
+                        {agent.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium">{agent.name}</p>
+                      <div className="flex items-center gap-2">
+                        <MapPin size={12} className="text-secondary-foreground" />
+                        <span className="text-sm text-secondary-foreground">
+                          {agent.location ? `${agent.location.lat.toFixed(2)}, ${agent.location.lng.toFixed(2)}` : 'No location'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">{agent.name}</p>
-                    <div className="flex items-center gap-2">
-                      <MapPin size={12} className="text-secondary-foreground" />
-                      <span className="text-sm text-secondary-foreground">{agent.location}</span>
+                  <div className="text-right">
+                    <Badge variant={
+                      agent.status === 'checked_in' ? 'default' : 
+                      agent.status === 'lunch' ? 'secondary' : 
+                      'destructive'
+                    }>
+                      {agent.status === 'checked_in' ? 'Active' : 
+                       agent.status === 'lunch' ? 'On Break' : 
+                       agent.status === 'checked_out' ? 'Offline' : 'Unknown'}
+                    </Badge>
+                    <div className="flex items-center gap-1 mt-1">
+                      <Clock size={10} className="text-secondary-foreground" />
+                      <span className="text-xs text-secondary-foreground">{agent.lastUpdate}</span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="text-xs text-secondary-foreground">
+                        {agent.todayStats.sales} sales
+                      </span>
+                      {agent.batteryLevel > 0 && (
+                        <span className="text-xs text-secondary-foreground">
+                          • {agent.batteryLevel}% battery
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <Badge variant={agent.status === 'active' ? 'default' : 'secondary'}>
-                    {agent.status}
-                  </Badge>
-                  <div className="flex items-center gap-1 mt-1">
-                    <Clock size={10} className="text-secondary-foreground" />
-                    <span className="text-xs text-secondary-foreground">{agent.lastUpdate}</span>
-                  </div>
-                </div>
+              </Card>
+            ))
+          ) : (
+            <Card className="p-4">
+              <div className="text-center text-muted-foreground">
+                <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p>No agents found in current workspace</p>
               </div>
             </Card>
-          ))}
+          )}
         </div>
       </div>
 

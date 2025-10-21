@@ -10,6 +10,7 @@ import { InstallPrompt } from "@/components/InstallPrompt";
 import { Dashboard } from "./pages/Dashboard";
 import { AgentDashboard } from "./pages/AgentDashboard";
 import { SupervisorDashboard } from "./pages/SupervisorDashboard";
+import { SupervisorMore } from "./pages/SupervisorMore";
 import { Surveys } from "./pages/Surveys";
 import { Routes as RoutesPage } from "./pages/Routes";
 import { Inventory } from "./pages/Inventory";
@@ -199,6 +200,11 @@ const App = () => (
             <Route path="/supervisor-dashboard" element={
               <RoleBasedRoute allowedRoles={['supervisor']} redirectTo="/agent">
                 <SupervisorDashboard />
+              </RoleBasedRoute>
+            } />
+            <Route path="/supervisor-more" element={
+              <RoleBasedRoute allowedRoles={['supervisor']} redirectTo="/agent">
+                <SupervisorMore />
               </RoleBasedRoute>
             } />
             <Route path="*" element={<NotFound />} />

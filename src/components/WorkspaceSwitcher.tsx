@@ -146,7 +146,7 @@ export const WorkspaceSwitcher = ({ onWorkspaceChange, className }: WorkspaceSwi
         onValueChange={handleWorkspaceChange}
         disabled={loading}
       >
-        <SelectTrigger className="w-[200px]">
+        <SelectTrigger className="w-[200px] bg-white/90 border-white/20">
           <SelectValue placeholder="Select workspace" />
         </SelectTrigger>
         <SelectContent>
@@ -167,6 +167,7 @@ export const WorkspaceSwitcher = ({ onWorkspaceChange, className }: WorkspaceSwi
         onClick={handleRefresh}
         disabled={refreshing}
         title="Refresh workspaces"
+        className="text-primary-foreground hover:bg-white/20"
       >
         <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
       </Button>
