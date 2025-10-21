@@ -198,7 +198,7 @@ const App = () => (
             } />
             <Route path="/supervisor-dashboard" element={
               <RoleBasedRoute allowedRoles={['supervisor']} redirectTo="/agent">
-                <AgentTracking />
+                <SupervisorDashboard />
               </RoleBasedRoute>
             } />
             <Route path="*" element={<NotFound />} />

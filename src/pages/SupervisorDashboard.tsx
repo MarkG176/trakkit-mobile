@@ -1,68 +1,96 @@
-import { MobileLayout } from "@/components/MobileLayout";
-import { Card } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { SupervisorMobileLayout } from "@/components/SupervisorMobileLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, TrendingUp, Package, MapPin, Clock, Phone } from "lucide-react";
+import { Users, TrendingUp, Package, MapPin, Clock, Trophy, Calendar, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export const SupervisorDashboard = () => {
   const navigate = useNavigate();
   const { displayName } = useUserProfile();
+  const { toast } = useToast();
+  const [stats, setStats] = useState({
+    totalAgents: 0,
+    activeAgents: 0,
+    todaySales: 0,
+    pendingApprovals: 0,
+  });
+
+  useEffect(() => {
+    fetchDashboardStats();
+  }, []);
+
+  const fetchDashboardStats = async () => {
+    try {
+      // Simplified stats - using placeholder values
+      setStats({
+        totalAgents: 12,
+        activeAgents: 8,
+        todaySales: 24,
+        pendingApprovals: 3,
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+    }
+  };
   
   return (
-    <MobileLayout currentPage="dashboard">
+    <SupervisorMobileLayout currentPage="dashboard">
       <div className="bg-primary text-primary-foreground p-4">
-        <h1 className="text-h1">Hello, {displayName}!</h1>
+        <h1 className="text-2xl font-bold">Hello, {displayName}!</h1>
         <p className="text-sm opacity-90">Team overview and management</p>
       </div>
 
       {/* Team Overview Cards */}
       <div className="p-4 grid grid-cols-2 gap-4">
-        <Card className="p-4">
+        <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/supervisor/agent-tracking')}>
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary/10 rounded-lg">
               <Users className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-secondary-foreground">Active Agents</p>
-              <p className="text-h2 font-bold text-primary">12</p>
+              <p className="text-sm text-secondary-foreground">Total Agents</p>
+              <p className="text-2xl font-bold text-primary">{stats.totalAgents}</p>
             </div>
           </div>
         </Card>
 
-        <Card className="p-4">
+        <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/supervisor/agent-tracking')}>
           <div className="flex items-center gap-3">
             <div className="p-2 bg-success/10 rounded-lg">
               <TrendingUp className="h-5 w-5 text-success" />
             </div>
             <div>
-              <p className="text-sm text-secondary-foreground">Today's Sales</p>
-              <p className="text-h2 font-bold text-success">KES 45,230</p>
+              <p className="text-sm text-secondary-foreground">Active Today</p>
+              <p className="text-2xl font-bold text-success">{stats.activeAgents}</p>
             </div>
           </div>
         </Card>
 
-        <Card className="p-4">
+        <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/supervisor/performance-snapshot')}>
           <div className="flex items-center gap-3">
             <div className="p-2 bg-warning/10 rounded-lg">
-              <Package className="h-5 w-5 text-warning" />
+              <Trophy className="h-5 w-5 text-warning" />
             </div>
             <div>
-              <p className="text-sm text-secondary-foreground">Pending Returns</p>
-              <p className="text-h2 font-bold text-warning">8</p>
+              <p className="text-sm text-secondary-foreground">Today's Sales</p>
+              <p className="text-2xl font-bold text-warning">{stats.todaySales}</p>
             </div>
           </div>
         </Card>
 
-        <Card className="p-4">
+        <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/supervisor/daily-plan-approval')}>
           <div className="flex items-center gap-3">
             <div className="p-2 bg-destructive/10 rounded-lg">
-              <MapPin className="h-5 w-5 text-destructive" />
+              <Calendar className="h-5 w-5 text-destructive" />
             </div>
             <div>
-              <p className="text-sm text-secondary-foreground">Routes Active</p>
-              <p className="text-h2 font-bold text-destructive">6</p>
+              <p className="text-sm text-secondary-foreground">Pending Plans</p>
+              <p className="text-2xl font-bold text-destructive">{stats.pendingApprovals}</p>
             </div>
           </div>
         </Card>
@@ -109,30 +137,42 @@ export const SupervisorDashboard = () => {
 
       {/* Quick Actions */}
       <div className="px-4 pb-20">
-        <h2 className="text-h3 mb-3">Quick Actions</h2>
+        <h2 className="text-lg font-semibold mb-3">Quick Actions</h2>
         <div className="grid grid-cols-2 gap-3">
           <Button 
             variant="outline" 
             className="h-20 flex-col gap-2"
-            onClick={() => navigate('/manage-agents')}
+            onClick={() => navigate('/supervisor/agent-tracking')}
           >
             <Users size={20} />
-            <span className="text-sm">Manage Agents</span>
+            <span className="text-sm">Agent Tracking</span>
           </Button>
-          <Button variant="outline" className="h-20 flex-col gap-2">
-            <TrendingUp size={20} />
-            <span className="text-sm">View Reports</span>
+          <Button 
+            variant="outline" 
+            className="h-20 flex-col gap-2"
+            onClick={() => navigate('/supervisor/daily-plan-approval')}
+          >
+            <Calendar size={20} />
+            <span className="text-sm">Approve Plans</span>
           </Button>
-          <Button variant="outline" className="h-20 flex-col gap-2">
+          <Button 
+            variant="outline" 
+            className="h-20 flex-col gap-2"
+            onClick={() => navigate('/supervisor/inventory-management')}
+          >
             <Package size={20} />
             <span className="text-sm">Inventory</span>
           </Button>
-          <Button variant="outline" className="h-20 flex-col gap-2">
-            <Phone size={20} />
-            <span className="text-sm">Support</span>
+          <Button 
+            variant="outline" 
+            className="h-20 flex-col gap-2"
+            onClick={() => navigate('/supervisor/performance-snapshot')}
+          >
+            <Trophy size={20} />
+            <span className="text-sm">Performance</span>
           </Button>
         </div>
       </div>
-    </MobileLayout>
+    </SupervisorMobileLayout>
   );
 };

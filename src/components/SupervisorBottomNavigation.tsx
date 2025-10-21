@@ -6,11 +6,11 @@ interface SupervisorBottomNavigationProps {
 }
 
 const navItems = [
+  { id: "dashboard", label: "Dashboard", icon: Users, path: "/supervisor-dashboard" },
   { id: "agent-tracking", label: "Agents", icon: Users, path: "/supervisor/agent-tracking" },
   { id: "daily-plan", label: "Plans", icon: Calendar, path: "/supervisor/daily-plan-approval" },
   { id: "inventory", label: "Inventory", icon: Package, path: "/supervisor/inventory-management" },
   { id: "performance", label: "Performance", icon: Trophy, path: "/supervisor/performance-snapshot" },
-  { id: "incidents", label: "Incidents", icon: AlertTriangle, path: "/supervisor/incident-reporting" },
 ];
 
 export const SupervisorBottomNavigation = ({ currentPage }: SupervisorBottomNavigationProps) => {
