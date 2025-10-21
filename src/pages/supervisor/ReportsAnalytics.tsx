@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { BarChart3, TrendingUp, ShoppingCart, Users, Calendar } from "lucide-react";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 
@@ -25,30 +26,26 @@ export const ReportsAnalytics = () => {
     avgSalesPerAgent: 0,
   });
   const { toast } = useToast();
+  const { currentWorkspaceId } = useWorkspace();
 
   useEffect(() => {
-    fetchReports();
-  }, []);
+    if (currentWorkspaceId) {
+      fetchReports();
+    }
+  }, [currentWorkspaceId]);
 
   const fetchReports = async () => {
+    if (!currentWorkspaceId) return;
+    
     try {
       setLoading(true);
       const today = new Date().toISOString().split('T')[0];
 
-      // Get Capwell workspace ID
-      const { data: capwellWorkspace, error: workspaceError } = await supabase
-        .from('workspaces')
-        .select('id')
-        .eq('name', 'Capwell')
-        .single();
-
-      if (workspaceError) throw workspaceError;
-
-      // Fetch agents in Capwell workspace
+      // Fetch agents in current workspace
       const { data: agents, error: agentsError } = await supabase
         .from('user_roles')
         .select('user_id, display_name, email')
-        .eq('workspace_id', capwellWorkspace.id)
+        .eq('workspace_id', currentWorkspaceId)
         .eq('role', 'agent')
         .eq('is_active', true);
 
@@ -58,7 +55,7 @@ export const ReportsAnalytics = () => {
       const { data: allSales, error: salesError } = await supabase
         .from('sale_items')
         .select('quantity, total_price, created_at, sale_id')
-        .eq('workspace_id', capwellWorkspace.id);
+        .eq('workspace_id', currentWorkspaceId);
 
       if (salesError) throw salesError;
 
@@ -66,7 +63,7 @@ export const ReportsAnalytics = () => {
       const { data: salesData, error: salesDataError } = await supabase
         .from('sales')
         .select('id, agent_id')
-        .eq('workspace_id', capwellWorkspace.id);
+        .eq('workspace_id', currentWorkspaceId);
 
       if (salesDataError) throw salesDataError;
 
@@ -132,7 +129,7 @@ export const ReportsAnalytics = () => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold">Sales Analytics</h1>
-            <p className="text-sm opacity-90">Capwell workspace reports</p>
+            <p className="text-sm opacity-90">Workspace sales reports</p>
           </div>
           <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
             <BarChart3 className="w-6 h-6" />

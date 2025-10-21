@@ -146,7 +146,7 @@ export const WorkspaceSwitcher = ({ onWorkspaceChange, className }: WorkspaceSwi
         onValueChange={handleWorkspaceChange}
         disabled={loading}
       >
-        <SelectTrigger className="w-[200px] bg-white/90 border-white/20">
+        <SelectTrigger className="w-[200px] bg-white/90 border-white/20 text-black">
           <SelectValue placeholder="Select workspace" />
         </SelectTrigger>
         <SelectContent>

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { Activity as ActivityIcon, MapPin, Clock } from "lucide-react";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 
@@ -28,40 +29,25 @@ export const Activity = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>('all');
   const { toast } = useToast();
+  const { currentWorkspaceId } = useWorkspace();
 
   useEffect(() => {
-    fetchActivities();
-  }, []);
+    if (currentWorkspaceId) {
+      fetchActivities();
+    }
+  }, [currentWorkspaceId]);
 
   const fetchActivities = async () => {
+    if (!currentWorkspaceId) return;
+    
     try {
       setLoading(true);
 
-      // Get Capwell workspace ID
-      const { data: capwellWorkspace, error: workspaceError } = await supabase
-        .from('workspaces')
-        .select('id')
-        .eq('name', 'Capwell')
-        .single();
-
-      if (workspaceError) throw workspaceError;
-
-      // Fetch agents in Capwell workspace using user_workspaces
-      const { data: workspaceUsers, error: workspaceUsersError } = await supabase
-        .from('user_workspaces')
-        .select('user_id, name, email')
-        .eq('workspace_id', capwellWorkspace.id)
-        .eq('is_active', true);
-
-      if (workspaceUsersError) throw workspaceUsersError;
-
-      const userIds = workspaceUsers?.map(u => u.user_id) || [];
-
-      // Get agents from user_roles
+      // Fetch agents in current workspace
       const { data: agents, error: agentsError } = await supabase
         .from('user_roles')
         .select('user_id, display_name, email')
-        .in('user_id', userIds)
+        .eq('workspace_id', currentWorkspaceId)
         .eq('role', 'agent')
         .eq('is_active', true);
 
