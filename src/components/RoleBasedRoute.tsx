@@ -60,7 +60,14 @@ export const RoleBasedRoute = ({ children, allowedRoles, redirectTo = "/login" }
     return <Navigate to="/login" replace />;
   }
 
-  if (!userRole || !allowedRoles.includes(userRole)) {
+  // Admins should be treated as supervisors
+  const effectiveRoles = userRole === 'admin' 
+    ? [userRole, 'supervisor'] 
+    : [userRole];
+  
+  const hasAccess = effectiveRoles.some(role => allowedRoles.includes(role));
+  
+  if (!userRole || !hasAccess) {
     return <Navigate to={redirectTo} replace />;
   }
 
