@@ -39,11 +39,22 @@ export const Activity = () => {
 
       if (workspaceError) throw workspaceError;
 
-      // Fetch agents in Capwell workspace
+      // Fetch agents in Capwell workspace using user_workspaces
+      const { data: workspaceUsers, error: workspaceUsersError } = await supabase
+        .from('user_workspaces')
+        .select('user_id, name, email')
+        .eq('workspace_id', capwellWorkspace.id)
+        .eq('is_active', true);
+
+      if (workspaceUsersError) throw workspaceUsersError;
+
+      const userIds = workspaceUsers?.map(u => u.user_id) || [];
+
+      // Get agents from user_roles
       const { data: agents, error: agentsError } = await supabase
         .from('user_roles')
         .select('user_id, display_name, email')
-        .eq('workspace_id', capwellWorkspace.id)
+        .in('user_id', userIds)
         .eq('role', 'agent')
         .eq('is_active', true);
 
