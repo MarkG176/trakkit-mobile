@@ -36,9 +36,10 @@ export const SupervisorMore = () => {
   const menuItems = [
     { icon: User, label: "Profile", action: () => navigate("/profile") },
     { icon: Users, label: "Manage Agents", action: () => navigate("/manage-agents") },
-    { icon: BarChart, label: "Reports", action: () => navigate("/reports") },
-    { icon: Activity, label: "Activity", action: () => navigate("/activity") },
+    { icon: BarChart, label: "Sales Analytics", action: () => navigate("/supervisor/reports-analytics") },
+    { icon: Activity, label: "Activity Feed", action: () => navigate("/activity") },
     { icon: MessageSquare, label: "Interaction History", action: () => navigate("/interaction-history") },
+    { icon: Shield, label: "Incident Reporting", action: () => navigate("/supervisor/incident-reporting") },
     { icon: FileText, label: "Documentation", action: () => navigate("/documentation") },
     { icon: Settings, label: "Settings", action: () => navigate("/settings") },
     { icon: Bug, label: "Debug Kit", action: () => navigate("/debug-kit") },

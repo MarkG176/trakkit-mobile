@@ -40,6 +40,7 @@ import { AgentTracking } from "./pages/supervisor/AgentTracking";
 import { DailyPlanApproval } from "./pages/supervisor/DailyPlanApproval";
 import { InventoryManagement } from "./pages/supervisor/InventoryManagement";
 import { IncidentReporting } from "./pages/supervisor/IncidentReporting";
+import { ReportsAnalytics } from "./pages/supervisor/ReportsAnalytics";
 
 const queryClient = new QueryClient();
 
@@ -189,6 +190,11 @@ const App = () => (
             <Route path="/supervisor/incident-reporting" element={
               <RoleBasedRoute allowedRoles={['supervisor']}>
                 <IncidentReporting />
+              </RoleBasedRoute>
+            } />
+            <Route path="/supervisor/reports-analytics" element={
+              <RoleBasedRoute allowedRoles={['supervisor']}>
+                <ReportsAnalytics />
               </RoleBasedRoute>
             } />
             <Route path="/supervisor-dashboard" element={

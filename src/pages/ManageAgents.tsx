@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { MobileLayout } from "@/components/MobileLayout";
+import { SupervisorMobileLayout } from "@/components/SupervisorMobileLayout";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { MapPin, Star, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 
 interface Agent {
   user_id: string;
@@ -28,9 +29,19 @@ export const ManageAgents = () => {
 
   const fetchAgents = async () => {
     try {
+      // Get Capwell workspace ID
+      const { data: capwellWorkspace, error: workspaceError } = await supabase
+        .from('workspaces')
+        .select('id')
+        .eq('name', 'Capwell')
+        .single();
+
+      if (workspaceError) throw workspaceError;
+
       const { data, error } = await supabase
         .from('user_roles')
         .select('user_id, display_name, role_title, location, years_experience, rating, email')
+        .eq('workspace_id', capwellWorkspace.id)
         .eq('role', 'agent')
         .eq('is_active', true)
         .order('rating', { ascending: false });
@@ -64,19 +75,22 @@ export const ManageAgents = () => {
 
   if (loading) {
     return (
-      <MobileLayout currentPage="more">
+      <SupervisorMobileLayout currentPage="more">
         <div className="flex items-center justify-center min-h-screen">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </MobileLayout>
+      </SupervisorMobileLayout>
     );
   }
 
   return (
-    <MobileLayout currentPage="more">
+    <SupervisorMobileLayout currentPage="more">
       <div className="bg-primary text-primary-foreground p-4">
         <h1 className="text-h1">Manage Agents</h1>
-        <p className="text-sm opacity-90">Select and manage your field agents</p>
+        <p className="text-sm opacity-90">Capwell workspace agents</p>
+        <div className="mt-3">
+          <WorkspaceSwitcher onWorkspaceChange={fetchAgents} />
+        </div>
       </div>
 
       <div className="p-4 space-y-3">
@@ -129,10 +143,10 @@ export const ManageAgents = () => {
 
         {agents.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">No agents found</p>
+            <p className="text-muted-foreground">No agents found in Capwell workspace</p>
           </div>
         )}
       </div>
-    </MobileLayout>
+    </SupervisorMobileLayout>
   );
 };
