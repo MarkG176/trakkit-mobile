@@ -35,6 +35,11 @@ import { RoleBasedRoute } from "./components/RoleBasedRoute";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import PWAUpdateNotification from "./components/PWAUpdateNotification";
 import NotFound from "./pages/NotFound";
+import { AgentTracking } from "./pages/supervisor/AgentTracking";
+import { DailyPlanApproval } from "./pages/supervisor/DailyPlanApproval";
+import { InventoryManagement } from "./pages/supervisor/InventoryManagement";
+import { PerformanceSnapshot } from "./pages/supervisor/PerformanceSnapshot";
+import { IncidentReporting } from "./pages/supervisor/IncidentReporting";
 
 const queryClient = new QueryClient();
 
@@ -165,6 +170,31 @@ const App = () => (
               <ProtectedRoute>
                 <Activity />
               </ProtectedRoute>
+            } />
+            <Route path="/supervisor/agent-tracking" element={
+              <RoleBasedRoute allowedRoles={['supervisor']}>
+                <AgentTracking />
+              </RoleBasedRoute>
+            } />
+            <Route path="/supervisor/daily-plan-approval" element={
+              <RoleBasedRoute allowedRoles={['supervisor']}>
+                <DailyPlanApproval />
+              </RoleBasedRoute>
+            } />
+            <Route path="/supervisor/inventory-management" element={
+              <RoleBasedRoute allowedRoles={['supervisor']}>
+                <InventoryManagement />
+              </RoleBasedRoute>
+            } />
+            <Route path="/supervisor/performance-snapshot" element={
+              <RoleBasedRoute allowedRoles={['supervisor']}>
+                <PerformanceSnapshot />
+              </RoleBasedRoute>
+            } />
+            <Route path="/supervisor/incident-reporting" element={
+              <RoleBasedRoute allowedRoles={['supervisor']}>
+                <IncidentReporting />
+              </RoleBasedRoute>
             } />
             <Route path="*" element={<NotFound />} />
           </Routes>
