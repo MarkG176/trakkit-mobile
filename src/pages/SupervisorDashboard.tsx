@@ -3,13 +3,14 @@ import { SupervisorMobileLayout } from "@/components/SupervisorMobileLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, TrendingUp, Package, MapPin, Clock, Trophy, Calendar, AlertTriangle, Loader2, RefreshCw } from "lucide-react";
+import { Users, TrendingUp, Package, MapPin, Clock, Trophy, Calendar, AlertTriangle, Loader2, RefreshCw, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
+import { InviteAgentDialog } from "@/components/InviteAgentDialog";
 
 interface AgentStatus {
   id: string;
@@ -38,25 +39,32 @@ export const SupervisorDashboard = () => {
   });
   const [agentStatuses, setAgentStatuses] = useState<AgentStatus[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
 
   useEffect(() => {
-    if (currentWorkspaceId) {
-      fetchDashboardStats();
-    }
-  }, [currentWorkspaceId]);
+    fetchDashboardStats();
+  }, []);
 
   const fetchDashboardStats = async () => {
-    if (!currentWorkspaceId) return;
-    
     try {
       setLoading(true);
       const today = new Date().toISOString().split('T')[0];
 
-      // Fetch total agents in workspace
+      // Get Capwell workspace ID
+      const { data: capwellWorkspace, error: workspaceError } = await supabase
+        .from('workspaces')
+        .select('id')
+        .eq('name', 'Capwell')
+        .single();
+
+      if (workspaceError) throw workspaceError;
+      const capwellWorkspaceId = capwellWorkspace.id;
+
+      // Fetch total agents in Capwell workspace
       const { data: workspaceAgents, error: agentsError } = await supabase
         .from('user_roles')
         .select('user_id, display_name, email, role')
-        .eq('workspace_id', currentWorkspaceId)
+        .eq('workspace_id', capwellWorkspaceId)
         .eq('role', 'agent')
         .eq('is_active', true);
 
@@ -98,12 +106,13 @@ export const SupervisorDashboard = () => {
         }
       });
 
-      // Fetch today's sales data
-      const { data: salesData, error: salesError } = await supabase
-        .from('daily_sales_tracking')
-        .select('agent_id, quantity_sold, total_value')
-        .in('agent_id', agentIds)
-        .eq('work_date', today);
+      // Fetch today's sales from sale_items table with Capwell workspace
+      const { data: saleItems, error: salesError } = await supabase
+        .from('sale_items')
+        .select('quantity, created_at')
+        .eq('workspace_id', capwellWorkspaceId)
+        .gte('created_at', `${today}T00:00:00`)
+        .lte('created_at', `${today}T23:59:59`);
 
       if (salesError) throw salesError;
 
@@ -111,7 +120,7 @@ export const SupervisorDashboard = () => {
       const { data: pendingPlans, error: plansError } = await supabase
         .from('day_plans')
         .select('id')
-        .eq('workspace_id', currentWorkspaceId)
+        .eq('workspace_id', capwellWorkspaceId)
         .eq('status', 'pending');
 
       if (plansError) throw plansError;
@@ -120,7 +129,7 @@ export const SupervisorDashboard = () => {
       const totalAgents = workspaceAgents?.length || 0;
       const activeAgents = Array.from(agentStatusMap.values())
         .filter(log => log.status === 'checked_in').length;
-      const todaySales = salesData?.reduce((sum, sale) => sum + sale.quantity_sold, 0) || 0;
+      const todaySales = saleItems?.reduce((sum, item) => sum + item.quantity, 0) || 0;
       const pendingApprovals = pendingPlans?.length || 0;
 
       setStats({
@@ -134,7 +143,6 @@ export const SupervisorDashboard = () => {
       const agentStatuses: AgentStatus[] = workspaceAgents?.map(agent => {
         const statusLog = agentStatusMap.get(agent.user_id);
         const batteryData = batteryStatusMap.get(agent.user_id);
-        const agentSales = salesData?.filter(sale => sale.agent_id === agent.user_id) || [];
         
         // Use location from status log first, then from battery status
         let location = null;
@@ -153,8 +161,8 @@ export const SupervisorDashboard = () => {
           lastUpdate: statusLog?.timestamp ? new Date(statusLog.timestamp).toLocaleTimeString() : 'Never',
           batteryLevel: batteryData?.battery_level || 0,
           todayStats: {
-            sales: agentSales.reduce((sum, sale) => sum + sale.quantity_sold, 0),
-            surveys: 0, // Could be enhanced with survey data
+            sales: 0,
+            surveys: 0,
           },
         };
       }) || [];
@@ -190,9 +198,12 @@ export const SupervisorDashboard = () => {
             <h1 className="text-2xl font-bold">Hello, {displayName}!</h1>
             <p className="text-sm opacity-90">Team overview and management</p>
           </div>
-          <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
-            <Users className="w-6 h-6" />
-          </div>
+          <button 
+            onClick={() => setShowInviteDialog(true)}
+            className="bg-white/20 backdrop-blur-sm rounded-full p-3 hover:bg-white/30 transition-colors"
+          >
+            <UserPlus className="w-6 h-6" />
+          </button>
         </div>
         
         <div className="mt-4 flex items-center justify-between">
@@ -239,7 +250,7 @@ export const SupervisorDashboard = () => {
           </div>
         </Card>
 
-        <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/supervisor/performance-snapshot')}>
+        <Card className="p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-warning/10 rounded-lg">
               <Trophy className="h-5 w-5 text-warning" />
@@ -355,16 +366,13 @@ export const SupervisorDashboard = () => {
             <Package size={20} />
             <span className="text-sm">Inventory</span>
           </Button>
-          <Button 
-            variant="outline" 
-            className="h-20 flex-col gap-2"
-            onClick={() => navigate('/supervisor/performance-snapshot')}
-          >
-            <Trophy size={20} />
-            <span className="text-sm">Performance</span>
-          </Button>
         </div>
       </div>
+
+      <InviteAgentDialog 
+        open={showInviteDialog} 
+        onOpenChange={setShowInviteDialog}
+      />
     </SupervisorMobileLayout>
   );
 };

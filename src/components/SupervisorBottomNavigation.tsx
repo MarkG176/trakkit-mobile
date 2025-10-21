@@ -10,7 +10,6 @@ const navItems = [
   { id: "agent-tracking", label: "Agents", icon: Users, path: "/supervisor/agent-tracking" },
   { id: "daily-plan", label: "Plans", icon: Calendar, path: "/supervisor/daily-plan-approval" },
   { id: "inventory", label: "Inventory", icon: Package, path: "/supervisor/inventory-management" },
-  { id: "performance", label: "Performance", icon: Trophy, path: "/supervisor/performance-snapshot" },
   { id: "more", label: "More", icon: MoreHorizontal, path: "/supervisor-more" },
 ];
 
