@@ -60,11 +60,22 @@ export const SupervisorDashboard = () => {
       if (workspaceError) throw workspaceError;
       const capwellWorkspaceId = capwellWorkspace.id;
 
-      // Fetch total agents in Capwell workspace
+      // Fetch total agents in Capwell workspace using user_workspaces
+      const { data: workspaceUsers, error: workspaceUsersError } = await supabase
+        .from('user_workspaces')
+        .select('user_id')
+        .eq('workspace_id', capwellWorkspaceId)
+        .eq('is_active', true);
+
+      if (workspaceUsersError) throw workspaceUsersError;
+
+      const userIds = workspaceUsers?.map(u => u.user_id) || [];
+
+      // Get agent details from user_roles
       const { data: workspaceAgents, error: agentsError } = await supabase
         .from('user_roles')
         .select('user_id, display_name, email, role')
-        .eq('workspace_id', capwellWorkspaceId)
+        .in('user_id', userIds)
         .eq('role', 'agent')
         .eq('is_active', true);
 

@@ -38,10 +38,21 @@ export const ManageAgents = () => {
 
       if (workspaceError) throw workspaceError;
 
+      // Fetch agents using user_workspaces table
+      const { data: workspaceUsers, error: workspaceUsersError } = await supabase
+        .from('user_workspaces')
+        .select('user_id')
+        .eq('workspace_id', capwellWorkspace.id)
+        .eq('is_active', true);
+
+      if (workspaceUsersError) throw workspaceUsersError;
+
+      const userIds = workspaceUsers?.map(u => u.user_id) || [];
+
       const { data, error } = await supabase
         .from('user_roles')
         .select('user_id, display_name, role_title, location, years_experience, rating, email')
-        .eq('workspace_id', capwellWorkspace.id)
+        .in('user_id', userIds)
         .eq('role', 'agent')
         .eq('is_active', true)
         .order('rating', { ascending: false });

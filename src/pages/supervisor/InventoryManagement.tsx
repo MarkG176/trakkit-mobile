@@ -118,16 +118,10 @@ export const InventoryManagement = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mt-3 pt-3 border-t">
+              <div className="grid grid-cols-1 gap-4 mt-3 pt-3 border-t">
                 <div>
                   <p className="text-xs text-muted-foreground">Total Quantity Sold</p>
                   <p className="text-2xl font-bold text-primary">{product.totalQuantitySold}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Total Value</p>
-                  <p className="text-2xl font-bold text-success">
-                    ${product.totalValue.toFixed(2)}
-                  </p>
                 </div>
               </div>
             </Card>

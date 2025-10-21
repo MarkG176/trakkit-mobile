@@ -36,6 +36,39 @@ export const AgentTracking = () => {
 
   const fetchAgentStatuses = async () => {
     try {
+      // Get Capwell workspace ID
+      const { data: capwellWorkspace, error: workspaceError } = await supabase
+        .from('workspaces')
+        .select('id')
+        .eq('name', 'Capwell')
+        .single();
+
+      if (workspaceError) throw workspaceError;
+
+      // Get agents in the workspace
+      const { data: workspaceUsers, error: workspaceUsersError } = await supabase
+        .from('user_workspaces')
+        .select('user_id')
+        .eq('workspace_id', capwellWorkspace.id)
+        .eq('is_active', true);
+
+      if (workspaceUsersError) throw workspaceUsersError;
+
+      const userIds = workspaceUsers?.map(u => u.user_id) || [];
+
+      // Get agents from user_roles
+      const { data: agents, error: agentsError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .in('user_id', userIds)
+        .eq('role', 'agent')
+        .eq('is_active', true);
+
+      if (agentsError) throw agentsError;
+
+      const agentIds = agents?.map(a => a.user_id) || [];
+
+      // Fetch status logs for workspace agents
       const { data: statusLogs, error } = await supabase
         .from("agent_status_log")
         .select(`
@@ -45,6 +78,7 @@ export const AgentTracking = () => {
           location_lng,
           timestamp
         `)
+        .in("agent_id", agentIds)
         .order("timestamp", { ascending: false });
 
       if (error) throw error;
@@ -58,7 +92,6 @@ export const AgentTracking = () => {
       });
 
       // Fetch agent details and stats
-      const agentIds = Array.from(agentMap.keys());
       const { data: userRoles } = await supabase
         .from("user_roles")
         .select("user_id, display_name, email")

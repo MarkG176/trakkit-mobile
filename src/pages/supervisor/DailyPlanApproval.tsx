@@ -36,38 +36,50 @@ export const DailyPlanApproval = () => {
 
       if (workspaceError) throw workspaceError;
 
-      // Fetch projects in Capwell workspace
-      const { data: projects, error } = await supabase
-        .from("projects")
+      // Fetch day plans in Capwell workspace
+      const { data: dayPlans, error } = await supabase
+        .from("day_plans")
         .select(`
           id,
-          name,
-          description,
-          client_name,
-          start_date,
-          end_date
+          date,
+          area_name,
+          total_sales_target,
+          status,
+          notes,
+          supervisor_id
         `)
         .eq("workspace_id", capwellWorkspace.id)
-        .order("start_date", { ascending: false });
+        .order("date", { ascending: false });
 
       if (error) throw error;
 
-      // Map projects to the DayPlan interface format
-      const projectsAsPlan = (projects || []).map(project => ({
-        id: project.id,
-        date: project.start_date,
-        areaName: project.name,
-        salesTarget: 0,
-        status: 'active',
+      // Fetch supervisor names
+      const supervisorIds = [...new Set(dayPlans?.map(dp => dp.supervisor_id).filter(Boolean) || [])];
+      const { data: supervisors } = await supabase
+        .from('user_roles')
+        .select('user_id, display_name, email')
+        .in('user_id', supervisorIds);
+
+      const supervisorMap = new Map(
+        supervisors?.map(s => [s.user_id, s.display_name || s.email]) || []
+      );
+
+      // Map day plans to the DayPlan interface format
+      const plansData = (dayPlans || []).map(plan => ({
+        id: plan.id,
+        date: plan.date,
+        areaName: plan.area_name,
+        salesTarget: plan.total_sales_target || 0,
+        status: plan.status || 'active',
         taskCount: 0,
-        agentName: project.client_name || 'N/A',
-        agentEmail: project.description || '',
+        agentName: plan.supervisor_id ? supervisorMap.get(plan.supervisor_id) || 'N/A' : 'N/A',
+        agentEmail: plan.notes || '',
       }));
 
-      setPlans(projectsAsPlan);
+      setPlans(plansData);
     } catch (error: any) {
       toast({
-        title: "Error loading projects",
+        title: "Error loading day plans",
         description: error.message,
         variant: "destructive",
       });
@@ -79,8 +91,8 @@ export const DailyPlanApproval = () => {
       <div className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold">Projects</h1>
-            <p className="text-sm opacity-90">Capwell workspace projects</p>
+            <h1 className="text-2xl font-bold">Day Plans</h1>
+            <p className="text-sm opacity-90">Capwell workspace day plans</p>
           </div>
           <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
             <Calendar className="w-6 h-6" />
@@ -94,9 +106,9 @@ export const DailyPlanApproval = () => {
 
       <div className="p-4">
         <div className="mb-4">
-          <h2 className="text-lg font-semibold mb-2">Active Projects</h2>
+          <h2 className="text-lg font-semibold mb-2">Active Day Plans</h2>
           <p className="text-sm text-muted-foreground">
-            {plans.length} project{plans.length !== 1 ? "s" : ""} in Capwell
+            {plans.length} day plan{plans.length !== 1 ? "s" : ""} in Capwell
           </p>
         </div>
 
@@ -120,12 +132,16 @@ export const DailyPlanApproval = () => {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Client</span>
+                  <span className="text-sm text-muted-foreground">Supervisor</span>
                   <span className="font-medium">{plan.agentName}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Description</span>
-                  <span className="font-medium text-sm">{plan.agentEmail || 'N/A'}</span>
+                  <span className="text-sm text-muted-foreground">Sales Target</span>
+                  <span className="font-medium text-sm">{plan.salesTarget}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Status</span>
+                  <span className="font-medium text-sm capitalize">{plan.status}</span>
                 </div>
               </div>
             </Card>
@@ -134,7 +150,7 @@ export const DailyPlanApproval = () => {
           {plans.length === 0 && (
             <Card className="p-8 text-center">
               <Calendar className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-              <p className="text-muted-foreground">No projects found</p>
+              <p className="text-muted-foreground">No day plans found</p>
             </Card>
           )}
         </div>
