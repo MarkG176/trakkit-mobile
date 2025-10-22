@@ -41,11 +41,21 @@ export const ReportsAnalytics = () => {
       setLoading(true);
       const today = new Date().toISOString().split('T')[0];
 
-      // Fetch agents in current workspace
+      // First get users in current workspace
+      const { data: workspaceUsers, error: workspaceUsersError } = await supabase
+        .from('user_workspaces')
+        .select('user_id')
+        .eq('workspace_id', currentWorkspaceId);
+
+      if (workspaceUsersError) throw workspaceUsersError;
+
+      const userIds = workspaceUsers?.map(u => u.user_id) || [];
+
+      // Then get agent details from user_roles
       const { data: agents, error: agentsError } = await supabase
         .from('user_roles')
         .select('user_id, display_name, email')
-        .eq('workspace_id', currentWorkspaceId)
+        .in('user_id', userIds)
         .eq('role', 'agent')
         .eq('is_active', true);
 

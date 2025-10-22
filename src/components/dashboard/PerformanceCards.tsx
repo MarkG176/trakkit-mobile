@@ -13,7 +13,7 @@ interface PerformanceCardsProps {
 }
 
 export const PerformanceCards = ({ data }: PerformanceCardsProps) => {
-  const salesProgress = (data.salesTarget.current / data.salesTarget.target) * 100;
+  const salesProgress = data.salesTarget.target > 0 ? (data.salesTarget.current / data.salesTarget.target) * 100 : 0;
   
   return (
     <div className="px-4 py-4">
@@ -28,7 +28,7 @@ export const PerformanceCards = ({ data }: PerformanceCardsProps) => {
             <div className="flex-1">
               <div className="flex items-center justify-between">
                 <h3 className="text-h3 text-black">{data.tasksToday}</h3>
-                <Label className="text-xs text-muted-foreground bg-primary/10 px-2 py-1 rounded">Remaining</Label>
+                <Label className="text-xs text-muted-foreground bg-primary/10 px-2 py-1 rounded">Today</Label>
               </div>
               <p className="text-sm text-black">Tasks for Today</p>
             </div>
@@ -44,7 +44,7 @@ export const PerformanceCards = ({ data }: PerformanceCardsProps) => {
             <div className="flex-1">
               <div className="flex items-center justify-between">
                 <h3 className="text-h3 text-black">{data.surveysCompleted}</h3>
-                <Label className="text-xs text-muted-foreground bg-green-500/10 px-2 py-1 rounded">Today</Label>
+                <Label className="text-xs text-muted-foreground bg-green-500/10 px-2 py-1 rounded">Completed</Label>
               </div>
               <p className="text-sm text-black">Surveys Completed</p>
             </div>
