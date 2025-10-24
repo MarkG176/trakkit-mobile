@@ -38,15 +38,14 @@ export const addTextOverlayToImage = async (
       // Set text properties
       const fontSize = Math.max(16, img.width / 30); // Responsive font size
       ctx.font = `bold ${fontSize}px Arial, sans-serif`;
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-      ctx.lineWidth = 2;
+      ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+      ctx.strokeStyle = 'rgba(0, 0, 0, 1)';
+      ctx.lineWidth = 4;
 
       // Prepare text lines
       const lines = [
         `Agent: ${overlayData.agentName}`,
         `Workspace: ${overlayData.workspaceName}`,
-        `Project: ${overlayData.projectName}`,
         `Location: ${overlayData.coordinates.lat.toFixed(6)}, ${overlayData.coordinates.lng.toFixed(6)}`,
         `Time: ${overlayData.timestamp}`
       ];
