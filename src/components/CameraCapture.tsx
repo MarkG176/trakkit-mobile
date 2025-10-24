@@ -4,48 +4,166 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useAgentStatus } from '@/hooks/useAgentStatus';
 import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { addTextOverlayToImage, ImageOverlayData, formatTimestamp } from '@/utils/imageOverlay';
+import { workspaceService } from '@/services/workspaceService';
 
 interface CameraCaptureProps {
   onCapture?: (imageData: string) => void;
   mode?: 'status' | 'general'; // 'status' for check-in/out, 'general' for other uses
   variant?: 'floating' | 'inline'; // 'floating' for bottom nav, 'inline' for top bar
+  onImagesList?: (images: string[]) => void; // Callback to get list of images in current workspace/project
 }
 
-export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({ onCapture, mode = 'status', variant = 'floating' }, ref) => {
+export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({ onCapture, mode = 'status', variant = 'floating', onImagesList }, ref) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { currentStatus, updateStatus } = useAgentStatus();
   const { user } = useAuth();
+  const { currentWorkspaceId, currentProjectId } = useWorkspace();
+  const { displayName } = useUserProfile();
   const { toast } = useToast();
 
-  // Expose the file input ref to parent component
-  useImperativeHandle(ref, () => fileInputRef.current!);
+  // Expose the file input ref and listWorkspaceImages function to parent component
+  useImperativeHandle(ref, () => ({
+    ...fileInputRef.current!,
+    listWorkspaceImages,
+    click: () => fileInputRef.current?.click()
+  }));
+
+  // Function to list images in current workspace/project/agent context
+  const listWorkspaceImages = async (): Promise<string[]> => {
+    if (!user) return [];
+
+    try {
+      // Get workspace and project names to build folder path
+      const workspaceName = workspaceService.getWorkspaceName();
+      const projectName = await workspaceService.getProjectNameAsync();
+
+      // Build the folder path: workspaceName/projectName/userId
+      let folderPath = '';
+      
+      if (workspaceName && workspaceName !== 'Unknown Workspace') {
+        // Sanitize workspace name for folder path
+        const sanitizedWorkspaceName = workspaceName.replace(/[^a-zA-Z0-9-_]/g, '_');
+        folderPath += sanitizedWorkspaceName;
+      } else {
+        // Fallback to user ID if no workspace
+        folderPath = user.id;
+      }
+      
+      if (projectName && projectName !== 'No Project') {
+        // Sanitize project name for folder path
+        const sanitizedProjectName = projectName.replace(/[^a-zA-Z0-9-_]/g, '_');
+        folderPath += `/${sanitizedProjectName}`;
+      }
+      
+      // Always include agent (user) as the final level
+      folderPath += `/${user.id}`;
+
+      // List files in the workspace/project/agent folder
+      const { data, error } = await supabase.storage
+        .from('agent-selfies')
+        .list(folderPath, {
+          limit: 100,
+          sortBy: { column: 'created_at', order: 'desc' }
+        });
+
+      if (error) {
+        console.error('Error listing images:', error);
+        return [];
+      }
+
+      // Get public URLs for all images
+      const imageUrls = data?.map(file => {
+        const { data: { publicUrl } } = supabase.storage
+          .from('agent-selfies')
+          .getPublicUrl(`${folderPath}/${file.name}`);
+        return publicUrl;
+      }) || [];
+
+      // Call the callback if provided
+      onImagesList?.(imageUrls);
+
+      return imageUrls;
+    } catch (error) {
+      console.error('Error listing workspace images:', error);
+      return [];
+    }
+  };
 
   const handleCameraClick = () => {
     fileInputRef.current?.click();
   };
 
-  const uploadToStorage = async (file: File): Promise<string | null> => {
+  const uploadToStorage = async (file: File, coordinates: { lat: number; lng: number }): Promise<string | null> => {
     if (!user) return null;
 
-    const fileName = `${user.id}/${Date.now()}.jpg`;
-    const { data, error } = await supabase.storage
-      .from('agent-selfies')
-      .upload(fileName, file);
+    try {
+      // Get workspace and project names
+      const workspaceName = workspaceService.getWorkspaceName();
+      const projectName = await workspaceService.getProjectNameAsync();
 
-    if (error) {
-      console.error('Upload error:', error);
+      // Create overlay data
+      const overlayData: ImageOverlayData = {
+        agentName: displayName || user.email?.split('@')[0] || 'Unknown Agent',
+        coordinates,
+        timestamp: formatTimestamp(new Date()),
+        workspaceName: workspaceName || 'Unknown Workspace',
+        projectName: projectName || 'No Project'
+      };
+
+      // Add text overlay to image
+      const imageWithOverlay = await addTextOverlayToImage(file, overlayData);
+
+      // Create folder structure: workspaceName/projectName/userId
+      let folderPath = '';
+      
+      if (workspaceName && workspaceName !== 'Unknown Workspace') {
+        // Sanitize workspace name for folder path
+        const sanitizedWorkspaceName = workspaceName.replace(/[^a-zA-Z0-9-_]/g, '_');
+        folderPath += sanitizedWorkspaceName;
+      } else {
+        // Fallback to user ID if no workspace
+        folderPath = user.id;
+      }
+      
+      if (projectName && projectName !== 'No Project') {
+        // Sanitize project name for folder path
+        const sanitizedProjectName = projectName.replace(/[^a-zA-Z0-9-_]/g, '_');
+        folderPath += `/${sanitizedProjectName}`;
+      }
+      
+      // Always include agent (user) as the final level
+      folderPath += `/${user.id}`;
+
+      // Create filename with agent name and timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const agentName = overlayData.agentName.replace(/[^a-zA-Z0-9-_]/g, '_');
+      const fileName = `${folderPath}/${agentName}_${timestamp}.jpg`;
+      
+      const { data, error } = await supabase.storage
+        .from('agent-selfies')
+        .upload(fileName, imageWithOverlay);
+
+      if (error) {
+        console.error('Upload error:', error);
+        return null;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('agent-selfies')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error processing image with overlay:', error);
       return null;
     }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('agent-selfies')
-      .getPublicUrl(fileName);
-
-    return publicUrl;
   };
 
   const getCurrentLocation = (): Promise<{ lat: number; lng: number }> => {
@@ -75,17 +193,18 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
     setIsProcessing(true);
 
     try {
-      // Upload to agent-selfies bucket
-      const imageUrl = await uploadToStorage(file);
+      // Get current location first
+      const location = await getCurrentLocation();
+
+      // Upload to agent-selfies bucket with coordinates
+      const imageUrl = await uploadToStorage(file, location);
 
       if (!imageUrl) {
         throw new Error('Failed to upload image');
       }
 
       if (mode === 'status') {
-        // Status mode: Get location and update agent status
-        const location = await getCurrentLocation();
-
+        // Status mode: Update agent status with the uploaded image
         // Determine next status based on current status
         let nextStatus = currentStatus;
         if (currentStatus === 'checked_out') {
@@ -115,7 +234,7 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
         // General mode: Just upload and notify
         toast({
           title: 'Photo captured',
-          description: 'Image uploaded successfully to agent-selfies bucket',
+          description: 'Image uploaded successfully with agent details',
         });
       }
 

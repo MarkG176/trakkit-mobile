@@ -59,9 +59,17 @@ export const RecordAttendanceForm = () => {
       const result = await updateStatus(pendingStatus, imageData, location.lat, location.lng);
       
       if (result.success) {
+        // Custom success messages for lunch breaks
+        let successMessage = result.message;
+        if (pendingStatus === 'lunch') {
+          successMessage = 'Successfully started lunch break';
+        } else if (currentStatus === 'lunch' && pendingStatus === 'checked_in') {
+          successMessage = 'Successfully finished lunch break';
+        }
+        
         toast({
           title: 'Success',
-          description: result.message,
+          description: successMessage,
         });
       } else {
         toast({
