@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,8 @@ export const RecordAttendanceForm = () => {
   const { toast } = useToast();
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<'checked_in' | 'lunch' | 'checked_out' | null>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
 
   const handleStatusChange = async (newStatus: 'checked_in' | 'lunch' | 'checked_out') => {
     if (!user || isCheckingIn) return;
@@ -39,14 +41,22 @@ export const RecordAttendanceForm = () => {
       }
     }
 
+    // Set the pending status and trigger camera
+    setPendingStatus(newStatus);
+    cameraRef.current?.click();
+  };
+
+  const handleCameraCapture = async (imageData: string) => {
+    if (!user || !pendingStatus) return;
+
     setIsCheckingIn(true);
     
     try {
       // Get current location
       const location = await getCurrentLocation();
       
-      // Update status with selfie requirement for attendance
-      const result = await updateStatus(newStatus, null, location.lat, location.lng);
+      // Update status with the captured image
+      const result = await updateStatus(pendingStatus, imageData, location.lat, location.lng);
       
       if (result.success) {
         toast({
@@ -69,6 +79,7 @@ export const RecordAttendanceForm = () => {
       });
     } finally {
       setIsCheckingIn(false);
+      setPendingStatus(null);
     }
   };
 
@@ -158,9 +169,15 @@ export const RecordAttendanceForm = () => {
           {getStatusBadge()}
         </div>
 
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <MapPin className="h-4 w-4" />
-          <span>Location will be captured automatically</span>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Camera className="h-4 w-4" />
+            <span>Camera will open automatically for selfie verification</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <MapPin className="h-4 w-4" />
+            <span>Location will be captured automatically</span>
+          </div>
         </div>
 
         <div className="flex gap-2">
@@ -177,14 +194,6 @@ export const RecordAttendanceForm = () => {
             )}
             {nextAction.action}
           </Button>
-          
-          <Button 
-            onClick={() => setShowCamera(true)}
-            variant="outline"
-            size="icon"
-          >
-            <Camera className="h-4 w-4" />
-          </Button>
         </div>
 
         {currentStatus === 'checked_in' && (
@@ -199,18 +208,12 @@ export const RecordAttendanceForm = () => {
         )}
       </CardContent>
 
-      {showCamera && (
-        <CameraCapture 
-          onCapture={(imageData) => {
-            toast({
-              title: 'Photo Captured',
-              description: 'Selfie saved successfully',
-            });
-            setShowCamera(false);
-          }}
-          mode="status"
-        />
-      )}
+      <CameraCapture 
+        ref={cameraRef}
+        onCapture={handleCameraCapture}
+        mode="status"
+        variant="inline"
+      />
     </Card>
   );
 };
