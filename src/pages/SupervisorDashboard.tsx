@@ -42,29 +42,23 @@ export const SupervisorDashboard = () => {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
 
   useEffect(() => {
-    fetchDashboardStats();
-  }, []);
+    if (currentWorkspaceId) {
+      fetchDashboardStats();
+    }
+  }, [currentWorkspaceId]);
 
   const fetchDashboardStats = async () => {
+    if (!currentWorkspaceId) return;
+    
     try {
       setLoading(true);
       const today = new Date().toISOString().split('T')[0];
 
-      // Get Capwell workspace ID
-      const { data: capwellWorkspace, error: workspaceError } = await supabase
-        .from('workspaces')
-        .select('id')
-        .eq('name', 'Capwell')
-        .single();
-
-      if (workspaceError) throw workspaceError;
-      const capwellWorkspaceId = capwellWorkspace.id;
-
-      // Fetch total agents in Capwell workspace using user_workspaces
+      // Fetch total agents in current workspace using user_workspaces
       const { data: workspaceUsers, error: workspaceUsersError } = await supabase
         .from('user_workspaces')
         .select('user_id')
-        .eq('workspace_id', capwellWorkspaceId)
+        .eq('workspace_id', currentWorkspaceId)
         .eq('is_active', true);
 
       if (workspaceUsersError) throw workspaceUsersError;
@@ -117,13 +111,12 @@ export const SupervisorDashboard = () => {
         }
       });
 
-      // Fetch today's sales from sale_items table with Capwell workspace
+      // Fetch today's sales from sale_items table with current workspace
       const { data: saleItems, error: salesError } = await supabase
-        .from('sale_items')
-        .select('quantity, created_at')
-        .eq('workspace_id', capwellWorkspaceId)
-        .gte('created_at', `${today}T00:00:00`)
-        .lte('created_at', `${today}T23:59:59`);
+        .from('daily_sales_tracking')
+        .select('quantity_sold, work_date')
+        .eq('workspace_id', currentWorkspaceId)
+        .eq('work_date', today);
 
       if (salesError) throw salesError;
 
@@ -131,7 +124,7 @@ export const SupervisorDashboard = () => {
       const { data: pendingPlans, error: plansError } = await supabase
         .from('day_plans')
         .select('id')
-        .eq('workspace_id', capwellWorkspaceId)
+        .eq('workspace_id', currentWorkspaceId)
         .eq('status', 'pending');
 
       if (plansError) throw plansError;
@@ -140,7 +133,7 @@ export const SupervisorDashboard = () => {
       const totalAgents = workspaceAgents?.length || 0;
       const activeAgents = Array.from(agentStatusMap.values())
         .filter(log => log.status === 'checked_in').length;
-      const todaySales = saleItems?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+      const todaySales = saleItems?.reduce((sum, item) => sum + item.quantity_sold, 0) || 0;
       const pendingApprovals = pendingPlans?.length || 0;
 
       setStats({
