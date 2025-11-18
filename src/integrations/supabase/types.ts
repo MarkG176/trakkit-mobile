@@ -1803,6 +1803,7 @@ export type Database = {
           status: string
           supervisors_required: number | null
           target_market: string | null
+          target_stores: string[] | null
           team_leaders: string[] | null
           total_doors_target: number | null
           updated_at: string
@@ -1826,6 +1827,7 @@ export type Database = {
           status?: string
           supervisors_required?: number | null
           target_market?: string | null
+          target_stores?: string[] | null
           team_leaders?: string[] | null
           total_doors_target?: number | null
           updated_at?: string
@@ -1849,6 +1851,7 @@ export type Database = {
           status?: string
           supervisors_required?: number | null
           target_market?: string | null
+          target_stores?: string[] | null
           team_leaders?: string[] | null
           total_doors_target?: number | null
           updated_at?: string
