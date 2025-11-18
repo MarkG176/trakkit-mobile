@@ -64,6 +64,7 @@ export const useSalesForm = () => {
             quantity_sold: item.quantity,
             sale_value: item.price * item.quantity,
             outcome: 'sale',
+            workspace_id: workspaceService.getCurrentWorkspaceId(),
             metadata: {
               engagement_type: formData.engagementType,
               notes: formData.notes,
