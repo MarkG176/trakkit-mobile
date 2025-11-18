@@ -1091,6 +1091,7 @@ export type Database = {
           product_variant_id: string | null
           quantity_sold: number
           sale_value: number | null
+          store_id: string | null
           survey_template_id: string | null
           task_id: string | null
           timestamp: string | null
@@ -1117,6 +1118,7 @@ export type Database = {
           product_variant_id?: string | null
           quantity_sold: number
           sale_value?: number | null
+          store_id?: string | null
           survey_template_id?: string | null
           task_id?: string | null
           timestamp?: string | null
@@ -1143,6 +1145,7 @@ export type Database = {
           product_variant_id?: string | null
           quantity_sold?: number
           sale_value?: number | null
+          store_id?: string | null
           survey_template_id?: string | null
           task_id?: string | null
           timestamp?: string | null
@@ -1154,6 +1157,13 @@ export type Database = {
             columns: ["product_variant_id"]
             isOneToOne: false
             referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interactions_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
             referencedColumns: ["id"]
           },
           {
