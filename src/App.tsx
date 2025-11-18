@@ -41,6 +41,8 @@ import { DailyPlanApproval } from "./pages/supervisor/DailyPlanApproval";
 import { InventoryManagement } from "./pages/supervisor/InventoryManagement";
 import { IncidentReporting } from "./pages/supervisor/IncidentReporting";
 import { ReportsAnalytics } from "./pages/supervisor/ReportsAnalytics";
+import { Planning } from "./pages/supervisor/Planning";
+import { ProjectDetails } from "./pages/supervisor/ProjectDetails";
 
 const queryClient = new QueryClient();
 
@@ -195,6 +197,16 @@ const App = () => (
             <Route path="/supervisor/reports-analytics" element={
               <RoleBasedRoute allowedRoles={['supervisor']}>
                 <ReportsAnalytics />
+              </RoleBasedRoute>
+            } />
+            <Route path="/supervisor/planning" element={
+              <RoleBasedRoute allowedRoles={['supervisor']}>
+                <Planning />
+              </RoleBasedRoute>
+            } />
+            <Route path="/supervisor/project-details/:projectId" element={
+              <RoleBasedRoute allowedRoles={['supervisor']}>
+                <ProjectDetails />
               </RoleBasedRoute>
             } />
             <Route path="/supervisor-dashboard" element={
