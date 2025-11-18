@@ -1337,7 +1337,7 @@ export type Database = {
           email: string | null
           event_type: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           metadata: Json | null
           user_agent: string | null
           user_id: string | null
@@ -1347,7 +1347,7 @@ export type Database = {
           email?: string | null
           event_type?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           user_agent?: string | null
           user_id?: string | null
@@ -1357,7 +1357,7 @@ export type Database = {
           email?: string | null
           event_type?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           user_agent?: string | null
           user_id?: string | null
@@ -2257,7 +2257,7 @@ export type Database = {
           details: Json | null
           event_type: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           user_agent: string | null
           user_id: string | null
         }
@@ -2266,7 +2266,7 @@ export type Database = {
           details?: Json | null
           event_type: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
           user_id?: string | null
         }
@@ -2275,7 +2275,7 @@ export type Database = {
           details?: Json | null
           event_type?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
           user_id?: string | null
         }
@@ -2808,6 +2808,7 @@ export type Database = {
           name: string | null
           project_id: string | null
           team_lead_id: string | null
+          workspace_id: string | null
         }
         Insert: {
           created_at?: string
@@ -2817,6 +2818,7 @@ export type Database = {
           name?: string | null
           project_id?: string | null
           team_lead_id?: string | null
+          workspace_id?: string | null
         }
         Update: {
           created_at?: string
@@ -2826,6 +2828,7 @@ export type Database = {
           name?: string | null
           project_id?: string | null
           team_lead_id?: string | null
+          workspace_id?: string | null
         }
         Relationships: [
           {
@@ -2841,6 +2844,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_roles"
             referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "teams_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2859,7 +2869,7 @@ export type Database = {
           invited_by: string | null
           is_active: boolean
           last_failed_login: string | null
-          last_ip_address: unknown | null
+          last_ip_address: unknown
           last_login_at: string | null
           last_name: string | null
           location: string | null
@@ -2889,7 +2899,7 @@ export type Database = {
           invited_by?: string | null
           is_active?: boolean
           last_failed_login?: string | null
-          last_ip_address?: unknown | null
+          last_ip_address?: unknown
           last_login_at?: string | null
           last_name?: string | null
           location?: string | null
@@ -2919,7 +2929,7 @@ export type Database = {
           invited_by?: string | null
           is_active?: boolean
           last_failed_login?: string | null
-          last_ip_address?: unknown | null
+          last_ip_address?: unknown
           last_login_at?: string | null
           last_name?: string | null
           location?: string | null
@@ -3131,10 +3141,7 @@ export type Database = {
         Args: { p_agent_id: string; p_work_date: string }
         Returns: undefined
       }
-      calculate_daily_kpis: {
-        Args: { for_date: string }
-        Returns: undefined
-      }
+      calculate_daily_kpis: { Args: { for_date: string }; Returns: undefined }
       check_rate_limit: {
         Args: {
           p_action: string
@@ -3157,10 +3164,7 @@ export type Database = {
         Args: { day_plan_id: string }
         Returns: undefined
       }
-      current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      current_user_role: { Args: never; Returns: string }
       deactivate_agent_account: {
         Args: { agent_user_id: string; reason?: string }
         Returns: undefined
@@ -3206,6 +3210,12 @@ export type Database = {
           survey_type: string
           updated_at: string
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "tasks"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_agent_work_summary: {
         Args: {
@@ -3225,18 +3235,9 @@ export type Database = {
           work_date: string
         }[]
       }
-      get_current_user_role_direct: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_current_user_role_safe: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_default_workspace: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_current_user_role_direct: { Args: never; Returns: string }
+      get_current_user_role_safe: { Args: never; Returns: string }
+      get_default_workspace: { Args: never; Returns: string }
       get_follow_ups_due: {
         Args: { p_agent_id?: string; p_due_date?: string }
         Returns: {
@@ -3267,7 +3268,7 @@ export type Database = {
         }[]
       }
       get_pending_returns: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           agent_email: string
           agent_name: string
@@ -3298,17 +3299,17 @@ export type Database = {
           survey_type: string
           updated_at: string
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "tasks"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
-      get_user_role: {
-        Args: { user_uuid: string }
-        Returns: string
-      }
-      get_user_workspace_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_user_role: { Args: { user_uuid: string }; Returns: string }
+      get_user_workspace_id: { Args: never; Returns: string }
       get_users_with_emails: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           email: string
           full_name: string
@@ -3325,22 +3326,10 @@ export type Database = {
         Args: { ip_address?: unknown; user_email: string }
         Returns: undefined
       }
-      is_account_locked: {
-        Args: { user_email: string }
-        Returns: boolean
-      }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_supervisor: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_supervisor_def: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_account_locked: { Args: { user_email: string }; Returns: boolean }
+      is_admin: { Args: never; Returns: boolean }
+      is_supervisor: { Args: never; Returns: boolean }
+      is_supervisor_def: { Args: never; Returns: boolean }
       issue_stock_to_agent: {
         Args: {
           agent_id: string
@@ -3385,10 +3374,7 @@ export type Database = {
         }
         Returns: string
       }
-      refresh_current_stock: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      refresh_current_stock: { Args: never; Returns: undefined }
       reject_product_return: {
         Args: { p_rejection_reason: string; p_return_id: string }
         Returns: boolean
@@ -3409,10 +3395,7 @@ export type Database = {
         Args: { workspace_id: string }
         Returns: undefined
       }
-      set_safe_search_path: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      set_safe_search_path: { Args: never; Returns: undefined }
       submit_checkout_request: {
         Args: { agent_id: string; movements: Json; task_id: string }
         Returns: string
@@ -3425,10 +3408,7 @@ export type Database = {
         Args: { new_display_name: string }
         Returns: undefined
       }
-      update_last_login: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      update_last_login: { Args: never; Returns: undefined }
       upsert_user_role: {
         Args: { new_role: string; user_uuid: string }
         Returns: undefined
