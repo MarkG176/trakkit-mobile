@@ -49,6 +49,7 @@ export const useInteractionForm = () => {
           customer_phone: formData.customerPhone,
           outcome: 'completed',
           quantity_sold: 0,
+          workspace_id: workspaceService.getCurrentWorkspaceId(),
           metadata: {
             interaction_type: formData.interactionType,
             notes: formData.notes,
