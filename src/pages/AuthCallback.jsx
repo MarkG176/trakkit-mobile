@@ -19,8 +19,7 @@ export default function AuthCallback() {
       
       // 2. Construct the Deep Link
       // Scheme: matches your Android package or custom scheme
-      const deepLink = `com.trakkit.daraja://auth/callback?access_token=${accessToken}&refresh_token=${refreshToken}`;
-      
+      const deepLink = `com.trakkit.daraja://auth/callback?access_token=${encodeURIComponent(accessToken)}&refresh_token=${encodeURIComponent(refreshToken)}`;      
       // 3. Force redirect to the App
       window.location.href = deepLink;
 
@@ -45,11 +44,19 @@ export default function AuthCallback() {
       
       {/* Manual Button in case automatic redirect fails */}
       <button 
-        onClick={() => window.location.reload()} 
-        style={{ marginTop: '10px', padding: '8px 16px', cursor: 'pointer' }}
-      >
-        Retry
-      </button>
+  onClick={() => {
+    // Re-attempt the redirect using the deep link we already constructed
+    if (accessToken && refreshToken) {
+       const link = `com.trakkit.daraja://auth/callback?access_token=${encodeURIComponent(accessToken)}&refresh_token=${encodeURIComponent(refreshToken)}`;
+       window.location.href = link;
+    } else {
+       window.location.reload(); // Fallback if state is lost
+    }
+  }} 
+  style={{ marginTop: '10px', padding: '8px 16px', cursor: 'pointer' }}
+>
+  Open App Again
+</button>
     </div>
   );
 }
