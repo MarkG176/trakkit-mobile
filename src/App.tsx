@@ -43,6 +43,7 @@ import { IncidentReporting } from "./pages/supervisor/IncidentReporting";
 import { ReportsAnalytics } from "./pages/supervisor/ReportsAnalytics";
 import { Planning } from "./pages/supervisor/Planning";
 import { ProjectDetails } from "./pages/supervisor/ProjectDetails";
+import AuthCallback from "./pages/AuthCallback";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ const App = () => (
           <PWAUpdateNotification />
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/" element={
               <RoleBasedRoute allowedRoles={['supervisor']} redirectTo="/agent">
                 <SupervisorDashboard />
