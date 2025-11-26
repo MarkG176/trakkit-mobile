@@ -1,36 +1,55 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Assuming react-router-dom
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function AuthCallback() {
   const [status, setStatus] = useState('Verifying credentials...');
   const navigate = useNavigate();
 
   useEffect(() => {
-    // 1. Extract tokens from URL hash (Supabase default)
-    const hash = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash);
-    
-    const accessToken = params.get('access_token');
-    const refreshToken = params.get('refresh_token');
-    const type = params.get('type');
-
-    if (accessToken && refreshToken) {
-      setStatus('Opening App...');
+    const handleAuth = async () => {
+      // 1. Extract tokens from URL hash (Supabase default)
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
       
-      // 2. Construct the Deep Link
-      // Scheme: matches your Android package or custom scheme
-      const deepLink = `com.trakkit.daraja://auth/callback?access_token=${encodeURIComponent(accessToken)}&refresh_token=${encodeURIComponent(refreshToken)}`;      
-      // 3. Force redirect to the App
-      window.location.href = deepLink;
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
 
-      // 4. Fallback (Optional): If app is not installed, show a message or redirect to web dashboard
-      setTimeout(() => {
-        setStatus('App not found. Redirecting to web dashboard...');
-        // navigate('/dashboard'); // Uncomment to keep them on web if app fails
-      }, 3000);
-    } else {
-      setStatus('Invalid login link.');
-    }
+      if (accessToken && refreshToken) {
+        try {
+          // 2. Set the session in Supabase
+          setStatus('Authenticating...');
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+
+          if (error) {
+            console.error('Auth error:', error);
+            setStatus('Authentication failed. Please try again.');
+            return;
+          }
+
+          // 3. Attempt mobile app redirect
+          setStatus('Opening App...');
+          const deepLink = `com.trakkit.daraja://auth/callback?access_token=${encodeURIComponent(accessToken)}&refresh_token=${encodeURIComponent(refreshToken)}`;      
+          window.location.href = deepLink;
+
+          // 4. Fallback to web dashboard if app doesn't open
+          setTimeout(() => {
+            setStatus('Redirecting to dashboard...');
+            navigate('/dashboard');
+          }, 3000);
+        } catch (err) {
+          console.error('Unexpected error:', err);
+          setStatus('Something went wrong. Please try again.');
+        }
+      } else {
+        setStatus('Invalid login link.');
+      }
+    };
+
+    handleAuth();
   }, [navigate]);
 
   return (
