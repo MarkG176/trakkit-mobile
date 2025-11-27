@@ -469,19 +469,7 @@ export const Surveys = () => {
 
         <div className="p-4 space-y-6">
           {activeSurvey?.questions && activeSurvey.questions.length > 0 ? (
-            activeSurvey.questions.map((question: any, index: number) => {
-              console.log(`🎯 Rendering question ${index + 1}:`, question);
-              console.log(`   - question.text: "${question.text}"`);
-              console.log(`   - question.question: "${question.question}"`);
-              console.log(`   - question.title: "${question.title}"`);
-              console.log(`   - question.label: "${question.label}"`);
-              console.log(`   - All question keys:`, Object.keys(question));
-              console.log(`   - Question type: "${question.type}"`);
-              console.log(`   - Question options:`, question.options);
-              console.log(`   - Question required:`, question.required);
-              console.log(`   - Final text: "${question.text || question.question || question.title || question.label || 'NO TEXT'}"`);
-              
-              return (
+            activeSurvey.questions.map((question: any, index: number) => (
                 <Card key={question.id}>
                   <CardContent className="p-6">
                     <div className="flex items-start gap-2 mb-4">
@@ -492,10 +480,6 @@ export const Surveys = () => {
                         <h2 className="text-h3 text-black mb-1">
                           {question.text || question.question || question.title || question.label || `Question ${index + 1}`}
                         </h2>
-                        {/* Temporary debug display */}
-                        <div className="text-xs text-gray-500 mt-2 p-2 bg-gray-100 rounded">
-                          <strong>DEBUG:</strong> Raw question data: {JSON.stringify(question, null, 2)}
-                        </div>
                         {question.required && (
                           <span className="inline-block bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">
                             Required
@@ -550,8 +534,7 @@ export const Surveys = () => {
                   </div>
                 </CardContent>
               </Card>
-              );
-            })
+            ))
           ) : (
             <Card>
               <CardContent className="p-6 text-center">
