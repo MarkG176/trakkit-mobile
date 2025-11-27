@@ -3,12 +3,22 @@ import { SupervisorMobileLayout } from "@/components/SupervisorMobileLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Briefcase, Calendar, Target, Users, TrendingUp } from "lucide-react";
+import { Briefcase, Calendar, Target, Users, TrendingUp, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Project {
   id: string;
@@ -29,6 +39,8 @@ export const Planning = () => {
   const { currentWorkspaceId } = useWorkspace();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     if (currentWorkspaceId) {
@@ -45,6 +57,7 @@ export const Planning = () => {
         .from('project_plans')
         .select('*')
         .eq('workspace_id', currentWorkspaceId)
+        .eq('is_deleted', false)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -57,6 +70,34 @@ export const Planning = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteProject = async () => {
+    if (!projectToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from('project_plans')
+        .update({ is_deleted: true })
+        .eq('id', projectToDelete);
+
+      if (error) throw error;
+
+      toast({
+        title: "Project deleted",
+        description: "The project has been marked as deleted.",
+      });
+
+      setProjects(projects.filter(p => p.id !== projectToDelete));
+      setDeleteDialogOpen(false);
+      setProjectToDelete(null);
+    } catch (error: any) {
+      toast({
+        title: "Error deleting project",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -165,19 +206,48 @@ export const Planning = () => {
                     </p>
                   </div>
                   
-                  <Button 
-                    className="w-full" 
-                    variant="outline"
-                    onClick={() => navigate(`/supervisor/project-details/${project.id}`)}
-                  >
-                    View Details
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1" 
+                      variant="outline"
+                      onClick={() => navigate(`/supervisor/project-details/${project.id}`)}
+                    >
+                      View Details
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => {
+                        setProjectToDelete(project.id);
+                        setDeleteDialogOpen(true);
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will mark the project as deleted. This action can be reversed by a database administrator if needed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteProject} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete Project
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SupervisorMobileLayout>
   );
 };

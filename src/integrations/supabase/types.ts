@@ -1793,13 +1793,16 @@ export type Database = {
           created_by: string | null
           description: string | null
           duration_months: number
+          end_date: string | null
           id: string
+          is_deleted: boolean | null
           phases: Json
           product_focus: string
           project_name: string | null
           project_type: string | null
           resource_requirements: Json | null
           sales_target: number
+          start_date: string | null
           status: string
           supervisors_required: number | null
           target_market: string | null
@@ -1817,13 +1820,16 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           duration_months: number
+          end_date?: string | null
           id?: string
+          is_deleted?: boolean | null
           phases?: Json
           product_focus: string
           project_name?: string | null
           project_type?: string | null
           resource_requirements?: Json | null
           sales_target: number
+          start_date?: string | null
           status?: string
           supervisors_required?: number | null
           target_market?: string | null
@@ -1841,13 +1847,16 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           duration_months?: number
+          end_date?: string | null
           id?: string
+          is_deleted?: boolean | null
           phases?: Json
           product_focus?: string
           project_name?: string | null
           project_type?: string | null
           resource_requirements?: Json | null
           sales_target?: number
+          start_date?: string | null
           status?: string
           supervisors_required?: number | null
           target_market?: string | null
