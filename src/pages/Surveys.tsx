@@ -81,8 +81,10 @@ export const Surveys = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchSurveyTemplates();
-  }, []);
+    if (currentWorkspaceId) {
+      fetchSurveyTemplates();
+    }
+  }, [currentWorkspaceId]);
 
   // Auto-open survey if only one exists
   useEffect(() => {
@@ -98,6 +100,7 @@ export const Surveys = () => {
       const { data: surveyTemplates, error } = await supabase
         .from('survey_templates')
         .select('*')
+        .eq('workspace_id', currentWorkspaceId)
         .eq('is_published', true)
         .eq('status', 'active')
         .order('created_at', { ascending: false });
