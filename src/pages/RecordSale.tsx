@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,11 +7,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ArrowLeft, Search, ShoppingCart, Plus, Minus, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useProducts } from "@/hooks/useProducts";
 import { useSalesForm } from "@/hooks/useSalesForm";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { toast } from "sonner";
+
+interface InventoryItem {
+  id: string;
+  name: string | null;
+  product_variant_id: string;
+  amount_issued: number;
+}
 
 interface CartItem {
   id: string;
@@ -22,12 +29,12 @@ interface CartItem {
 
 export const RecordSale = () => {
   const navigate = useNavigate();
-  const { products, categories, loading: productsLoading } = useProducts();
   const { submitSale, loading: submitting } = useSalesForm();
   const { user } = useAuth();
   const { currentWorkspaceId } = useWorkspace();
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -35,19 +42,44 @@ export const RecordSale = () => {
   const [showCart, setShowCart] = useState(false);
   const [showCustomerInfo, setShowCustomerInfo] = useState(false);
 
-  const addToCart = (product: any) => {
-    const existingItem = cartItems.find(item => item.id === product.id);
+  useEffect(() => {
+    fetchInventory();
+  }, [user]);
+
+  const fetchInventory = async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('agent_task_inventory')
+        .select('id, name, product_variant_id, amount_issued')
+        .eq('agent_id', user.id)
+        .eq('is_deleted', false);
+
+      if (error) throw error;
+      setInventory(data || []);
+    } catch (error) {
+      console.error('Error fetching inventory:', error);
+      toast.error('Failed to load inventory');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addToCart = (item: InventoryItem) => {
+    const existingItem = cartItems.find(cartItem => cartItem.id === item.product_variant_id);
     if (existingItem) {
-      setCartItems(cartItems.map(item => 
-        item.id === product.id 
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
+      setCartItems(cartItems.map(cartItem => 
+        cartItem.id === item.product_variant_id 
+          ? { ...cartItem, quantity: cartItem.quantity + 1 }
+          : cartItem
       ));
     } else {
       setCartItems([...cartItems, { 
-        id: product.id, 
-        name: product.name, 
-        price: product.price, 
+        id: item.product_variant_id, 
+        name: item.name || 'Unknown Product', 
+        price: 0, 
         quantity: 1 
       }]);
     }
@@ -187,12 +219,10 @@ export const RecordSale = () => {
     }
   };
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.sku.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredInventory = inventory.filter(item =>
+    item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.product_variant_id.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
@@ -227,56 +257,48 @@ export const RecordSale = () => {
           </div>
         </div>
 
-        {/* Category Filters */}
-        <div className="px-4 pb-4 bg-background">
-          <div className="flex gap-2 overflow-x-auto">
-            {categories.map((category) => (
-              <Button
-                key={category.id}
-                variant={selectedCategory === category.id ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedCategory(category.id)}
-                className="whitespace-nowrap"
-              >
-                {category.name}
-              </Button>
-            ))}
-          </div>
-        </div>
-
         {/* Product List */}
         <div className="flex-1 overflow-y-auto px-4 pb-20">
-          <div className="space-y-3">
-            {filteredProducts.map((product) => (
-              <Card key={product.id} className="overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex gap-4">
-                    {/* Product Image */}
-                    <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center shrink-0">
-                      <ShoppingCart size={24} className="text-muted-foreground" />
-                    </div>
-                    
-                    {/* Product Info */}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-base">{product.name}</h3>
-                      <p className="text-sm text-muted-foreground">{product.sku}</p>
-                      <p className="text-lg font-semibold text-primary">KES {product.price}</p>
-                    </div>
+          {loading ? (
+            <div className="flex items-center justify-center h-32">
+              <p className="text-muted-foreground">Loading inventory...</p>
+            </div>
+          ) : filteredInventory.length === 0 ? (
+            <div className="flex items-center justify-center h-32">
+              <p className="text-muted-foreground">No products in inventory</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredInventory.map((item) => (
+                <Card key={item.id} className="overflow-hidden">
+                  <CardContent className="p-4">
+                    <div className="flex gap-4">
+                      {/* Product Image */}
+                      <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center shrink-0">
+                        <ShoppingCart size={24} className="text-muted-foreground" />
+                      </div>
+                      
+                      {/* Product Info */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-base">{item.name || 'Unknown Product'}</h3>
+                        <p className="text-sm text-muted-foreground">Available: {item.amount_issued}</p>
+                      </div>
 
-                    {/* Add Button */}
-                    <div className="flex items-center">
-                      <Button
-                        onClick={() => addToCart(product)}
-                        className="bg-primary hover:bg-primary/90"
-                      >
-                        + Add
-                      </Button>
+                      {/* Add Button */}
+                      <div className="flex items-center">
+                        <Button
+                          onClick={() => addToCart(item)}
+                          className="bg-primary hover:bg-primary/90"
+                        >
+                          + Add
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
