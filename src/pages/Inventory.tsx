@@ -10,6 +10,7 @@ interface InventoryItem {
   product_variant_id: string;
   amount_issued: number;
   task_id: string;
+  name: string | null;
   products: any;
   product_variants: {
     id: string;
@@ -49,6 +50,7 @@ export const Inventory = () => {
           product_variant_id,
           amount_issued,
           task_id,
+          name,
           products,
           product_variants (
             id,
@@ -106,7 +108,7 @@ export const Inventory = () => {
               >
                 <ArrowLeft size={20} />
               </Button>
-              <h1 className="text-lg font-medium">{selectedProduct.product_variants?.name || 'Product'}</h1>
+              <h1 className="text-lg font-medium">{selectedProduct.name || 'Product'}</h1>
             </div>
           </div>
 
@@ -194,7 +196,7 @@ export const Inventory = () => {
                   </div>
                   
                   <div className="flex-1">
-                    <h3 className="text-h3 mb-1">{item.product_variants?.name || 'Product'}</h3>
+                    <h3 className="text-h3 mb-1">{item.name || 'Product'}</h3>
                     <div className="flex items-center gap-2 mb-2">
                       <p className="text-secondary text-xs font-medium">{item.product_variants?.sku || 'N/A'}</p>
                     </div>
