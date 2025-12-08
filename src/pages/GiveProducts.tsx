@@ -18,15 +18,10 @@ interface InventoryItem {
   product_variant_id: string;
   amount_issued: number;
   products: {
-    product_id: string;
     name: string;
     price: number;
-    product: {
-      name: string;
-      description: string;
-      category: string;
-    };
-  };
+    sku: string | null;
+  } | null;
 }
 
 interface SelectedProduct {
@@ -76,15 +71,10 @@ export const GiveProducts = () => {
           id,
           product_variant_id,
           amount_issued,
-          products:product_variant_id (
-            product_id,
+          products:product_variants!product_variant_id (
             name,
             price,
-            product:product_id (
-              name,
-              description,
-              category
-            )
+            sku
           )
         `)
         .eq('agent_id', user.id)
@@ -144,7 +134,7 @@ export const GiveProducts = () => {
     } else {
       setSelectedProducts(prev => [...prev, {
         id: item.id,
-        name: item.products.name,
+        name: item.products?.name || 'Unknown Product',
         quantity: 1,
         maxQuantity: item.amount_issued,
         productVariantId: item.product_variant_id
@@ -256,9 +246,9 @@ export const GiveProducts = () => {
 
   // Filter inventory based on search term
   const filteredInventory = inventory.filter(item =>
-    item.products.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.products?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.product_variant_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.products.product.name.toLowerCase().includes(searchTerm.toLowerCase())
+    item.products?.sku?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -350,7 +340,7 @@ export const GiveProducts = () => {
                       </div>
                     )}
                   </div>
-                  <h3 className="font-medium text-xs text-center mb-1 line-clamp-2">{item.products.name}</h3>
+                  <h3 className="font-medium text-xs text-center mb-1 line-clamp-2">{item.products?.name || 'Unknown Product'}</h3>
                   <p className="text-xs text-muted-foreground mb-2 text-center">
                     Available: {item.amount_issued}
                   </p>
