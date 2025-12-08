@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Package, ShoppingCart, Gift, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface InventoryItem {
   id: string;
@@ -25,13 +24,10 @@ export const Inventory = () => {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { currentWorkspaceId, isInitialized } = useWorkspace();
 
   useEffect(() => {
-    if (isInitialized) {
-      fetchInventory();
-    }
-  }, [isInitialized, currentWorkspaceId]);
+    fetchInventory();
+  }, []);
 
   const fetchInventory = async () => {
     try {
@@ -46,50 +42,34 @@ export const Inventory = () => {
         return;
       }
 
-      // Fetch inventory items
-      const { data: inventoryData, error: inventoryError } = await supabase
+      const { data, error } = await supabase
         .from('agent_task_inventory')
-        .select('id, product_variant_id, amount_issued, task_id, products')
+        .select(`
+          id,
+          product_variant_id,
+          amount_issued,
+          task_id,
+          products,
+          product_variants (
+            id,
+            name,
+            sku,
+            price
+          )
+        `)
         .eq('agent_id', user.id)
         .eq('is_deleted', false);
 
-      if (inventoryError) {
-        console.error('Error fetching inventory:', inventoryError);
+      if (error) {
+        console.error('Error fetching inventory:', error);
         toast({
           title: "Error loading inventory",
           description: "Could not load your assigned inventory.",
           variant: "destructive",
         });
-        return;
+      } else {
+        setInventory(data || []);
       }
-
-      // Get unique product variant IDs
-      const variantIds = [...new Set(inventoryData?.map(item => item.product_variant_id) || [])];
-      
-      // Fetch product variants separately
-      let variantsMap: Record<string, { id: string; name: string; sku: string; price: number }> = {};
-      
-      if (variantIds.length > 0) {
-        const { data: variantsData } = await supabase
-          .from('product_variants')
-          .select('id, name, sku, price')
-          .in('id', variantIds);
-        
-        if (variantsData) {
-          variantsMap = variantsData.reduce((acc, v) => {
-            acc[v.id] = v;
-            return acc;
-          }, {} as Record<string, { id: string; name: string; sku: string; price: number }>);
-        }
-      }
-
-      // Combine the data
-      const combinedData = (inventoryData || []).map(item => ({
-        ...item,
-        product_variants: variantsMap[item.product_variant_id] || null
-      }));
-
-      setInventory(combinedData);
     } catch (error) {
       console.error('Error:', error);
     } finally {
