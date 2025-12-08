@@ -160,6 +160,9 @@ export const Routes = () => {
       // Save selected county to localStorage
       localStorage.setItem('lastSelectedCounty', newStoreCounty.trim());
 
+      // Get current user for added_by field
+      const { data: { user } } = await supabase.auth.getUser();
+
       const { error } = await supabase
         .from('stores')
         .insert({
@@ -168,7 +171,8 @@ export const Routes = () => {
           store_lat: currentLocation.latitude,
           store_long: currentLocation.longitude,
           contact: newStoreContact.trim() || null,
-          products: [] // Empty products array for new store
+          products: [], // Empty products array for new store
+          added_by: user?.id || null
         });
 
       if (error) {
