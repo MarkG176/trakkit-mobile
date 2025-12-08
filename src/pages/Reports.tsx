@@ -14,10 +14,11 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { workspaceService } from "@/services/workspaceService";
 import { toast } from "sonner";
 
-interface ProductVariant {
+interface InventoryItem {
   id: string;
-  name: string;
-  price: number;
+  product_variant_id: string;
+  name: string | null;
+  amount_issued: number;
 }
 
 export const Reports = () => {
@@ -26,35 +27,37 @@ export const Reports = () => {
   const { currentWorkspaceId } = useWorkspace();
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [productVariants, setProductVariants] = useState<ProductVariant[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState("");
   const [amount, setAmount] = useState("");
   const [notes, setNotes] = useState("");
   const [images, setImages] = useState<File[]>([]);
 
   useEffect(() => {
-    const fetchProductVariants = async () => {
+    const fetchInventory = async () => {
       if (!user) return;
       setLoading(true);
       
       try {
-        // Fetch all product variants
-        const { data: variants, error } = await supabase
-          .from('product_variants')
-          .select('id, name, price')
-          .order('name');
+        const { data, error } = await supabase
+          .from('agent_task_inventory')
+          .select('id, product_variant_id, name, amount_issued')
+          .eq('agent_id', user.id)
+          .eq('is_deleted', false)
+          .gt('amount_issued', 0);
 
         if (error) throw error;
 
-        setProductVariants(variants || []);
+        setInventory(data || []);
       } catch (err) {
-        console.error('Failed to fetch product variants', err);
+        console.error('Failed to fetch inventory', err);
+        toast.error('Failed to load products');
       } finally {
         setLoading(false);
       }
     };
     
-    fetchProductVariants();
+    fetchInventory();
   }, [user]);
 
   const handleSubmitSale = async () => {
@@ -215,9 +218,9 @@ export const Reports = () => {
                       <SelectValue placeholder="Select product" />
                     </SelectTrigger>
                     <SelectContent>
-                      {productVariants.map((variant) => (
-                        <SelectItem key={variant.id} value={variant.id}>
-                          {variant.name}
+                      {inventory.map((item) => (
+                        <SelectItem key={item.id} value={item.product_variant_id}>
+                          {item.name || 'Unknown Product'}
                         </SelectItem>
                       ))}
                     </SelectContent>
