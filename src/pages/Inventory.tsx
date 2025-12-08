@@ -42,34 +42,50 @@ export const Inventory = () => {
         return;
       }
 
-      const { data, error } = await supabase
+      // Fetch inventory items
+      const { data: inventoryData, error: inventoryError } = await supabase
         .from('agent_task_inventory')
-        .select(`
-          id,
-          product_variant_id,
-          amount_issued,
-          task_id,
-          products,
-          product_variants (
-            id,
-            name,
-            sku,
-            price
-          )
-        `)
+        .select('id, product_variant_id, amount_issued, task_id, products')
         .eq('agent_id', user.id)
         .eq('is_deleted', false);
 
-      if (error) {
-        console.error('Error fetching inventory:', error);
+      if (inventoryError) {
+        console.error('Error fetching inventory:', inventoryError);
         toast({
           title: "Error loading inventory",
           description: "Could not load your assigned inventory.",
           variant: "destructive",
         });
-      } else {
-        setInventory(data || []);
+        return;
       }
+
+      // Get unique product variant IDs
+      const variantIds = [...new Set(inventoryData?.map(item => item.product_variant_id) || [])];
+      
+      // Fetch product variants separately
+      let variantsMap: Record<string, { id: string; name: string; sku: string; price: number }> = {};
+      
+      if (variantIds.length > 0) {
+        const { data: variantsData } = await supabase
+          .from('product_variants')
+          .select('id, name, sku, price')
+          .in('id', variantIds);
+        
+        if (variantsData) {
+          variantsMap = variantsData.reduce((acc, v) => {
+            acc[v.id] = v;
+            return acc;
+          }, {} as Record<string, { id: string; name: string; sku: string; price: number }>);
+        }
+      }
+
+      // Combine the data
+      const combinedData = (inventoryData || []).map(item => ({
+        ...item,
+        product_variants: variantsMap[item.product_variant_id] || null
+      }));
+
+      setInventory(combinedData);
     } catch (error) {
       console.error('Error:', error);
     } finally {
