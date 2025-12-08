@@ -2541,6 +2541,7 @@ export type Database = {
       }
       stores: {
         Row: {
+          added_by: string | null
           address: string | null
           contact: string | null
           county: string
@@ -2558,6 +2559,7 @@ export type Database = {
           workspace_id: string | null
         }
         Insert: {
+          added_by?: string | null
           address?: string | null
           contact?: string | null
           county: string
@@ -2575,6 +2577,7 @@ export type Database = {
           workspace_id?: string | null
         }
         Update: {
+          added_by?: string | null
           address?: string | null
           contact?: string | null
           county?: string
