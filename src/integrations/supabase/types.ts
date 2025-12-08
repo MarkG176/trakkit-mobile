@@ -336,8 +336,10 @@ export type Database = {
           location_lng: number | null
           selfie_url: string | null
           status: string
+          store_id: string | null
           team_id: string | null
           timestamp: string
+          workspace_id: string | null
         }
         Insert: {
           agent_display_name?: string | null
@@ -353,8 +355,10 @@ export type Database = {
           location_lng?: number | null
           selfie_url?: string | null
           status: string
+          store_id?: string | null
           team_id?: string | null
           timestamp?: string
+          workspace_id?: string | null
         }
         Update: {
           agent_display_name?: string | null
@@ -370,15 +374,31 @@ export type Database = {
           location_lng?: number | null
           selfie_url?: string | null
           status?: string
+          store_id?: string | null
           team_id?: string | null
           timestamp?: string
+          workspace_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "agent_status_log_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "agent_status_log_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_status_log_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -739,6 +759,7 @@ export type Database = {
           reviewed_by: string | null
           status: string | null
           task_id: string
+          workspace_id: string | null
         }
         Insert: {
           agent_id: string
@@ -749,6 +770,7 @@ export type Database = {
           reviewed_by?: string | null
           status?: string | null
           task_id: string
+          workspace_id?: string | null
         }
         Update: {
           agent_id?: string
@@ -759,6 +781,7 @@ export type Database = {
           reviewed_by?: string | null
           status?: string | null
           task_id?: string
+          workspace_id?: string | null
         }
         Relationships: [
           {
@@ -773,6 +796,13 @@ export type Database = {
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkout_requests_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -790,6 +820,7 @@ export type Database = {
           quantity: number
           store_id: string | null
           total_value: number
+          workspace_id: string | null
         }
         Insert: {
           agent_id: string
@@ -803,6 +834,7 @@ export type Database = {
           quantity?: number
           store_id?: string | null
           total_value?: number
+          workspace_id?: string | null
         }
         Update: {
           agent_id?: string
@@ -816,6 +848,7 @@ export type Database = {
           quantity?: number
           store_id?: string | null
           total_value?: number
+          workspace_id?: string | null
         }
         Relationships: [
           {
@@ -837,6 +870,13 @@ export type Database = {
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_purchases_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -1197,6 +1237,7 @@ export type Database = {
           id: string
           status: string
           updated_at: string
+          workspace_id: string | null
         }
         Insert: {
           agent_id: string
@@ -1205,6 +1246,7 @@ export type Database = {
           id?: string
           status?: string
           updated_at?: string
+          workspace_id?: string | null
         }
         Update: {
           agent_id?: string
@@ -1213,8 +1255,17 @@ export type Database = {
           id?: string
           status?: string
           updated_at?: string
+          workspace_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "inventory_sessions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       inventory_transactions: {
         Row: {
@@ -1628,6 +1679,7 @@ export type Database = {
           price: number | null
           product_id: string | null
           sku: string | null
+          workspace_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -1636,6 +1688,7 @@ export type Database = {
           price?: number | null
           product_id?: string | null
           sku?: string | null
+          workspace_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -1644,6 +1697,7 @@ export type Database = {
           price?: number | null
           product_id?: string | null
           sku?: string | null
+          workspace_id?: string | null
         }
         Relationships: [
           {
@@ -1651,6 +1705,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_variants_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -1796,6 +1857,7 @@ export type Database = {
           end_date: string | null
           id: string
           is_deleted: boolean | null
+          is_public: boolean | null
           phases: Json
           product_focus: string
           project_name: string | null
@@ -1823,6 +1885,7 @@ export type Database = {
           end_date?: string | null
           id?: string
           is_deleted?: boolean | null
+          is_public?: boolean | null
           phases?: Json
           product_focus: string
           project_name?: string | null
@@ -1850,6 +1913,7 @@ export type Database = {
           end_date?: string | null
           id?: string
           is_deleted?: boolean | null
+          is_public?: boolean | null
           phases?: Json
           product_focus?: string
           project_name?: string | null
@@ -2315,6 +2379,7 @@ export type Database = {
           task_id: string | null
           timestamp: string | null
           user_id: string
+          workspace_id: string | null
         }
         Insert: {
           id?: string
@@ -2327,6 +2392,7 @@ export type Database = {
           task_id?: string | null
           timestamp?: string | null
           user_id: string
+          workspace_id?: string | null
         }
         Update: {
           id?: string
@@ -2339,6 +2405,7 @@ export type Database = {
           task_id?: string | null
           timestamp?: string | null
           user_id?: string
+          workspace_id?: string | null
         }
         Relationships: [
           {
@@ -2376,43 +2443,149 @@ export type Database = {
             referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "stock_movements_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_visits: {
+        Row: {
+          agent_id: string
+          check_in_lat: number | null
+          check_in_lng: number | null
+          check_in_selfie_url: string | null
+          check_in_time: string | null
+          check_out_time: string | null
+          created_at: string | null
+          distance_from_store: number | null
+          estimated_duration: unknown
+          id: string
+          notes: string | null
+          planned_date: string
+          planned_time: string | null
+          route_id: string | null
+          status: string | null
+          store_id: string
+          tasks_completed: Json | null
+          updated_at: string | null
+          visit_order: number | null
+          workspace_id: string | null
+        }
+        Insert: {
+          agent_id: string
+          check_in_lat?: number | null
+          check_in_lng?: number | null
+          check_in_selfie_url?: string | null
+          check_in_time?: string | null
+          check_out_time?: string | null
+          created_at?: string | null
+          distance_from_store?: number | null
+          estimated_duration?: unknown
+          id?: string
+          notes?: string | null
+          planned_date: string
+          planned_time?: string | null
+          route_id?: string | null
+          status?: string | null
+          store_id: string
+          tasks_completed?: Json | null
+          updated_at?: string | null
+          visit_order?: number | null
+          workspace_id?: string | null
+        }
+        Update: {
+          agent_id?: string
+          check_in_lat?: number | null
+          check_in_lng?: number | null
+          check_in_selfie_url?: string | null
+          check_in_time?: string | null
+          check_out_time?: string | null
+          created_at?: string | null
+          distance_from_store?: number | null
+          estimated_duration?: unknown
+          id?: string
+          notes?: string | null
+          planned_date?: string
+          planned_time?: string | null
+          route_id?: string | null
+          status?: string | null
+          store_id?: string
+          tasks_completed?: Json | null
+          updated_at?: string | null
+          visit_order?: number | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_visits_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_visits_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
         ]
       }
       stores: {
         Row: {
+          address: string | null
           contact: string | null
           county: string
           created_at: string | null
           id: string
+          last_visited_at: string | null
+          priority: number | null
           products: Json
           store_lat: number
           store_long: number
           store_name: string
+          store_type: string | null
           updated_at: string | null
+          visit_frequency: string | null
           workspace_id: string | null
         }
         Insert: {
+          address?: string | null
           contact?: string | null
           county: string
           created_at?: string | null
           id?: string
+          last_visited_at?: string | null
+          priority?: number | null
           products?: Json
           store_lat: number
           store_long: number
           store_name: string
+          store_type?: string | null
           updated_at?: string | null
+          visit_frequency?: string | null
           workspace_id?: string | null
         }
         Update: {
+          address?: string | null
           contact?: string | null
           county?: string
           created_at?: string | null
           id?: string
+          last_visited_at?: string | null
+          priority?: number | null
           products?: Json
           store_lat?: number
           store_long?: number
           store_name?: string
+          store_type?: string | null
           updated_at?: string | null
+          visit_frequency?: string | null
           workspace_id?: string | null
         }
         Relationships: [
@@ -2781,21 +2954,21 @@ export type Database = {
           created_at: string
           id: string
           team_id: string | null
-          workspace: string | null
+          workspace_id: string | null
         }
         Insert: {
           agent_id?: string | null
           created_at?: string
           id?: string
           team_id?: string | null
-          workspace?: string | null
+          workspace_id?: string | null
         }
         Update: {
           agent_id?: string | null
           created_at?: string
           id?: string
           team_id?: string | null
-          workspace?: string | null
+          workspace_id?: string | null
         }
         Relationships: [
           {
@@ -2814,7 +2987,14 @@ export type Database = {
           },
           {
             foreignKeyName: "team_members_workspace_fkey"
-            columns: ["workspace"]
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_members_workspace_id_fkey"
+            columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
             referencedColumns: ["id"]

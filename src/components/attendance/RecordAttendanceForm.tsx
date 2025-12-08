@@ -21,26 +21,6 @@ export const RecordAttendanceForm = () => {
   const handleStatusChange = async (newStatus: 'checked_in' | 'lunch' | 'checked_out') => {
     if (!user || isCheckingIn) return;
 
-    // Check if user has set their location before checking in
-    if (newStatus === 'checked_in' && (currentStatus === 'checked_out' || !currentStatus)) {
-      const { data: locationCheck, error: locationError } = await supabase
-        .from('agent_status_log')
-        .select('id')
-        .eq('agent_id', user.id)
-        .eq('status', 'set_location')
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (locationError || !locationCheck || locationCheck.length === 0) {
-        toast({
-          title: 'Set your location first',
-          description: 'Please go to Routes & Planning to set your assigned location before checking in.',
-          variant: 'destructive',
-        });
-        return;
-      }
-    }
-
     // Set the pending status and trigger camera
     setPendingStatus(newStatus);
     cameraRef.current?.click();
