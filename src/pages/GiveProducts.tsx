@@ -15,13 +15,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface InventoryItem {
   id: string;
+  name: string | null;
   product_variant_id: string;
   amount_issued: number;
-  products: {
-    name: string;
-    price: number;
-    sku: string | null;
-  } | null;
 }
 
 interface SelectedProduct {
@@ -67,16 +63,7 @@ export const GiveProducts = () => {
 
       const { data, error } = await supabase
         .from('agent_task_inventory')
-        .select(`
-          id,
-          product_variant_id,
-          amount_issued,
-          products:product_variants!product_variant_id (
-            name,
-            price,
-            sku
-          )
-        `)
+        .select('id, name, product_variant_id, amount_issued')
         .eq('agent_id', user.id)
         .eq('is_deleted', false);
 
@@ -134,7 +121,7 @@ export const GiveProducts = () => {
     } else {
       setSelectedProducts(prev => [...prev, {
         id: item.id,
-        name: item.products?.name || 'Unknown Product',
+        name: item.name || 'Unknown Product',
         quantity: 1,
         maxQuantity: item.amount_issued,
         productVariantId: item.product_variant_id
@@ -246,9 +233,8 @@ export const GiveProducts = () => {
 
   // Filter inventory based on search term
   const filteredInventory = inventory.filter(item =>
-    item.products?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.product_variant_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.products?.sku?.toLowerCase().includes(searchTerm.toLowerCase())
+    item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.product_variant_id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -340,7 +326,7 @@ export const GiveProducts = () => {
                       </div>
                     )}
                   </div>
-                  <h3 className="font-medium text-xs text-center mb-1 line-clamp-2">{item.products?.name || 'Unknown Product'}</h3>
+                  <h3 className="font-medium text-xs text-center mb-1 line-clamp-2">{item.name || 'Unknown Product'}</h3>
                   <p className="text-xs text-muted-foreground mb-2 text-center">
                     Available: {item.amount_issued}
                   </p>
