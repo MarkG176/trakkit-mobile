@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useWorkspace } from './useWorkspace';
 
 interface Product {
   id: string;
@@ -12,22 +13,26 @@ interface Product {
 }
 
 export const useProducts = () => {
+  const { currentWorkspaceId } = useWorkspace();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    if (currentWorkspaceId) {
+      fetchProducts();
+    }
+  }, [currentWorkspaceId]);
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
       
-      // Fetch product variants directly - they have all needed fields
+      // Fetch product variants filtered by workspace
       const { data: productVariants, error } = await supabase
         .from('product_variants')
-        .select('*');
+        .select('*')
+        .eq('workspace_id', currentWorkspaceId);
 
       if (error) throw error;
 
