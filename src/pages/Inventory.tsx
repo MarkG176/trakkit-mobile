@@ -10,11 +10,12 @@ interface InventoryItem {
   product_variant_id: string;
   amount_issued: number;
   task_id: string;
+  products: any;
   product_variants: {
     id: string;
     name: string;
-    sku: string | null;
-    price: number | null;
+    sku: string;
+    price: number;
   } | null;
 }
 
@@ -48,7 +49,8 @@ export const Inventory = () => {
           product_variant_id,
           amount_issued,
           task_id,
-          product_variants:product_variants!product_variant_id (
+          products,
+          product_variants (
             id,
             name,
             sku,
