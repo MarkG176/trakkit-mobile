@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Package, ShoppingCart, Gift, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface InventoryItem {
   id: string;
@@ -24,10 +25,13 @@ export const Inventory = () => {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { currentWorkspaceId, isInitialized } = useWorkspace();
 
   useEffect(() => {
-    fetchInventory();
-  }, []);
+    if (isInitialized) {
+      fetchInventory();
+    }
+  }, [isInitialized, currentWorkspaceId]);
 
   const fetchInventory = async () => {
     try {

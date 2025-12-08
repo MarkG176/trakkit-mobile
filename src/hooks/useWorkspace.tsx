@@ -25,9 +25,24 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    if (user && workspaceService.isInitialized()) {
-      updateWorkspaceState();
-    }
+    const initializeWorkspace = async () => {
+      if (user) {
+        setIsLoading(true);
+        try {
+          // Initialize the workspace service if not already initialized
+          if (!workspaceService.isInitialized()) {
+            await workspaceService.initialize(user);
+          }
+          updateWorkspaceState();
+        } catch (error) {
+          console.error('Error initializing workspace:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    
+    initializeWorkspace();
   }, [user]);
 
   // Continuously monitor workspace changes
