@@ -2,46 +2,61 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Download, X } from 'lucide-react';
-import { setupServiceWorkerListeners } from '@/utils/serviceWorker';
 
 const PWAUpdateNotification: React.FC = () => {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
-    // Check if service worker update is available
+    // Listen for custom event from service worker registration
+    const handleSwUpdate = () => {
+      console.log('PWA update available detected');
+      setUpdateAvailable(true);
+    };
+
+    window.addEventListener('sw-update-available', handleSwUpdate);
+
+    // Also check directly for service worker updates
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then((registration) => {
+        // Check if there's already a waiting worker
+        if (registration.waiting) {
+          console.log('Found waiting service worker');
+          setUpdateAvailable(true);
+        }
+
+        // Listen for new updates
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('New service worker installed and waiting');
                 setUpdateAvailable(true);
               }
             });
           }
         });
       });
+
+      // Listen for controller change to reload
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
     }
 
-    // Listen for offline data sync events
-    const handleOfflineSync = () => {
-      console.log('Syncing offline data...');
-      // Trigger your existing offline sync logic here
-    };
-
-    window.addEventListener('syncOfflineData', handleOfflineSync);
-
     return () => {
-      window.removeEventListener('syncOfflineData', handleOfflineSync);
+      window.removeEventListener('sw-update-available', handleSwUpdate);
     };
   }, []);
 
   const handleUpdate = () => {
     setInstalling(true);
     
-    // Skip waiting and reload the page
+    // Tell the waiting service worker to skip waiting
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistration().then((registration) => {
         if (registration?.waiting) {
@@ -49,10 +64,6 @@ const PWAUpdateNotification: React.FC = () => {
         }
       });
     }
-    
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
   };
 
   const handleDismiss = () => {
