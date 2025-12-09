@@ -32,6 +32,8 @@ interface UserWorkspace {
   workspace: Workspace;
 }
 
+const WORKSPACE_STORAGE_KEY = 'trakkit_current_workspace_id';
+
 class WorkspaceService {
   private currentWorkspaceId: string | null = null;
   private currentProjectId: string | null = null;
@@ -40,9 +42,35 @@ class WorkspaceService {
   private initialized: boolean = false;
 
   constructor() {
-    // Will be initialized when user logs in
-    this.currentWorkspaceId = null;
+    // Load saved workspace from localStorage on initialization
+    this.currentWorkspaceId = this.loadSavedWorkspaceId();
     this.currentProjectId = null;
+  }
+
+  /**
+   * Load saved workspace ID from localStorage
+   */
+  private loadSavedWorkspaceId(): string | null {
+    try {
+      return localStorage.getItem(WORKSPACE_STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Save workspace ID to localStorage
+   */
+  private saveWorkspaceId(workspaceId: string | null): void {
+    try {
+      if (workspaceId) {
+        localStorage.setItem(WORKSPACE_STORAGE_KEY, workspaceId);
+      } else {
+        localStorage.removeItem(WORKSPACE_STORAGE_KEY);
+      }
+    } catch {
+      // Ignore localStorage errors
+    }
   }
 
   /**
@@ -181,6 +209,7 @@ class WorkspaceService {
     }
 
     this.currentWorkspaceId = workspaceId;
+    this.saveWorkspaceId(workspaceId);
     console.log('🏢 Workspace changed to:', workspaceId);
     
     // Load projects for the new workspace
