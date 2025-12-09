@@ -2196,6 +2196,8 @@ export type Database = {
       sale_items: {
         Row: {
           created_at: string | null
+          customer_name: string | null
+          customer_phone: string | null
           id: string
           product_category: string | null
           product_id: string | null
@@ -2210,6 +2212,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           id?: string
           product_category?: string | null
           product_id?: string | null
@@ -2224,6 +2228,8 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           id?: string
           product_category?: string | null
           product_id?: string | null

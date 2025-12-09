@@ -32,16 +32,7 @@ interface InventoryItem {
   id: string;
   product_variant_id: string;
   amount_issued: number;
-  products: {
-    product_id: string;
-    name: string;
-    price: number;
-    product: {
-      name: string;
-      description: string;
-      category: string;
-    };
-  };
+  name: string;
 }
 
 export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty }: StoreSuccessDialogProps) => {
@@ -92,32 +83,20 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
         console.log('Setting questions:', questions);
         setSurveyQuestions(questions);
       }
-    } else if (action === "sale") {
-      const { data } = await supabase.from('product_variants').select('*, product:product_id(name, category)');
-      setProducts(data || []);
-    } else if (action === "giveaway") {
+    } else if (action === "sale" || action === "giveaway") {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data } = await supabase
           .from('agent_task_inventory')
-          .select(`
-            id,
-            product_variant_id,
-            amount_issued,
-            products:product_variant_id (
-              product_id,
-              name,
-              price,
-              product:product_id (
-                name,
-                description,
-                category
-              )
-            )
-          `)
+          .select('id, product_variant_id, amount_issued, name')
           .eq('agent_id', user.id)
           .eq('is_deleted', false);
-        setInventory(data || []);
+        
+        if (action === "sale") {
+          setProducts(data || []);
+        } else {
+          setInventory((data || []) as InventoryItem[]);
+        }
       }
     }
   };
@@ -416,7 +395,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
     } else {
       setSelectedProducts([...selectedProducts, {
         id: item.id,
-        name: item.products?.product?.name || item.products?.name || 'Unknown Product',
+        name: item.name || 'Unknown Product',
         quantity: 1,
         maxQuantity: item.amount_issued,
         productVariantId: item.product_variant_id
@@ -528,8 +507,8 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
                 </SelectTrigger>
                 <SelectContent>
                   {products.map((product) => (
-                    <SelectItem key={product.id} value={product.id}>
-                      {product.product?.name} - {product.name}
+                    <SelectItem key={product.product_variant_id} value={product.product_variant_id}>
+                      {product.name || 'Unknown Product'}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -560,7 +539,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
                 <Card key={item.id} className="p-3">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <p className="font-medium">{item.products?.product?.name || item.products?.name}</p>
+                      <p className="font-medium">{item.name || 'Unknown Product'}</p>
                       <p className="text-sm text-muted-foreground">Available: {item.amount_issued}</p>
                     </div>
                     <div className="flex items-center gap-2">
