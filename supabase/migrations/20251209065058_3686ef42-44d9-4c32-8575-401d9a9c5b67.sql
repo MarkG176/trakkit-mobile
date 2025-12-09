@@ -1,0 +1,2 @@
+INSERT INTO agent_task_inventory (agent_id, task_id, name, product_variant_id, amount_issued, is_deleted)
+VALUES ('b64d49d4-d19c-48ab-a9a9-56b1a05671af', '1f016335-fa86-4958-9fd2-15b68f1ce7a0', 'Mega Growth Curl Mousse', 'b035e2ed-6347-4104-8e39-2e09448432a5', 1000, false)
