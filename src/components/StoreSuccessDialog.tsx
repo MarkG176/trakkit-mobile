@@ -416,6 +416,31 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
     }
   };
 
+  const updateProductQuantity = (item: InventoryItem, newQuantity: number) => {
+    const clampedQuantity = Math.max(0, Math.min(newQuantity, item.amount_issued));
+    
+    if (clampedQuantity === 0) {
+      setSelectedProducts(selectedProducts.filter(p => p.productVariantId !== item.product_variant_id));
+    } else {
+      const existing = selectedProducts.find(p => p.productVariantId === item.product_variant_id);
+      if (existing) {
+        setSelectedProducts(selectedProducts.map(p =>
+          p.productVariantId === item.product_variant_id
+            ? { ...p, quantity: clampedQuantity }
+            : p
+        ));
+      } else {
+        setSelectedProducts([...selectedProducts, {
+          id: item.id,
+          name: item.name || 'Unknown Product',
+          quantity: clampedQuantity,
+          maxQuantity: item.amount_issued,
+          productVariantId: item.product_variant_id
+        }]);
+      }
+    }
+  };
+
   const renderActionForm = () => {
     switch (activeAction) {
       case "survey":
@@ -551,9 +576,14 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
                       >
                         <Minus size={16} />
                       </Button>
-                      <span className="w-8 text-center">
-                        {selectedProducts.find(p => p.productVariantId === item.product_variant_id)?.quantity || 0}
-                      </span>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={item.amount_issued}
+                        value={selectedProducts.find(p => p.productVariantId === item.product_variant_id)?.quantity || 0}
+                        onChange={(e) => updateProductQuantity(item, parseInt(e.target.value) || 0)}
+                        className="w-16 text-center h-9"
+                      />
                       <Button
                         size="icon"
                         variant="outline"
