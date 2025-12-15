@@ -14,6 +14,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 interface StoreSuccessDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  storeId: string;
   storeName: string;
   storeCounty: string;
 }
@@ -36,7 +37,7 @@ interface InventoryItem {
   name: string;
 }
 
-export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty }: StoreSuccessDialogProps) => {
+export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, storeCounty }: StoreSuccessDialogProps) => {
   const { toast } = useToast();
   const { currentWorkspaceId } = useWorkspace();
   const [activeAction, setActiveAction] = useState<ActionType>(null);
@@ -139,6 +140,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
           task_id: null,
           interaction_type: 'survey',
           survey_template_id: selectedSurvey,
+          store_id: storeId,
           customer_name: storeName,
           outcome: 'completed',
           quantity_sold: 0,
@@ -224,6 +226,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
       const { error: interactionError } = await supabase.from('interactions').insert({
         task_id: null,
         interaction_type: 'sale',
+        store_id: storeId,
         customer_name: storeName,
         product_variant_id: productVariantId,
         quantity_sold: parseInt(quantity),
@@ -328,6 +331,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
       const { error } = await supabase.from('interactions').insert({
         task_id: null,
         interaction_type: 'other',
+        store_id: storeId,
         customer_name: storeName,
         outcome: 'completed',
         quantity_sold: 0,
