@@ -4,6 +4,7 @@ import { useAuth } from './useAuth';
 import { calculateDistance, debugDistanceCalculation } from '@/utils/distanceCalculator';
 import { workspaceService } from '@/services/workspaceService';
 import { useAgentActions } from './useAgentActions';
+import { useWorkspace } from './useWorkspace';
 
 export type AgentStatus = 'checked_out' | 'checked_in' | 'lunch';
 
@@ -19,6 +20,7 @@ interface StatusLog {
 
 export const useAgentStatus = () => {
   const { user } = useAuth();
+  const { currentWorkspaceId } = useWorkspace();
   const { recordStatusChange } = useAgentActions();
   const [currentStatus, setCurrentStatus] = useState<AgentStatus>('checked_out');
   const [loading, setLoading] = useState(true);
@@ -144,6 +146,7 @@ export const useAgentStatus = () => {
         selfie_url: selfieUrl,
         check_in_successful: checkInSuccessful,
         in_range: inRange,
+        workspace_id: currentWorkspaceId,
       });
 
       if (error) throw error;
