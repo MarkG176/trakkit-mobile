@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAgentStatus, AgentStatus } from "@/hooks/useAgentStatus";
 import { toast } from "sonner";
 import { SalesTrackingForm } from "./SalesTrackingForm";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface CheckInOutDialogProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export const CheckInOutDialog = ({ isOpen, onClose }: CheckInOutDialogProps) => 
   const [inventory, setInventory] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { updateStatus } = useAgentStatus();
+  const { currentWorkspaceId } = useWorkspace();
 
   useEffect(() => {
     if (isOpen) {
@@ -201,7 +203,8 @@ export const CheckInOutDialog = ({ isOpen, onClose }: CheckInOutDialogProps) => 
           quantity_sold: sale.quantity,
           total_value: (product?.price || 0) * sale.quantity,
           status_event: statusEvent,
-          work_date: new Date().toISOString().split('T')[0]
+          work_date: new Date().toISOString().split('T')[0],
+          workspace_id: currentWorkspaceId
         };
       });
 

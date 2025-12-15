@@ -84,7 +84,8 @@ export const Reports = () => {
           quantity_sold: 1,
           total_value: amountNum,
           status_event: 'sale',
-          work_date: new Date().toISOString().split('T')[0]
+          work_date: new Date().toISOString().split('T')[0],
+          workspace_id: currentWorkspaceId
         });
 
       if (error) throw error;

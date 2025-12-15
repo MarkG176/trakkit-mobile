@@ -8,6 +8,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface ActivityData {
   id: string;
@@ -29,6 +30,7 @@ interface Note {
 export const ActivityDetail = () => {
   const navigate = useNavigate();
   const { activityId } = useParams();
+  const { currentWorkspaceId } = useWorkspace();
   const [activity, setActivity] = useState<ActivityData | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
   const [images, setImages] = useState<string[]>([]);
@@ -93,7 +95,8 @@ export const ActivityDetail = () => {
           .insert({
             interaction_id: activityId,
             content: noteContent,
-            customer_name: activity?.customer_name
+            customer_name: activity?.customer_name,
+            workspace_id: currentWorkspaceId
           })
           .select()
           .single();
