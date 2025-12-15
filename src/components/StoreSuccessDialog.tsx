@@ -284,6 +284,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
 
       const { error } = await supabase.from('giveaways').insert({
         agent_id: user.id,
+        store_id: storeId,
         recipient_name: storeName,
         products_given: selectedProducts.map(p => ({
           product_variant_id: p.productVariantId,
