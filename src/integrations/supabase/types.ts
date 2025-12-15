@@ -2602,6 +2602,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_stores_added_by_user_roles"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "user_roles"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "stores_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false

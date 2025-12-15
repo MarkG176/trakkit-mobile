@@ -49,7 +49,7 @@ export const Routes = () => {
   }, [counties]);
   const [isSubmittingStore, setIsSubmittingStore] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  const [addedStore, setAddedStore] = useState<{ name: string; county: string } | null>(null);
+  const [addedStore, setAddedStore] = useState<{ id: string; name: string; county: string } | null>(null);
   const { toast } = useToast();
   const { recordLocationSet } = useAgentActions();
   const { currentWorkspaceId } = useWorkspace();
@@ -165,7 +165,7 @@ export const Routes = () => {
       // Get current user for added_by field
       const { data: { user } } = await supabase.auth.getUser();
 
-      const { error } = await supabase
+      const { data: insertedStore, error } = await supabase
         .from('stores')
         .insert({
           store_name: newStoreName.trim(),
@@ -176,7 +176,9 @@ export const Routes = () => {
           products: [], // Empty products array for new store
           added_by: user?.id || null,
           workspace_id: currentWorkspaceId
-        });
+        })
+        .select('id')
+        .single();
 
       if (error) {
         throw error;
@@ -184,6 +186,7 @@ export const Routes = () => {
 
       // Store the added store info and show success dialog
       setAddedStore({
+        id: insertedStore.id,
         name: newStoreName.trim(),
         county: newStoreCounty.trim()
       });
@@ -535,6 +538,7 @@ export const Routes = () => {
         <StoreSuccessDialog
           open={showSuccessDialog}
           onOpenChange={setShowSuccessDialog}
+          storeId={addedStore.id}
           storeName={addedStore.name}
           storeCounty={addedStore.county}
         />
