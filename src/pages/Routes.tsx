@@ -12,6 +12,7 @@ import { calculateGoogleMapsDistance } from "@/utils/googleMapsDistance";
 import { calculateDistance, formatDistance, debugDistanceCalculation } from "@/utils/distanceCalculator";
 import { useAgentActions } from "@/hooks/useAgentActions";
 import { StoreSuccessDialog } from "@/components/StoreSuccessDialog";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface Store {
   id: string;
@@ -51,6 +52,7 @@ export const Routes = () => {
   const [addedStore, setAddedStore] = useState<{ name: string; county: string } | null>(null);
   const { toast } = useToast();
   const { recordLocationSet } = useAgentActions();
+  const { currentWorkspaceId } = useWorkspace();
 
   useEffect(() => {
     fetchStores();
@@ -172,7 +174,8 @@ export const Routes = () => {
           store_long: currentLocation.longitude,
           contact: newStoreContact.trim() || null,
           products: [], // Empty products array for new store
-          added_by: user?.id || null
+          added_by: user?.id || null,
+          workspace_id: currentWorkspaceId
         });
 
       if (error) {
@@ -301,6 +304,7 @@ export const Routes = () => {
           assigned_location_lng: selectedStoreData.store_long,
           distance_from_assigned: distance,
           in_range: inRange,
+          workspace_id: currentWorkspaceId,
         });
 
       if (error) throw error;

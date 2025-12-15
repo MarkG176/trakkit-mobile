@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart, Gift, MessageSquare, ClipboardList, Star, Plus, Minus, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface StoreSuccessDialogProps {
   open: boolean;
@@ -37,6 +38,7 @@ interface InventoryItem {
 
 export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty }: StoreSuccessDialogProps) => {
   const { toast } = useToast();
+  const { currentWorkspaceId } = useWorkspace();
   const [activeAction, setActiveAction] = useState<ActionType>(null);
   const [loading, setLoading] = useState(false);
 
@@ -142,7 +144,8 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
           quantity_sold: 0,
           latitude: location.latitude,
           longitude: location.longitude,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          workspace_id: currentWorkspaceId
         } as any)
         .select()
         .single();
@@ -162,7 +165,8 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
           is_completed: true,
           completion_status: 'completed',
           location_lat: location.latitude,
-          location_lng: location.longitude
+          location_lng: location.longitude,
+          workspace_id: currentWorkspaceId
         });
 
       if (surveyResponseError) throw surveyResponseError;
@@ -227,7 +231,8 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
         outcome: 'completed',
         latitude: location.latitude,
         longitude: location.longitude,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        workspace_id: currentWorkspaceId
       } as any);
 
       if (interactionError) throw interactionError;
@@ -241,6 +246,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
         total_value: totalValue,
         location_lat: location.latitude,
         location_lng: location.longitude,
+        workspace_id: currentWorkspaceId,
       });
 
       toast({
@@ -285,7 +291,8 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
         notes: giveawayNotes,
         location_lat: location.latitude,
         location_lng: location.longitude,
-        recorded_at: new Date().toISOString()
+        recorded_at: new Date().toISOString(),
+        workspace_id: currentWorkspaceId
       });
 
       if (error) throw error;
@@ -331,7 +338,8 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeName, storeCounty 
         },
         latitude: location.latitude,
         longitude: location.longitude,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        workspace_id: currentWorkspaceId
       } as any);
 
       if (error) throw error;

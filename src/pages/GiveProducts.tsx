@@ -208,6 +208,7 @@ export const GiveProducts = () => {
           notes: notes || null,
           location_lat: location.latitude,
           location_lng: location.longitude,
+          workspace_id: currentWorkspaceId,
         });
 
       if (error) {

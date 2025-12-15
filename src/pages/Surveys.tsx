@@ -325,7 +325,8 @@ export const Surveys = () => {
           metadata: {
             survey_template_id: activeSurvey.id,
             recording_duration: recordingDuration
-          }
+          },
+          workspace_id: currentWorkspaceId
         })
         .select()
         .single();
@@ -349,7 +350,8 @@ export const Surveys = () => {
           is_completed: true,
           completion_status: 'completed',
           location_lat: location?.lat || null,
-          location_lng: location?.lng || null
+          location_lng: location?.lng || null,
+          workspace_id: currentWorkspaceId
         });
 
       if (surveyResponseError) {

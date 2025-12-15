@@ -151,7 +151,8 @@ export const RecordSale = () => {
               name: customerName,
               phone: customerPhone,
               location_lat: location.latitude,
-              location_lng: location.longitude
+              location_lng: location.longitude,
+              workspace_id: currentWorkspaceId
             })
             .select()
             .single();
@@ -186,7 +187,8 @@ export const RecordSale = () => {
               quantity: item.quantity,
               total_value: item.price * item.quantity,
               location_lat: location.latitude,
-              location_lng: location.longitude
+              location_lng: location.longitude,
+              workspace_id: currentWorkspaceId
             });
         }
       }
