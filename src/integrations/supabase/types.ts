@@ -1066,6 +1066,7 @@ export type Database = {
           recipient_name: string | null
           recipient_phone: string | null
           recorded_at: string
+          store_id: string | null
           total_items: number
           updated_at: string
           workspace_id: string | null
@@ -1086,6 +1087,7 @@ export type Database = {
           recipient_name?: string | null
           recipient_phone?: string | null
           recorded_at?: string
+          store_id?: string | null
           total_items?: number
           updated_at?: string
           workspace_id?: string | null
@@ -1106,11 +1108,20 @@ export type Database = {
           recipient_name?: string | null
           recipient_phone?: string | null
           recorded_at?: string
+          store_id?: string | null
           total_items?: number
           updated_at?: string
           workspace_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "giveaways_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       interactions: {
         Row: {
