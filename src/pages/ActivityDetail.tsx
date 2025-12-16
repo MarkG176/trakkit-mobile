@@ -19,6 +19,7 @@ interface ActivityData {
   interaction_type: string;
   image_url: string | null;
   product_variant_id: string | null;
+  product_name: string | null;
 }
 
 interface Note {
@@ -46,12 +47,15 @@ export const ActivityDetail = () => {
       try {
         const { data: interaction } = await supabase
           .from('interactions')
-          .select('*')
+          .select('*, product_variants(name)')
           .eq('id', activityId)
           .single();
 
         if (interaction) {
-          setActivity(interaction);
+          setActivity({
+            ...interaction,
+            product_name: (interaction as any).product_variants?.name || null
+          });
           if (interaction.image_url) {
             setImages([interaction.image_url]);
           }
@@ -200,6 +204,12 @@ export const ActivityDetail = () => {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Phone:</span>
                 <span className="text-foreground font-medium">{activity.customer_phone}</span>
+              </div>
+            )}
+            {activity.product_name && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Product:</span>
+                <span className="text-foreground font-medium">{activity.product_name}</span>
               </div>
             )}
             {activity.sale_value && (

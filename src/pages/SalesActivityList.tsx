@@ -14,6 +14,7 @@ interface SaleActivity {
   customer_name: string | null;
   sale_value: number;
   product_variant_id: string;
+  product_name: string | null;
   has_notes: boolean;
   has_images: boolean;
 }
@@ -38,7 +39,7 @@ export const SalesActivityList = () => {
 
         const { data: interactions } = await supabase
           .from('interactions')
-          .select('id, timestamp, customer_name, sale_value, product_variant_id, image_url')
+          .select('id, timestamp, customer_name, sale_value, product_variant_id, image_url, product_variants(name)')
           .eq('interaction_type', 'sale')
           .in('task_id', taskIds)
           .order('timestamp', { ascending: false });
@@ -54,6 +55,7 @@ export const SalesActivityList = () => {
 
               return {
                 ...interaction,
+                product_name: (interaction as any).product_variants?.name || null,
                 has_notes: (notes?.length || 0) > 0,
                 has_images: !!interaction.image_url
               };
@@ -107,6 +109,9 @@ export const SalesActivityList = () => {
                       {activity.customer_name || 'Customer'}
                     </p>
                     <p className="text-sm text-muted-foreground">
+                      {activity.product_name || 'Product'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
                       {format(new Date(activity.timestamp), 'MMM dd, yyyy • HH:mm')}
                     </p>
                   </div>
