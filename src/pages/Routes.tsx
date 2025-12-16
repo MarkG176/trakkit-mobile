@@ -13,6 +13,7 @@ import { calculateDistance, formatDistance, debugDistanceCalculation } from "@/u
 import { useAgentActions } from "@/hooks/useAgentActions";
 import { StoreSuccessDialog } from "@/components/StoreSuccessDialog";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { CheckInLocationCard } from "@/components/CheckInLocationCard";
 
 interface Store {
   id: string;
@@ -359,6 +360,11 @@ export const Routes = () => {
         <p className="text-sm opacity-90">Manage and optimize your routes</p>
       </div>
 
+
+      {/* Check In Location Card */}
+      <div className="px-4 pt-4">
+        <CheckInLocationCard />
+      </div>
 
       {/* Location Selection Form */}
       <div className="px-4 pb-20">
