@@ -198,14 +198,26 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
     const file = event.target.files?.[0];
     if (!file || !user) return;
 
+    // Prevent duplicate processing - check if already processing
+    if (isProcessing) {
+      console.log('CameraCapture: Already processing, ignoring duplicate event');
+      return;
+    }
+
     setIsProcessing(true);
+
+    // Reset the file input immediately to prevent duplicate events on some devices
+    const currentFile = file;
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
 
     try {
       // Get current location first
       const location = await getCurrentLocation();
 
       // Upload to agent-selfies bucket with coordinates
-      const imageUrl = await uploadToStorage(file, location);
+      const imageUrl = await uploadToStorage(currentFile, location);
 
       if (!imageUrl) {
         throw new Error('Failed to upload image');
@@ -248,13 +260,11 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
         });
       }
 
-      // Call the optional onCapture callback with image data
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const imageData = reader.result as string;
-        onCapture?.(imageData);
-      };
-      reader.readAsDataURL(file);
+      // Call the optional onCapture callback with image URL (not base64)
+      // This ensures the parent receives the actual storage URL
+      if (onCapture) {
+        onCapture(imageUrl);
+      }
 
     } catch (error) {
       console.error('Error:', error);
@@ -264,11 +274,10 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
         variant: 'destructive',
       });
     } finally {
-      setIsProcessing(false);
-      // Reset the file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      // Add delay before allowing next capture to prevent rapid re-triggering on budget devices
+      setTimeout(() => {
+        setIsProcessing(false);
+      }, 500);
     }
   };
 
