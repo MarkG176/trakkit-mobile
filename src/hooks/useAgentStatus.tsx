@@ -34,16 +34,26 @@ export const useAgentStatus = () => {
   }, [user]);
 
   const fetchCurrentStatus = async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    // Create a timeout promise to prevent hanging on slow networks
+    const timeoutPromise = new Promise<null>((_, reject) => {
+      setTimeout(() => reject(new Error('Status fetch timeout')), 8000);
+    });
 
     try {
-      const { data, error } = await supabase
+      const queryPromise = supabase
         .from('agent_status_log')
         .select('*')
         .eq('agent_id', user.id)
         .order('timestamp', { ascending: false })
         .limit(1)
         .single();
+
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
 
       if (error && error.code !== 'PGRST116') throw error;
       
@@ -52,6 +62,8 @@ export const useAgentStatus = () => {
       }
     } catch (error) {
       console.error('Error fetching status:', error);
+      // Default to checked_out on error/timeout so button is not stuck
+      setCurrentStatus('checked_out');
     } finally {
       setLoading(false);
     }

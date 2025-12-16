@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,9 +16,21 @@ export const RecordAttendanceForm = () => {
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<'checked_in' | 'lunch' | 'checked_out' | null>(null);
+  const [loadingOverride, setLoadingOverride] = useState(false);
   const cameraRef = useRef<HTMLInputElement>(null);
   // Ref-based guard to prevent duplicate calls (survives re-renders and is synchronous)
   const isProcessingRef = useRef(false);
+
+  // Loading timeout fallback - if loading takes too long, allow user to proceed
+  useEffect(() => {
+    if (loading && !loadingOverride) {
+      const timeoutId = setTimeout(() => {
+        console.log('Loading timeout - enabling button override');
+        setLoadingOverride(true);
+      }, 10000); // 10 second fallback
+      return () => clearTimeout(timeoutId);
+    }
+  }, [loading, loadingOverride]);
 
   const handleStatusChange = useCallback(async (newStatus: 'checked_in' | 'lunch' | 'checked_out') => {
     // Synchronous check using ref to prevent race conditions
@@ -94,13 +106,22 @@ export const RecordAttendanceForm = () => {
   const getCurrentLocation = (): Promise<{ lat: number; lng: number }> => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
-        reject(new Error('Geolocation not supported'));
+        // Fallback to 0,0 if geolocation not supported rather than blocking
+        console.warn('Geolocation not supported, using fallback');
+        resolve({ lat: 0, lng: 0 });
         return;
       }
 
       const timeoutId = setTimeout(() => {
-        reject(new Error('Location request timed out. Please try again.'));
-      }, 15000);
+        // On timeout, resolve with fallback coordinates instead of rejecting
+        console.warn('Location request timed out, using fallback');
+        toast({
+          title: 'Location Warning',
+          description: 'Could not get exact location, proceeding with approximate data.',
+          variant: 'default',
+        });
+        resolve({ lat: 0, lng: 0 });
+      }, 10000); // Reduced to 10 seconds
 
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -112,12 +133,22 @@ export const RecordAttendanceForm = () => {
         },
         (error) => {
           clearTimeout(timeoutId);
-          reject(error);
+          console.warn('Location error:', error.message);
+          // Resolve with fallback instead of rejecting to allow check-in to proceed
+          toast({
+            title: 'Location Warning',
+            description: 'Could not get location, proceeding without coordinates.',
+            variant: 'default',
+          });
+          resolve({ lat: 0, lng: 0 });
         },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 } // Lower accuracy, longer cache
       );
     });
   };
+
+  // Effective loading state considers both actual loading and override
+  const effectiveLoading = loading && !loadingOverride;
 
   const getStatusBadge = () => {
     switch (currentStatus) {
@@ -199,7 +230,7 @@ export const RecordAttendanceForm = () => {
         <div className="flex gap-2">
           <Button 
             onClick={() => handleStatusChange(nextAction.status)}
-            disabled={loading || isCheckingIn}
+            disabled={effectiveLoading || isCheckingIn}
             variant={nextAction.variant}
             className="flex-1"
           >
@@ -215,7 +246,7 @@ export const RecordAttendanceForm = () => {
         {currentStatus === 'checked_in' && (
           <Button 
             onClick={() => handleStatusChange('checked_out')}
-            disabled={loading || isCheckingIn}
+            disabled={effectiveLoading || isCheckingIn}
             variant="destructive"
             className="w-full"
           >
