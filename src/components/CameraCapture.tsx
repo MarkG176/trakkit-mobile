@@ -211,8 +211,10 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
         throw new Error('Failed to upload image');
       }
 
-      if (mode === 'status') {
-        // Status mode: Update agent status with the uploaded image
+      // If onCapture callback is provided, let the parent handle status updates
+      // This prevents double status updates when parent components manage their own status logic
+      if (mode === 'status' && !onCapture) {
+        // Status mode without callback: Update agent status with the uploaded image
         // Determine next status based on current status
         let nextStatus = currentStatus;
         if (currentStatus === 'checked_out') {
@@ -238,8 +240,8 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
             variant: 'destructive',
           });
         }
-      } else {
-        // General mode: Just upload and notify
+      } else if (!onCapture) {
+        // General mode without callback: Just upload and notify
         toast({
           title: 'Photo captured',
           description: 'Image uploaded successfully with agent details',

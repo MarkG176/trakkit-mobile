@@ -88,15 +88,23 @@ export const StatusBar = ({ status, loading }: StatusBarProps) => {
         return;
       }
 
+      const timeoutId = setTimeout(() => {
+        reject(new Error('Location request timed out. Please try again.'));
+      }, 15000);
+
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          clearTimeout(timeoutId);
           resolve({
             lat: position.coords.latitude,
             lng: position.coords.longitude,
           });
         },
-        (error) => reject(error),
-        { enableHighAccuracy: true }
+        (error) => {
+          clearTimeout(timeoutId);
+          reject(error);
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
       );
     });
   };
