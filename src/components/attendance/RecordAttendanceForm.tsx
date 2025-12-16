@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,33 +17,49 @@ export const RecordAttendanceForm = () => {
   const [showCamera, setShowCamera] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<'checked_in' | 'lunch' | 'checked_out' | null>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
+  // Ref-based guard to prevent duplicate calls (survives re-renders and is synchronous)
+  const isProcessingRef = useRef(false);
 
-  const handleStatusChange = async (newStatus: 'checked_in' | 'lunch' | 'checked_out') => {
-    if (!user || isCheckingIn) return;
+  const handleStatusChange = useCallback(async (newStatus: 'checked_in' | 'lunch' | 'checked_out') => {
+    // Synchronous check using ref to prevent race conditions
+    if (!user || isCheckingIn || isProcessingRef.current) {
+      console.log('Status change blocked - already processing or not authenticated');
+      return;
+    }
 
     // Set the pending status and trigger camera
     setPendingStatus(newStatus);
     cameraRef.current?.click();
-  };
+  }, [user, isCheckingIn]);
 
-  const handleCameraCapture = async (imageData: string) => {
-    if (!user || !pendingStatus) return;
+  const handleCameraCapture = useCallback(async (imageData: string) => {
+    // Double-check with ref to prevent duplicate processing
+    if (!user || !pendingStatus || isProcessingRef.current) {
+      console.log('Camera capture blocked - missing data or already processing');
+      return;
+    }
 
+    // Set ref immediately to prevent any concurrent calls
+    isProcessingRef.current = true;
     setIsCheckingIn(true);
+    
+    // Store the status we're setting to prevent issues if pendingStatus changes
+    const statusToSet = pendingStatus;
+    const previousStatus = currentStatus;
     
     try {
       // Get current location
       const location = await getCurrentLocation();
       
       // Update status with the captured image
-      const result = await updateStatus(pendingStatus, imageData, location.lat, location.lng);
+      const result = await updateStatus(statusToSet, imageData, location.lat, location.lng);
       
       if (result.success) {
         // Custom success messages for lunch breaks
         let successMessage = result.message;
-        if (pendingStatus === 'lunch') {
+        if (statusToSet === 'lunch') {
           successMessage = 'Successfully started lunch break';
-        } else if (currentStatus === 'lunch' && pendingStatus === 'checked_in') {
+        } else if (previousStatus === 'lunch' && statusToSet === 'checked_in') {
           successMessage = 'Successfully finished lunch break';
         }
         
@@ -68,8 +84,12 @@ export const RecordAttendanceForm = () => {
     } finally {
       setIsCheckingIn(false);
       setPendingStatus(null);
+      // Add a small delay before allowing next action to prevent rapid re-triggering on budget devices
+      setTimeout(() => {
+        isProcessingRef.current = false;
+      }, 1000);
     }
-  };
+  }, [user, pendingStatus, currentStatus, updateStatus, toast]);
 
   const getCurrentLocation = (): Promise<{ lat: number; lng: number }> => {
     return new Promise((resolve, reject) => {
