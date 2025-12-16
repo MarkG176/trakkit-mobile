@@ -57,6 +57,7 @@ export const useSalesForm = () => {
           .from('interactions')
           .insert({
             task_id: currentTask?.id || null,
+            agent_id: user.id,
             interaction_type: 'sale',
             customer_name: formData.customerName,
             customer_phone: formData.customerPhone,

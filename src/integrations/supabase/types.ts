@@ -1140,6 +1140,7 @@ export type Database = {
       }
       interactions: {
         Row: {
+          agent_id: string | null
           contact_method: string | null
           created_at: string | null
           customer_name: string | null
@@ -1167,6 +1168,7 @@ export type Database = {
           workspace_id: string | null
         }
         Insert: {
+          agent_id?: string | null
           contact_method?: string | null
           created_at?: string | null
           customer_name?: string | null
@@ -1194,6 +1196,7 @@ export type Database = {
           workspace_id?: string | null
         }
         Update: {
+          agent_id?: string | null
           contact_method?: string | null
           created_at?: string | null
           customer_name?: string | null
@@ -2239,6 +2242,7 @@ export type Database = {
       }
       sale_items: {
         Row: {
+          agent_id: string | null
           created_at: string | null
           customer_name: string | null
           customer_phone: string | null
@@ -2256,6 +2260,7 @@ export type Database = {
           workspace_id: string | null
         }
         Insert: {
+          agent_id?: string | null
           created_at?: string | null
           customer_name?: string | null
           customer_phone?: string | null
@@ -2273,6 +2278,7 @@ export type Database = {
           workspace_id?: string | null
         }
         Update: {
+          agent_id?: string | null
           created_at?: string | null
           customer_name?: string | null
           customer_phone?: string | null
