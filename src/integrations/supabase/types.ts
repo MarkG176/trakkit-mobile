@@ -463,6 +463,7 @@ export type Database = {
           day_plan_id: string | null
           id: string
           individual_sales_target: number
+          is_deleted: boolean | null
           started_at: string | null
           status: string | null
           updated_at: string | null
@@ -476,6 +477,7 @@ export type Database = {
           day_plan_id?: string | null
           id?: string
           individual_sales_target: number
+          is_deleted?: boolean | null
           started_at?: string | null
           status?: string | null
           updated_at?: string | null
@@ -489,6 +491,7 @@ export type Database = {
           day_plan_id?: string | null
           id?: string
           individual_sales_target?: number
+          is_deleted?: boolean | null
           started_at?: string | null
           status?: string | null
           updated_at?: string | null
@@ -663,6 +666,7 @@ export type Database = {
           center_lng: number
           created_at: string
           id: string
+          is_deleted: boolean | null
           name: string
           updated_at: string
           workspace_id: string | null
@@ -672,6 +676,7 @@ export type Database = {
           center_lng: number
           created_at?: string
           id?: string
+          is_deleted?: boolean | null
           name: string
           updated_at?: string
           workspace_id?: string | null
@@ -681,6 +686,7 @@ export type Database = {
           center_lng?: number
           created_at?: string
           id?: string
+          is_deleted?: boolean | null
           name?: string
           updated_at?: string
           workspace_id?: string | null
@@ -701,6 +707,7 @@ export type Database = {
           area_id: string | null
           created_at: string
           id: string
+          is_deleted: boolean | null
           latitude: number
           longitude: number
           name: string
@@ -714,6 +721,7 @@ export type Database = {
           area_id?: string | null
           created_at?: string
           id?: string
+          is_deleted?: boolean | null
           latitude: number
           longitude: number
           name: string
@@ -727,6 +735,7 @@ export type Database = {
           area_id?: string | null
           created_at?: string
           id?: string
+          is_deleted?: boolean | null
           latitude?: number
           longitude?: number
           name?: string
@@ -889,6 +898,7 @@ export type Database = {
           county: string | null
           created_at: string | null
           id: string
+          is_deleted: boolean | null
           location_lat: number | null
           location_lng: number | null
           name: string
@@ -900,6 +910,7 @@ export type Database = {
           county?: string | null
           created_at?: string | null
           id?: string
+          is_deleted?: boolean | null
           location_lat?: number | null
           location_lng?: number | null
           name: string
@@ -911,6 +922,7 @@ export type Database = {
           county?: string | null
           created_at?: string | null
           id?: string
+          is_deleted?: boolean | null
           location_lat?: number | null
           location_lng?: number | null
           name?: string
@@ -988,6 +1000,7 @@ export type Database = {
           created_at: string | null
           date: string
           id: string
+          is_deleted: boolean | null
           notes: string | null
           project_id: string | null
           status: string | null
@@ -1002,6 +1015,7 @@ export type Database = {
           created_at?: string | null
           date: string
           id?: string
+          is_deleted?: boolean | null
           notes?: string | null
           project_id?: string | null
           status?: string | null
@@ -1016,6 +1030,7 @@ export type Database = {
           created_at?: string | null
           date?: string
           id?: string
+          is_deleted?: boolean | null
           notes?: string | null
           project_id?: string | null
           status?: string | null
@@ -1450,6 +1465,7 @@ export type Database = {
           follow_up_date: string | null
           id: string
           interaction_id: string | null
+          is_deleted: boolean | null
           is_private: boolean | null
           metadata: Json | null
           note_type: string | null
@@ -1467,6 +1483,7 @@ export type Database = {
           follow_up_date?: string | null
           id?: string
           interaction_id?: string | null
+          is_deleted?: boolean | null
           is_private?: boolean | null
           metadata?: Json | null
           note_type?: string | null
@@ -1484,6 +1501,7 @@ export type Database = {
           follow_up_date?: string | null
           id?: string
           interaction_id?: string | null
+          is_deleted?: boolean | null
           is_private?: boolean | null
           metadata?: Json | null
           note_type?: string | null
@@ -1689,6 +1707,7 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          is_deleted: boolean | null
           name: string
           price: number | null
           product_id: string | null
@@ -1698,6 +1717,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
+          is_deleted?: boolean | null
           name: string
           price?: number | null
           product_id?: string | null
@@ -1707,6 +1727,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
+          is_deleted?: boolean | null
           name?: string
           price?: number | null
           product_id?: string | null
@@ -1737,6 +1758,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           id: string
+          is_deleted: boolean | null
           name: string
           project_id: string | null
           workspace_id: string | null
@@ -1747,6 +1769,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          is_deleted?: boolean | null
           name: string
           project_id?: string | null
           workspace_id?: string | null
@@ -1757,6 +1780,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          is_deleted?: boolean | null
           name?: string
           project_id?: string | null
           workspace_id?: string | null
@@ -1961,6 +1985,7 @@ export type Database = {
           description: string | null
           end_date: string
           id: string
+          is_deleted: boolean | null
           name: string
           start_date: string
           target_areas: string[] | null
@@ -1973,6 +1998,7 @@ export type Database = {
           description?: string | null
           end_date: string
           id?: string
+          is_deleted?: boolean | null
           name: string
           start_date: string
           target_areas?: string[] | null
@@ -1985,6 +2011,7 @@ export type Database = {
           description?: string | null
           end_date?: string
           id?: string
+          is_deleted?: boolean | null
           name?: string
           start_date?: string
           target_areas?: string[] | null
@@ -2068,6 +2095,7 @@ export type Database = {
           created_at: string
           date: string
           id: string
+          is_deleted: boolean | null
           project_id: string | null
           sales_target: number | null
           status: string
@@ -2086,6 +2114,7 @@ export type Database = {
           created_at?: string
           date: string
           id?: string
+          is_deleted?: boolean | null
           project_id?: string | null
           sales_target?: number | null
           status?: string
@@ -2104,6 +2133,7 @@ export type Database = {
           created_at?: string
           date?: string
           id?: string
+          is_deleted?: boolean | null
           project_id?: string | null
           sales_target?: number | null
           status?: string
@@ -2143,6 +2173,7 @@ export type Database = {
           completed_at: string | null
           created_at: string | null
           id: string
+          is_deleted: boolean | null
           locations: Json
           planned_date: string
           project_id: string | null
@@ -2157,6 +2188,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string | null
           id?: string
+          is_deleted?: boolean | null
           locations: Json
           planned_date: string
           project_id?: string | null
@@ -2171,6 +2203,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string | null
           id?: string
+          is_deleted?: boolean | null
           locations?: Json
           planned_date?: string
           project_id?: string | null
@@ -2210,6 +2243,7 @@ export type Database = {
           customer_name: string | null
           customer_phone: string | null
           id: string
+          is_deleted: boolean | null
           product_category: string | null
           product_id: string | null
           product_name: string | null
@@ -2226,6 +2260,7 @@ export type Database = {
           customer_name?: string | null
           customer_phone?: string | null
           id?: string
+          is_deleted?: boolean | null
           product_category?: string | null
           product_id?: string | null
           product_name?: string | null
@@ -2242,6 +2277,7 @@ export type Database = {
           customer_name?: string | null
           customer_phone?: string | null
           id?: string
+          is_deleted?: boolean | null
           product_category?: string | null
           product_id?: string | null
           product_name?: string | null
@@ -2293,6 +2329,7 @@ export type Database = {
           customer_name: string | null
           customer_phone: string | null
           id: string
+          is_deleted: boolean | null
           notes: string | null
           payment_method: string | null
           project_id: string | null
@@ -2309,6 +2346,7 @@ export type Database = {
           customer_name?: string | null
           customer_phone?: string | null
           id?: string
+          is_deleted?: boolean | null
           notes?: string | null
           payment_method?: string | null
           project_id?: string | null
@@ -2325,6 +2363,7 @@ export type Database = {
           customer_name?: string | null
           customer_phone?: string | null
           id?: string
+          is_deleted?: boolean | null
           notes?: string | null
           payment_method?: string | null
           project_id?: string | null
@@ -2564,6 +2603,7 @@ export type Database = {
           county: string
           created_at: string | null
           id: string
+          is_deleted: boolean | null
           last_visited_at: string | null
           priority: number | null
           products: Json
@@ -2582,6 +2622,7 @@ export type Database = {
           county: string
           created_at?: string | null
           id?: string
+          is_deleted?: boolean | null
           last_visited_at?: string | null
           priority?: number | null
           products?: Json
@@ -2600,6 +2641,7 @@ export type Database = {
           county?: string
           created_at?: string | null
           id?: string
+          is_deleted?: boolean | null
           last_visited_at?: string | null
           priority?: number | null
           products?: Json
@@ -2722,6 +2764,7 @@ export type Database = {
           id: string
           interaction_id: string | null
           is_completed: boolean | null
+          is_deleted: boolean | null
           location_lat: number | null
           location_lng: number | null
           responses: Json
@@ -2739,6 +2782,7 @@ export type Database = {
           id?: string
           interaction_id?: string | null
           is_completed?: boolean | null
+          is_deleted?: boolean | null
           location_lat?: number | null
           location_lng?: number | null
           responses: Json
@@ -2756,6 +2800,7 @@ export type Database = {
           id?: string
           interaction_id?: string | null
           is_completed?: boolean | null
+          is_deleted?: boolean | null
           location_lat?: number | null
           location_lng?: number | null
           responses?: Json
@@ -2797,6 +2842,7 @@ export type Database = {
           end_date: string | null
           estimated_duration_minutes: number | null
           id: string
+          is_deleted: boolean | null
           is_published: boolean | null
           project_id: string | null
           questions: Json
@@ -2818,6 +2864,7 @@ export type Database = {
           end_date?: string | null
           estimated_duration_minutes?: number | null
           id?: string
+          is_deleted?: boolean | null
           is_published?: boolean | null
           project_id?: string | null
           questions: Json
@@ -2839,6 +2886,7 @@ export type Database = {
           end_date?: string | null
           estimated_duration_minutes?: number | null
           id?: string
+          is_deleted?: boolean | null
           is_published?: boolean | null
           project_id?: string | null
           questions?: Json
@@ -2983,6 +3031,7 @@ export type Database = {
           agent_id: string | null
           created_at: string
           id: string
+          is_deleted: boolean | null
           team_id: string | null
           workspace_id: string | null
         }
@@ -2990,6 +3039,7 @@ export type Database = {
           agent_id?: string | null
           created_at?: string
           id?: string
+          is_deleted?: boolean | null
           team_id?: string | null
           workspace_id?: string | null
         }
@@ -2997,6 +3047,7 @@ export type Database = {
           agent_id?: string | null
           created_at?: string
           id?: string
+          is_deleted?: boolean | null
           team_id?: string | null
           workspace_id?: string | null
         }
@@ -3036,6 +3087,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          is_deleted: boolean | null
           member_count: number
           name: string | null
           project_id: string | null
@@ -3046,6 +3098,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_deleted?: boolean | null
           member_count?: number
           name?: string | null
           project_id?: string | null
@@ -3056,6 +3109,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_deleted?: boolean | null
           member_count?: number
           name?: string | null
           project_id?: string | null
@@ -3193,6 +3247,7 @@ export type Database = {
           email: string | null
           id: string
           is_active: boolean | null
+          is_deleted: boolean | null
           name: string | null
           role: string
           updated_at: string | null
@@ -3204,6 +3259,7 @@ export type Database = {
           email?: string | null
           id?: string
           is_active?: boolean | null
+          is_deleted?: boolean | null
           name?: string | null
           role: string
           updated_at?: string | null
@@ -3215,6 +3271,7 @@ export type Database = {
           email?: string | null
           id?: string
           is_active?: boolean | null
+          is_deleted?: boolean | null
           name?: string | null
           role?: string
           updated_at?: string | null
@@ -3281,6 +3338,7 @@ export type Database = {
           created_by: string | null
           description: string | null
           id: string
+          is_deleted: boolean | null
           name: string
           updated_at: string | null
         }
@@ -3289,6 +3347,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          is_deleted?: boolean | null
           name: string
           updated_at?: string | null
         }
@@ -3297,6 +3356,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          is_deleted?: boolean | null
           name?: string
           updated_at?: string | null
         }
