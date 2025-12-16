@@ -319,6 +319,7 @@ export const Surveys = () => {
         .from('interactions')
         .insert({
           task_id: currentTask?.id,
+          agent_id: user.id,
           interaction_type: 'survey',
           outcome: 'completed',
           quantity_sold: 0,

@@ -138,6 +138,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
         .from('interactions')
         .insert({
           task_id: null,
+          agent_id: user.id,
           interaction_type: 'survey',
           survey_template_id: selectedSurvey,
           store_id: storeId,
@@ -225,6 +226,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
       // Record interaction
       const { error: interactionError } = await supabase.from('interactions').insert({
         task_id: null,
+        agent_id: user.id,
         interaction_type: 'sale',
         store_id: storeId,
         customer_name: storeName,
@@ -331,6 +333,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
 
       const { error } = await supabase.from('interactions').insert({
         task_id: null,
+        agent_id: user.id,
         interaction_type: 'other',
         store_id: storeId,
         customer_name: storeName,

@@ -44,6 +44,7 @@ export const useInteractionForm = () => {
         .from('interactions')
         .insert({
           task_id: currentTask?.id || null,
+          agent_id: user.id,
           interaction_type: 'other',
           customer_name: formData.customerName,
           customer_phone: formData.customerPhone,
