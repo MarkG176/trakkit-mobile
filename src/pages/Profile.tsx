@@ -1,173 +1,99 @@
-import { useEffect, useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit2, Award, Target, Calendar } from "lucide-react";
+import { ArrowLeft, Mail, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useWorkspace } from "@/hooks/useWorkspace";
-import { supabase } from "@/integrations/supabase/client";
+import { useAgentProfileStats } from "@/hooks/useAgentProfileStats";
+import { ProfileHeader } from "@/components/profile/ProfileHeader";
+import { DailySummaryCard } from "@/components/profile/DailySummaryCard";
+import { WeeklySummaryCard } from "@/components/profile/WeeklySummaryCard";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const Profile = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { currentWorkspaceId } = useWorkspace();
+  const { signOut } = useAuth();
+  const stats = useAgentProfileStats();
 
-  const [performanceData, setPerformanceData] = useState({
-    totalPoints: 0,
-    surveysCompleted: 0,
-    salesThisMonth: 0,
-    rank: "",
-    teamName: "",
-    managerName: ""
-  });
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
+  };
 
-  useEffect(() => {
-    const fetchProfileData = async () => {
-      if (!user) return;
-      try {
-        const firstDayOfMonth = new Date();
-        firstDayOfMonth.setDate(1);
-        firstDayOfMonth.setHours(0,0,0,0);
-        const nowIso = new Date().toISOString();
-        const monthStartIso = firstDayOfMonth.toISOString();
-
-        const [{ data: surveys }, { data: sales }, { data: rankData }] = await Promise.all([
-          supabase
-            .from('interactions')
-            .select('*, agent_tasks!inner(*)')
-            .eq('agent_tasks.agent_id', user.id)
-            .eq('interaction_type', 'survey'),
-          supabase
-            .from('interactions')
-            .select('*, agent_tasks!inner(*)')
-            .eq('agent_tasks.agent_id', user.id)
-            .eq('interaction_type', 'sale')
-            .gte('created_at', monthStartIso)
-            .lte('created_at', nowIso),
-          supabase
-            .from('agent_ranks')
-            .select('*')
-            .eq('agent_id', user.id)
-            .single()
-        ]);
-
-        setPerformanceData({
-          totalPoints: (surveys?.length || 0) * 10 + (sales?.length || 0) * 20,
-          surveysCompleted: surveys?.length || 0,
-          salesThisMonth: sales?.length || 0,
-          rank: rankData?.current_rank || "Agent",
-          teamName: "",
-          managerName: ""
-        });
-      } catch (err) {
-        console.error('Failed to load profile data', err);
-      }
-    };
-    fetchProfileData();
-  }, [user]);
+  if (stats.isLoading) {
+    return (
+      <MobileLayout currentPage="more">
+        <div className="bg-primary p-6 pb-8">
+          <div className="flex items-center gap-4 mb-4">
+            <Skeleton className="w-20 h-20 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+          </div>
+        </div>
+        <div className="p-4 space-y-4">
+          <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-32 w-full" />
+        </div>
+      </MobileLayout>
+    );
+  }
 
   return (
     <MobileLayout currentPage="more">
-      <div className="bg-primary text-primary-foreground p-4">
-        <div className="flex items-center gap-3 mb-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/more")}
-            className="text-primary-foreground hover:bg-primary-foreground/20"
-          >
-            <ArrowLeft size={20} />
-          </Button>
-          <h1 className="text-h1">My Profile</h1>
-        </div>
-        
-        {/* Profile Header */}
-        <div className="flex items-center gap-4">
-          <Avatar className="w-16 h-16">
-            <AvatarImage src="/placeholder-avatar.jpg" />
-            <AvatarFallback className="bg-white text-primary text-lg font-semibold">
-              {user?.email?.charAt(0).toUpperCase() || "A"}
-            </AvatarFallback>
-          </Avatar>
-          
-          <div className="flex-1">
-            <h2 className="text-xl font-semibold">Agent Profile</h2>
-            <p className="text-sm opacity-90">{performanceData.rank}</p>
-          </div>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-primary-foreground hover:bg-primary-foreground/20"
-          >
-            <Edit2 size={20} />
-          </Button>
-        </div>
+      {/* Back Button */}
+      <div className="absolute top-4 left-4 z-10">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate("/more")}
+          className="text-primary-foreground hover:bg-primary-foreground/20"
+        >
+          <ArrowLeft size={20} />
+        </Button>
       </div>
 
-      <div className="p-4 space-y-6">
+      {/* Profile Header */}
+      <ProfileHeader
+        displayName={stats.displayName}
+        currentRank={stats.currentRank}
+        totalPoints={stats.totalPoints}
+      />
+
+      <div className="p-4 space-y-4 -mt-4">
+        {/* Today's Summary - Main Screenshot Target */}
+        <DailySummaryCard
+          storesAdded={stats.todayStoresAdded}
+          sales={stats.todaySales}
+          revenue={stats.todayRevenue}
+          surveys={stats.todaySurveys}
+          giveaways={stats.todayGiveaways}
+          giveawayItems={stats.todayGiveawayItems}
+          workMinutes={stats.todayWorkMinutes}
+        />
+
+        {/* Weekly Summary */}
+        <WeeklySummaryCard
+          storesAdded={stats.weekStoresAdded}
+          sales={stats.weekSales}
+          revenue={stats.weekRevenue}
+          surveys={stats.weekSurveys}
+          giveaways={stats.weekGiveaways}
+          giveawayItems={stats.weekGiveawayItems}
+          workMinutes={stats.weekWorkMinutes}
+        />
+
         {/* Profile Details */}
         <Card>
           <CardContent className="p-4">
-            <h3 className="text-h3 mb-4 text-black">Profile Details</h3>
-            
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Email:</span>
-                <span className="text-black font-medium">{user?.email}</span>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Role:</span>
-                <span className="text-black font-medium">{performanceData.rank || 'Field Agent'}</span>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Team:</span>
-                <span className="text-black font-medium">{performanceData.teamName}</span>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Manager:</span>
-                <span className="text-black font-medium">{performanceData.managerName}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Performance Snapshot */}
-        <Card>
-          <CardContent className="p-4">
-            <h3 className="text-h3 mb-4 text-black">Performance Snapshot</h3>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-3 bg-primary-light rounded-lg">
-                <Award className="w-6 h-6 text-primary mx-auto mb-2" />
-                <p className="text-2xl font-bold text-primary">{performanceData.totalPoints}</p>
-                <p className="text-sm text-muted-foreground">Total Points</p>
-              </div>
-              
-              <div className="text-center p-3 bg-accent rounded-lg">
-                <Target className="w-6 h-6 text-accent-foreground mx-auto mb-2" />
-                <p className="text-2xl font-bold text-accent-foreground">{performanceData.surveysCompleted}</p>
-                <p className="text-sm text-muted-foreground">Surveys Done</p>
-              </div>
-              
-              <div className="text-center p-3 bg-muted rounded-lg">
-                <Calendar className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-                <p className="text-2xl font-bold text-foreground">{performanceData.salesThisMonth}</p>
-                <p className="text-sm text-muted-foreground">Sales This Month</p>
-              </div>
-              
-              <div className="text-center p-3 bg-card border rounded-lg">
-                <Badge className="bg-primary text-primary-foreground text-lg px-3 py-1">
-                  {performanceData.rank.split(' ')[0]}
-                </Badge>
-                <p className="text-sm text-muted-foreground mt-2">Current Rank</p>
-              </div>
+            <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">
+              Profile Details
+            </h3>
+            <div className="flex items-center gap-3">
+              <Mail className="w-5 h-5 text-muted-foreground" />
+              <span className="text-foreground">{stats.email}</span>
             </div>
           </CardContent>
         </Card>
@@ -175,17 +101,17 @@ export const Profile = () => {
         {/* Account Settings */}
         <Card>
           <CardContent className="p-4">
-            <h3 className="text-h3 mb-4 text-black">Account Settings</h3>
-            
-            <div className="space-y-3">
-              <Button variant="outline" className="w-full justify-start">
-                Change Password
-              </Button>
-              
-              <Button variant="outline" className="w-full justify-start text-red-600 border-red-200 hover:bg-red-50">
-                Logout
-              </Button>
-            </div>
+            <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">
+              Account
+            </h3>
+            <Button
+              variant="outline"
+              className="w-full justify-start text-destructive border-destructive/30 hover:bg-destructive/10"
+              onClick={handleLogout}
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
           </CardContent>
         </Card>
       </div>
