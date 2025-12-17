@@ -108,7 +108,7 @@ export const Inventory = () => {
               >
                 <ArrowLeft size={20} />
               </Button>
-              <h1 className="text-lg font-medium">{selectedProduct.name || 'Product'}</h1>
+              <h1 className="text-lg font-medium">{selectedProduct.name || selectedProduct.product_variants?.name || 'Product'}</h1>
             </div>
           </div>
 
@@ -196,7 +196,7 @@ export const Inventory = () => {
                   </div>
                   
                   <div className="flex-1">
-                    <h3 className="text-h3 mb-1">{item.name || 'Product'}</h3>
+                    <h3 className="text-h3 mb-1">{item.name || item.product_variants?.name || 'Product'}</h3>
                     <div className="flex items-center gap-2 mb-2">
                       <p className="text-secondary text-xs font-medium">{item.product_variants?.sku || 'N/A'}</p>
                     </div>
