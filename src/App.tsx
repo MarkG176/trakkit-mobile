@@ -34,7 +34,7 @@ import { ActivityDetail } from "./pages/ActivityDetail";
 import { Activity } from "./pages/Activity";
 import { RoleBasedRoute } from "./components/RoleBasedRoute";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
-import PWAUpdateNotification from "./components/PWAUpdateNotification";
+
 import NotFound from "./pages/NotFound";
 import { AgentTracking } from "./pages/supervisor/AgentTracking";
 import { DailyPlanApproval } from "./pages/supervisor/DailyPlanApproval";
@@ -57,7 +57,7 @@ const App = () => (
           <BrowserRouter>
           <InstallPrompt />
           <PWAInstallPrompt />
-          <PWAUpdateNotification />
+          
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
