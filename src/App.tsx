@@ -57,7 +57,6 @@ const App = () => (
           <BrowserRouter>
           <InstallPrompt />
           <PWAInstallPrompt />
-          
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
