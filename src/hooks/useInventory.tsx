@@ -44,10 +44,10 @@ export const useInventory = () => {
 
       if (error) throw error;
 
-      // Transform data to include price from product_variants
+      // Transform data - prioritize product_variants.name over agent_task_inventory.name
       const transformedData: InventoryItem[] = (data || []).map(item => ({
         id: item.id,
-        name: item.name || (item.product_variants as any)?.name || 'Unknown Product',
+        name: (item.product_variants as any)?.name || item.name || 'Unknown Product',
         product_variant_id: item.product_variant_id,
         amount_issued: item.amount_issued,
         price: (item.product_variants as any)?.price || 0,

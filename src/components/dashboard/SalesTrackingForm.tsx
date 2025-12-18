@@ -3,6 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2 } from "lucide-react";
+import { InventoryItem } from "@/hooks/useInventory";
 
 interface SaleEntry {
   product_variant_id: string;
@@ -11,11 +12,7 @@ interface SaleEntry {
 }
 
 interface SalesTrackingFormProps {
-  inventory: Array<{
-    id: string;
-    product_variant_id: string;
-    products: { name: string };
-  }>;
+  inventory: InventoryItem[];
   onSubmit: (sales: SaleEntry[]) => void;
   onSkip: () => void;
 }
@@ -62,7 +59,7 @@ export const SalesTrackingForm = ({ inventory, onSubmit, onSkip }: SalesTracking
                 <SelectContent>
                   {inventory.map((item) => (
                     <SelectItem key={item.product_variant_id} value={item.product_variant_id}>
-                      {item.products?.name || "Unknown Product"}
+                      {item.name || "Unknown Product"}
                     </SelectItem>
                   ))}
                 </SelectContent>
