@@ -1,83 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Package, ShoppingCart, Gift, ArrowLeft } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-
-interface InventoryItem {
-  id: string;
-  product_variant_id: string;
-  amount_issued: number;
-  task_id: string;
-  name: string | null;
-  products: any;
-  product_variants: {
-    id: string;
-    name: string;
-    sku: string;
-    price: number;
-  } | null;
-}
+import { useInventory, InventoryItem } from "@/hooks/useInventory";
 
 export const Inventory = () => {
   const [selectedProduct, setSelectedProduct] = useState<InventoryItem | null>(null);
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    fetchInventory();
-  }, []);
-
-  const fetchInventory = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast({
-          title: "Authentication required",
-          description: "Please sign in to view your inventory.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('agent_task_inventory')
-        .select(`
-          id,
-          product_variant_id,
-          amount_issued,
-          task_id,
-          name,
-          products,
-          product_variants (
-            id,
-            name,
-            sku,
-            price
-          )
-        `)
-        .eq('agent_id', user.id)
-        .eq('is_deleted', false);
-
-      if (error) {
-        console.error('Error fetching inventory:', error);
-        toast({
-          title: "Error loading inventory",
-          description: "Could not load your assigned inventory.",
-          variant: "destructive",
-        });
-      } else {
-        setInventory(data || []);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { inventory, loading } = useInventory();
 
   if (loading) {
     return (
@@ -108,7 +37,7 @@ export const Inventory = () => {
               >
                 <ArrowLeft size={20} />
               </Button>
-              <h1 className="text-lg font-medium">{selectedProduct.name || selectedProduct.product_variants?.name || 'Product'}</h1>
+              <h1 className="text-lg font-medium">{selectedProduct.name || 'Product'}</h1>
             </div>
           </div>
 
@@ -123,7 +52,7 @@ export const Inventory = () => {
             <div className="performance-card mb-4">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-body text-secondary-foreground">SKU</span>
-                <span className="text-h3 font-medium">{selectedProduct.product_variants?.sku || 'N/A'}</span>
+                <span className="text-h3 font-medium">{selectedProduct.sku || 'N/A'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-body text-secondary-foreground">Stock Available</span>
@@ -140,14 +69,14 @@ export const Inventory = () => {
             <div className="performance-card mb-4">
               <div className="flex items-center justify-between">
                 <span className="text-body">Unit Price</span>
-                <span className="text-h3">KES {selectedProduct.product_variants?.price || 0}</span>
+                <span className="text-h3">KES {selectedProduct.price || 0}</span>
               </div>
             </div>
 
             {/* Product Info */}
             <div className="performance-card mb-6">
               <h3 className="text-h3 mb-2">Product Details</h3>
-              <p className="text-body text-secondary-foreground">SKU: {selectedProduct.product_variants?.sku || 'N/A'}</p>
+              <p className="text-body text-secondary-foreground">SKU: {selectedProduct.sku || 'N/A'}</p>
               <p className="text-body text-secondary-foreground mt-2">Amount Issued: {selectedProduct.amount_issued}</p>
             </div>
 
@@ -196,13 +125,13 @@ export const Inventory = () => {
                   </div>
                   
                   <div className="flex-1">
-                    <h3 className="text-h3 mb-1">{item.name || item.product_variants?.name || 'Product'}</h3>
+                    <h3 className="text-h3 mb-1">{item.name || 'Product'}</h3>
                     <div className="flex items-center gap-2 mb-2">
-                      <p className="text-secondary text-xs font-medium">{item.product_variants?.sku || 'N/A'}</p>
+                      <p className="text-secondary text-xs font-medium">{item.sku || 'N/A'}</p>
                     </div>
                     
                     <div className="flex items-center justify-between">
-                      <span className="text-body font-medium">KES {item.product_variants?.price || 0}</span>
+                      <span className="text-body font-medium">KES {item.price || 0}</span>
                       <div className="flex items-center gap-1">
                         <span className={`text-sm font-medium ${
                           item.amount_issued < 5 ? "text-destructive" : 
