@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,14 +11,7 @@ import { useSalesForm } from "@/hooks/useSalesForm";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { toast } from "sonner";
-
-interface InventoryItem {
-  id: string;
-  name: string | null;
-  product_variant_id: string;
-  amount_issued: number;
-}
+import { useInventory, InventoryItem } from "@/hooks/useInventory";
 
 interface CartItem {
   id: string;
@@ -32,8 +25,7 @@ export const RecordSale = () => {
   const { submitSale, loading: submitting } = useSalesForm();
   const { user } = useAuth();
   const { currentWorkspaceId } = useWorkspace();
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { inventory, loading } = useInventory();
   const [searchTerm, setSearchTerm] = useState("");
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState("");
@@ -41,31 +33,6 @@ export const RecordSale = () => {
   const [customerEmail, setCustomerEmail] = useState("");
   const [showCart, setShowCart] = useState(false);
   const [showCustomerInfo, setShowCustomerInfo] = useState(false);
-
-  useEffect(() => {
-    fetchInventory();
-  }, [user]);
-
-  const fetchInventory = async () => {
-    if (!user) return;
-
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('agent_task_inventory')
-        .select('id, name, product_variant_id, amount_issued')
-        .eq('agent_id', user.id)
-        .eq('is_deleted', false);
-
-      if (error) throw error;
-      setInventory(data || []);
-    } catch (error) {
-      console.error('Error fetching inventory:', error);
-      toast.error('Failed to load inventory');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const addToCart = (item: InventoryItem) => {
     const existingItem = cartItems.find(cartItem => cartItem.id === item.product_variant_id);
@@ -79,7 +46,7 @@ export const RecordSale = () => {
       setCartItems([...cartItems, { 
         id: item.product_variant_id, 
         name: item.name || 'Unknown Product', 
-        price: 0, 
+        price: item.price || 0, 
         quantity: 1 
       }]);
     }
@@ -284,6 +251,9 @@ export const RecordSale = () => {
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-base">{item.name || 'Unknown Product'}</h3>
                         <p className="text-sm text-muted-foreground">Available: {item.amount_issued}</p>
+                        {item.price > 0 && (
+                          <p className="text-sm font-medium text-primary">KES {item.price}</p>
+                        )}
                       </div>
 
                       {/* Add Button */}

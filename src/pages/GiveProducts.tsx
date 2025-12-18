@@ -1,24 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
 import { RecordingIndicator } from "@/components/RecordingIndicator";
-import { EngagementModal } from "@/components/EngagementModal";
-import { ArrowLeft, Mic, MicOff, Plus, Minus, Search } from "lucide-react";
+import { ArrowLeft, Plus, Minus, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useInventory, InventoryItem } from "@/hooks/useInventory";
 import { supabase } from "@/integrations/supabase/client";
-
-interface InventoryItem {
-  id: string;
-  name: string | null;
-  product_variant_id: string;
-  amount_issued: number;
-}
 
 interface SelectedProduct {
   id: string;
@@ -32,62 +22,14 @@ export const GiveProducts = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { currentWorkspaceId } = useWorkspace();
+  const { inventory, loading } = useInventory();
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
   const [recipientName, setRecipientName] = useState("");
   const [recipientPhone, setRecipientPhone] = useState("");
   const [notes, setNotes] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
-  const [showEngagementModal, setShowEngagementModal] = useState(false);
-  const [showRecipientModal, setShowRecipientModal] = useState(false);
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-
-  useEffect(() => {
-    fetchInventory();
-  }, []);
-
-  const fetchInventory = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast({
-          title: "Authentication required",
-          description: "Please sign in to view your inventory.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('agent_task_inventory')
-        .select('id, name, product_variant_id, amount_issued')
-        .eq('agent_id', user.id)
-        .eq('is_deleted', false);
-
-      if (error) {
-        console.error('Error fetching inventory:', error);
-        toast({
-          title: "Error loading inventory",
-          description: "Could not load your assigned inventory.",
-          variant: "destructive",
-        });
-      } else {
-        setInventory(data || []);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred while loading inventory.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const startRecording = () => {
     setIsRecording(true);
