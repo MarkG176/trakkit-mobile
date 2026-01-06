@@ -109,16 +109,18 @@ class WorkspaceService {
           workspace_id,
           role,
           created_at,
-          workspace:workspaces (
+          workspace:workspaces!inner (
             id,
             name,
             description,
             created_at,
-            updated_at
+            updated_at,
+            is_active
           )
         `)
         .eq('user_id', this.user.id)
         .eq('is_active', true)
+        .eq('workspace.is_active', true)
         .order('created_at', { ascending: true });
 
       if (error) {
