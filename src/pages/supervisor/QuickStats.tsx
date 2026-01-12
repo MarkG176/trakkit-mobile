@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { SupervisorMobileLayout } from "@/components/SupervisorMobileLayout";
 import { QuickStatCard } from "@/components/supervisor/QuickStatCard";
+import { DateRangeSelector } from "@/components/supervisor/DateRangeSelector";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,11 +9,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Users, ShoppingCart, Gift, ClipboardCheck, 
   RefreshCw, Loader2, Battery, AlertTriangle,
-  TrendingUp, Target, Clock
+  TrendingUp, Target, Clock, MapPin
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useToast } from "@/hooks/use-toast";
+import { useDateRangeFilter } from "@/hooks/useDateRangeFilter";
+import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 
 interface DashboardStats {
   activeAgents: number;
@@ -31,6 +34,7 @@ interface TopPerformer {
   name: string;
   initials: string;
   sales: number;
+  location?: string;
 }
 
 export const QuickStats = () => {
@@ -50,6 +54,7 @@ export const QuickStats = () => {
   const [refreshing, setRefreshing] = useState(false);
   const { currentWorkspaceId } = useWorkspace();
   const { toast } = useToast();
+  const { preset, setPreset, setCustomRange, dateRange, startISO, endISO, dateLabel } = useDateRangeFilter('today');
 
   useEffect(() => {
     fetchStats();
