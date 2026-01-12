@@ -1049,6 +1049,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "day_plans_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_stats_view"
+            referencedColumns: ["project_id"]
+          },
+          {
             foreignKeyName: "day_plans_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
@@ -1797,6 +1804,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "products_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_stats_view"
+            referencedColumns: ["project_id"]
+          },
+          {
             foreignKeyName: "products_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
@@ -1883,6 +1897,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "project_plans"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_inventory_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_stats_view"
+            referencedColumns: ["project_id"]
           },
         ]
       }
@@ -2160,6 +2181,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "project_plans"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "route_assignments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_stats_view"
+            referencedColumns: ["project_id"]
           },
           {
             foreignKeyName: "route_assignments_workspace_id_fkey"
@@ -2486,6 +2514,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "project_plans"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_stats_view"
+            referencedColumns: ["project_id"]
           },
           {
             foreignKeyName: "stock_movements_request_id_fkey"
@@ -2914,6 +2949,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "survey_templates_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_stats_view"
+            referencedColumns: ["project_id"]
+          },
+          {
             foreignKeyName: "survey_templates_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
@@ -3129,6 +3171,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "project_plans"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teams_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_stats_view"
+            referencedColumns: ["project_id"]
           },
           {
             foreignKeyName: "teams_team_lead_id_fkey"
@@ -3428,6 +3477,26 @@ export type Database = {
         }
         Relationships: []
       }
+      project_stats_view: {
+        Row: {
+          agents_count: number | null
+          completed_tasks: number | null
+          day_plan_count: number | null
+          project_id: string | null
+          team_member_count: number | null
+          total_tasks: number | null
+          workspace_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_plans_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       approve_checkout_request: {
@@ -3538,6 +3607,7 @@ export type Database = {
       }
       get_current_user_role_direct: { Args: never; Returns: string }
       get_current_user_role_safe: { Args: never; Returns: string }
+      get_dashboard_stats: { Args: { p_workspace_id: string }; Returns: Json }
       get_default_workspace: { Args: never; Returns: string }
       get_follow_ups_due: {
         Args: { p_agent_id?: string; p_due_date?: string }
@@ -3580,6 +3650,10 @@ export type Database = {
           selfie_url: string
         }[]
       }
+      get_projects_with_stats: {
+        Args: { p_workspace_id: string }
+        Returns: Json
+      }
       get_recent_tasks: {
         Args: { p_agent_id: string }
         Returns: {
@@ -3606,6 +3680,10 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      get_supervisor_stats: {
+        Args: { p_supervisor_id: string; p_workspace_id?: string }
+        Returns: Json
       }
       get_user_role: { Args: { user_uuid: string }; Returns: string }
       get_user_workspace_id: { Args: never; Returns: string }
