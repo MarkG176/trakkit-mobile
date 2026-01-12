@@ -1,4 +1,4 @@
-import { Users, Calendar, Package, Trophy, AlertTriangle, MoreHorizontal, Briefcase } from "lucide-react";
+import { Users, Package, MoreHorizontal, Activity, BarChart3, LayoutDashboard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface SupervisorBottomNavigationProps {
@@ -6,10 +6,10 @@ interface SupervisorBottomNavigationProps {
 }
 
 const navItems = [
-  { id: "dashboard", label: "Dashboard", icon: Users, path: "/supervisor-dashboard" },
+  { id: "dashboard", label: "Home", icon: LayoutDashboard, path: "/supervisor-dashboard" },
+  { id: "live-feed", label: "Live", icon: Activity, path: "/supervisor/live-feed" },
   { id: "agent-tracking", label: "Agents", icon: Users, path: "/supervisor/agent-tracking" },
-  { id: "planning", label: "Planning", icon: Briefcase, path: "/supervisor/planning" },
-  { id: "inventory", label: "Inventory", icon: Package, path: "/supervisor/inventory-management" },
+  { id: "quick-stats", label: "Stats", icon: BarChart3, path: "/supervisor/quick-stats" },
   { id: "more", label: "More", icon: MoreHorizontal, path: "/supervisor-more" },
 ];
 

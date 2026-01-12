@@ -43,6 +43,11 @@ import { IncidentReporting } from "./pages/supervisor/IncidentReporting";
 import { ReportsAnalytics } from "./pages/supervisor/ReportsAnalytics";
 import { Planning } from "./pages/supervisor/Planning";
 import { ProjectDetails } from "./pages/supervisor/ProjectDetails";
+import { LiveFeed } from "./pages/supervisor/LiveFeed";
+import { QuickStats } from "./pages/supervisor/QuickStats";
+import { Leaderboard } from "./pages/supervisor/Leaderboard";
+import { CheckInGallery } from "./pages/supervisor/CheckInGallery";
+import { QuickActions } from "./pages/supervisor/QuickActions";
 import AuthCallback from "./pages/AuthCallback";
 
 const queryClient = new QueryClient();
@@ -218,6 +223,31 @@ const App = () => (
             <Route path="/supervisor-more" element={
               <RoleBasedRoute allowedRoles={['supervisor']} redirectTo="/agent">
                 <SupervisorMore />
+              </RoleBasedRoute>
+            } />
+            <Route path="/supervisor/live-feed" element={
+              <RoleBasedRoute allowedRoles={['supervisor']}>
+                <LiveFeed />
+              </RoleBasedRoute>
+            } />
+            <Route path="/supervisor/quick-stats" element={
+              <RoleBasedRoute allowedRoles={['supervisor']}>
+                <QuickStats />
+              </RoleBasedRoute>
+            } />
+            <Route path="/supervisor/leaderboard" element={
+              <RoleBasedRoute allowedRoles={['supervisor']}>
+                <Leaderboard />
+              </RoleBasedRoute>
+            } />
+            <Route path="/supervisor/check-in-gallery" element={
+              <RoleBasedRoute allowedRoles={['supervisor']}>
+                <CheckInGallery />
+              </RoleBasedRoute>
+            } />
+            <Route path="/supervisor/quick-actions" element={
+              <RoleBasedRoute allowedRoles={['supervisor']}>
+                <QuickActions />
               </RoleBasedRoute>
             } />
             <Route path="*" element={<NotFound />} />
