@@ -1,12 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { SupervisorMobileLayout } from "@/components/SupervisorMobileLayout";
 import { ActivityCard } from "@/components/supervisor/ActivityCard";
+import { DateRangeSelector } from "@/components/supervisor/DateRangeSelector";
+import { PaginationControls } from "@/components/supervisor/PaginationControls";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, Filter, Loader2, Activity, ShoppingCart, Gift, ClipboardCheck, LogIn } from "lucide-react";
+import { RefreshCw, Filter, Loader2, Activity, ShoppingCart, Gift, ClipboardCheck, LogIn, Wifi } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useToast } from "@/hooks/use-toast";
+import { usePagination } from "@/hooks/usePagination";
+import { useDateRangeFilter } from "@/hooks/useDateRangeFilter";
+import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 
 interface ActivityItem {
   id: string;
@@ -27,24 +32,39 @@ export const LiveFeed = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<FilterType>('all');
+  const [isRealtime, setIsRealtime] = useState(true);
   const { currentWorkspaceId } = useWorkspace();
   const { toast } = useToast();
+  
+  const { preset, setPreset, setCustomRange, dateRange, startISO, endISO, dateLabel } = useDateRangeFilter('today');
 
-  useEffect(() => {
-    fetchActivities();
-  }, [currentWorkspaceId]);
+  const filteredActivities = activities.filter(activity => {
+    if (filter === 'all') return true;
+    if (filter === 'check_in') return activity.type === 'check_in' || activity.type === 'check_out';
+    return activity.type === filter;
+  });
 
-  const fetchActivities = async () => {
+  const {
+    currentPage,
+    totalPages,
+    paginatedItems,
+    nextPage,
+    prevPage,
+    hasNextPage,
+    hasPrevPage,
+    startIndex,
+    endIndex,
+    totalItems,
+  } = usePagination({ items: filteredActivities, itemsPerPage: 15 });
+
+  const fetchActivities = useCallback(async () => {
     if (!currentWorkspaceId) return;
     
     try {
       setRefreshing(true);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayISO = today.toISOString();
 
       // Fetch check-ins/outs from agent_status_log
-      const { data: statusLogs, error: statusError } = await supabase
+      let statusQuery = supabase
         .from('agent_status_log')
         .select(`
           id,
@@ -57,14 +77,17 @@ export const LiveFeed = () => {
           agent_display_name
         `)
         .eq('workspace_id', currentWorkspaceId)
-        .gte('timestamp', todayISO)
         .order('timestamp', { ascending: false })
-        .limit(50);
+        .limit(200);
 
+      if (startISO) statusQuery = statusQuery.gte('timestamp', startISO);
+      if (endISO) statusQuery = statusQuery.lte('timestamp', endISO);
+
+      const { data: statusLogs, error: statusError } = await statusQuery;
       if (statusError) throw statusError;
 
       // Fetch sales from interactions
-      const { data: sales, error: salesError } = await supabase
+      let salesQuery = supabase
         .from('interactions')
         .select(`
           id,
@@ -78,14 +101,17 @@ export const LiveFeed = () => {
         `)
         .eq('workspace_id', currentWorkspaceId)
         .eq('interaction_type', 'sale')
-        .gte('timestamp', todayISO)
         .order('timestamp', { ascending: false })
-        .limit(30);
+        .limit(100);
 
+      if (startISO) salesQuery = salesQuery.gte('timestamp', startISO);
+      if (endISO) salesQuery = salesQuery.lte('timestamp', endISO);
+
+      const { data: sales, error: salesError } = await salesQuery;
       if (salesError) throw salesError;
 
       // Fetch giveaways
-      const { data: giveaways, error: giveawayError } = await supabase
+      let giveawayQuery = supabase
         .from('giveaways')
         .select(`
           id,
@@ -97,14 +123,17 @@ export const LiveFeed = () => {
           location_lng
         `)
         .eq('workspace_id', currentWorkspaceId)
-        .gte('recorded_at', todayISO)
         .order('recorded_at', { ascending: false })
-        .limit(30);
+        .limit(100);
 
+      if (startISO) giveawayQuery = giveawayQuery.gte('recorded_at', startISO);
+      if (endISO) giveawayQuery = giveawayQuery.lte('recorded_at', endISO);
+
+      const { data: giveaways, error: giveawayError } = await giveawayQuery;
       if (giveawayError) throw giveawayError;
 
       // Fetch surveys from interactions
-      const { data: surveys, error: surveyError } = await supabase
+      let surveyQuery = supabase
         .from('interactions')
         .select(`
           id,
@@ -116,10 +145,13 @@ export const LiveFeed = () => {
         `)
         .eq('workspace_id', currentWorkspaceId)
         .eq('interaction_type', 'survey')
-        .gte('timestamp', todayISO)
         .order('timestamp', { ascending: false })
-        .limit(30);
+        .limit(100);
 
+      if (startISO) surveyQuery = surveyQuery.gte('timestamp', startISO);
+      if (endISO) surveyQuery = surveyQuery.lte('timestamp', endISO);
+
+      const { data: surveys, error: surveyError } = await surveyQuery;
       if (surveyError) throw surveyError;
 
       // Get agent names
@@ -219,12 +251,41 @@ export const LiveFeed = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [currentWorkspaceId, startISO, endISO, toast]);
 
-  const filteredActivities = activities.filter(activity => {
-    if (filter === 'all') return true;
-    if (filter === 'check_in') return activity.type === 'check_in' || activity.type === 'check_out';
-    return activity.type === filter;
+  useEffect(() => {
+    fetchActivities();
+  }, [fetchActivities]);
+
+  // Real-time subscriptions
+  const handleRealtimeUpdate = useCallback(() => {
+    if (isRealtime && preset === 'today') {
+      fetchActivities();
+    }
+  }, [fetchActivities, isRealtime, preset]);
+
+  useRealtimeSubscription({
+    table: 'agent_status_log',
+    event: 'INSERT',
+    filter: currentWorkspaceId ? `workspace_id=eq.${currentWorkspaceId}` : undefined,
+    onData: handleRealtimeUpdate,
+    enabled: isRealtime && preset === 'today' && !!currentWorkspaceId,
+  });
+
+  useRealtimeSubscription({
+    table: 'interactions',
+    event: 'INSERT',
+    filter: currentWorkspaceId ? `workspace_id=eq.${currentWorkspaceId}` : undefined,
+    onData: handleRealtimeUpdate,
+    enabled: isRealtime && preset === 'today' && !!currentWorkspaceId,
+  });
+
+  useRealtimeSubscription({
+    table: 'giveaways',
+    event: 'INSERT',
+    filter: currentWorkspaceId ? `workspace_id=eq.${currentWorkspaceId}` : undefined,
+    onData: handleRealtimeUpdate,
+    enabled: isRealtime && preset === 'today' && !!currentWorkspaceId,
   });
 
   const filterButtons = [
@@ -243,20 +304,51 @@ export const LiveFeed = () => {
             <h1 className="text-2xl font-bold">Live Activity</h1>
             <p className="text-sm opacity-90">Real-time field updates</p>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={fetchActivities}
-            disabled={refreshing}
-            className="text-primary-foreground hover:bg-white/20"
-          >
-            <RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => setIsRealtime(!isRealtime)}
+              className={`text-primary-foreground hover:bg-white/20 ${isRealtime ? 'bg-white/20' : ''}`}
+            >
+              <Wifi className={`h-5 w-5 ${isRealtime ? 'text-green-300' : ''}`} />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={fetchActivities}
+              disabled={refreshing}
+              className="text-primary-foreground hover:bg-white/20"
+            >
+              <RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
         </div>
         
-        <Badge variant="secondary" className="bg-white/20 text-primary-foreground">
-          {activities.length} activities today
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="bg-white/20 text-primary-foreground">
+            {activities.length} activities
+          </Badge>
+          <Badge variant="secondary" className="bg-white/20 text-primary-foreground">
+            {dateLabel}
+          </Badge>
+          {isRealtime && preset === 'today' && (
+            <Badge variant="secondary" className="bg-green-500/30 text-primary-foreground animate-pulse">
+              Live
+            </Badge>
+          )}
+        </div>
+      </div>
+
+      {/* Date range selector */}
+      <div className="px-4 py-3 border-b">
+        <DateRangeSelector
+          preset={preset}
+          setPreset={setPreset}
+          setCustomRange={setCustomRange}
+          dateRange={dateRange}
+          dateLabel={dateLabel}
+        />
       </div>
 
       {/* Filter tabs */}
@@ -283,15 +375,29 @@ export const LiveFeed = () => {
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : filteredActivities.length === 0 ? (
+        ) : paginatedItems.length === 0 ? (
           <div className="text-center py-12">
             <Activity className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-            <p className="text-muted-foreground">No activities yet today</p>
+            <p className="text-muted-foreground">No activities found</p>
           </div>
         ) : (
-          filteredActivities.map(activity => (
-            <ActivityCard key={activity.id} activity={activity} />
-          ))
+          <>
+            {paginatedItems.map(activity => (
+              <ActivityCard key={activity.id} activity={activity} />
+            ))}
+            
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              startIndex={startIndex}
+              endIndex={endIndex}
+              totalItems={totalItems}
+              onPrevPage={prevPage}
+              onNextPage={nextPage}
+              hasPrevPage={hasPrevPage}
+              hasNextPage={hasNextPage}
+            />
+          </>
         )}
       </div>
     </SupervisorMobileLayout>
