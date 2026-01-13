@@ -321,6 +321,68 @@ export type Database = {
           },
         ]
       }
+      agent_report_summary: {
+        Row: {
+          agent_id: string
+          agent_name: string
+          check_ins_count: number | null
+          created_at: string | null
+          id: string
+          interactions_count: number | null
+          net_work_minutes: number | null
+          notes_count: number | null
+          recent_notes: Json | null
+          report_date: string
+          total_lunch_minutes: number | null
+          total_segments: number | null
+          total_work_minutes: number | null
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          agent_id: string
+          agent_name: string
+          check_ins_count?: number | null
+          created_at?: string | null
+          id?: string
+          interactions_count?: number | null
+          net_work_minutes?: number | null
+          notes_count?: number | null
+          recent_notes?: Json | null
+          report_date?: string
+          total_lunch_minutes?: number | null
+          total_segments?: number | null
+          total_work_minutes?: number | null
+          updated_at?: string | null
+          workspace_id: string
+        }
+        Update: {
+          agent_id?: string
+          agent_name?: string
+          check_ins_count?: number | null
+          created_at?: string | null
+          id?: string
+          interactions_count?: number | null
+          net_work_minutes?: number | null
+          notes_count?: number | null
+          recent_notes?: Json | null
+          report_date?: string
+          total_lunch_minutes?: number | null
+          total_segments?: number | null
+          total_work_minutes?: number | null
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_report_summary_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_status_log: {
         Row: {
           agent_display_name: string | null
@@ -943,37 +1005,46 @@ export type Database = {
       daily_sales_tracking: {
         Row: {
           agent_id: string
+          agent_name: string | null
           created_at: string | null
           id: string
+          product_name: string | null
           product_variant_id: string
           quantity_sold: number
           recorded_at: string
           status_event: string
           total_value: number
+          unit_price: number | null
           work_date: string
           workspace_id: string | null
         }
         Insert: {
           agent_id: string
+          agent_name?: string | null
           created_at?: string | null
           id?: string
+          product_name?: string | null
           product_variant_id: string
           quantity_sold?: number
           recorded_at?: string
           status_event: string
           total_value?: number
+          unit_price?: number | null
           work_date?: string
           workspace_id?: string | null
         }
         Update: {
           agent_id?: string
+          agent_name?: string | null
           created_at?: string | null
           id?: string
+          product_name?: string | null
           product_variant_id?: string
           quantity_sold?: number
           recorded_at?: string
           status_event?: string
           total_value?: number
+          unit_price?: number | null
           work_date?: string
           workspace_id?: string | null
         }
@@ -1911,6 +1982,11 @@ export type Database = {
         Row: {
           activities: Json | null
           agents_required: number | null
+          cached_active_agents: number | null
+          cached_giveaway_count: number | null
+          cached_product_breakdown: Json | null
+          cached_total_sales: number | null
+          cached_units_sold: number | null
           client_name: string
           created_at: string
           created_by: string | null
@@ -1920,6 +1996,7 @@ export type Database = {
           id: string
           is_deleted: boolean | null
           is_public: boolean | null
+          metrics_updated_at: string | null
           phases: Json
           product_focus: string
           project_name: string | null
@@ -1939,6 +2016,11 @@ export type Database = {
         Insert: {
           activities?: Json | null
           agents_required?: number | null
+          cached_active_agents?: number | null
+          cached_giveaway_count?: number | null
+          cached_product_breakdown?: Json | null
+          cached_total_sales?: number | null
+          cached_units_sold?: number | null
           client_name: string
           created_at?: string
           created_by?: string | null
@@ -1948,6 +2030,7 @@ export type Database = {
           id?: string
           is_deleted?: boolean | null
           is_public?: boolean | null
+          metrics_updated_at?: string | null
           phases?: Json
           product_focus: string
           project_name?: string | null
@@ -1967,6 +2050,11 @@ export type Database = {
         Update: {
           activities?: Json | null
           agents_required?: number | null
+          cached_active_agents?: number | null
+          cached_giveaway_count?: number | null
+          cached_product_breakdown?: Json | null
+          cached_total_sales?: number | null
+          cached_units_sold?: number | null
           client_name?: string
           created_at?: string
           created_by?: string | null
@@ -1976,6 +2064,7 @@ export type Database = {
           id?: string
           is_deleted?: boolean | null
           is_public?: boolean | null
+          metrics_updated_at?: string | null
           phases?: Json
           product_focus?: string
           project_name?: string | null
@@ -3752,6 +3841,10 @@ export type Database = {
           p_type: string
         }
         Returns: string
+      }
+      refresh_agent_report_summary: {
+        Args: { p_agent_id: string; p_date?: string }
+        Returns: undefined
       }
       refresh_current_stock: { Args: never; Returns: undefined }
       reject_product_return: {
