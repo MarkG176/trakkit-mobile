@@ -6,21 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   ArrowLeft, Target, Users, TrendingUp, Package, 
-  Calendar, DollarSign, MapPin, Clock, Download, FileText, FileSpreadsheet
+  Calendar, DollarSign, MapPin, Clock, Download, FileText
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { 
   ProjectExportData, 
   generateCSV, 
-  generateTXT, 
   downloadFile 
 } from "@/utils/projectExport";
 
@@ -368,7 +361,7 @@ export const ProjectDetails = () => {
     }
   };
 
-  const handleExport = async (type: 'csv' | 'txt') => {
+  const handleExport = async () => {
     if (!project) return;
     
     setExporting(true);
@@ -412,17 +405,12 @@ export const ProjectDetails = () => {
 
       const filename = `${(project.project_name || project.client_name).replace(/\s+/g, '_')}_${format(new Date(), 'yyyyMMdd')}`;
       
-      if (type === 'csv') {
-        const content = generateCSV(exportData);
-        downloadFile(content, `${filename}.csv`, 'text/csv;charset=utf-8;');
-      } else {
-        const content = generateTXT(exportData);
-        downloadFile(content, `${filename}.txt`, 'text/plain;charset=utf-8;');
-      }
+      const content = generateCSV(exportData);
+      downloadFile(content, `${filename}.csv`, 'text/csv;charset=utf-8;');
 
       toast({
         title: "Export successful",
-        description: `Project data exported as ${type.toUpperCase()}`,
+        description: "Project data exported as CSV",
       });
     } catch (error: any) {
       toast({
@@ -471,28 +459,15 @@ export const ProjectDetails = () => {
             <h1 className="text-2xl font-bold">{project.project_name || project.client_name}</h1>
             <p className="text-sm opacity-90">Project Metrics</p>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                className="text-primary-foreground hover:bg-white/20"
-                disabled={exporting}
-              >
-                <Download className="w-5 h-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleExport('csv')}>
-                <FileSpreadsheet className="w-4 h-4 mr-2" />
-                Export as CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport('txt')}>
-                <FileText className="w-4 h-4 mr-2" />
-                Export as TXT
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="text-primary-foreground hover:bg-white/20"
+            disabled={exporting}
+            onClick={() => handleExport()}
+          >
+            <Download className="w-5 h-5" />
+          </Button>
           <Badge variant="secondary" className="bg-white/20 text-white border-0">
             {project.status}
           </Badge>
