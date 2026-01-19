@@ -6,6 +6,7 @@ import { Mic, ShoppingCart, ClipboardList, Gift, MessageSquare, Play } from "luc
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 type InteractionRow = {
   id: string;
@@ -67,28 +68,24 @@ export const InteractionHistory = () => {
   const [interactions, setInteractions] = useState<InteractionRow[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { currentWorkspaceId } = useWorkspace();
 
   useEffect(() => {
-    fetchInteractions();
-  }, []);
+    if (currentWorkspaceId) {
+      fetchInteractions();
+    }
+  }, [currentWorkspaceId]);
 
   const fetchInteractions = async () => {
     setLoading(true);
     try {
-      // Get Capwell workspace ID
-      const { data: capwellWorkspace, error: workspaceError } = await supabase
-        .from('workspaces')
-        .select('id')
-        .eq('name', 'Capwell')
-        .single();
+      if (!currentWorkspaceId) return;
 
-      if (workspaceError) throw workspaceError;
-
-      // Fetch interactions from Capwell workspace
+      // Fetch interactions from current workspace
       const { data: interactionsData, error: interactionsError } = await supabase
         .from('interactions')
         .select('*, agent_tasks!inner(agent_id)')
-        .eq('workspace_id', capwellWorkspace.id)
+        .eq('workspace_id', currentWorkspaceId)
         .order('created_at', { ascending: false })
         .limit(100);
 
@@ -145,7 +142,7 @@ export const InteractionHistory = () => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold">Interaction History</h1>
-            <p className="text-sm opacity-90">All recorded interactions in Capwell</p>
+            <p className="text-sm opacity-90">All recorded interactions in this workspace</p>
           </div>
           <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
             <MessageSquare className="w-6 h-6" />

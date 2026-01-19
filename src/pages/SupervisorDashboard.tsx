@@ -109,6 +109,55 @@ export const SupervisorDashboard = () => {
 
       const todaySalesValue = saleItemsValue?.reduce((sum, item) => sum + (Number(item.total_price) || 0), 0) || 0;
 
+      if (agentUserIds.length === 0) {
+        setStats({
+          totalAgents,
+          activeAgents,
+          todaySales,
+          todaySalesValue,
+        });
+        setAgentStatuses([]);
+        return;
+      }
+
+      // Fetch agent sales today for quick stats
+      const { data: saleItemsByAgent, error: saleItemsByAgentError } = await supabase
+        .from('sale_items')
+        .select('agent_id, quantity')
+        .eq('workspace_id', currentWorkspaceId)
+        .gte('created_at', todayStart)
+        .lte('created_at', todayEnd)
+        .eq('is_deleted', false)
+        .in('agent_id', agentUserIds);
+
+      if (saleItemsByAgentError) throw saleItemsByAgentError;
+
+      const salesByAgent = new Map<string, number>();
+      saleItemsByAgent?.forEach(item => {
+        if (!item.agent_id) return;
+        const current = salesByAgent.get(item.agent_id) || 0;
+        salesByAgent.set(item.agent_id, current + (item.quantity || 0));
+      });
+
+      // Fetch agent surveys today
+      const { data: surveyInteractions, error: surveyError } = await supabase
+        .from('interactions')
+        .select('agent_id')
+        .eq('workspace_id', currentWorkspaceId)
+        .eq('interaction_type', 'survey')
+        .gte('timestamp', todayStart)
+        .lte('timestamp', todayEnd)
+        .in('agent_id', agentUserIds);
+
+      if (surveyError) throw surveyError;
+
+      const surveysByAgent = new Map<string, number>();
+      surveyInteractions?.forEach(item => {
+        if (!item.agent_id) return;
+        const current = surveysByAgent.get(item.agent_id) || 0;
+        surveysByAgent.set(item.agent_id, current + 1);
+      });
+
       // Fetch agent details for display (from user_roles for those in workspace)
       const { data: workspaceAgents, error: agentsError } = await supabase
         .from('user_roles')
@@ -182,8 +231,8 @@ export const SupervisorDashboard = () => {
           lastUpdate: statusLog?.timestamp ? new Date(statusLog.timestamp).toLocaleTimeString() : 'Never',
           batteryLevel: batteryData?.battery_level || 0,
           todayStats: {
-            sales: 0,
-            surveys: 0,
+            sales: salesByAgent.get(agent.user_id) || 0,
+            surveys: surveysByAgent.get(agent.user_id) || 0,
           },
         };
       }) || [];

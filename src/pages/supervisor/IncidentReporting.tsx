@@ -6,9 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { AlertTriangle, Plus, MessageSquare } from "lucide-react";
+import { AlertTriangle, Plus, MessageSquare, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
+import { supabase } from "@/integrations/supabase/client";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Select,
   SelectContent,
@@ -36,18 +39,7 @@ interface Incident {
 }
 
 export const IncidentReporting = () => {
-  const [incidents, setIncidents] = useState<Incident[]>([
-    {
-      id: "1",
-      title: "Product Damage Report",
-      type: "Product Damage",
-      priority: "high",
-      status: "new",
-      reportedBy: "John Doe",
-      reportedAt: new Date().toISOString(),
-      description: "Multiple units damaged during transport",
-    },
-  ]);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
   const [showNewIncidentDialog, setShowNewIncidentDialog] = useState(false);
   const [newIncident, setNewIncident] = useState({
     title: "",
@@ -56,8 +48,83 @@ export const IncidentReporting = () => {
     description: "",
   });
   const { toast } = useToast();
+  const { currentWorkspaceId } = useWorkspace();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
 
-  const handleCreateIncident = () => {
+  useEffect(() => {
+    if (currentWorkspaceId) {
+      fetchIncidents();
+    }
+  }, [currentWorkspaceId]);
+
+  const fetchIncidents = async () => {
+    if (!currentWorkspaceId) return;
+
+    try {
+      setLoading(true);
+      const { data: notes, error } = await supabase
+        .from('notes')
+        .select('id, content, priority, note_type, created_at, agent_id, metadata, is_deleted')
+        .eq('workspace_id', currentWorkspaceId)
+        .eq('note_type', 'incident')
+        .eq('is_deleted', false)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const agentIds = Array.from(new Set(notes?.map(note => note.agent_id).filter(Boolean) || []));
+      let agentMap = new Map<string, string>();
+
+      if (agentIds.length > 0) {
+        const { data: agents, error: agentsError } = await supabase
+          .from('user_roles')
+          .select('user_id, display_name, email')
+          .in('user_id', agentIds);
+
+        if (agentsError) throw agentsError;
+
+        agentMap = new Map(
+          agents?.map(agent => [
+            agent.user_id, 
+            agent.display_name || agent.email || 'Unknown'
+          ]) || []
+        );
+      }
+
+      const mappedIncidents: Incident[] = (notes || []).map(note => {
+        const metadata = (note.metadata || {}) as Record<string, any>;
+        const title = metadata.title || note.content.substring(0, 40) || "Incident Report";
+        const type = metadata.incident_type || metadata.type || "General";
+        const status = metadata.status || "new";
+        const priority = (note.priority as Incident["priority"]) || metadata.priority || "medium";
+        const reportedBy = note.agent_id ? agentMap.get(note.agent_id) || "Unknown" : "Unknown";
+
+        return {
+          id: note.id,
+          title,
+          type,
+          priority,
+          status,
+          reportedBy,
+          reportedAt: note.created_at || new Date().toISOString(),
+          description: note.content,
+        };
+      });
+
+      setIncidents(mappedIncidents);
+    } catch (error: any) {
+      toast({
+        title: "Error loading incidents",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateIncident = async () => {
     if (!newIncident.title || !newIncident.type || !newIncident.description) {
       toast({
         title: "Missing information",
@@ -67,27 +134,54 @@ export const IncidentReporting = () => {
       return;
     }
 
-    const incident: Incident = {
-      id: Date.now().toString(),
-      ...newIncident,
-      status: "new",
-      reportedBy: "Current User",
-      reportedAt: new Date().toISOString(),
-    };
+    if (!currentWorkspaceId || !user) {
+      toast({
+        title: "Unable to report incident",
+        description: "Select a workspace and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    setIncidents([incident, ...incidents]);
-    setShowNewIncidentDialog(false);
-    setNewIncident({
-      title: "",
-      type: "",
-      priority: "medium",
-      description: "",
-    });
+    try {
+      const { error } = await supabase
+        .from('notes')
+        .insert({
+          content: newIncident.description.trim(),
+          note_type: 'incident',
+          priority: newIncident.priority,
+          workspace_id: currentWorkspaceId,
+          agent_id: user.id,
+          is_private: false,
+          metadata: {
+            title: newIncident.title.trim(),
+            incident_type: newIncident.type,
+            status: "new",
+          },
+        });
 
-    toast({
-      title: "Incident reported",
-      description: "The incident has been logged successfully.",
-    });
+      if (error) throw error;
+
+      toast({
+        title: "Incident reported",
+        description: "The incident has been logged successfully.",
+      });
+
+      setShowNewIncidentDialog(false);
+      setNewIncident({
+        title: "",
+        type: "",
+        priority: "medium",
+        description: "",
+      });
+      fetchIncidents();
+    } catch (error: any) {
+      toast({
+        title: "Error reporting incident",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const getPriorityBadge = (priority: string) => {
@@ -134,7 +228,7 @@ export const IncidentReporting = () => {
         </Button>
         
         <div className="mt-3">
-          <WorkspaceSwitcher onWorkspaceChange={() => {}} />
+          <WorkspaceSwitcher onWorkspaceChange={fetchIncidents} />
         </div>
       </div>
 
@@ -147,42 +241,53 @@ export const IncidentReporting = () => {
         </div>
 
         <div className="space-y-3">
-          {incidents.map((incident) => (
-            <Card key={incident.id} className="p-4">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-semibold text-sm">{incident.title}</h3>
-                  </div>
-                  <div className="flex gap-2 mb-2">
-                    {getPriorityBadge(incident.priority)}
-                    {getStatusBadge(incident.status)}
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Type: {incident.type}
-                  </p>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Reported by {incident.reportedBy} •{" "}
-                    {new Date(incident.reportedAt).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-muted rounded p-3 mb-3">
-                <p className="text-sm">{incident.description}</p>
-              </div>
-
-              <Button variant="outline" size="sm" className="w-full">
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Add Comment
-              </Button>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : incidents.length === 0 ? (
+            <Card className="p-8 text-center">
+              <AlertTriangle className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+              <p className="text-muted-foreground">No incidents reported</p>
             </Card>
-          ))}
+          ) : (
+            incidents.map((incident) => (
+              <Card key={incident.id} className="p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-semibold text-sm">{incident.title}</h3>
+                    </div>
+                    <div className="flex gap-2 mb-2">
+                      {getPriorityBadge(incident.priority)}
+                      {getStatusBadge(incident.status)}
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Type: {incident.type}
+                    </p>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Reported by {incident.reportedBy} •{" "}
+                      {new Date(incident.reportedAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-muted rounded p-3 mb-3">
+                  <p className="text-sm">{incident.description}</p>
+                </div>
+
+                <Button variant="outline" size="sm" className="w-full">
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Add Comment
+                </Button>
+              </Card>
+            ))
+          )}
         </div>
       </div>
 

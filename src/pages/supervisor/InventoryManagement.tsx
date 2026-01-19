@@ -93,34 +93,21 @@ export const InventoryManagement = () => {
       if (variantsError) throw variantsError;
       setProducts(variants || []);
 
-      // Fetch agent task inventory (assigned inventory)
-      const { data: inventory, error: inventoryError } = await supabase
-        .from('agent_task_inventory')
-        .select(`
-          id,
-          agent_id,
-          product_variant_id,
-          amount_issued,
-          created_at,
-          name,
-          product_variants (
-            id,
-            name
-          )
-        `)
-        .eq('is_deleted', false)
-        .order('created_at', { ascending: false });
-
-      if (inventoryError) throw inventoryError;
-
       // Get workspace users
-      const { data: workspaceUsers } = await supabase
+      const { data: workspaceUsers, error: workspaceUsersError } = await supabase
         .from('user_workspaces')
         .select('user_id')
         .eq('workspace_id', currentWorkspaceId)
         .eq('is_active', true);
 
+      if (workspaceUsersError) throw workspaceUsersError;
+
       const userIds = workspaceUsers?.map(u => u.user_id) || [];
+      if (userIds.length === 0) {
+        setAgents([]);
+        setAgentInventory([]);
+        return;
+      }
 
       // Fetch agents
       const { data: agentsData, error: agentsError } = await supabase
@@ -133,6 +120,7 @@ export const InventoryManagement = () => {
 
       if (agentsError) throw agentsError;
 
+      const agentIds = agentsData?.map(a => a.user_id) || [];
       const agentMap = new Map(agentsData?.map(a => [a.user_id, a]));
       
       setAgents(agentsData?.map(a => ({
@@ -141,10 +129,36 @@ export const InventoryManagement = () => {
         email: a.email,
       })) || []);
 
+      let inventory: any[] = [];
+      if (agentIds.length > 0) {
+        const { data: inventoryData, error: inventoryError } = await supabase
+          .from('agent_task_inventory')
+          .select(`
+            id,
+            agent_id,
+            product_variant_id,
+            amount_issued,
+            created_at,
+            name,
+            product_variants (
+              id,
+              name
+            ),
+            agent_tasks!inner (
+              workspace_id
+            )
+          `)
+          .eq('is_deleted', false)
+          .eq('agent_tasks.workspace_id', currentWorkspaceId)
+          .in('agent_id', agentIds)
+          .order('created_at', { ascending: false });
+
+        if (inventoryError) throw inventoryError;
+        inventory = inventoryData || [];
+      }
+
       // Transform inventory data
-      const transformedInventory: AgentInventory[] = (inventory || [])
-        .filter(item => item.agent_id && userIds.includes(item.agent_id))
-        .map(item => {
+      const transformedInventory: AgentInventory[] = (inventory || []).map(item => {
           const agent = agentMap.get(item.agent_id!);
           return {
             id: item.id,
@@ -186,17 +200,42 @@ export const InventoryManagement = () => {
 
     setAssigning(true);
     try {
-      const product = products.find(p => p.id === selectedProduct);
-      
-      const { error } = await supabase
-        .from('agent_task_inventory')
-        .insert({
-          agent_id: selectedAgent,
-          product_variant_id: selectedProduct,
-          amount_issued: parseInt(quantity),
-          name: product?.name || 'Unknown',
-          task_id: crypto.randomUUID(), // Generate a task ID for the assignment
+      const quantityValue = parseInt(quantity, 10);
+      if (Number.isNaN(quantityValue) || quantityValue <= 0) {
+        toast({
+          title: "Invalid quantity",
+          description: "Please enter a valid quantity.",
+          variant: "destructive",
         });
+        return;
+      }
+
+      const { data: taskData, error: taskError } = await supabase
+        .from('agent_tasks')
+        .select('id')
+        .eq('agent_id', selectedAgent)
+        .eq('workspace_id', currentWorkspaceId)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (taskError) throw taskError;
+      if (!taskData?.id) {
+        toast({
+          title: "No active task",
+          description: "Assign a task to the agent before issuing inventory.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase.rpc('issue_stock_to_agent', {
+        agent_id: selectedAgent,
+        product_variant_id: selectedProduct,
+        quantity: quantityValue,
+        task_id: taskData.id,
+      });
 
       if (error) throw error;
 
