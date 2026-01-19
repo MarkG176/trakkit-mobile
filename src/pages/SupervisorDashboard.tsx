@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,12 +34,12 @@ export const SupervisorDashboard = () => {
   const { currentWorkspaceId } = useWorkspace();
   const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [agentCache, setAgentCache] = useState<Map<string, string>>(new Map());
+  const agentCacheRef = useRef<Map<string, string>>(new Map());
 
   // Fetch agent name from cache or database
   const getAgentName = useCallback(async (agentId: string): Promise<string> => {
-    if (agentCache.has(agentId)) {
-      return agentCache.get(agentId)!;
+    if (agentCacheRef.current.has(agentId)) {
+      return agentCacheRef.current.get(agentId)!;
     }
 
     const { data } = await supabase
@@ -49,20 +49,21 @@ export const SupervisorDashboard = () => {
       .single();
 
     const name = data?.display_name || data?.email || 'Unknown Agent';
-    setAgentCache(prev => new Map(prev).set(agentId, name));
+    agentCacheRef.current.set(agentId, name);
     return name;
-  }, [agentCache]);
+  }, []);
 
-  // Add notification and show toast
-  const addNotification = useCallback((notification: Notification) => {
-    setNotifications(prev => [notification, ...prev].slice(0, 100)); // Keep last 100
+  // Add notification and show toast - using ref to avoid stale closures
+  const addNotificationRef = useRef<(notification: Notification) => void>();
+  addNotificationRef.current = (notification: Notification) => {
+    setNotifications(prev => [notification, ...prev].slice(0, 100));
     
     const config = notificationConfig[notification.type];
     toast({
       title: `${config.label}: ${notification.agentName}`,
       description: notification.message,
     });
-  }, [toast]);
+  };
 
   // Setup real-time subscriptions
   useEffect(() => {
@@ -104,7 +105,7 @@ export const SupervisorDashboard = () => {
               message = `${agentName} status: ${record.status}`;
           }
 
-          addNotification({
+          addNotificationRef.current?.({
             id: record.id,
             type,
             agentName,
@@ -140,7 +141,7 @@ export const SupervisorDashboard = () => {
           const productName = variant?.name || 'Product';
           const message = `${agentName} sold ${record.quantity}x ${productName}`;
 
-          addNotification({
+          addNotificationRef.current?.({
             id: record.id,
             type: 'sale',
             agentName,
@@ -169,7 +170,7 @@ export const SupervisorDashboard = () => {
           
           const message = `${agentName} gave away ${record.total_items} items`;
 
-          addNotification({
+          addNotificationRef.current?.({
             id: record.id,
             type: 'giveaway',
             agentName,
@@ -199,7 +200,7 @@ export const SupervisorDashboard = () => {
           const agentName = await getAgentName(record.agent_id || '');
           const message = `${agentName} completed a survey`;
 
-          addNotification({
+          addNotificationRef.current?.({
             id: record.id,
             type: 'survey',
             agentName,
@@ -217,7 +218,7 @@ export const SupervisorDashboard = () => {
       supabase.removeChannel(giveawayChannel);
       supabase.removeChannel(interactionChannel);
     };
-  }, [currentWorkspaceId, getAgentName, addNotification]);
+  }, [currentWorkspaceId, getAgentName]);
 
   const clearNotifications = () => {
     setNotifications([]);
