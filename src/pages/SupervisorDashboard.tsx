@@ -3,7 +3,7 @@ import { SupervisorMobileLayout } from "@/components/SupervisorMobileLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, TrendingUp, Package, MapPin, Clock, Trophy, Calendar, AlertTriangle, Loader2, RefreshCw, UserPlus } from "lucide-react";
+import { Users, TrendingUp, Package, MapPin, Clock, Trophy, DollarSign, Calendar, AlertTriangle, Loader2, RefreshCw, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,7 +35,7 @@ export const SupervisorDashboard = () => {
     totalAgents: 0,
     activeAgents: 0,
     todaySales: 0,
-    pendingApprovals: 0,
+    todaySalesValue: 0,
   });
   const [agentStatuses, setAgentStatuses] = useState<AgentStatus[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,38 +53,80 @@ export const SupervisorDashboard = () => {
     try {
       setLoading(true);
       const today = new Date().toISOString().split('T')[0];
+      const todayStart = `${today}T00:00:00`;
+      const todayEnd = `${today}T23:59:59`;
 
-      // Fetch total agents in current workspace using user_workspaces
-      const { data: workspaceUsers, error: workspaceUsersError } = await supabase
+      // 1. Total Agents: Count from user_workspaces where role = 'agent' and is_active = true
+      const { data: agentWorkspaces, error: agentWorkspacesError } = await supabase
         .from('user_workspaces')
         .select('user_id')
         .eq('workspace_id', currentWorkspaceId)
+        .eq('role', 'agent')
         .eq('is_active', true);
 
-      if (workspaceUsersError) throw workspaceUsersError;
+      if (agentWorkspacesError) throw agentWorkspacesError;
 
-      const userIds = workspaceUsers?.map(u => u.user_id) || [];
+      const totalAgents = agentWorkspaces?.length || 0;
+      const agentUserIds = agentWorkspaces?.map(a => a.user_id) || [];
 
-      // Get agent details from user_roles
+      // 2. Active Today: Count distinct agents who appear in agent_status_log today
+      const { data: todayStatusLogs, error: statusError } = await supabase
+        .from('agent_status_log')
+        .select('agent_id')
+        .eq('workspace_id', currentWorkspaceId)
+        .gte('timestamp', todayStart)
+        .lte('timestamp', todayEnd);
+
+      if (statusError) throw statusError;
+
+      // Get unique agent IDs who logged activity today
+      const uniqueActiveAgents = new Set(todayStatusLogs?.map(log => log.agent_id) || []);
+      const activeAgents = uniqueActiveAgents.size;
+
+      // 3. Today's Sales: Count of sale_items today
+      const { data: saleItemsCount, error: salesCountError } = await supabase
+        .from('sale_items')
+        .select('id', { count: 'exact' })
+        .eq('workspace_id', currentWorkspaceId)
+        .gte('created_at', todayStart)
+        .lte('created_at', todayEnd)
+        .eq('is_deleted', false);
+
+      if (salesCountError) throw salesCountError;
+
+      const todaySales = saleItemsCount?.length || 0;
+
+      // 4. Today's Sales Value: Sum of total_price from sale_items today
+      const { data: saleItemsValue, error: salesValueError } = await supabase
+        .from('sale_items')
+        .select('total_price')
+        .eq('workspace_id', currentWorkspaceId)
+        .gte('created_at', todayStart)
+        .lte('created_at', todayEnd)
+        .eq('is_deleted', false);
+
+      if (salesValueError) throw salesValueError;
+
+      const todaySalesValue = saleItemsValue?.reduce((sum, item) => sum + (Number(item.total_price) || 0), 0) || 0;
+
+      // Fetch agent details for display (from user_roles for those in workspace)
       const { data: workspaceAgents, error: agentsError } = await supabase
         .from('user_roles')
         .select('user_id, display_name, email, role')
-        .in('user_id', userIds)
-        .eq('role', 'agent')
+        .in('user_id', agentUserIds)
         .eq('is_active', true);
 
       if (agentsError) throw agentsError;
 
-      // Fetch agent status logs for today
-      const agentIds = workspaceAgents?.map(agent => agent.user_id) || [];
-      const { data: statusLogs, error: statusError } = await supabase
+      // Fetch status logs for agent display
+      const { data: statusLogs, error: statusLogsError } = await supabase
         .from('agent_status_log')
         .select('agent_id, status, timestamp, location_lat, location_lng')
-        .in('agent_id', agentIds)
-        .gte('timestamp', `${today}T00:00:00`)
+        .in('agent_id', agentUserIds)
+        .gte('timestamp', todayStart)
         .order('timestamp', { ascending: false });
 
-      if (statusError) throw statusError;
+      if (statusLogsError) throw statusLogsError;
 
       // Get latest status for each agent
       const agentStatusMap = new Map();
@@ -98,7 +140,7 @@ export const SupervisorDashboard = () => {
       const { data: batteryStatus, error: batteryError } = await supabase
         .from('agent_battery_status')
         .select('agent_id, battery_level, location_lat, location_lng')
-        .in('agent_id', agentIds)
+        .in('agent_id', agentUserIds)
         .order('updated_at', { ascending: false });
 
       if (batteryError) throw batteryError;
@@ -111,36 +153,11 @@ export const SupervisorDashboard = () => {
         }
       });
 
-      // Fetch today's sales from sale_items table with current workspace
-      const { data: saleItems, error: salesError } = await supabase
-        .from('daily_sales_tracking')
-        .select('quantity_sold, work_date')
-        .eq('workspace_id', currentWorkspaceId)
-        .eq('work_date', today);
-
-      if (salesError) throw salesError;
-
-      // Fetch pending day plans
-      const { data: pendingPlans, error: plansError } = await supabase
-        .from('day_plans')
-        .select('id')
-        .eq('workspace_id', currentWorkspaceId)
-        .eq('status', 'pending');
-
-      if (plansError) throw plansError;
-
-      // Calculate stats
-      const totalAgents = workspaceAgents?.length || 0;
-      const activeAgents = Array.from(agentStatusMap.values())
-        .filter(log => log.status === 'checked_in').length;
-      const todaySales = saleItems?.reduce((sum, item) => sum + item.quantity_sold, 0) || 0;
-      const pendingApprovals = pendingPlans?.length || 0;
-
       setStats({
         totalAgents,
         activeAgents,
         todaySales,
-        pendingApprovals,
+        todaySalesValue,
       });
 
       // Build agent statuses for display
@@ -266,14 +283,16 @@ export const SupervisorDashboard = () => {
           </div>
         </Card>
 
-        <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/supervisor/daily-plan-approval')}>
+        <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-destructive/10 rounded-lg">
-              <Calendar className="h-5 w-5 text-destructive" />
+            <div className="p-2 bg-accent/10 rounded-lg">
+              <DollarSign className="h-5 w-5 text-accent-foreground" />
             </div>
             <div>
-              <p className="text-sm text-secondary-foreground">Pending Plans</p>
-              <p className="text-2xl font-bold text-destructive">{stats.pendingApprovals}</p>
+              <p className="text-sm text-secondary-foreground">Sales Value</p>
+              <p className="text-2xl font-bold text-foreground">
+                {stats.todaySalesValue.toLocaleString('en-KE', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 })}
+              </p>
             </div>
           </div>
         </Card>
