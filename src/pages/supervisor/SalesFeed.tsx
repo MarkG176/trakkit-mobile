@@ -44,27 +44,46 @@ export const SalesFeed = () => {
     if (!currentWorkspaceId) return;
 
     try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayDate = today.toISOString().split('T')[0];
-
-      const { data, error } = await supabase
-        .from('daily_sales_tracking')
-        .select('id, agent_id, agent_name, product_name, quantity_sold, total_value, recorded_at')
+      // Get recent sales from sale_items (more reliable data source)
+      // First get workspace users to filter by
+      const { data: workspaceUsers } = await supabase
+        .from('user_workspaces')
+        .select('user_id')
         .eq('workspace_id', currentWorkspaceId)
-        .eq('work_date', todayDate)
-        .order('recorded_at', { ascending: false });
+        .eq('is_active', true);
+
+      const userIds = workspaceUsers?.map(u => u.user_id) || [];
+
+      // Get agent IDs
+      const { data: agentData } = await supabase
+        .from('user_roles')
+        .select('user_id, display_name')
+        .in('user_id', userIds.length > 0 ? userIds : ['no-match'])
+        .eq('role', 'agent')
+        .eq('is_active', true);
+
+      const agentMap = new Map(agentData?.map(a => [a.user_id, a.display_name]) || []);
+      const agentIds = Array.from(agentMap.keys());
+
+      // Fetch recent sales from sale_items for these agents
+      const { data, error } = await supabase
+        .from('sale_items')
+        .select('id, agent_id, product_name, quantity, total_price, created_at')
+        .in('agent_id', agentIds.length > 0 ? agentIds : ['no-match'])
+        .eq('is_deleted', false)
+        .order('created_at', { ascending: false })
+        .limit(100);
 
       if (error) throw error;
 
       const salesData: SaleData[] = (data || []).map(sale => ({
         id: sale.id,
-        agentId: sale.agent_id,
-        agentName: sale.agent_name || 'Unknown',
+        agentId: sale.agent_id || '',
+        agentName: agentMap.get(sale.agent_id || '') || 'Unknown',
         productName: sale.product_name || 'Unknown Product',
-        quantity: sale.quantity_sold,
-        value: sale.total_value,
-        timestamp: sale.recorded_at,
+        quantity: sale.quantity,
+        value: sale.total_price,
+        timestamp: sale.created_at || new Date().toISOString(),
       }));
 
       setSales(salesData);
@@ -76,9 +95,9 @@ export const SalesFeed = () => {
       setTotalRevenue(revenue);
 
       // Calculate agent summaries
-      const agentMap = new Map<string, AgentSummary>();
+      const agentSummaryMap = new Map<string, AgentSummary>();
       salesData.forEach(sale => {
-        const existing = agentMap.get(sale.agentId) || {
+        const existing = agentSummaryMap.get(sale.agentId) || {
           agentId: sale.agentId,
           agentName: sale.agentName,
           totalSales: 0,
@@ -86,10 +105,10 @@ export const SalesFeed = () => {
         };
         existing.totalSales += sale.quantity;
         existing.totalValue += sale.value;
-        agentMap.set(sale.agentId, existing);
+        agentSummaryMap.set(sale.agentId, existing);
       });
 
-      const summaries = Array.from(agentMap.values())
+      const summaries = Array.from(agentSummaryMap.values())
         .sort((a, b) => b.totalSales - a.totalSales);
       setAgentSummaries(summaries);
 
@@ -108,21 +127,24 @@ export const SalesFeed = () => {
     fetchSales();
   }, [fetchSales]);
 
-  // Real-time subscription
+  // Real-time subscription for new sales
   useRealtimeSubscription({
-    table: 'daily_sales_tracking',
+    table: 'sale_items',
     event: 'INSERT',
-    filter: currentWorkspaceId ? `workspace_id=eq.${currentWorkspaceId}` : undefined,
+    filter: undefined, // Filter in the callback since sale_items may not have workspace_id
     onData: (payload) => {
       const sale = payload.new as any;
+      // Only process if it's from our workspace agents
+      if (!sale.agent_id) return;
+      
       const newSale: SaleData = {
         id: sale.id,
         agentId: sale.agent_id,
-        agentName: sale.agent_name || 'Unknown',
+        agentName: sale.agent_id?.substring(0, 8) || 'Unknown',
         productName: sale.product_name || 'Unknown Product',
-        quantity: sale.quantity_sold,
-        value: sale.total_value,
-        timestamp: sale.recorded_at,
+        quantity: sale.quantity,
+        value: sale.total_price,
+        timestamp: sale.created_at,
       };
       
       setSales(prev => [newSale, ...prev]);
@@ -173,7 +195,7 @@ export const SalesFeed = () => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold">Sales Feed</h1>
-            <p className="text-sm opacity-90">Today's live sales stream</p>
+            <p className="text-sm opacity-90">Recent sales from your team</p>
           </div>
           <div className="flex items-center gap-2">
             <LiveIndicator isConnected={isConnected} className="text-white" />

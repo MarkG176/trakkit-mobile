@@ -27,7 +27,7 @@ export const LiveFeed = () => {
   const { currentWorkspaceId } = useWorkspace();
   const { toast } = useToast();
   
-  const { preset, setPreset, setCustomRange, dateRange, startISO, endISO, dateLabel } = useDateRangeFilter('today');
+  const { preset, setPreset, setCustomRange, dateRange, startISO, endISO, dateLabel } = useDateRangeFilter('month');
 
   const filteredActivities = activities.filter(activity => {
     if (filter === 'all') return true;
