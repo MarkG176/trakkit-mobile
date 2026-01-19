@@ -371,6 +371,7 @@ export const UsersPage = () => {
             {filteredUsers.map((user) => (
               <UserCard
                 key={user.user_id}
+                userId={user.user_id}
                 displayName={user.display_name}
                 email={user.email}
                 role={user.role}
