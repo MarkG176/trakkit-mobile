@@ -5,7 +5,6 @@ import { Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
-import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface DayPlan {
   id: string;
@@ -21,19 +20,23 @@ interface DayPlan {
 export const DailyPlanApproval = () => {
   const [plans, setPlans] = useState<DayPlan[]>([]);
   const { toast } = useToast();
-  const { currentWorkspaceId } = useWorkspace();
 
   useEffect(() => {
-    if (currentWorkspaceId) {
-      fetchPendingPlans();
-    }
-  }, [currentWorkspaceId]);
+    fetchPendingPlans();
+  }, []);
 
   const fetchPendingPlans = async () => {
     try {
-      if (!currentWorkspaceId) return;
+      // Get Capwell workspace ID
+      const { data: capwellWorkspace, error: workspaceError } = await supabase
+        .from('workspaces')
+        .select('id')
+        .eq('name', 'Capwell')
+        .single();
 
-      // Fetch day plans in current workspace
+      if (workspaceError) throw workspaceError;
+
+      // Fetch day plans in Capwell workspace
       const { data: dayPlans, error } = await supabase
         .from("day_plans")
         .select(`
@@ -45,8 +48,7 @@ export const DailyPlanApproval = () => {
           notes,
           supervisor_id
         `)
-        .eq("workspace_id", currentWorkspaceId)
-        .eq("is_deleted", false)
+        .eq("workspace_id", capwellWorkspace.id)
         .order("date", { ascending: false });
 
       if (error) throw error;
@@ -90,7 +92,7 @@ export const DailyPlanApproval = () => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold">Day Plans</h1>
-            <p className="text-sm opacity-90">Current workspace day plans</p>
+            <p className="text-sm opacity-90">Capwell workspace day plans</p>
           </div>
           <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
             <Calendar className="w-6 h-6" />
@@ -106,7 +108,7 @@ export const DailyPlanApproval = () => {
         <div className="mb-4">
           <h2 className="text-lg font-semibold mb-2">Active Day Plans</h2>
           <p className="text-sm text-muted-foreground">
-            {plans.length} day plan{plans.length !== 1 ? "s" : ""} in this workspace
+            {plans.length} day plan{plans.length !== 1 ? "s" : ""} in Capwell
           </p>
         </div>
 

@@ -9,7 +9,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
-import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface AgentStatus {
   id: string;
@@ -30,32 +29,32 @@ export const AgentTracking = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const { toast } = useToast();
-  const { currentWorkspaceId } = useWorkspace();
 
   useEffect(() => {
-    if (currentWorkspaceId) {
-      fetchAgentStatuses();
-    }
-  }, [currentWorkspaceId]);
+    fetchAgentStatuses();
+  }, []);
 
   const fetchAgentStatuses = async () => {
     try {
-      if (!currentWorkspaceId) return;
+      // Get Capwell workspace ID
+      const { data: capwellWorkspace, error: workspaceError } = await supabase
+        .from('workspaces')
+        .select('id')
+        .eq('name', 'Capwell')
+        .single();
+
+      if (workspaceError) throw workspaceError;
 
       // Get agents in the workspace
       const { data: workspaceUsers, error: workspaceUsersError } = await supabase
         .from('user_workspaces')
         .select('user_id')
-        .eq('workspace_id', currentWorkspaceId)
+        .eq('workspace_id', capwellWorkspace.id)
         .eq('is_active', true);
 
       if (workspaceUsersError) throw workspaceUsersError;
 
       const userIds = workspaceUsers?.map(u => u.user_id) || [];
-      if (userIds.length === 0) {
-        setAgents([]);
-        return;
-      }
 
       // Get agents from user_roles
       const { data: agents, error: agentsError } = await supabase
@@ -68,10 +67,6 @@ export const AgentTracking = () => {
       if (agentsError) throw agentsError;
 
       const agentIds = agents?.map(a => a.user_id) || [];
-      if (agentIds.length === 0) {
-        setAgents([]);
-        return;
-      }
 
       // Fetch status logs for workspace agents
       const { data: statusLogs, error } = await supabase
@@ -83,7 +78,6 @@ export const AgentTracking = () => {
           location_lng,
           timestamp
         `)
-        .eq("workspace_id", currentWorkspaceId)
         .in("agent_id", agentIds)
         .order("timestamp", { ascending: false });
 
@@ -107,36 +101,20 @@ export const AgentTracking = () => {
       const { data: batteryStatus } = await supabase
         .from("agent_battery_status")
         .select("agent_id, battery_level")
-        .eq("workspace_id", currentWorkspaceId)
         .in("agent_id", agentIds);
 
       // Fetch today's stats
       const today = new Date().toISOString().split("T")[0];
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      const todayEnd = new Date();
-      todayEnd.setHours(23, 59, 59, 999);
       const { data: salesData } = await supabase
         .from("daily_sales_tracking")
         .select("agent_id, quantity_sold")
-        .eq("workspace_id", currentWorkspaceId)
         .in("agent_id", agentIds)
         .eq("work_date", today);
-
-      const { data: surveyData } = await supabase
-        .from("interactions")
-        .select("agent_id")
-        .eq("workspace_id", currentWorkspaceId)
-        .eq("interaction_type", "survey")
-        .in("agent_id", agentIds)
-        .gte("timestamp", todayStart.toISOString())
-        .lte("timestamp", todayEnd.toISOString());
 
       const agentStatuses: AgentStatus[] = userRoles?.map((user) => {
         const statusLog = agentMap.get(user.user_id);
         const battery = batteryStatus?.find((b) => b.agent_id === user.user_id);
         const sales = salesData?.filter((s) => s.agent_id === user.user_id);
-        const surveys = surveyData?.filter((s) => s.agent_id === user.user_id);
 
         return {
           id: user.user_id,
@@ -150,7 +128,7 @@ export const AgentTracking = () => {
           batteryLevel: battery?.battery_level || 0,
           todayStats: {
             sales: sales?.reduce((sum, s) => sum + s.quantity_sold, 0) || 0,
-            surveys: surveys?.length || 0,
+            surveys: 0,
           },
         };
       }) || [];

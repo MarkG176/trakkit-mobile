@@ -9,7 +9,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
-import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface AgentPerformance {
   id: string;
@@ -26,75 +25,39 @@ export const PerformanceSnapshot = () => {
   const [agents, setAgents] = useState<AgentPerformance[]>([]);
   const [period, setPeriod] = useState<"today" | "week" | "month">("today");
   const { toast } = useToast();
-  const { currentWorkspaceId } = useWorkspace();
 
   useEffect(() => {
-    if (currentWorkspaceId) {
-      fetchAgentPerformance();
-    }
-  }, [period, currentWorkspaceId]);
+    fetchAgentPerformance();
+  }, [period]);
 
   const fetchAgentPerformance = async () => {
     try {
-      if (!currentWorkspaceId) return;
-
-      const now = new Date();
-      const startDate = new Date(now);
-      if (period === "today") {
-        startDate.setHours(0, 0, 0, 0);
-      } else if (period === "week") {
-        startDate.setDate(now.getDate() - 7);
-        startDate.setHours(0, 0, 0, 0);
-      } else {
-        startDate.setDate(now.getDate() - 30);
-        startDate.setHours(0, 0, 0, 0);
-      }
-
-      const startISO = startDate.toISOString();
-      const endISO = now.toISOString();
-
       // Fetch agent ranks
       const { data: ranks, error: ranksError } = await supabase
         .from("agent_ranks")
         .select("agent_id, total_points, current_rank, weekly_points, monthly_points")
-        .eq("workspace_id", currentWorkspaceId)
         .order("total_points", { ascending: false });
 
       if (ranksError) throw ranksError;
 
       // Fetch agent details
       const agentIds = ranks?.map((r) => r.agent_id) || [];
-      if (agentIds.length === 0) {
-        setAgents([]);
-        return;
-      }
       const { data: userRoles } = await supabase
         .from("user_roles")
         .select("user_id, display_name, email")
         .in("user_id", agentIds);
 
       // Fetch sales data
+      const today = new Date().toISOString().split("T")[0];
       const { data: salesData } = await supabase
         .from("daily_sales_tracking")
         .select("agent_id, quantity_sold, total_value")
-        .eq("workspace_id", currentWorkspaceId)
         .in("agent_id", agentIds)
-        .gte("recorded_at", startISO)
-        .lte("recorded_at", endISO);
-
-      const { data: surveyData } = await supabase
-        .from("interactions")
-        .select("agent_id")
-        .eq("workspace_id", currentWorkspaceId)
-        .eq("interaction_type", "survey")
-        .in("agent_id", agentIds)
-        .gte("timestamp", startISO)
-        .lte("timestamp", endISO);
+        .eq("work_date", today);
 
       const agentPerformances: AgentPerformance[] = (ranks || []).map((rank) => {
         const user = userRoles?.find((u) => u.user_id === rank.agent_id);
         const sales = salesData?.filter((s) => s.agent_id === rank.agent_id);
-        const surveys = surveyData?.filter((s) => s.agent_id === rank.agent_id);
         const totalSales = sales?.reduce((sum, s) => sum + s.quantity_sold, 0) || 0;
 
         const points =
@@ -111,7 +74,7 @@ export const PerformanceSnapshot = () => {
           rank: rank.current_rank || "rookie",
           points: points || 0,
           sales: totalSales,
-          surveys: surveys?.length || 0,
+          surveys: 0,
           trend: "stable" as const,
         };
       });

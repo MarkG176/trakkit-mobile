@@ -16,7 +16,6 @@ import {
   generateCSV, 
   downloadFile 
 } from "@/utils/projectExport";
-import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface ProjectDetails {
   id: string;
@@ -73,7 +72,6 @@ export const ProjectDetails = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { currentWorkspaceId } = useWorkspace();
   const [project, setProject] = useState<ProjectDetails | null>(null);
   const [metrics, setMetrics] = useState<ProjectMetrics>({
     totalSales: 0,
@@ -93,20 +91,18 @@ export const ProjectDetails = () => {
   const [productBreakdown, setProductBreakdown] = useState<ProductData[]>([]);
 
   useEffect(() => {
-    if (projectId && currentWorkspaceId) {
+    if (projectId) {
       fetchProjectDetails();
       fetchProjectMetrics();
     }
-  }, [projectId, currentWorkspaceId]);
+  }, [projectId]);
 
   const fetchProjectDetails = async () => {
     try {
-      if (!currentWorkspaceId) return;
       const { data, error } = await supabase
         .from('project_plans')
         .select('*')
         .eq('id', projectId)
-        .eq('workspace_id', currentWorkspaceId)
         .single();
 
       if (error) throw error;
@@ -123,16 +119,14 @@ export const ProjectDetails = () => {
   };
 
   const fetchProjectMetrics = async () => {
-    if (!projectId || !currentWorkspaceId) return;
+    if (!projectId) return;
 
     try {
       // Get day plans for this project
       const { data: dayPlans, error: dayPlansError } = await supabase
         .from('day_plans')
         .select('id, date')
-        .eq('project_id', projectId)
-        .eq('workspace_id', currentWorkspaceId)
-        .eq('is_deleted', false);
+        .eq('project_id', projectId);
 
       if (dayPlansError) throw dayPlansError;
 
@@ -146,93 +140,50 @@ export const ProjectDetails = () => {
       const { data: agentTasks, error: tasksError } = await supabase
         .from('agent_tasks')
         .select('id, agent_id, day_plan_id')
-        .in('day_plan_id', dayPlanIds)
-        .eq('workspace_id', currentWorkspaceId);
+        .in('day_plan_id', dayPlanIds);
 
       if (tasksError) throw tasksError;
 
       const taskIds = agentTasks?.map(task => task.id) || [];
       const uniqueAgentIds = [...new Set(agentTasks?.map(task => task.agent_id).filter(Boolean) || [])];
 
-      if (taskIds.length === 0) {
-        setMetrics({
-          totalSales: 0,
-          totalRevenue: 0,
-          totalGiveaways: 0,
-          totalSurveys: 0,
-          activeAgents: 0,
-          targetStoresCount: project?.target_stores?.length || 0,
-          completionRate: 0,
-        });
-        setDailyBreakdown([]);
-        setAgentPerformance([]);
-        setProductBreakdown([]);
-        return;
-      }
-
       // Get agent names
-      let agentNameMap = new Map<string, string>();
-      if (uniqueAgentIds.length > 0) {
-        const { data: agentRoles, error: agentRolesError } = await supabase
-          .from('user_roles')
-          .select('user_id, display_name')
-          .in('user_id', uniqueAgentIds);
+      const { data: agentRoles } = await supabase
+        .from('user_roles')
+        .select('user_id, display_name')
+        .in('user_id', uniqueAgentIds);
 
-        if (agentRolesError) throw agentRolesError;
-        agentNameMap = new Map(agentRoles?.map(r => [r.user_id, r.display_name || 'Unknown']) || []);
-      }
+      const agentNameMap = new Map(agentRoles?.map(r => [r.user_id, r.display_name || 'Unknown']) || []);
 
       // Get interactions (sales & surveys) for these tasks
       const { data: interactions, error: interactionsError } = await supabase
         .from('interactions')
         .select('id, task_id, interaction_type, quantity_sold, sale_value, agent_id, product_variant_id, created_at')
-        .in('task_id', taskIds)
-        .eq('workspace_id', currentWorkspaceId);
+        .in('task_id', taskIds);
 
       if (interactionsError) throw interactionsError;
 
       // Get product variant names
       const productVariantIds = [...new Set(interactions?.map(i => i.product_variant_id).filter(Boolean) || [])];
-      let productNameMap = new Map<string, string>();
-      if (productVariantIds.length > 0) {
-        const { data: productVariants, error: productVariantsError } = await supabase
-          .from('product_variants')
-          .select('id, name, price')
-          .in('id', productVariantIds)
-          .eq('workspace_id', currentWorkspaceId)
-          .eq('is_deleted', false);
+      const { data: productVariants } = await supabase
+        .from('product_variants')
+        .select('id, name, price')
+        .in('id', productVariantIds);
 
-        if (productVariantsError) throw productVariantsError;
-        productNameMap = new Map(productVariants?.map(p => [p.id, p.name]) || []);
-      }
+      const productNameMap = new Map(productVariants?.map(p => [p.id, p.name]) || []);
 
       // Get giveaways
-      let giveaways: any[] = [];
-      if (uniqueAgentIds.length > 0) {
-        const { data: giveawayData, error: giveawaysError } = await supabase
-          .from('giveaways')
-          .select('id, agent_id, total_items, created_at')
-          .in('agent_id', uniqueAgentIds)
-          .eq('workspace_id', currentWorkspaceId)
-          .eq('is_deleted', false);
-
-        if (giveawaysError) throw giveawaysError;
-        giveaways = giveawayData || [];
-      }
+      const { data: giveaways } = await supabase
+        .from('giveaways')
+        .select('id, agent_id, total_items, created_at')
+        .in('agent_id', uniqueAgentIds);
 
       // Get check-ins
-      let checkIns: any[] = [];
-      if (uniqueAgentIds.length > 0) {
-        const { data: checkInData, error: checkInsError } = await supabase
-          .from('agent_status_log')
-          .select('id, agent_id, status, timestamp')
-          .in('agent_id', uniqueAgentIds)
-          .eq('workspace_id', currentWorkspaceId)
-          .eq('status', 'checked_in');
-
-        if (checkInsError) throw checkInsError;
-        checkIns = checkInData || [];
-      }
+      const { data: checkIns } = await supabase
+        .from('agent_status_log')
+        .select('id, agent_id, status, timestamp')
+        .in('agent_id', uniqueAgentIds)
+        .eq('status', 'checked_in');
 
       // Calculate metrics
       const salesInteractions = interactions?.filter(i => i.interaction_type === 'sale') || [];
