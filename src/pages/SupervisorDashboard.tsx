@@ -6,10 +6,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, ShoppingCart, Gift, ClipboardCheck, LogIn, LogOut, Coffee, Clock, Trash2 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { Bell, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SupervisorBottomNav } from "@/components/supervisor/SupervisorBottomNav";
+import { ActivityCard } from "@/components/supervisor/ActivityCard";
 
 interface Notification {
   id: string;
@@ -20,14 +20,14 @@ interface Notification {
   data?: any;
 }
 
-const notificationConfig = {
-  check_in: { icon: LogIn, color: 'bg-green-500', label: 'Check In' },
-  check_out: { icon: LogOut, color: 'bg-red-500', label: 'Check Out' },
-  sale: { icon: ShoppingCart, color: 'bg-blue-500', label: 'Sale' },
-  giveaway: { icon: Gift, color: 'bg-purple-500', label: 'Giveaway' },
-  survey: { icon: ClipboardCheck, color: 'bg-orange-500', label: 'Survey' },
-  break_start: { icon: Coffee, color: 'bg-yellow-500', label: 'Break Started' },
-  break_end: { icon: Coffee, color: 'bg-green-500', label: 'Break Ended' },
+const notificationLabels: Record<Notification['type'], string> = {
+  check_in: 'Check In',
+  check_out: 'Check Out',
+  sale: 'Sale',
+  giveaway: 'Giveaway',
+  survey: 'Survey',
+  break_start: 'Break Started',
+  break_end: 'Break Ended',
 };
 
 export const SupervisorDashboard = () => {
@@ -58,9 +58,9 @@ export const SupervisorDashboard = () => {
   addNotificationRef.current = (notification: Notification) => {
     setNotifications(prev => [notification, ...prev].slice(0, 100));
     
-    const config = notificationConfig[notification.type];
+    const label = notificationLabels[notification.type];
     toast({
-      title: `${config.label}: ${notification.agentName}`,
+      title: `${label}: ${notification.agentName}`,
       description: notification.message,
     });
   };
@@ -274,32 +274,26 @@ export const SupervisorDashboard = () => {
           <ScrollArea className="h-[calc(100vh-220px)]">
             <div className="space-y-3">
               {notifications.map((notification) => {
-                const config = notificationConfig[notification.type];
-                const Icon = config.icon;
+                const initials = notification.agentName
+                  .split(' ')
+                  .map(n => n[0])
+                  .join('')
+                  .toUpperCase()
+                  .slice(0, 2);
 
                 return (
-                  <Card key={notification.id} className="p-3">
-                    <div className="flex items-start gap-3">
-                      <div className={`${config.color} rounded-full p-2 shrink-0`}>
-                        <Icon className="w-4 h-4 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-sm">{notification.agentName}</span>
-                          <Badge variant="outline" className="text-xs">
-                            {config.label}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {notification.message}
-                        </p>
-                        <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                          <Clock className="w-3 h-3" />
-                          <span>{formatDistanceToNow(notification.timestamp, { addSuffix: true })}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
+                  <ActivityCard
+                    key={notification.id}
+                    activity={{
+                      id: notification.id,
+                      type: notification.type,
+                      agentName: notification.agentName,
+                      agentInitials: initials,
+                      timestamp: notification.timestamp.toISOString(),
+                      details: notification.message,
+                      value: notification.data?.total_price || notification.data?.total_value,
+                    }}
+                  />
                 );
               })}
             </div>
