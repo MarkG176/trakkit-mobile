@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { SupervisorMobileLayout } from "@/components/SupervisorMobileLayout";
+import { MobileLayout } from "@/components/MobileLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Mic, ShoppingCart, ClipboardList, Gift, MessageSquare, Play } from "lucide-react";
@@ -140,7 +140,7 @@ export const InteractionHistory = () => {
   };
 
   return (
-    <SupervisorMobileLayout currentPage="more">
+    <MobileLayout currentPage="more">
       <div className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -197,6 +197,6 @@ export const InteractionHistory = () => {
           </Card>
         )}
       </div>
-    </SupervisorMobileLayout>
+    </MobileLayout>
   );
 };

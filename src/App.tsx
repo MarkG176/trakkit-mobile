@@ -9,8 +9,6 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { Dashboard } from "./pages/Dashboard";
 import { AgentDashboard } from "./pages/AgentDashboard";
-import { SupervisorDashboard } from "./pages/SupervisorDashboard";
-import { SupervisorMore } from "./pages/SupervisorMore";
 import { Surveys } from "./pages/Surveys";
 import { Routes as RoutesPage } from "./pages/Routes";
 import { Inventory } from "./pages/Inventory";
@@ -36,19 +34,6 @@ import { RoleBasedRoute } from "./components/RoleBasedRoute";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
 
 import NotFound from "./pages/NotFound";
-import { AgentTracking } from "./pages/supervisor/AgentTracking";
-import { DailyPlanApproval } from "./pages/supervisor/DailyPlanApproval";
-import { InventoryManagement } from "./pages/supervisor/InventoryManagement";
-import { IncidentReporting } from "./pages/supervisor/IncidentReporting";
-import { ReportsAnalytics } from "./pages/supervisor/ReportsAnalytics";
-import { Planning } from "./pages/supervisor/Planning";
-import { ProjectDetails } from "./pages/supervisor/ProjectDetails";
-import { LiveFeed } from "./pages/supervisor/LiveFeed";
-import { QuickStats } from "./pages/supervisor/QuickStats";
-import { Leaderboard } from "./pages/supervisor/Leaderboard";
-import { CheckInGallery } from "./pages/supervisor/CheckInGallery";
-import { QuickActions } from "./pages/supervisor/QuickActions";
-import { SalesFeed } from "./pages/supervisor/SalesFeed";
 import AuthCallback from "./pages/AuthCallback";
 
 const queryClient = new QueryClient();
@@ -67,14 +52,14 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/" element={
-              <RoleBasedRoute allowedRoles={['supervisor']} redirectTo="/agent">
-                <SupervisorDashboard />
-              </RoleBasedRoute>
+              <ProtectedRoute>
+                <AgentDashboard />
+              </ProtectedRoute>
             } />
             <Route path="/agent" element={
-              <RoleBasedRoute allowedRoles={['agent']} redirectTo="/">
+              <ProtectedRoute>
                 <AgentDashboard />
-              </RoleBasedRoute>
+              </ProtectedRoute>
             } />
             <Route path="/dashboard" element={
               <ProtectedRoute>
@@ -180,81 +165,6 @@ const App = () => (
               <ProtectedRoute>
                 <Activity />
               </ProtectedRoute>
-            } />
-            <Route path="/supervisor/agent-tracking" element={
-              <RoleBasedRoute allowedRoles={['supervisor']}>
-                <AgentTracking />
-              </RoleBasedRoute>
-            } />
-            <Route path="/supervisor/daily-plan-approval" element={
-              <RoleBasedRoute allowedRoles={['supervisor']}>
-                <DailyPlanApproval />
-              </RoleBasedRoute>
-            } />
-            <Route path="/supervisor/inventory-management" element={
-              <RoleBasedRoute allowedRoles={['supervisor']}>
-                <InventoryManagement />
-              </RoleBasedRoute>
-            } />
-            <Route path="/supervisor/incident-reporting" element={
-              <RoleBasedRoute allowedRoles={['supervisor']}>
-                <IncidentReporting />
-              </RoleBasedRoute>
-            } />
-            <Route path="/supervisor/reports-analytics" element={
-              <RoleBasedRoute allowedRoles={['supervisor']}>
-                <ReportsAnalytics />
-              </RoleBasedRoute>
-            } />
-            <Route path="/supervisor/planning" element={
-              <RoleBasedRoute allowedRoles={['supervisor']}>
-                <Planning />
-              </RoleBasedRoute>
-            } />
-            <Route path="/supervisor/project-details/:projectId" element={
-              <RoleBasedRoute allowedRoles={['supervisor']}>
-                <ProjectDetails />
-              </RoleBasedRoute>
-            } />
-            <Route path="/supervisor-dashboard" element={
-              <RoleBasedRoute allowedRoles={['supervisor']} redirectTo="/agent">
-                <SupervisorDashboard />
-              </RoleBasedRoute>
-            } />
-            <Route path="/supervisor-more" element={
-              <RoleBasedRoute allowedRoles={['supervisor']} redirectTo="/agent">
-                <SupervisorMore />
-              </RoleBasedRoute>
-            } />
-            <Route path="/supervisor/live-feed" element={
-              <RoleBasedRoute allowedRoles={['supervisor']}>
-                <LiveFeed />
-              </RoleBasedRoute>
-            } />
-            <Route path="/supervisor/quick-stats" element={
-              <RoleBasedRoute allowedRoles={['supervisor']}>
-                <QuickStats />
-              </RoleBasedRoute>
-            } />
-            <Route path="/supervisor/leaderboard" element={
-              <RoleBasedRoute allowedRoles={['supervisor']}>
-                <Leaderboard />
-              </RoleBasedRoute>
-            } />
-            <Route path="/supervisor/check-in-gallery" element={
-              <RoleBasedRoute allowedRoles={['supervisor']}>
-                <CheckInGallery />
-              </RoleBasedRoute>
-            } />
-            <Route path="/supervisor/quick-actions" element={
-              <RoleBasedRoute allowedRoles={['supervisor']}>
-                <QuickActions />
-              </RoleBasedRoute>
-            } />
-            <Route path="/supervisor/sales-feed" element={
-              <RoleBasedRoute allowedRoles={['supervisor']}>
-                <SalesFeed />
-              </RoleBasedRoute>
             } />
             <Route path="*" element={<NotFound />} />
           </Routes>
