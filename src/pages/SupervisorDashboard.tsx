@@ -60,25 +60,35 @@ export const SupervisorDashboard = () => {
 
     try {
       setLoading(true);
-      const { todayStart, todayEnd, todayDate } = getTodayRange();
+      const { todayStart, todayEnd } = getTodayRange();
 
-      // Parallel fetch all data
+      // First get workspace users
+      const { data: workspaceUsers } = await supabase
+        .from('user_workspaces')
+        .select('user_id')
+        .eq('workspace_id', currentWorkspaceId)
+        .eq('is_active', true);
+
+      const userIds = workspaceUsers?.map(u => u.user_id) || [];
+
+      // Get agents (those with role='agent' in user_roles)
+      const { data: agentData } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .in('user_id', userIds.length > 0 ? userIds : ['no-match'])
+        .eq('role', 'agent')
+        .eq('is_active', true);
+
+      const totalAgents = agentData?.length || 0;
+
+      // Parallel fetch remaining data
       const [
-        agentsResult,
         statusResult,
         salesResult,
         storesResult,
         projectsResult,
         activityResult,
       ] = await Promise.all([
-        // Total agents
-        supabase
-          .from('user_workspaces')
-          .select('user_id')
-          .eq('workspace_id', currentWorkspaceId)
-          .eq('role', 'agent')
-          .eq('is_active', true),
-        
         // Agents with activity today
         supabase
           .from('agent_status_log')
@@ -87,11 +97,10 @@ export const SupervisorDashboard = () => {
           .gte('timestamp', todayStart)
           .lte('timestamp', todayEnd),
         
-        // Sales today from sale_items
+        // Sales today from sale_items (include null workspace_id or matching)
         supabase
           .from('sale_items')
-          .select('id, total_price')
-          .eq('workspace_id', currentWorkspaceId)
+          .select('id, total_price, agent_id')
           .gte('created_at', todayStart)
           .lte('created_at', todayEnd)
           .eq('is_deleted', false),
@@ -111,22 +120,26 @@ export const SupervisorDashboard = () => {
           .eq('workspace_id', currentWorkspaceId)
           .eq('status', 'active'),
         
-        // Recent activity
+        // Recent activity - show recent regardless of today for demo purposes
         supabase
           .from('agent_status_log')
           .select('id, agent_id, agent_display_name, status, timestamp, location_lat, location_lng, selfie_url, distance_from_assigned, in_range')
           .eq('workspace_id', currentWorkspaceId)
-          .gte('timestamp', todayStart)
           .order('timestamp', { ascending: false })
           .limit(5),
       ]);
 
+      // Filter sales by agents in this workspace
+      const agentIdSet = new Set(agentData?.map(a => a.user_id) || []);
+      const workspaceSales = (salesResult.data || []).filter(s => 
+        s.agent_id && agentIdSet.has(s.agent_id)
+      );
+
       // Process KPIs
-      const totalAgents = agentsResult.data?.length || 0;
       const uniqueActiveAgents = new Set(statusResult.data?.map(s => s.agent_id) || []);
       const agentsOnline = uniqueActiveAgents.size;
-      const salesCount = salesResult.data?.length || 0;
-      const salesValue = salesResult.data?.reduce((sum, s) => sum + (Number(s.total_price) || 0), 0) || 0;
+      const salesCount = workspaceSales.length;
+      const salesValue = workspaceSales.reduce((sum, s) => sum + (Number(s.total_price) || 0), 0);
       const uniqueStores = new Set(storesResult.data?.map(s => s.store_id) || []);
       const storesVisited = uniqueStores.size;
       const activeProjects = projectsResult.count || 0;
