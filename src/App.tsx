@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { Dashboard } from "./pages/Dashboard";
 import { AgentDashboard } from "./pages/AgentDashboard";
+import { SupervisorDashboard } from "./pages/SupervisorDashboard";
 import { Surveys } from "./pages/Surveys";
 import { Routes as RoutesPage } from "./pages/Routes";
 import { Inventory } from "./pages/Inventory";
@@ -52,14 +53,19 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/" element={
-              <ProtectedRoute>
-                <AgentDashboard />
-              </ProtectedRoute>
+              <RoleBasedRoute allowedRoles={['supervisor']} redirectTo="/agent">
+                <SupervisorDashboard />
+              </RoleBasedRoute>
+            } />
+            <Route path="/supervisor" element={
+              <RoleBasedRoute allowedRoles={['supervisor']} redirectTo="/agent">
+                <SupervisorDashboard />
+              </RoleBasedRoute>
             } />
             <Route path="/agent" element={
-              <ProtectedRoute>
+              <RoleBasedRoute allowedRoles={['agent']} redirectTo="/supervisor">
                 <AgentDashboard />
-              </ProtectedRoute>
+              </RoleBasedRoute>
             } />
             <Route path="/dashboard" element={
               <ProtectedRoute>
