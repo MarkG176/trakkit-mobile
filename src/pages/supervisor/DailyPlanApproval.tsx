@@ -106,7 +106,7 @@ export const DailyPlanApproval = () => {
         <div className="mb-4">
           <h2 className="text-lg font-semibold mb-2">Active Day Plans</h2>
           <p className="text-sm text-muted-foreground">
-            {plans.length} day plan{plans.length !== 1 ? "s" : ""} in Capwell
+            {plans.length} day plan{plans.length !== 1 ? "s" : ""} in this workspace
           </p>
         </div>
 
