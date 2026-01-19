@@ -1,114 +1,166 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { Activity as ActivityIcon, MapPin, Clock } from "lucide-react";
+import { Activity as ActivityIcon, RefreshCw } from "lucide-react";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
+import { ActivityCard } from "@/components/supervisor/ActivityCard";
 
-interface AgentActivity {
+interface ActivityItem {
   id: string;
-  agent_id: string;
-  agent_name: string;
-  agent_email: string;
-  status: string;
+  type: 'check_in' | 'check_out' | 'sale' | 'giveaway' | 'survey' | 'break_start' | 'break_end';
+  agentName: string;
+  agentInitials: string;
   timestamp: string;
-  location_lat: number | null;
-  location_lng: number | null;
+  location?: string;
+  details?: string;
+  value?: number;
+  imageUrl?: string;
 }
 
-type FilterType = 'all' | 'active' | 'inactive';
+type FilterType = 'all' | 'check_ins' | 'sales' | 'giveaways';
 
 export const Activity = () => {
-  const [activities, setActivities] = useState<AgentActivity[]>([]);
-  const [allAgents, setAllAgents] = useState<string[]>([]);
-  const [activeAgentIds, setActiveAgentIds] = useState<string[]>([]);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<FilterType>('all');
   const { toast } = useToast();
   const { currentWorkspaceId } = useWorkspace();
 
-  useEffect(() => {
-    if (currentWorkspaceId) {
-      fetchActivities();
-    }
-  }, [currentWorkspaceId]);
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
-  const fetchActivities = async () => {
+  const fetchAgentName = useCallback(async (agentId: string): Promise<{ name: string; email: string }> => {
+    const { data } = await supabase
+      .from('user_roles')
+      .select('display_name, email')
+      .eq('user_id', agentId)
+      .single();
+
+    return {
+      name: data?.display_name || data?.email || 'Unknown Agent',
+      email: data?.email || '',
+    };
+  }, []);
+
+  const fetchActivities = useCallback(async (showRefresh = false) => {
     if (!currentWorkspaceId) return;
-    
+
     try {
-      setLoading(true);
+      if (showRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
 
-      // First get users in current workspace
-      const { data: workspaceUsers, error: workspaceUsersError } = await supabase
-        .from('user_workspaces')
-        .select('user_id')
-        .eq('workspace_id', currentWorkspaceId);
+      const allActivities: ActivityItem[] = [];
 
-      if (workspaceUsersError) throw workspaceUsersError;
-
-      const userIds = workspaceUsers?.map(u => u.user_id) || [];
-
-      // Then get agent details from user_roles
-      const { data: agents, error: agentsError } = await supabase
-        .from('user_roles')
-        .select('user_id, display_name, email')
-        .in('user_id', userIds)
-        .eq('role', 'agent')
-        .eq('is_active', true);
-
-      if (agentsError) throw agentsError;
-
-      const agentIds = agents?.map(a => a.user_id) || [];
-      setAllAgents(agentIds);
-
-      // Fetch recent status logs
-      const { data: statusLogs, error: statusError } = await supabase
+      // Fetch check-ins/check-outs
+      const { data: statusLogs } = await supabase
         .from('agent_status_log')
-        .select('id, agent_id, status, timestamp, location_lat, location_lng')
-        .in('agent_id', agentIds)
+        .select('id, agent_id, status, timestamp, location_lat, location_lng, selfie_url')
+        .eq('workspace_id', currentWorkspaceId)
         .order('timestamp', { ascending: false })
-        .limit(50);
+        .limit(30);
 
-      if (statusError) throw statusError;
+      for (const log of statusLogs || []) {
+        const agent = await fetchAgentName(log.agent_id);
+        let type: ActivityItem['type'] = 'check_in';
+        
+        if (log.status === 'checked_out') type = 'check_out';
+        else if (log.status === 'lunch' || log.status === 'break') type = 'break_start';
 
-      // Find agents who have checked in today
-      const today = new Date().toISOString().split('T')[0];
-      const checkedInAgents = new Set(
-        statusLogs
-          ?.filter(log => 
-            log.status === 'checked_in' && 
-            new Date(log.timestamp).toISOString().split('T')[0] === today
-          )
-          .map(log => log.agent_id) || []
-      );
-      setActiveAgentIds(Array.from(checkedInAgents));
-
-      // Create agent map
-      const agentMap = new Map(
-        agents?.map(a => [a.user_id, { name: a.display_name || a.email || 'Unknown', email: a.email || '' }]) || []
-      );
-
-      // Build activities for all agents
-      const activitiesList: AgentActivity[] = (statusLogs || []).map(log => {
-        const agent = agentMap.get(log.agent_id) || { name: 'Unknown', email: '' };
-        return {
-          id: log.id,
-          agent_id: log.agent_id,
-          agent_name: agent.name,
-          agent_email: agent.email,
-          status: log.status,
+        allActivities.push({
+          id: `status-${log.id}`,
+          type,
+          agentName: agent.name,
+          agentInitials: getInitials(agent.name),
           timestamp: log.timestamp,
-          location_lat: log.location_lat,
-          location_lng: log.location_lng,
-        };
-      });
+          location: log.location_lat && log.location_lng 
+            ? `${log.location_lat.toFixed(4)}, ${log.location_lng.toFixed(4)}`
+            : undefined,
+          imageUrl: log.selfie_url || undefined,
+        });
+      }
 
-      setActivities(activitiesList);
+      // Fetch sales
+      const { data: sales } = await supabase
+        .from('interactions')
+        .select(`
+          id,
+          agent_id,
+          quantity_sold,
+          sale_value,
+          created_at,
+          latitude,
+          longitude,
+          product_variants (name)
+        `)
+        .eq('workspace_id', currentWorkspaceId)
+        .eq('interaction_type', 'sale')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      for (const sale of sales || []) {
+        if (!sale.agent_id) continue;
+        const agent = await fetchAgentName(sale.agent_id);
+        const productName = (sale.product_variants as any)?.name || 'Product';
+
+        allActivities.push({
+          id: `sale-${sale.id}`,
+          type: 'sale',
+          agentName: agent.name,
+          agentInitials: getInitials(agent.name),
+          timestamp: sale.created_at || new Date().toISOString(),
+          details: `Sold ${sale.quantity_sold}x ${productName}`,
+          value: sale.sale_value || undefined,
+          location: sale.latitude && sale.longitude
+            ? `${sale.latitude.toFixed(4)}, ${sale.longitude.toFixed(4)}`
+            : undefined,
+        });
+      }
+
+      // Fetch giveaways
+      const { data: giveaways } = await supabase
+        .from('giveaways')
+        .select('id, agent_id, total_items, recorded_at, location_lat, location_lng, recipient_name')
+        .eq('workspace_id', currentWorkspaceId)
+        .order('recorded_at', { ascending: false })
+        .limit(20);
+
+      for (const giveaway of giveaways || []) {
+        const agent = await fetchAgentName(giveaway.agent_id);
+
+        allActivities.push({
+          id: `giveaway-${giveaway.id}`,
+          type: 'giveaway',
+          agentName: agent.name,
+          agentInitials: getInitials(agent.name),
+          timestamp: giveaway.recorded_at,
+          details: `Gave ${giveaway.total_items} items${giveaway.recipient_name ? ` to ${giveaway.recipient_name}` : ''}`,
+          location: giveaway.location_lat && giveaway.location_lng
+            ? `${giveaway.location_lat.toFixed(4)}, ${giveaway.location_lng.toFixed(4)}`
+            : undefined,
+        });
+      }
+
+      // Sort all activities by timestamp
+      allActivities.sort((a, b) => 
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+
+      setActivities(allActivities);
     } catch (error: any) {
       console.error('Error fetching activities:', error);
       toast({
@@ -118,36 +170,30 @@ export const Activity = () => {
       });
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, [currentWorkspaceId, fetchAgentName, toast]);
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'checked_in':
-        return <Badge variant="default">Checked In</Badge>;
-      case 'checked_out':
-        return <Badge variant="secondary">Checked Out</Badge>;
-      case 'lunch':
-        return <Badge variant="outline">Inactive</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
+  useEffect(() => {
+    if (currentWorkspaceId) {
+      fetchActivities();
     }
-  };
+  }, [currentWorkspaceId, fetchActivities]);
 
   const getFilteredActivities = () => {
-    if (filter === 'all') {
-      return activities;
+    switch (filter) {
+      case 'check_ins':
+        return activities.filter(a => a.type === 'check_in' || a.type === 'check_out' || a.type === 'break_start' || a.type === 'break_end');
+      case 'sales':
+        return activities.filter(a => a.type === 'sale');
+      case 'giveaways':
+        return activities.filter(a => a.type === 'giveaway');
+      default:
+        return activities;
     }
-    if (filter === 'active') {
-      // Show activities only from agents who checked in today
-      return activities.filter(activity => activeAgentIds.includes(activity.agent_id));
-    }
-    if (filter === 'inactive') {
-      // Show activities only from agents who have NOT checked in today
-      return activities.filter(activity => !activeAgentIds.includes(activity.agent_id));
-    }
-    return activities;
   };
+
+  const filteredActivities = getFilteredActivities();
 
   return (
     <MobileLayout currentPage="more">
@@ -155,73 +201,82 @@ export const Activity = () => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold">Activity Feed</h1>
-            <p className="text-sm opacity-90">Recent agent activities</p>
+            <p className="text-sm opacity-90">Real-time agent activities</p>
           </div>
-          <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
-            <ActivityIcon className="w-6 h-6" />
-          </div>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="bg-white/20 backdrop-blur-sm rounded-full"
+            onClick={() => fetchActivities(true)}
+            disabled={refreshing}
+          >
+            <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
         <div className="mt-3">
-          <WorkspaceSwitcher onWorkspaceChange={fetchActivities} />
+          <WorkspaceSwitcher onWorkspaceChange={() => fetchActivities()} />
         </div>
       </div>
 
       <div className="p-4 space-y-4">
+        {/* Filter buttons */}
         <div className="flex gap-2 overflow-x-auto pb-2">
           <Button
             variant={filter === 'all' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilter('all')}
           >
-            All ({allAgents.length})
+            All
           </Button>
           <Button
-            variant={filter === 'active' ? 'default' : 'outline'}
+            variant={filter === 'check_ins' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setFilter('active')}
+            onClick={() => setFilter('check_ins')}
           >
-            Active ({activeAgentIds.length})
+            Check-ins
           </Button>
           <Button
-            variant={filter === 'inactive' ? 'default' : 'outline'}
+            variant={filter === 'sales' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setFilter('inactive')}
+            onClick={() => setFilter('sales')}
           >
-            Inactive ({allAgents.length - activeAgentIds.length})
+            Sales
+          </Button>
+          <Button
+            variant={filter === 'giveaways' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('giveaways')}
+          >
+            Giveaways
           </Button>
         </div>
 
-        {getFilteredActivities().map((activity) => (
-          <Card key={activity.id} className="p-4">
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex-1">
-                <p className="font-medium">{activity.agent_name}</p>
-                <p className="text-sm text-muted-foreground">{activity.agent_email}</p>
-              </div>
-              {getStatusBadge(activity.status)}
-            </div>
-
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Clock className="w-4 h-4" />
-                <span>{new Date(activity.timestamp).toLocaleString()}</span>
-              </div>
-              {activity.location_lat && activity.location_lng && (
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-4 h-4" />
-                  <span>
-                    {activity.location_lat.toFixed(2)}, {activity.location_lng.toFixed(2)}
-                  </span>
+        {/* Activity list */}
+        {loading ? (
+          <div className="space-y-3">
+            {[1, 2, 3, 4].map(i => (
+              <Card key={i} className="p-4">
+                <div className="flex gap-3">
+                  <Skeleton className="w-12 h-12 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-48" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
                 </div>
-              )}
-            </div>
-          </Card>
-        ))}
-
-        {getFilteredActivities().length === 0 && !loading && (
+              </Card>
+            ))}
+          </div>
+        ) : filteredActivities.length > 0 ? (
+          <div className="space-y-3">
+            {filteredActivities.map(activity => (
+              <ActivityCard key={activity.id} activity={activity} />
+            ))}
+          </div>
+        ) : (
           <Card className="p-8 text-center">
             <ActivityIcon className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-            <p className="text-muted-foreground">No recent activities</p>
+            <p className="text-muted-foreground">No activities found</p>
           </Card>
         )}
       </div>
