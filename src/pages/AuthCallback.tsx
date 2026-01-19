@@ -15,7 +15,7 @@ export default function AuthCallback() {
       const refreshToken = params.get('refresh_token');
 
       if (!accessToken || !refreshToken) {
-        setStatus('Invalid login link.');
+        navigate('/login?error=invalid_link', { replace: true });
         return;
       }
 
@@ -26,8 +26,7 @@ export default function AuthCallback() {
       });
 
       if (error) {
-        setStatus('Login failed. Please try again.');
-        console.error('Auth error:', error);
+        navigate('/login?error=auth_failed', { replace: true });
         return;
       }
 
