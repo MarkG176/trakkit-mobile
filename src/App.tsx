@@ -48,6 +48,7 @@ import { QuickStats } from "./pages/supervisor/QuickStats";
 import { Leaderboard } from "./pages/supervisor/Leaderboard";
 import { CheckInGallery } from "./pages/supervisor/CheckInGallery";
 import { QuickActions } from "./pages/supervisor/QuickActions";
+import { SalesFeed } from "./pages/supervisor/SalesFeed";
 import AuthCallback from "./pages/AuthCallback";
 
 const queryClient = new QueryClient();
@@ -248,6 +249,11 @@ const App = () => (
             <Route path="/supervisor/quick-actions" element={
               <RoleBasedRoute allowedRoles={['supervisor']}>
                 <QuickActions />
+              </RoleBasedRoute>
+            } />
+            <Route path="/supervisor/sales-feed" element={
+              <RoleBasedRoute allowedRoles={['supervisor']}>
+                <SalesFeed />
               </RoleBasedRoute>
             } />
             <Route path="*" element={<NotFound />} />
