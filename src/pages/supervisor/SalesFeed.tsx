@@ -54,22 +54,40 @@ export const SalesFeed = () => {
 
       const userIds = workspaceUsers?.map(u => u.user_id) || [];
 
+      if (userIds.length === 0) {
+        setSales([]);
+        setTotalUnits(0);
+        setTotalRevenue(0);
+        setAgentSummaries([]);
+        setLoading(false);
+        return;
+      }
+
       // Get agent IDs
       const { data: agentData } = await supabase
         .from('user_roles')
         .select('user_id, display_name')
-        .in('user_id', userIds.length > 0 ? userIds : ['no-match'])
+        .in('user_id', userIds)
         .eq('role', 'agent')
         .eq('is_active', true);
 
       const agentMap = new Map(agentData?.map(a => [a.user_id, a.display_name]) || []);
       const agentIds = Array.from(agentMap.keys());
 
+      if (agentIds.length === 0) {
+        setSales([]);
+        setTotalUnits(0);
+        setTotalRevenue(0);
+        setAgentSummaries([]);
+        setLoading(false);
+        return;
+      }
+
       // Fetch recent sales from sale_items for these agents
       const { data, error } = await supabase
         .from('sale_items')
         .select('id, agent_id, product_name, quantity, total_price, created_at')
-        .in('agent_id', agentIds.length > 0 ? agentIds : ['no-match'])
+        .in('agent_id', agentIds)
         .eq('is_deleted', false)
         .order('created_at', { ascending: false })
         .limit(100);
