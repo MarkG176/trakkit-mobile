@@ -80,6 +80,7 @@ export const UsersPage = () => {
   const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
   const [selectedTeamId, setSelectedTeamId] = useState<string>("");
   const [invitedUserEmail, setInvitedUserEmail] = useState("");
+  const [invitedUserId, setInvitedUserId] = useState<string | null>(null);
   const [assigningTeam, setAssigningTeam] = useState(false);
   const [isCreatingNewTeam, setIsCreatingNewTeam] = useState(false);
   const [newTeamName, setNewTeamName] = useState("");
@@ -263,14 +264,26 @@ export const UsersPage = () => {
         description: `A magic link has been sent to ${inviteEmail}`,
       });
 
-      // Store invited email and show team assignment dialog
-      setInvitedUserEmail(inviteEmail);
+      // Store invited email for team assignment
+      setInvitedUserEmail(inviteEmail.trim().toLowerCase());
+      
+      // Try to find user ID from user_roles (may exist if already in system)
+      const { data: existingUserRole } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('email', inviteEmail.trim().toLowerCase())
+        .single();
+      
+      if (existingUserRole) {
+        setInvitedUserId(existingUserRole.user_id);
+      } else {
+        setInvitedUserId(null);
+      }
+      
       setInviteDialogOpen(false);
       
-      // Only show team dialog if there are teams
-      if (teams.length > 0) {
-        setTeamDialogOpen(true);
-      }
+      // Show team dialog - always show to allow assignment
+      setTeamDialogOpen(true);
 
       // Reset invite form
       setInviteEmail("");
@@ -621,6 +634,9 @@ export const UsersPage = () => {
         if (!open) {
           setIsCreatingNewTeam(false);
           setNewTeamName("");
+          setSelectedTeamId("");
+          setInvitedUserEmail("");
+          setInvitedUserId(null);
         }
       }}>
         <DialogContent>
@@ -767,20 +783,27 @@ export const UsersPage = () => {
                 
                 setAssigningTeam(true);
                 try {
-                  // Find user by email to get their user_id
-                  const { data: userRole } = await supabase
-                    .from('user_roles')
-                    .select('user_id')
-                    .eq('email', invitedUserEmail.toLowerCase())
-                    .single();
+                  // Use stored user ID if available, otherwise try to find by email
+                  let userIdToAssign = invitedUserId;
                   
-                  if (userRole) {
-                    // Add user to team
+                  if (!userIdToAssign) {
+                    const { data: userRole } = await supabase
+                      .from('user_roles')
+                      .select('user_id')
+                      .eq('email', invitedUserEmail)
+                      .single();
+                    
+                    userIdToAssign = userRole?.user_id || null;
+                  }
+                  
+                  if (userIdToAssign) {
+                    // Add user to team with correct column names
                     const { error } = await supabase
                       .from('team_members')
                       .insert({
                         team_id: teamIdToUse,
-                        user_id: userRole.user_id,
+                        agent_id: userIdToAssign,
+                        workspace_id: currentWorkspaceId,
                       });
                     
                     if (error) throw error;
@@ -788,26 +811,29 @@ export const UsersPage = () => {
                     toast({
                       title: "Added to team!",
                       description: isCreatingNewTeam 
-                        ? `Created "${newTeamName}" and added user`
-                        : `User will be added to the team when they accept the invitation`,
+                        ? `Created "${newTeamName}" and added user to the team`
+                        : `User has been added to the team`,
                     });
                   } else {
+                    // User doesn't exist yet - they need to accept the invitation first
                     toast({
-                      title: isCreatingNewTeam ? "Team created!" : "Team assignment saved",
-                      description: "User will be added to the team when they accept the invitation",
+                      title: isCreatingNewTeam ? "Team created!" : "Team selected",
+                      description: "The user will need to be added to the team after they accept the invitation",
                     });
                   }
                 } catch (error: any) {
                   console.error('Error assigning team:', error);
                   toast({
-                    title: "Note",
-                    description: "User will need to be added to the team after they accept the invitation",
+                    title: "Error",
+                    description: error.message || "Failed to assign user to team",
+                    variant: "destructive",
                   });
                 } finally {
                   setAssigningTeam(false);
                   setTeamDialogOpen(false);
                   setSelectedTeamId("");
                   setInvitedUserEmail("");
+                  setInvitedUserId(null);
                   setIsCreatingNewTeam(false);
                   setNewTeamName("");
                 }
