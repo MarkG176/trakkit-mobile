@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { SupervisorMobileLayout } from "@/components/SupervisorMobileLayout";
+import { MobileLayout } from "@/components/MobileLayout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -150,7 +150,7 @@ export const Activity = () => {
   };
 
   return (
-    <SupervisorMobileLayout currentPage="more">
+    <MobileLayout currentPage="more">
       <div className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -225,6 +225,6 @@ export const Activity = () => {
           </Card>
         )}
       </div>
-    </SupervisorMobileLayout>
+    </MobileLayout>
   );
 };

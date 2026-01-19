@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { SupervisorMobileLayout } from "@/components/SupervisorMobileLayout";
+import { MobileLayout } from "@/components/MobileLayout";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
@@ -86,16 +86,16 @@ export const ManageAgents = () => {
 
   if (loading) {
     return (
-      <SupervisorMobileLayout currentPage="more">
+      <MobileLayout currentPage="more">
         <div className="flex items-center justify-center min-h-screen">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </SupervisorMobileLayout>
+      </MobileLayout>
     );
   }
 
   return (
-    <SupervisorMobileLayout currentPage="more">
+    <MobileLayout currentPage="more">
       <div className="bg-primary text-primary-foreground p-4">
         <h1 className="text-h1">Manage Agents</h1>
         <p className="text-sm opacity-90">Capwell workspace agents</p>
@@ -158,6 +158,6 @@ export const ManageAgents = () => {
           </div>
         )}
       </div>
-    </SupervisorMobileLayout>
+    </MobileLayout>
   );
 };
