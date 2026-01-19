@@ -73,6 +73,13 @@ export const UsersPage = () => {
   const [inviteLoading, setInviteLoading] = useState(false);
   const [existingUser, setExistingUser] = useState<WorkspaceUser | null>(null);
   const [checkingEmail, setCheckingEmail] = useState(false);
+  
+  // Team assignment dialog state
+  const [teamDialogOpen, setTeamDialogOpen] = useState(false);
+  const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
+  const [selectedTeamId, setSelectedTeamId] = useState<string>("");
+  const [invitedUserEmail, setInvitedUserEmail] = useState("");
+  const [assigningTeam, setAssigningTeam] = useState(false);
 
   // Fetch users from workspace
   const fetchUsers = async () => {
@@ -128,8 +135,26 @@ export const UsersPage = () => {
     }
   };
 
+  // Fetch teams for workspace
+  const fetchTeams = async () => {
+    if (!currentWorkspaceId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('teams')
+        .select('id, name')
+        .eq('workspace_id', currentWorkspaceId);
+      
+      if (error) throw error;
+      setTeams(data || []);
+    } catch (error) {
+      console.error('Error fetching teams:', error);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
+    fetchTeams();
   }, [currentWorkspaceId]);
 
   // Check if email exists in workspace
@@ -235,12 +260,20 @@ export const UsersPage = () => {
         description: `A magic link has been sent to ${inviteEmail}`,
       });
 
-      // Reset form and close dialog
+      // Store invited email and show team assignment dialog
+      setInvitedUserEmail(inviteEmail);
+      setInviteDialogOpen(false);
+      
+      // Only show team dialog if there are teams
+      if (teams.length > 0) {
+        setTeamDialogOpen(true);
+      }
+
+      // Reset invite form
       setInviteEmail("");
       setInviteDisplayName("");
       setInviteRole("agent");
       setExistingUser(null);
-      setInviteDialogOpen(false);
       
       // Refresh users list
       fetchUsers();
@@ -574,6 +607,120 @@ export const UsersPage = () => {
                 <Mail className="mr-2 h-4 w-4" />
               )}
               Send Invitation
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Team Assignment Dialog */}
+      <Dialog open={teamDialogOpen} onOpenChange={setTeamDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              Add to Team
+            </DialogTitle>
+            <DialogDescription>
+              Would you like to add {invitedUserEmail} to a team?
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Select Team</Label>
+              <Select 
+                value={selectedTeamId} 
+                onValueChange={setSelectedTeamId}
+                disabled={assigningTeam}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a team..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {teams.map((team) => (
+                    <SelectItem key={team.id} value={team.id}>
+                      {team.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setTeamDialogOpen(false);
+                setSelectedTeamId("");
+                setInvitedUserEmail("");
+              }} 
+              disabled={assigningTeam}
+            >
+              Skip
+            </Button>
+            <Button 
+              onClick={async () => {
+                if (!selectedTeamId) {
+                  toast({
+                    title: "Select a team",
+                    description: "Please select a team to add the user to",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                
+                setAssigningTeam(true);
+                try {
+                  // Find user by email to get their user_id
+                  const { data: userRole } = await supabase
+                    .from('user_roles')
+                    .select('user_id')
+                    .eq('email', invitedUserEmail.toLowerCase())
+                    .single();
+                  
+                  if (userRole) {
+                    // Add user to team
+                    const { error } = await supabase
+                      .from('team_members')
+                      .insert({
+                        team_id: selectedTeamId,
+                        user_id: userRole.user_id,
+                      });
+                    
+                    if (error) throw error;
+                    
+                    toast({
+                      title: "Added to team!",
+                      description: `User will be added to the team when they accept the invitation`,
+                    });
+                  } else {
+                    toast({
+                      title: "Team assignment saved",
+                      description: "User will be added to the team when they accept the invitation",
+                    });
+                  }
+                } catch (error: any) {
+                  console.error('Error assigning team:', error);
+                  toast({
+                    title: "Note",
+                    description: "User will need to be added to the team after they accept the invitation",
+                  });
+                } finally {
+                  setAssigningTeam(false);
+                  setTeamDialogOpen(false);
+                  setSelectedTeamId("");
+                  setInvitedUserEmail("");
+                }
+              }} 
+              disabled={assigningTeam || !selectedTeamId}
+            >
+              {assigningTeam ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCircle className="mr-2 h-4 w-4" />
+              )}
+              Add to Team
             </Button>
           </DialogFooter>
         </DialogContent>
