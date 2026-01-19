@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Dialog, 
   DialogContent, 
@@ -17,30 +16,18 @@ import {
   DialogDescription 
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { 
   Users, 
   UserPlus, 
   Search, 
-  ArrowUpDown, 
-  ArrowUp, 
-  ArrowDown,
   Loader2,
   Mail,
   AlertCircle,
   CheckCircle,
-  ArrowLeft,
   Plus
 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { useNavigate } from "react-router-dom";
+import { SupervisorBottomNav } from "@/components/supervisor/SupervisorBottomNav";
+import { UserCard } from "@/components/supervisor/UserCard";
 
 interface WorkspaceUser {
   user_id: string;
@@ -51,20 +38,14 @@ interface WorkspaceUser {
   created_at: string;
 }
 
-type SortField = 'display_name' | 'email' | 'role' | 'created_at';
-type SortDirection = 'asc' | 'desc';
-
 export const UsersPage = () => {
   const { currentWorkspaceId } = useWorkspace();
   const { toast } = useToast();
-  const navigate = useNavigate();
   
   // Users list state
   const [users, setUsers] = useState<WorkspaceUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortField, setSortField] = useState<SortField>('display_name');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   
   // Invite dialog state
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -305,120 +286,48 @@ export const UsersPage = () => {
     }
   };
 
-  // Sort handler
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
-
-  // Filtered and sorted users
+  // Filtered users (simple search, no sorting needed for cards)
   const filteredUsers = useMemo(() => {
-    let result = [...users];
-
-    // Filter by search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(user => 
-        user.display_name?.toLowerCase().includes(query) ||
-        user.email.toLowerCase().includes(query)
-      );
-    }
-
-    // Sort
-    result.sort((a, b) => {
-      let aVal: any;
-      let bVal: any;
-
-      switch (sortField) {
-        case 'display_name':
-          aVal = a.display_name?.toLowerCase() || a.email.toLowerCase();
-          bVal = b.display_name?.toLowerCase() || b.email.toLowerCase();
-          break;
-        case 'email':
-          aVal = a.email.toLowerCase();
-          bVal = b.email.toLowerCase();
-          break;
-        case 'role':
-          aVal = a.role;
-          bVal = b.role;
-          break;
-        case 'created_at':
-          aVal = new Date(a.created_at).getTime();
-          bVal = new Date(b.created_at).getTime();
-          break;
-        default:
-          return 0;
-      }
-
-      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
-      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
-    });
-
-    return result;
-  }, [users, searchQuery, sortField, sortDirection]);
-
-  const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) return <ArrowUpDown className="w-4 h-4 ml-1" />;
-    return sortDirection === 'asc' 
-      ? <ArrowUp className="w-4 h-4 ml-1" />
-      : <ArrowDown className="w-4 h-4 ml-1" />;
-  };
-
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return <Badge className="bg-primary">Admin</Badge>;
-      case 'member':
-        return <Badge variant="secondary">Member</Badge>;
-      case 'viewer':
-        return <Badge variant="outline">Viewer</Badge>;
-      default:
-        return <Badge variant="outline">{role}</Badge>;
-    }
-  };
+    if (!searchQuery) return users;
+    
+    const query = searchQuery.toLowerCase();
+    return users.filter(user => 
+      user.display_name?.toLowerCase().includes(query) ||
+      user.email.toLowerCase().includes(query)
+    );
+  }, [users, searchQuery]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <div className="bg-primary text-primary-foreground p-4">
-        <div className="flex items-center gap-3 mb-3">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => navigate('/supervisor')}
-            className="text-primary-foreground hover:bg-primary-foreground/20"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold">Users</h1>
             <p className="text-sm opacity-90">Manage workspace members</p>
           </div>
+          <Button 
+            variant="secondary" 
+            size="sm"
+            onClick={() => setInviteDialogOpen(true)}
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            Add
+          </Button>
         </div>
       </div>
 
       {/* Content */}
       <div className="p-4 space-y-4">
-        {/* Search and Actions */}
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name or email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Button onClick={() => setInviteDialogOpen(true)}>
-            <UserPlus className="w-4 h-4 mr-2" />
-            Add User
-          </Button>
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by name or email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
         </div>
 
         {/* Stats */}
@@ -445,7 +354,7 @@ export const UsersPage = () => {
           </Card>
         </div>
 
-        {/* Users Table */}
+        {/* Users Cards */}
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -458,72 +367,21 @@ export const UsersPage = () => {
             </p>
           </Card>
         ) : (
-          <Card>
-            <ScrollArea className="h-[calc(100vh-350px)]">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead 
-                      className="cursor-pointer select-none"
-                      onClick={() => handleSort('display_name')}
-                    >
-                      <div className="flex items-center">
-                        Name
-                        <SortIcon field="display_name" />
-                      </div>
-                    </TableHead>
-                    <TableHead 
-                      className="cursor-pointer select-none"
-                      onClick={() => handleSort('email')}
-                    >
-                      <div className="flex items-center">
-                        Email
-                        <SortIcon field="email" />
-                      </div>
-                    </TableHead>
-                    <TableHead 
-                      className="cursor-pointer select-none"
-                      onClick={() => handleSort('role')}
-                    >
-                      <div className="flex items-center">
-                        Role
-                        <SortIcon field="role" />
-                      </div>
-                    </TableHead>
-                    <TableHead 
-                      className="cursor-pointer select-none"
-                      onClick={() => handleSort('created_at')}
-                    >
-                      <div className="flex items-center">
-                        Joined
-                        <SortIcon field="created_at" />
-                      </div>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow key={user.user_id}>
-                      <TableCell className="font-medium">
-                        {user.display_name || '-'}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {user.email}
-                      </TableCell>
-                      <TableCell>
-                        {getRoleBadge(user.role)}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {formatDistanceToNow(new Date(user.created_at), { addSuffix: true })}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </ScrollArea>
-          </Card>
+          <div className="space-y-3">
+            {filteredUsers.map((user) => (
+              <UserCard
+                key={user.user_id}
+                displayName={user.display_name}
+                email={user.email}
+                role={user.role}
+                isActive={user.is_active}
+              />
+            ))}
+          </div>
         )}
       </div>
+
+      <SupervisorBottomNav />
 
       {/* Invite Dialog */}
       <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>

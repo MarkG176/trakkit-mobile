@@ -6,10 +6,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, ShoppingCart, Gift, ClipboardCheck, LogIn, LogOut, Coffee, Clock, Trash2, Users } from "lucide-react";
+import { Bell, ShoppingCart, Gift, ClipboardCheck, LogIn, LogOut, Coffee, Clock, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { SupervisorBottomNav } from "@/components/supervisor/SupervisorBottomNav";
 
 interface Notification {
   id: string;
@@ -33,7 +33,6 @@ const notificationConfig = {
 export const SupervisorDashboard = () => {
   const { currentWorkspaceId } = useWorkspace();
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [agentCache, setAgentCache] = useState<Map<string, string>>(new Map());
 
@@ -225,7 +224,7 @@ export const SupervisorDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <div className="bg-primary text-primary-foreground p-4">
         <div className="flex items-center justify-between mb-3">
@@ -240,17 +239,8 @@ export const SupervisorDashboard = () => {
             </Badge>
           </div>
         </div>
-        <div className="flex items-center gap-2 mt-3">
-          <WorkspaceSwitcher className="flex-1" />
-          <Button 
-            variant="secondary" 
-            size="sm"
-            onClick={() => navigate('/supervisor/users')}
-            className="shrink-0"
-          >
-            <Users className="w-4 h-4 mr-1" />
-            Users
-          </Button>
+        <div className="mt-3">
+          <WorkspaceSwitcher className="w-full" />
         </div>
       </div>
 
@@ -315,6 +305,8 @@ export const SupervisorDashboard = () => {
           </ScrollArea>
         )}
       </div>
+
+      <SupervisorBottomNav />
     </div>
   );
 };
