@@ -36,7 +36,8 @@ import {
   Mail,
   AlertCircle,
   CheckCircle,
-  ArrowLeft
+  ArrowLeft,
+  Plus
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -80,6 +81,8 @@ export const UsersPage = () => {
   const [selectedTeamId, setSelectedTeamId] = useState<string>("");
   const [invitedUserEmail, setInvitedUserEmail] = useState("");
   const [assigningTeam, setAssigningTeam] = useState(false);
+  const [isCreatingNewTeam, setIsCreatingNewTeam] = useState(false);
+  const [newTeamName, setNewTeamName] = useState("");
 
   // Fetch users from workspace
   const fetchUsers = async () => {
@@ -613,7 +616,13 @@ export const UsersPage = () => {
       </Dialog>
 
       {/* Team Assignment Dialog */}
-      <Dialog open={teamDialogOpen} onOpenChange={setTeamDialogOpen}>
+      <Dialog open={teamDialogOpen} onOpenChange={(open) => {
+        setTeamDialogOpen(open);
+        if (!open) {
+          setIsCreatingNewTeam(false);
+          setNewTeamName("");
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -626,25 +635,70 @@ export const UsersPage = () => {
           </DialogHeader>
           
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Select Team</Label>
-              <Select 
-                value={selectedTeamId} 
-                onValueChange={setSelectedTeamId}
-                disabled={assigningTeam}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a team..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {teams.map((team) => (
-                    <SelectItem key={team.id} value={team.id}>
-                      {team.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {!isCreatingNewTeam ? (
+              <>
+                <div className="space-y-2">
+                  <Label>Select Team</Label>
+                  <Select 
+                    value={selectedTeamId} 
+                    onValueChange={setSelectedTeamId}
+                    disabled={assigningTeam}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a team..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {teams.map((team) => (
+                        <SelectItem key={team.id} value={team.id}>
+                          {team.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-xs text-muted-foreground">or</span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+                
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => {
+                    setIsCreatingNewTeam(true);
+                    setSelectedTeamId("");
+                  }}
+                  disabled={assigningTeam}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create New Team
+                </Button>
+              </>
+            ) : (
+              <div className="space-y-2">
+                <Label>New Team Name</Label>
+                <Input
+                  placeholder="Enter team name..."
+                  value={newTeamName}
+                  onChange={(e) => setNewTeamName(e.target.value)}
+                  disabled={assigningTeam}
+                />
+                <Button 
+                  variant="link" 
+                  size="sm"
+                  className="p-0 h-auto"
+                  onClick={() => {
+                    setIsCreatingNewTeam(false);
+                    setNewTeamName("");
+                  }}
+                  disabled={assigningTeam}
+                >
+                  ← Back to team selection
+                </Button>
+              </div>
+            )}
           </div>
           
           <DialogFooter>
@@ -654,6 +708,8 @@ export const UsersPage = () => {
                 setTeamDialogOpen(false);
                 setSelectedTeamId("");
                 setInvitedUserEmail("");
+                setIsCreatingNewTeam(false);
+                setNewTeamName("");
               }} 
               disabled={assigningTeam}
             >
@@ -661,10 +717,49 @@ export const UsersPage = () => {
             </Button>
             <Button 
               onClick={async () => {
-                if (!selectedTeamId) {
+                let teamIdToUse = selectedTeamId;
+                
+                // If creating new team, create it first
+                if (isCreatingNewTeam) {
+                  if (!newTeamName.trim()) {
+                    toast({
+                      title: "Team name required",
+                      description: "Please enter a name for the new team",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  
+                  setAssigningTeam(true);
+                  try {
+                    const { data: newTeam, error: createError } = await supabase
+                      .from('teams')
+                      .insert({
+                        name: newTeamName.trim(),
+                        workspace_id: currentWorkspaceId,
+                      })
+                      .select('id')
+                      .single();
+                    
+                    if (createError) throw createError;
+                    teamIdToUse = newTeam.id;
+                    
+                    // Refresh teams list
+                    fetchTeams();
+                  } catch (error: any) {
+                    console.error('Error creating team:', error);
+                    toast({
+                      title: "Error",
+                      description: error.message || "Failed to create team",
+                      variant: "destructive",
+                    });
+                    setAssigningTeam(false);
+                    return;
+                  }
+                } else if (!selectedTeamId) {
                   toast({
                     title: "Select a team",
-                    description: "Please select a team to add the user to",
+                    description: "Please select a team or create a new one",
                     variant: "destructive",
                   });
                   return;
@@ -684,7 +779,7 @@ export const UsersPage = () => {
                     const { error } = await supabase
                       .from('team_members')
                       .insert({
-                        team_id: selectedTeamId,
+                        team_id: teamIdToUse,
                         user_id: userRole.user_id,
                       });
                     
@@ -692,11 +787,13 @@ export const UsersPage = () => {
                     
                     toast({
                       title: "Added to team!",
-                      description: `User will be added to the team when they accept the invitation`,
+                      description: isCreatingNewTeam 
+                        ? `Created "${newTeamName}" and added user`
+                        : `User will be added to the team when they accept the invitation`,
                     });
                   } else {
                     toast({
-                      title: "Team assignment saved",
+                      title: isCreatingNewTeam ? "Team created!" : "Team assignment saved",
                       description: "User will be added to the team when they accept the invitation",
                     });
                   }
@@ -711,16 +808,18 @@ export const UsersPage = () => {
                   setTeamDialogOpen(false);
                   setSelectedTeamId("");
                   setInvitedUserEmail("");
+                  setIsCreatingNewTeam(false);
+                  setNewTeamName("");
                 }
               }} 
-              disabled={assigningTeam || !selectedTeamId}
+              disabled={assigningTeam || (!selectedTeamId && !isCreatingNewTeam) || (isCreatingNewTeam && !newTeamName.trim())}
             >
               {assigningTeam ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <CheckCircle className="mr-2 h-4 w-4" />
               )}
-              Add to Team
+              {isCreatingNewTeam ? "Create & Add" : "Add to Team"}
             </Button>
           </DialogFooter>
         </DialogContent>
