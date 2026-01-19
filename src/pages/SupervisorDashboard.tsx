@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { SupervisorMobileLayout } from "@/components/SupervisorMobileLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { LiveKPICard } from "@/components/supervisor/LiveKPICard";
+import { LiveIndicator } from "@/components/supervisor/LiveIndicator";
+import { AgentStatusItem, AgentStatusItemProps } from "@/components/supervisor/AgentStatusItem";
+import { PullToRefresh } from "@/components/supervisor/PullToRefresh";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, TrendingUp, Package, MapPin, Clock, Trophy, DollarSign, Calendar, AlertTriangle, Loader2, RefreshCw, UserPlus } from "lucide-react";
+import { Users, TrendingUp, DollarSign, Store, Briefcase, Calendar, Package, RefreshCw, UserPlus, Loader2, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,19 +14,16 @@ import { useToast } from "@/hooks/use-toast";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { InviteAgentDialog } from "@/components/InviteAgentDialog";
+import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
+import { formatDistanceToNow } from "date-fns";
 
-interface AgentStatus {
-  id: string;
-  name: string;
-  email: string;
-  status: string;
-  location: { lat: number; lng: number } | null;
-  lastUpdate: string;
-  batteryLevel: number;
-  todayStats: {
-    sales: number;
-    surveys: number;
-  };
+interface KPIData {
+  agentsOnline: number;
+  totalAgents: number;
+  salesCount: number;
+  salesValue: number;
+  storesVisited: number;
+  activeProjects: number;
 }
 
 export const SupervisorDashboard = () => {
@@ -31,166 +31,133 @@ export const SupervisorDashboard = () => {
   const { displayName } = useUserProfile();
   const { toast } = useToast();
   const { currentWorkspaceId } = useWorkspace();
-  const [stats, setStats] = useState({
+  
+  const [kpis, setKpis] = useState<KPIData>({
+    agentsOnline: 0,
     totalAgents: 0,
-    activeAgents: 0,
-    todaySales: 0,
-    todaySalesValue: 0,
+    salesCount: 0,
+    salesValue: 0,
+    storesVisited: 0,
+    activeProjects: 0,
   });
-  const [agentStatuses, setAgentStatuses] = useState<AgentStatus[]>([]);
+  const [recentActivity, setRecentActivity] = useState<AgentStatusItemProps[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [showInviteDialog, setShowInviteDialog] = useState(false);
 
-  useEffect(() => {
-    if (currentWorkspaceId) {
-      fetchDashboardStats();
-    }
-  }, [currentWorkspaceId]);
+  const getTodayRange = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStart = today.toISOString();
+    const todayEnd = new Date(today);
+    todayEnd.setHours(23, 59, 59, 999);
+    return { todayStart, todayEnd: todayEnd.toISOString(), todayDate: today.toISOString().split('T')[0] };
+  };
 
-  const fetchDashboardStats = async () => {
+  const fetchDashboardData = useCallback(async () => {
     if (!currentWorkspaceId) return;
-    
+
     try {
       setLoading(true);
-      const today = new Date().toISOString().split('T')[0];
-      const todayStart = `${today}T00:00:00`;
-      const todayEnd = `${today}T23:59:59`;
+      const { todayStart, todayEnd, todayDate } = getTodayRange();
 
-      // 1. Total Agents: Count from user_workspaces where role = 'agent' and is_active = true
-      const { data: agentWorkspaces, error: agentWorkspacesError } = await supabase
-        .from('user_workspaces')
-        .select('user_id')
-        .eq('workspace_id', currentWorkspaceId)
-        .eq('role', 'agent')
-        .eq('is_active', true);
+      // Parallel fetch all data
+      const [
+        agentsResult,
+        statusResult,
+        salesResult,
+        storesResult,
+        projectsResult,
+        activityResult,
+      ] = await Promise.all([
+        // Total agents
+        supabase
+          .from('user_workspaces')
+          .select('user_id')
+          .eq('workspace_id', currentWorkspaceId)
+          .eq('role', 'agent')
+          .eq('is_active', true),
+        
+        // Agents with activity today
+        supabase
+          .from('agent_status_log')
+          .select('agent_id')
+          .eq('workspace_id', currentWorkspaceId)
+          .gte('timestamp', todayStart)
+          .lte('timestamp', todayEnd),
+        
+        // Sales today from sale_items
+        supabase
+          .from('sale_items')
+          .select('id, total_price')
+          .eq('workspace_id', currentWorkspaceId)
+          .gte('created_at', todayStart)
+          .lte('created_at', todayEnd)
+          .eq('is_deleted', false),
+        
+        // Stores visited
+        supabase
+          .from('interactions')
+          .select('store_id')
+          .eq('workspace_id', currentWorkspaceId)
+          .gte('created_at', todayStart)
+          .not('store_id', 'is', null),
+        
+        // Active projects
+        supabase
+          .from('project_plans')
+          .select('id', { count: 'exact', head: true })
+          .eq('workspace_id', currentWorkspaceId)
+          .eq('status', 'active'),
+        
+        // Recent activity
+        supabase
+          .from('agent_status_log')
+          .select('id, agent_id, agent_display_name, status, timestamp, location_lat, location_lng, selfie_url, distance_from_assigned, in_range')
+          .eq('workspace_id', currentWorkspaceId)
+          .gte('timestamp', todayStart)
+          .order('timestamp', { ascending: false })
+          .limit(5),
+      ]);
 
-      if (agentWorkspacesError) throw agentWorkspacesError;
+      // Process KPIs
+      const totalAgents = agentsResult.data?.length || 0;
+      const uniqueActiveAgents = new Set(statusResult.data?.map(s => s.agent_id) || []);
+      const agentsOnline = uniqueActiveAgents.size;
+      const salesCount = salesResult.data?.length || 0;
+      const salesValue = salesResult.data?.reduce((sum, s) => sum + (Number(s.total_price) || 0), 0) || 0;
+      const uniqueStores = new Set(storesResult.data?.map(s => s.store_id) || []);
+      const storesVisited = uniqueStores.size;
+      const activeProjects = projectsResult.count || 0;
 
-      const totalAgents = agentWorkspaces?.length || 0;
-      const agentUserIds = agentWorkspaces?.map(a => a.user_id) || [];
-
-      // 2. Active Today: Count distinct agents who appear in agent_status_log today
-      const { data: todayStatusLogs, error: statusError } = await supabase
-        .from('agent_status_log')
-        .select('agent_id')
-        .eq('workspace_id', currentWorkspaceId)
-        .gte('timestamp', todayStart)
-        .lte('timestamp', todayEnd);
-
-      if (statusError) throw statusError;
-
-      // Get unique agent IDs who logged activity today
-      const uniqueActiveAgents = new Set(todayStatusLogs?.map(log => log.agent_id) || []);
-      const activeAgents = uniqueActiveAgents.size;
-
-      // 3. Today's Sales: Count of sale_items today
-      const { data: saleItemsCount, error: salesCountError } = await supabase
-        .from('sale_items')
-        .select('id', { count: 'exact' })
-        .eq('workspace_id', currentWorkspaceId)
-        .gte('created_at', todayStart)
-        .lte('created_at', todayEnd)
-        .eq('is_deleted', false);
-
-      if (salesCountError) throw salesCountError;
-
-      const todaySales = saleItemsCount?.length || 0;
-
-      // 4. Today's Sales Value: Sum of total_price from sale_items today
-      const { data: saleItemsValue, error: salesValueError } = await supabase
-        .from('sale_items')
-        .select('total_price')
-        .eq('workspace_id', currentWorkspaceId)
-        .gte('created_at', todayStart)
-        .lte('created_at', todayEnd)
-        .eq('is_deleted', false);
-
-      if (salesValueError) throw salesValueError;
-
-      const todaySalesValue = saleItemsValue?.reduce((sum, item) => sum + (Number(item.total_price) || 0), 0) || 0;
-
-      // Fetch agent details for display (from user_roles for those in workspace)
-      const { data: workspaceAgents, error: agentsError } = await supabase
-        .from('user_roles')
-        .select('user_id, display_name, email, role')
-        .in('user_id', agentUserIds)
-        .eq('is_active', true);
-
-      if (agentsError) throw agentsError;
-
-      // Fetch status logs for agent display
-      const { data: statusLogs, error: statusLogsError } = await supabase
-        .from('agent_status_log')
-        .select('agent_id, status, timestamp, location_lat, location_lng')
-        .in('agent_id', agentUserIds)
-        .gte('timestamp', todayStart)
-        .order('timestamp', { ascending: false });
-
-      if (statusLogsError) throw statusLogsError;
-
-      // Get latest status for each agent
-      const agentStatusMap = new Map();
-      statusLogs?.forEach(log => {
-        if (!agentStatusMap.has(log.agent_id)) {
-          agentStatusMap.set(log.agent_id, log);
-        }
-      });
-
-      // Fetch battery status
-      const { data: batteryStatus, error: batteryError } = await supabase
-        .from('agent_battery_status')
-        .select('agent_id, battery_level, location_lat, location_lng')
-        .in('agent_id', agentUserIds)
-        .order('updated_at', { ascending: false });
-
-      if (batteryError) throw batteryError;
-
-      // Get latest battery status for each agent
-      const batteryStatusMap = new Map();
-      batteryStatus?.forEach(battery => {
-        if (!batteryStatusMap.has(battery.agent_id)) {
-          batteryStatusMap.set(battery.agent_id, battery);
-        }
-      });
-
-      setStats({
+      setKpis({
+        agentsOnline,
         totalAgents,
-        activeAgents,
-        todaySales,
-        todaySalesValue,
+        salesCount,
+        salesValue,
+        storesVisited,
+        activeProjects,
       });
 
-      // Build agent statuses for display
-      const agentStatuses: AgentStatus[] = workspaceAgents?.map(agent => {
-        const statusLog = agentStatusMap.get(agent.user_id);
-        const batteryData = batteryStatusMap.get(agent.user_id);
-        
-        // Use location from status log first, then from battery status
-        let location = null;
-        if (statusLog?.location_lat && statusLog?.location_lng) {
-          location = { lat: statusLog.location_lat, lng: statusLog.location_lng };
-        } else if (batteryData?.location_lat && batteryData?.location_lng) {
-          location = { lat: batteryData.location_lat, lng: batteryData.location_lng };
-        }
-        
-        return {
-          id: agent.user_id,
-          name: agent.display_name || agent.email || 'Unknown Agent',
-          email: agent.email || '',
-          status: statusLog?.status || 'unknown',
-          location,
-          lastUpdate: statusLog?.timestamp ? new Date(statusLog.timestamp).toLocaleTimeString() : 'Never',
-          batteryLevel: batteryData?.battery_level || 0,
-          todayStats: {
-            sales: 0,
-            surveys: 0,
-          },
-        };
-      }) || [];
+      // Process activity
+      const activity: AgentStatusItemProps[] = (activityResult.data || []).map(log => ({
+        id: log.id,
+        agentName: log.agent_display_name || 'Unknown Agent',
+        agentInitials: (log.agent_display_name || 'UA').substring(0, 2).toUpperCase(),
+        status: log.status as AgentStatusItemProps['status'],
+        timestamp: log.timestamp,
+        locationLat: log.location_lat ?? undefined,
+        locationLng: log.location_lng ?? undefined,
+        selfieUrl: log.selfie_url ?? undefined,
+        distanceFromAssigned: log.distance_from_assigned ?? undefined,
+        inRange: log.in_range ?? undefined,
+      }));
+      setRecentActivity(activity);
+      setLastUpdated(new Date());
 
-      setAgentStatuses(agentStatuses);
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
+      console.error('Error fetching dashboard data:', error);
       toast({
         title: "Error",
         description: "Failed to load dashboard data",
@@ -199,8 +166,73 @@ export const SupervisorDashboard = () => {
     } finally {
       setLoading(false);
     }
+  }, [currentWorkspaceId, toast]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  // Real-time subscriptions
+  const handleStatusUpdate = useCallback((payload: any) => {
+    const log = payload.new;
+    
+    const newActivity: AgentStatusItemProps = {
+      id: log.id,
+      agentName: log.agent_display_name || 'Unknown Agent',
+      agentInitials: (log.agent_display_name || 'UA').substring(0, 2).toUpperCase(),
+      status: log.status,
+      timestamp: log.timestamp,
+      locationLat: log.location_lat,
+      locationLng: log.location_lng,
+      selfieUrl: log.selfie_url,
+      distanceFromAssigned: log.distance_from_assigned,
+      inRange: log.in_range,
+      isNew: true,
+    };
+
+    setRecentActivity(prev => [newActivity, ...prev].slice(0, 5));
+    
+    if (log.status === 'checked_in') {
+      setKpis(prev => ({ ...prev, agentsOnline: prev.agentsOnline + 1 }));
+    } else if (log.status === 'checked_out') {
+      setKpis(prev => ({ ...prev, agentsOnline: Math.max(0, prev.agentsOnline - 1) }));
+    }
+    
+    setLastUpdated(new Date());
+    setIsConnected(true);
+  }, []);
+
+  const handleSaleUpdate = useCallback((payload: any) => {
+    const sale = payload.new;
+    setKpis(prev => ({
+      ...prev,
+      salesCount: prev.salesCount + 1,
+      salesValue: prev.salesValue + (Number(sale.total_price) || 0),
+    }));
+    setLastUpdated(new Date());
+    setIsConnected(true);
+  }, []);
+
+  useRealtimeSubscription({
+    table: 'agent_status_log',
+    event: 'INSERT',
+    filter: currentWorkspaceId ? `workspace_id=eq.${currentWorkspaceId}` : undefined,
+    onData: handleStatusUpdate,
+    enabled: !!currentWorkspaceId,
+  });
+
+  useRealtimeSubscription({
+    table: 'sale_items',
+    event: 'INSERT',
+    filter: currentWorkspaceId ? `workspace_id=eq.${currentWorkspaceId}` : undefined,
+    onData: handleSaleUpdate,
+    enabled: !!currentWorkspaceId,
+  });
+
+  const handleRefresh = async () => {
+    await fetchDashboardData();
   };
-  
+
   if (loading) {
     return (
       <SupervisorMobileLayout currentPage="dashboard">
@@ -213,184 +245,133 @@ export const SupervisorDashboard = () => {
 
   return (
     <SupervisorMobileLayout currentPage="dashboard">
-      <div className="bg-primary text-primary-foreground p-4">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold">Hello, {displayName}!</h1>
-            <p className="text-sm opacity-90">Team overview and management</p>
+      <PullToRefresh onRefresh={handleRefresh}>
+        {/* Header */}
+        <div className="bg-primary text-primary-foreground p-4 pb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-2xl font-bold">Hello, {displayName}!</h1>
+              <p className="text-sm opacity-90">Team overview</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <LiveIndicator isConnected={isConnected} className="text-primary-foreground" />
+              <button 
+                onClick={() => setShowInviteDialog(true)}
+                className="bg-white/20 backdrop-blur-sm rounded-full p-3 hover:bg-white/30 transition-colors"
+              >
+                <UserPlus className="w-5 h-5" />
+              </button>
+            </div>
           </div>
-          <button 
-            onClick={() => setShowInviteDialog(true)}
-            className="bg-white/20 backdrop-blur-sm rounded-full p-3 hover:bg-white/30 transition-colors"
-          >
-            <UserPlus className="w-6 h-6" />
-          </button>
+          
+          <div className="flex items-center justify-between">
+            <WorkspaceSwitcher 
+              onWorkspaceChange={() => fetchDashboardData()}
+              className="text-primary-foreground"
+            />
+            <div className="text-xs opacity-75">
+              Updated {formatDistanceToNow(lastUpdated, { addSuffix: true })}
+            </div>
+          </div>
         </div>
-        
-        <div className="mt-4 flex items-center justify-between">
-          <WorkspaceSwitcher 
-            onWorkspaceChange={() => fetchDashboardStats()}
-            className="text-primary-foreground"
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => fetchDashboardStats()}
-            disabled={loading}
-            className="text-primary-foreground hover:bg-white/20"
-            title="Refresh dashboard data"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
+
+        {/* Live KPIs Grid */}
+        <div className="p-4 -mt-4">
+          <div className="grid grid-cols-2 gap-3">
+            <LiveKPICard
+              title="Agents Online"
+              value={kpis.agentsOnline}
+              subtitle={`of ${kpis.totalAgents} total`}
+              icon={Users}
+              color="success"
+              onClick={() => navigate('/supervisor/agent-tracking')}
+              isLive
+            />
+            <LiveKPICard
+              title="Today's Sales"
+              value={kpis.salesCount}
+              subtitle="transactions"
+              icon={TrendingUp}
+              color="primary"
+              onClick={() => navigate('/supervisor/sales-feed')}
+              isLive
+            />
+            <LiveKPICard
+              title="Revenue"
+              value={`KES ${kpis.salesValue.toLocaleString()}`}
+              icon={DollarSign}
+              color="success"
+              onClick={() => navigate('/supervisor/sales-feed')}
+            />
+            <LiveKPICard
+              title="Stores Visited"
+              value={kpis.storesVisited}
+              icon={Store}
+              color="warning"
+            />
+          </div>
         </div>
-      </div>
 
-      {/* Team Overview Cards */}
-      <div className="p-4 grid grid-cols-2 gap-4">
-        <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/supervisor/agent-tracking')}>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Users className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-secondary-foreground">Total Agents</p>
-              <p className="text-2xl font-bold text-primary">{stats.totalAgents}</p>
-            </div>
+        {/* Recent Activity */}
+        <div className="px-4 pb-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-h3">Recent Activity</h2>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-primary"
+              onClick={() => navigate('/supervisor/live-feed')}
+            >
+              View All
+              <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
           </div>
-        </Card>
-
-        <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/supervisor/agent-tracking')}>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-success/10 rounded-lg">
-              <TrendingUp className="h-5 w-5 text-success" />
+          
+          {recentActivity.length > 0 ? (
+            <div className="space-y-2">
+              {recentActivity.map((activity) => (
+                <AgentStatusItem key={activity.id} {...activity} />
+              ))}
             </div>
-            <div>
-              <p className="text-sm text-secondary-foreground">Active Today</p>
-              <p className="text-2xl font-bold text-success">{stats.activeAgents}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-warning/10 rounded-lg">
-              <Trophy className="h-5 w-5 text-warning" />
-            </div>
-            <div>
-              <p className="text-sm text-secondary-foreground">Today's Sales</p>
-              <p className="text-2xl font-bold text-warning">{stats.todaySales}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-accent/10 rounded-lg">
-              <DollarSign className="h-5 w-5 text-accent-foreground" />
-            </div>
-            <div>
-              <p className="text-sm text-secondary-foreground">Sales Value</p>
-              <p className="text-2xl font-bold text-foreground">
-                {stats.todaySalesValue.toLocaleString('en-KE', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 })}
-              </p>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Agent Status */}
-      <div className="px-4 pb-4">
-        <h2 className="text-h3 mb-3">Agent Status</h2>
-        <div className="space-y-3">
-          {agentStatuses.length > 0 ? (
-            agentStatuses.slice(0, 4).map((agent) => (
-              <Card key={agent.id} className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-accent rounded-full flex items-center justify-center">
-                      <span className="text-sm font-medium">
-                        {agent.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-medium">{agent.name}</p>
-                      <div className="flex items-center gap-2">
-                        <MapPin size={12} className="text-secondary-foreground" />
-                        <span className="text-sm text-secondary-foreground">
-                          {agent.location ? `${agent.location.lat.toFixed(2)}, ${agent.location.lng.toFixed(2)}` : 'No location'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <Badge variant={
-                      agent.status === 'checked_in' ? 'default' : 
-                      agent.status === 'lunch' ? 'secondary' : 
-                      'destructive'
-                    }>
-                      {agent.status === 'checked_in' ? 'Active' : 
-                       agent.status === 'lunch' ? 'On Break' : 
-                       agent.status === 'checked_out' ? 'Offline' : 'Unknown'}
-                    </Badge>
-                    <div className="flex items-center gap-1 mt-1">
-                      <Clock size={10} className="text-secondary-foreground" />
-                      <span className="text-xs text-secondary-foreground">{agent.lastUpdate}</span>
-                    </div>
-                    <div className="mt-1 flex items-center gap-2">
-                      <span className="text-xs text-secondary-foreground">
-                        {agent.todayStats.sales} sales
-                      </span>
-                      {agent.batteryLevel > 0 && (
-                        <span className="text-xs text-secondary-foreground">
-                          • {agent.batteryLevel}% battery
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            ))
           ) : (
-            <Card className="p-4">
-              <div className="text-center text-muted-foreground">
-                <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p>No agents found in current workspace</p>
-              </div>
+            <Card className="p-6 text-center">
+              <Users className="w-10 h-10 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-muted-foreground text-sm">No activity yet today</p>
             </Card>
           )}
         </div>
-      </div>
 
-      {/* Quick Actions */}
-      <div className="px-4 pb-20">
-        <h2 className="text-lg font-semibold mb-3">Quick Actions</h2>
-        <div className="grid grid-cols-2 gap-3">
-          <Button 
-            variant="outline" 
-            className="h-20 flex-col gap-2"
-            onClick={() => navigate('/supervisor/agent-tracking')}
-          >
-            <Users size={20} />
-            <span className="text-sm">Agent Tracking</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="h-20 flex-col gap-2"
-            onClick={() => navigate('/supervisor/daily-plan-approval')}
-          >
-            <Calendar size={20} />
-            <span className="text-sm">Approve Plans</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="h-20 flex-col gap-2"
-            onClick={() => navigate('/supervisor/inventory-management')}
-          >
-            <Package size={20} />
-            <span className="text-sm">Inventory</span>
-          </Button>
+        {/* Quick Actions */}
+        <div className="px-4 pb-24">
+          <h2 className="text-h3 mb-3">Quick Actions</h2>
+          <div className="grid grid-cols-3 gap-3">
+            <Button 
+              variant="outline" 
+              className="h-20 flex-col gap-2 p-2"
+              onClick={() => navigate('/supervisor/agent-tracking')}
+            >
+              <Users size={20} className="text-primary" />
+              <span className="text-xs text-center">Agents</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              className="h-20 flex-col gap-2 p-2"
+              onClick={() => navigate('/supervisor/daily-plan-approval')}
+            >
+              <Calendar size={20} className="text-primary" />
+              <span className="text-xs text-center">Plans</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              className="h-20 flex-col gap-2 p-2"
+              onClick={() => navigate('/supervisor/inventory-management')}
+            >
+              <Package size={20} className="text-primary" />
+              <span className="text-xs text-center">Inventory</span>
+            </Button>
+          </div>
         </div>
-      </div>
+      </PullToRefresh>
 
       <InviteAgentDialog 
         open={showInviteDialog} 
