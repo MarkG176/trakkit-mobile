@@ -28,6 +28,8 @@ import {
 } from "lucide-react";
 import { SupervisorBottomNav } from "@/components/supervisor/SupervisorBottomNav";
 import { UserCard } from "@/components/supervisor/UserCard";
+import { MobileWorkspaceMembers } from "@/components/supervisor/MobileWorkspaceMembers";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface WorkspaceUser {
   user_id: string;
@@ -317,70 +319,89 @@ export const UsersPage = () => {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="p-4 space-y-4">
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by name or email..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+      {/* Tabs for switching views */}
+      <Tabs defaultValue="list" className="flex-1">
+        <div className="px-4 pt-4">
+          <TabsList className="w-full grid grid-cols-2">
+            <TabsTrigger value="list">User List</TabsTrigger>
+            <TabsTrigger value="members">Team View</TabsTrigger>
+          </TabsList>
         </div>
 
-        {/* Stats */}
-        <div className="flex gap-3">
-          <Card className="p-3 flex-1">
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-primary" />
-              <div>
-                <p className="text-2xl font-bold">{users.length}</p>
-                <p className="text-xs text-muted-foreground">Total Users</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-3 flex-1">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-green-500" />
-              <div>
-                <p className="text-2xl font-bold">
-                  {users.filter(u => u.is_active).length}
-                </p>
-                <p className="text-xs text-muted-foreground">Active</p>
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        {/* Users Cards */}
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : filteredUsers.length === 0 ? (
-          <Card className="p-8 text-center">
-            <Users className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-            <p className="text-muted-foreground">
-              {searchQuery ? 'No users found matching your search' : 'No users in this workspace'}
-            </p>
-          </Card>
-        ) : (
-          <div className="space-y-3">
-            {filteredUsers.map((user) => (
-              <UserCard
-                key={user.user_id}
-                userId={user.user_id}
-                displayName={user.display_name}
-                email={user.email}
-                role={user.role}
-                isActive={user.is_active}
+        {/* Original List View */}
+        <TabsContent value="list" className="mt-0">
+          <div className="p-4 space-y-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name or email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
               />
-            ))}
+            </div>
+
+            {/* Stats */}
+            <div className="flex gap-3">
+              <Card className="p-3 flex-1">
+                <div className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-primary" />
+                  <div>
+                    <p className="text-2xl font-bold">{users.length}</p>
+                    <p className="text-xs text-muted-foreground">Total Users</p>
+                  </div>
+                </div>
+              </Card>
+              <Card className="p-3 flex-1">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  <div>
+                    <p className="text-2xl font-bold">
+                      {users.filter(u => u.is_active).length}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Active</p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Users Cards */}
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : filteredUsers.length === 0 ? (
+              <Card className="p-8 text-center">
+                <Users className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                <p className="text-muted-foreground">
+                  {searchQuery ? 'No users found matching your search' : 'No users in this workspace'}
+                </p>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {filteredUsers.map((user) => (
+                  <UserCard
+                    key={user.user_id}
+                    userId={user.user_id}
+                    displayName={user.display_name}
+                    email={user.email}
+                    role={user.role}
+                    isActive={user.is_active}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </TabsContent>
+
+        {/* Mobile Workspace Members View */}
+        <TabsContent value="members" className="mt-0">
+          {currentWorkspaceId && (
+            <MobileWorkspaceMembers workspaceId={currentWorkspaceId} />
+          )}
+        </TabsContent>
+      </Tabs>
 
       <SupervisorBottomNav />
 
