@@ -49,11 +49,16 @@ export const LiveFeed = () => {
   } = usePagination({ items: filteredActivities, itemsPerPage: 20 });
 
   const fetchActivities = useCallback(async () => {
-    if (!currentWorkspaceId) return;
+    if (!currentWorkspaceId) {
+      setLoading(false);
+      return;
+    }
     
     try {
+      setLoading(true);
       setRefreshing(true);
 
+      // Build query - for 'all' preset, don't apply date filters
       let query = supabase
         .from('agent_status_log')
         .select(`
@@ -69,11 +74,18 @@ export const LiveFeed = () => {
           in_range
         `)
         .eq('workspace_id', currentWorkspaceId)
-        .order('timestamp', { ascending: false })
-        .limit(200);
+        .order('timestamp', { ascending: false });
 
-      if (startISO) query = query.gte('timestamp', startISO);
-      if (endISO) query = query.lte('timestamp', endISO);
+      // Only apply date filters if they exist (not 'all' preset)
+      if (startISO) {
+        query = query.gte('timestamp', startISO);
+      }
+      if (endISO) {
+        query = query.lte('timestamp', endISO);
+      }
+
+      // Apply limit after date filters
+      query = query.limit(200);
 
       const { data, error } = await query;
       if (error) throw error;
@@ -104,9 +116,17 @@ export const LiveFeed = () => {
     }
   }, [currentWorkspaceId, startISO, endISO, toast]);
 
+  // Re-fetch when workspace or date range changes
   useEffect(() => {
     fetchActivities();
   }, [fetchActivities]);
+
+  // Also trigger fetch when preset changes explicitly
+  useEffect(() => {
+    if (currentWorkspaceId) {
+      fetchActivities();
+    }
+  }, [preset, currentWorkspaceId]);
 
   // Real-time subscription
   const handleRealtimeUpdate = useCallback((payload: any) => {
