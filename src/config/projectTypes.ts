@@ -23,6 +23,7 @@ export interface PageFeatures {
 
 export interface RoutesFeatures {
   showAssignedLocation: boolean;
+  showAddLocation: boolean;
 }
 
 export interface ReportFeatures {
@@ -77,7 +78,7 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
     reports: { showDailySales: true, showStockReports: false },
     inventory: { showQuantity: false },
     attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false },
-    routes: { showAssignedLocation: false }
+    routes: { showAssignedLocation: false, showAddLocation: true }
   },
   survey_campaign: {
     quickActions: { 
@@ -100,7 +101,7 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
     reports: { showDailySales: true, showStockReports: false },
     inventory: { showQuantity: false },
     attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false },
-    routes: { showAssignedLocation: false }
+    routes: { showAssignedLocation: false, showAddLocation: true }
   },
   brand_activation: {
     quickActions: { 
@@ -123,7 +124,7 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
     reports: { showDailySales: true, showStockReports: false },
     inventory: { showQuantity: false },
     attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false },
-    routes: { showAssignedLocation: false }
+    routes: { showAssignedLocation: false, showAddLocation: true }
   },
   door_to_door: {
     quickActions: { 
@@ -146,7 +147,7 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
     reports: { showDailySales: true, showStockReports: false },
     inventory: { showQuantity: true },
     attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false },
-    routes: { showAssignedLocation: false }
+    routes: { showAssignedLocation: false, showAddLocation: true }
   },
   sampling: {
     quickActions: { 
@@ -169,7 +170,7 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
     reports: { showDailySales: true, showStockReports: false },
     inventory: { showQuantity: true },
     attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false },
-    routes: { showAssignedLocation: false }
+    routes: { showAssignedLocation: false, showAddLocation: true }
   },
   wholesale: {
     quickActions: { 
@@ -192,7 +193,7 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
     reports: { showDailySales: false, showStockReports: true },
     inventory: { showQuantity: false },
     attendance: { showStockReportOnCheckIn: true, showStockReportOnCheckOut: true },
-    routes: { showAssignedLocation: true }
+    routes: { showAssignedLocation: true, showAddLocation: false }
   },
   hybrid: {
     quickActions: { 
@@ -215,7 +216,7 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
     reports: { showDailySales: true, showStockReports: false },
     inventory: { showQuantity: false },
     attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false },
-    routes: { showAssignedLocation: false }
+    routes: { showAssignedLocation: false, showAddLocation: true }
   }
 };
 

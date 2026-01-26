@@ -433,7 +433,8 @@ export const Routes = () => {
           </Card>
         )}
 
-        {/* Add Location Form */}
+        {/* Add Location Form - Hidden for wholesale */}
+        {features.routes.showAddLocation && (
         <Card className="p-4 mt-4">
           <div className="flex items-center gap-2 mb-4">
             <Plus size={20} className="text-primary" />
@@ -534,6 +535,7 @@ export const Routes = () => {
             </div>
           )}
         </Card>
+        )}
       </div>
 
       {addedStore && (
