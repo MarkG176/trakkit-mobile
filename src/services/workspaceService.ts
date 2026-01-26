@@ -30,6 +30,7 @@ interface UserWorkspace {
   role: 'admin' | 'member' | 'viewer';
   joined_at: string;
   workspace: Workspace;
+  team_type: 'sales_activation' | 'survey_campaign' | 'brand_activation' | 'door_to_door' | 'sampling' | 'wholesale' | 'hybrid';
 }
 
 const WORKSPACE_STORAGE_KEY = 'trakkit_current_workspace_id';
@@ -37,6 +38,7 @@ const WORKSPACE_STORAGE_KEY = 'trakkit_current_workspace_id';
 class WorkspaceService {
   private currentWorkspaceId: string | null = null;
   private currentProjectId: string | null = null;
+  private currentTeamType: 'sales_activation' | 'survey_campaign' | 'brand_activation' | 'door_to_door' | 'sampling' | 'wholesale' | 'hybrid' = 'hybrid';
   private userWorkspaces: UserWorkspace[] = [];
   private user: User | null = null;
   private initialized: boolean = false;
@@ -108,6 +110,7 @@ class WorkspaceService {
           user_id,
           workspace_id,
           role,
+          team_type,
           created_at,
           workspace:workspaces!inner (
             id,
@@ -136,22 +139,26 @@ class WorkspaceService {
         workspace_id: item.workspace_id,
         role: item.role as 'admin' | 'member' | 'viewer',
         joined_at: item.created_at,
-        workspace: item.workspace as Workspace
+        workspace: item.workspace as Workspace,
+        team_type: (item.team_type as UserWorkspace['team_type']) || 'hybrid'
       }));
 
       // Preserve current workspace if it still exists in user's workspaces
       if (previousWorkspaceId && this.userWorkspaces.some(w => w.workspace_id === previousWorkspaceId)) {
         this.currentWorkspaceId = previousWorkspaceId;
-        console.log('🏢 Preserving current workspace:', this.getWorkspaceName());
+        this.updateCurrentTeamType();
+        console.log('🏢 Preserving current workspace:', this.getWorkspaceName(), 'team_type:', this.currentTeamType);
         await this.loadProjectsForWorkspace(this.currentWorkspaceId);
       } else if (!this.currentWorkspaceId && this.userWorkspaces.length > 0) {
         // Only set default if no workspace was previously set
         this.currentWorkspaceId = this.userWorkspaces[0].workspace_id;
-        console.log('🏢 Default workspace set to:', this.userWorkspaces[0].workspace.name);
+        this.updateCurrentTeamType();
+        console.log('🏢 Default workspace set to:', this.userWorkspaces[0].workspace.name, 'team_type:', this.currentTeamType);
         await this.loadProjectsForWorkspace(this.currentWorkspaceId);
       } else if (this.currentWorkspaceId && this.userWorkspaces.length > 0) {
         // If workspace is already set, just ensure projects are loaded
-        console.log('🏢 Workspace already set, maintaining:', this.getWorkspaceName());
+        this.updateCurrentTeamType();
+        console.log('🏢 Workspace already set, maintaining:', this.getWorkspaceName(), 'team_type:', this.currentTeamType);
         await this.loadProjectsForWorkspace(this.currentWorkspaceId);
       }
     } catch (error) {
@@ -175,6 +182,16 @@ class WorkspaceService {
   }
 
   /**
+   * Update current team type based on selected workspace
+   */
+  private updateCurrentTeamType(): void {
+    const userWorkspace = this.userWorkspaces.find(
+      uw => uw.workspace_id === this.currentWorkspaceId
+    );
+    this.currentTeamType = userWorkspace?.team_type || 'hybrid';
+  }
+
+  /**
    * Get current user's role in the current workspace
    */
   getCurrentWorkspaceRole(): 'admin' | 'member' | 'viewer' | null {
@@ -185,6 +202,13 @@ class WorkspaceService {
     );
     
     return userWorkspace?.role || null;
+  }
+
+  /**
+   * Get current team type for feature loading
+   */
+  getCurrentTeamType(): 'sales_activation' | 'survey_campaign' | 'brand_activation' | 'door_to_door' | 'sampling' | 'wholesale' | 'hybrid' {
+    return this.currentTeamType;
   }
 
   /**
@@ -212,7 +236,8 @@ class WorkspaceService {
 
     this.currentWorkspaceId = workspaceId;
     this.saveWorkspaceId(workspaceId);
-    console.log('🏢 Workspace changed to:', workspaceId);
+    this.updateCurrentTeamType();
+    console.log('🏢 Workspace changed to:', workspaceId, 'team_type:', this.currentTeamType);
     
     // Load projects for the new workspace
     await this.loadProjectsForWorkspace(workspaceId);

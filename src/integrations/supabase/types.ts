@@ -3458,6 +3458,7 @@ export type Database = {
           is_deleted: boolean | null
           name: string | null
           role: string
+          team_type: string | null
           updated_at: string | null
           user_id: string | null
           workspace_id: string | null
@@ -3470,6 +3471,7 @@ export type Database = {
           is_deleted?: boolean | null
           name?: string | null
           role: string
+          team_type?: string | null
           updated_at?: string | null
           user_id?: string | null
           workspace_id?: string | null
@@ -3482,6 +3484,7 @@ export type Database = {
           is_deleted?: boolean | null
           name?: string | null
           role?: string
+          team_type?: string | null
           updated_at?: string | null
           user_id?: string | null
           workspace_id?: string | null
