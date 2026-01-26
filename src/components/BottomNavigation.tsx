@@ -1,7 +1,6 @@
 import { Home, ClipboardList, Map, Package, MoreHorizontal, Clipboard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useProjectConfig } from "@/hooks/useProjectConfig";
-
+import { useWorkspace } from "@/hooks/useWorkspace";
 interface BottomNavigationProps {
   currentPage: string;
 }
@@ -25,7 +24,7 @@ const allNavItems: NavItem[] = [
 
 export const BottomNavigation = ({ currentPage }: BottomNavigationProps) => {
   const navigate = useNavigate();
-  const { features } = useProjectConfig();
+  const { features } = useWorkspace();
 
   // Filter nav items based on enabled features
   const navItems = allNavItems.filter(item => {
