@@ -4,6 +4,7 @@ export type ProjectType =
   | 'brand_activation'      // Focus: All features
   | 'door_to_door'          // Focus: Sales + Surveys + Interactions
   | 'sampling'              // Focus: Giveaways only
+  | 'wholesale'             // Focus: Inventory without quantity, no routes, no daily sales
   | 'hybrid';               // All features enabled (default)
 
 export interface QuickActionFeatures {
@@ -20,6 +21,14 @@ export interface PageFeatures {
   reports: boolean;
 }
 
+export interface ReportFeatures {
+  showDailySales: boolean;
+}
+
+export interface InventoryFeatures {
+  showQuantity: boolean;
+}
+
 export interface MetricFeatures {
   showSalesTarget: boolean;
   showSurveyCount: boolean;
@@ -30,6 +39,8 @@ export interface ProjectFeatureConfig {
   quickActions: QuickActionFeatures;
   pages: PageFeatures;
   metrics: MetricFeatures;
+  reports: ReportFeatures;
+  inventory: InventoryFeatures;
 }
 
 export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = {
@@ -50,7 +61,9 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
       showSalesTarget: true, 
       showSurveyCount: false, 
       showTasksToday: true 
-    }
+    },
+    reports: { showDailySales: true },
+    inventory: { showQuantity: true }
   },
   survey_campaign: {
     quickActions: { 
@@ -69,7 +82,9 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
       showSalesTarget: false, 
       showSurveyCount: true, 
       showTasksToday: true 
-    }
+    },
+    reports: { showDailySales: true },
+    inventory: { showQuantity: true }
   },
   brand_activation: {
     quickActions: { 
@@ -88,7 +103,9 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
       showSalesTarget: true, 
       showSurveyCount: true, 
       showTasksToday: true 
-    }
+    },
+    reports: { showDailySales: true },
+    inventory: { showQuantity: true }
   },
   door_to_door: {
     quickActions: { 
@@ -107,7 +124,9 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
       showSalesTarget: true, 
       showSurveyCount: true, 
       showTasksToday: true 
-    }
+    },
+    reports: { showDailySales: true },
+    inventory: { showQuantity: true }
   },
   sampling: {
     quickActions: { 
@@ -126,7 +145,30 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
       showSalesTarget: false, 
       showSurveyCount: false, 
       showTasksToday: true 
-    }
+    },
+    reports: { showDailySales: true },
+    inventory: { showQuantity: true }
+  },
+  wholesale: {
+    quickActions: { 
+      recordSale: true, 
+      giveProducts: false, 
+      startSurvey: false, 
+      logInteraction: true 
+    },
+    pages: { 
+      surveys: false, 
+      inventory: true, 
+      routes: false, 
+      reports: true 
+    },
+    metrics: { 
+      showSalesTarget: true, 
+      showSurveyCount: false, 
+      showTasksToday: true 
+    },
+    reports: { showDailySales: false },
+    inventory: { showQuantity: false }
   },
   hybrid: {
     quickActions: { 
@@ -145,7 +187,9 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
       showSalesTarget: true, 
       showSurveyCount: true, 
       showTasksToday: true 
-    }
+    },
+    reports: { showDailySales: true },
+    inventory: { showQuantity: true }
   }
 };
 
@@ -155,6 +199,7 @@ export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
   brand_activation: 'Brand Activation',
   door_to_door: 'Door to Door',
   sampling: 'Product Sampling',
+  wholesale: 'Wholesale',
   hybrid: 'Hybrid (All Features)'
 };
 
