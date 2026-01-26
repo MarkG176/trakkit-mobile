@@ -3,13 +3,10 @@ import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Package, ShoppingCart, Gift, ArrowLeft } from "lucide-react";
 import { useInventory, InventoryItem } from "@/hooks/useInventory";
-import { useWorkspace } from "@/hooks/useWorkspace";
 
 export const Inventory = () => {
   const [selectedProduct, setSelectedProduct] = useState<InventoryItem | null>(null);
   const { inventory, loading } = useInventory();
-  const { features } = useWorkspace();
-  const showQuantity = features.inventory.showQuantity;
 
   if (loading) {
     return (
@@ -57,17 +54,15 @@ export const Inventory = () => {
                 <span className="text-body text-secondary-foreground">SKU</span>
                 <span className="text-h3 font-medium">{selectedProduct.sku || 'N/A'}</span>
               </div>
-              {showQuantity && (
-                <div className="flex items-center justify-between">
-                  <span className="text-body text-secondary-foreground">Stock Available</span>
-                  <span className={`text-h3 font-bold ${
-                    selectedProduct.amount_issued < 5 ? "text-destructive" : 
-                    selectedProduct.amount_issued < 10 ? "text-warning" : "text-success"
-                  }`}>
-                    {selectedProduct.amount_issued} units
-                  </span>
-                </div>
-              )}
+              <div className="flex items-center justify-between">
+                <span className="text-body text-secondary-foreground">Stock Available</span>
+                <span className={`text-h3 font-bold ${
+                  selectedProduct.amount_issued < 5 ? "text-destructive" : 
+                  selectedProduct.amount_issued < 10 ? "text-warning" : "text-success"
+                }`}>
+                  {selectedProduct.amount_issued} units
+                </span>
+              </div>
             </div>
 
             {/* Price */}
@@ -79,13 +74,11 @@ export const Inventory = () => {
             </div>
 
             {/* Product Info */}
-            {showQuantity && (
-              <div className="performance-card mb-6">
-                <h3 className="text-h3 mb-2">Product Details</h3>
-                <p className="text-body text-secondary-foreground">SKU: {selectedProduct.sku || 'N/A'}</p>
-                <p className="text-body text-secondary-foreground mt-2">Amount Issued: {selectedProduct.amount_issued}</p>
-              </div>
-            )}
+            <div className="performance-card mb-6">
+              <h3 className="text-h3 mb-2">Product Details</h3>
+              <p className="text-body text-secondary-foreground">SKU: {selectedProduct.sku || 'N/A'}</p>
+              <p className="text-body text-secondary-foreground mt-2">Amount Issued: {selectedProduct.amount_issued}</p>
+            </div>
 
             {/* Actions */}
             <div className="space-y-3">
@@ -131,26 +124,24 @@ export const Inventory = () => {
                     <Package size={24} className="text-primary" />
                   </div>
                   
-                    <div className="flex-1">
-                      <h3 className="text-h3 mb-1">{item.name || 'Product'}</h3>
-                      <div className="flex items-center gap-2 mb-2">
-                        <p className="text-secondary text-xs font-medium">{item.sku || 'N/A'}</p>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <span className="text-body font-medium">KES {item.price || 0}</span>
-                        {showQuantity && (
-                          <div className="flex items-center gap-1">
-                            <span className={`text-sm font-medium ${
-                              item.amount_issued < 5 ? "text-destructive" : 
-                              item.amount_issued < 10 ? "text-warning" : "text-success"
-                            }`}>
-                              {item.amount_issued} in stock
-                            </span>
-                          </div>
-                        )}
+                  <div className="flex-1">
+                    <h3 className="text-h3 mb-1">{item.name || 'Product'}</h3>
+                    <div className="flex items-center gap-2 mb-2">
+                      <p className="text-secondary text-xs font-medium">{item.sku || 'N/A'}</p>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <span className="text-body font-medium">KES {item.price || 0}</span>
+                      <div className="flex items-center gap-1">
+                        <span className={`text-sm font-medium ${
+                          item.amount_issued < 5 ? "text-destructive" : 
+                          item.amount_issued < 10 ? "text-warning" : "text-success"
+                        }`}>
+                          {item.amount_issued} in stock
+                        </span>
                       </div>
                     </div>
+                  </div>
                 </div>
               </div>
             ))}

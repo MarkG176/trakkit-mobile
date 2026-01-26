@@ -52,7 +52,7 @@ export const Routes = () => {
   const [addedStore, setAddedStore] = useState<{ id: string; name: string; county: string } | null>(null);
   const { toast } = useToast();
   const { recordLocationSet } = useAgentActions();
-  const { currentWorkspaceId, features } = useWorkspace();
+  const { currentWorkspaceId } = useWorkspace();
 
   useEffect(() => {
     fetchStores();
@@ -360,10 +360,9 @@ export const Routes = () => {
       </div>
 
 
+      {/* Location Selection Form */}
       <div className="px-4 pb-20">
-        {/* Location Selection Form - Only for wholesale/instore */}
-        {features.routes.showAssignedLocation && (
-          <Card className="p-4">
+        <Card className="p-4">
           <h2 className="text-h2 mb-4">Set Your Assigned Location</h2>
           
           
@@ -430,11 +429,9 @@ export const Routes = () => {
               {isSubmitting ? "Setting Location..." : "Submit Location"}
             </Button>
           </div>
-          </Card>
-        )}
+        </Card>
 
-        {/* Add Location Form - Hidden for wholesale */}
-        {features.routes.showAddLocation && (
+        {/* Add Location Form */}
         <Card className="p-4 mt-4">
           <div className="flex items-center gap-2 mb-4">
             <Plus size={20} className="text-primary" />
@@ -535,7 +532,6 @@ export const Routes = () => {
             </div>
           )}
         </Card>
-        )}
       </div>
 
       {addedStore && (

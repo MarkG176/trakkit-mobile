@@ -5,23 +5,18 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { useAgentStatus } from "@/hooks/useAgentStatus";
 import { useToast } from "@/hooks/use-toast";
-import { useWorkspace } from "@/hooks/useWorkspace";
 import { CheckCircle, Clock, MapPin, Camera } from "lucide-react";
 import { CameraCapture } from "@/components/CameraCapture";
-import { StockReportDialog } from "./StockReportDialog";
 import { supabase } from "@/integrations/supabase/client";
 
 export const RecordAttendanceForm = () => {
   const { user } = useAuth();
   const { currentStatus, loading, updateStatus } = useAgentStatus();
   const { toast } = useToast();
-  const { features } = useWorkspace();
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<'checked_in' | 'lunch' | 'checked_out' | null>(null);
   const [loadingOverride, setLoadingOverride] = useState(false);
-  const [showStockReportDialog, setShowStockReportDialog] = useState(false);
-  const [stockReportType, setStockReportType] = useState<'morning' | 'evening'>('morning');
   const cameraRef = useRef<HTMLInputElement>(null);
   // Ref-based guard to prevent duplicate calls (survives re-renders and is synchronous)
   const isProcessingRef = useRef(false);
@@ -84,15 +79,6 @@ export const RecordAttendanceForm = () => {
           title: 'Success',
           description: successMessage,
         });
-
-        // Show stock report dialog for wholesale projects
-        if (statusToSet === 'checked_in' && features.attendance.showStockReportOnCheckIn) {
-          setStockReportType('morning');
-          setShowStockReportDialog(true);
-        } else if (statusToSet === 'checked_out' && features.attendance.showStockReportOnCheckOut) {
-          setStockReportType('evening');
-          setShowStockReportDialog(true);
-        }
       } else {
         toast({
           title: 'Error',
@@ -115,7 +101,7 @@ export const RecordAttendanceForm = () => {
         isProcessingRef.current = false;
       }, 1000);
     }
-  }, [user, pendingStatus, currentStatus, updateStatus, toast, features.attendance]);
+  }, [user, pendingStatus, currentStatus, updateStatus, toast]);
 
   const getCurrentLocation = (): Promise<{ lat: number; lng: number }> => {
     return new Promise((resolve, reject) => {
@@ -274,12 +260,6 @@ export const RecordAttendanceForm = () => {
         onCapture={handleCameraCapture}
         mode="status"
         variant="inline"
-      />
-
-      <StockReportDialog
-        isOpen={showStockReportDialog}
-        onClose={() => setShowStockReportDialog(false)}
-        reportType={stockReportType}
       />
     </Card>
   );

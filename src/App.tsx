@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { WorkspaceProvider } from "@/hooks/useWorkspace";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { FeatureRoute } from "@/components/FeatureRoute";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { Dashboard } from "./pages/Dashboard";
 import { AgentDashboard } from "./pages/AgentDashboard";
@@ -105,23 +104,17 @@ const App = () => (
             } />
             <Route path="/surveys" element={
               <ProtectedRoute>
-                <FeatureRoute feature="surveys">
-                  <Surveys />
-                </FeatureRoute>
+                <Surveys />
               </ProtectedRoute>
             } />
             <Route path="/routes" element={
               <ProtectedRoute>
-                <FeatureRoute feature="routes">
-                  <RoutesPage />
-                </FeatureRoute>
+                <RoutesPage />
               </ProtectedRoute>
             } />
             <Route path="/inventory" element={
               <ProtectedRoute>
-                <FeatureRoute feature="inventory">
-                  <Inventory />
-                </FeatureRoute>
+                <Inventory />
               </ProtectedRoute>
             } />
             <Route path="/more" element={
