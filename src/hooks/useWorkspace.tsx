@@ -1,12 +1,15 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { workspaceService, UserWorkspace } from '@/services/workspaceService';
 import { useAuth } from './useAuth';
+import { ProjectType, ProjectFeatureConfig, PROJECT_TYPE_FEATURES, DEFAULT_PROJECT_TYPE } from '@/config/projectTypes';
 
 interface WorkspaceContextType {
   currentWorkspaceId: string | null;
   currentProjectId: string | null;
   userWorkspaces: UserWorkspace[];
   currentWorkspaceRole: 'admin' | 'member' | 'viewer' | null;
+  currentTeamType: ProjectType;
+  features: ProjectFeatureConfig;
   isLoading: boolean;
   switchWorkspace: (workspaceId: string) => Promise<boolean>;
   refreshWorkspaces: () => Promise<void>;
@@ -21,8 +24,12 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [userWorkspaces, setUserWorkspaces] = useState<UserWorkspace[]>([]);
   const [currentWorkspaceRole, setCurrentWorkspaceRole] = useState<'admin' | 'member' | 'viewer' | null>(null);
+  const [currentTeamType, setCurrentTeamType] = useState<ProjectType>(DEFAULT_PROJECT_TYPE);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+
+  // Compute features based on current team type
+  const features = PROJECT_TYPE_FEATURES[currentTeamType];
 
   useEffect(() => {
     if (user && workspaceService.isInitialized()) {
@@ -51,6 +58,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     setCurrentProjectId(workspaceService.getCurrentProjectId());
     setUserWorkspaces(workspaceService.getUserWorkspaces());
     setCurrentWorkspaceRole(workspaceService.getCurrentWorkspaceRole());
+    setCurrentTeamType(workspaceService.getCurrentTeamType() as ProjectType);
     setIsInitialized(workspaceService.isInitialized());
   };
 
@@ -88,6 +96,8 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
       currentProjectId,
       userWorkspaces,
       currentWorkspaceRole,
+      currentTeamType,
+      features,
       isLoading,
       switchWorkspace,
       refreshWorkspaces,
