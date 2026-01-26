@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useInventory, InventoryItem } from "@/hooks/useInventory";
+import { SaleFeedbackDialog, FeedbackData } from "@/components/dashboard/SaleFeedbackDialog";
 
 interface CartItem {
   id: string;
@@ -33,6 +34,12 @@ export const RecordSale = () => {
   const [customerEmail, setCustomerEmail] = useState("");
   const [showCart, setShowCart] = useState(false);
   const [showCustomerInfo, setShowCustomerInfo] = useState(false);
+  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
+  const [pendingSaleData, setPendingSaleData] = useState<{
+    totalAmount: number;
+    itemCount: number;
+    customerName: string;
+  } | null>(null);
 
   const addToCart = (item: InventoryItem) => {
     const existingItem = cartItems.find(cartItem => cartItem.id === item.product_variant_id);
@@ -68,6 +75,17 @@ export const RecordSale = () => {
       return;
     }
     
+    // Store sale data and show feedback dialog
+    setPendingSaleData({
+      totalAmount: totalAmount,
+      itemCount: cartItems.reduce((sum, item) => sum + item.quantity, 0),
+      customerName: customerName || 'Customer',
+    });
+    setShowCustomerInfo(false);
+    setShowFeedbackDialog(true);
+  };
+
+  const processSaleWithFeedback = async (feedbackData: FeedbackData) => {
     try {
       // Get current location
       let location = { latitude: null, longitude: null };
@@ -127,7 +145,7 @@ export const RecordSale = () => {
         }
       }
 
-      // Submit sale with customer tracking
+      // Submit sale with feedback data
       const success = await submitSale({
         items: cartItems.map(item => ({
           productVariantId: item.id,
@@ -137,9 +155,9 @@ export const RecordSale = () => {
         customerName,
         customerPhone,
         customerEmail,
-        engagementType: 'direct',
-        notes: '',
-        sentiment: 0
+        engagementType: feedbackData.engagementType,
+        notes: feedbackData.notes,
+        sentiment: feedbackData.sentiment
       });
 
       // Record customer purchases if customer was created
@@ -161,6 +179,7 @@ export const RecordSale = () => {
       }
 
       if (success) {
+        setShowFeedbackDialog(false);
         navigate("/");
       }
     } catch (error) {
@@ -168,24 +187,16 @@ export const RecordSale = () => {
     }
   };
 
-  const handleEngagementSave = async (engagementData: any) => {
-    const success = await submitSale({
-      items: cartItems.map(item => ({
-        productVariantId: item.id,
-        quantity: item.quantity,
-        price: item.price
-      })),
-      customerName,
-      customerPhone,
-      customerEmail,
-      engagementType: engagementData.engagementType,
-      notes: engagementData.notes,
-      sentiment: engagementData.sentiment
-    });
+  const handleFeedbackSubmit = async (feedbackData: FeedbackData) => {
+    await processSaleWithFeedback(feedbackData);
+  };
 
-    if (success) {
-      navigate("/");
-    }
+  const handleFeedbackSkip = async () => {
+    await processSaleWithFeedback({
+      engagementType: 'direct',
+      notes: '',
+      sentiment: 0
+    });
   };
 
   const filteredInventory = inventory.filter(item =>
@@ -430,6 +441,19 @@ export const RecordSale = () => {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Feedback Dialog */}
+      {pendingSaleData && (
+        <SaleFeedbackDialog
+          open={showFeedbackDialog}
+          onOpenChange={setShowFeedbackDialog}
+          onSubmit={handleFeedbackSubmit}
+          onSkip={handleFeedbackSkip}
+          totalAmount={pendingSaleData.totalAmount}
+          itemCount={pendingSaleData.itemCount}
+          customerName={pendingSaleData.customerName}
+        />
+      )}
 
     </MobileLayout>
   );

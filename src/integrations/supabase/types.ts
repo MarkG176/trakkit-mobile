@@ -2641,6 +2641,67 @@ export type Database = {
           },
         ]
       }
+      stock_reports: {
+        Row: {
+          agent_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          product_variant_id: string
+          report_type: string
+          reported_at: string
+          stock_level: string
+          store_id: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_variant_id: string
+          report_type: string
+          reported_at?: string
+          stock_level: string
+          store_id?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_variant_id?: string
+          report_type?: string
+          reported_at?: string
+          stock_level?: string
+          store_id?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_reports_product_variant_id_fkey"
+            columns: ["product_variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_reports_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_reports_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_visits: {
         Row: {
           agent_id: string
@@ -3229,6 +3290,7 @@ export type Database = {
           name: string | null
           project_id: string | null
           team_lead_id: string | null
+          team_type: string | null
           workspace_id: string | null
         }
         Insert: {
@@ -3240,6 +3302,7 @@ export type Database = {
           name?: string | null
           project_id?: string | null
           team_lead_id?: string | null
+          team_type?: string | null
           workspace_id?: string | null
         }
         Update: {
@@ -3251,6 +3314,7 @@ export type Database = {
           name?: string | null
           project_id?: string | null
           team_lead_id?: string | null
+          team_type?: string | null
           workspace_id?: string | null
         }
         Relationships: [
@@ -3394,6 +3458,7 @@ export type Database = {
           is_deleted: boolean | null
           name: string | null
           role: string
+          team_type: string | null
           updated_at: string | null
           user_id: string | null
           workspace_id: string | null
@@ -3406,6 +3471,7 @@ export type Database = {
           is_deleted?: boolean | null
           name?: string | null
           role: string
+          team_type?: string | null
           updated_at?: string | null
           user_id?: string | null
           workspace_id?: string | null
@@ -3418,6 +3484,7 @@ export type Database = {
           is_deleted?: boolean | null
           name?: string | null
           role?: string
+          team_type?: string | null
           updated_at?: string | null
           user_id?: string | null
           workspace_id?: string | null
