@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { workspaceService } from "@/services/workspaceService";
 import { toast } from "sonner";
+import { useProjectConfig } from "@/hooks/useProjectConfig";
 
 interface InventoryItem {
   id: string;
@@ -25,6 +26,7 @@ export const Reports = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { currentWorkspaceId } = useWorkspace();
+  const { features } = useProjectConfig();
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -204,57 +206,59 @@ export const Reports = () => {
       </div>
 
       <div className="p-4 space-y-6">
-        <Card>
-          <CardContent className="p-6">
-            <h3 className="text-h3 mb-6 text-black">Report Daily Sales</h3>
-            
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="product" className="text-sm mb-2 block">
-                    Product
-                  </Label>
-                  <Select value={selectedProduct} onValueChange={setSelectedProduct}>
-                    <SelectTrigger id="product">
-                      <SelectValue placeholder="Select product" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {inventory.map((item) => (
-                        <SelectItem key={item.id} value={item.product_variant_id}>
-                          {item.name || 'Unknown Product'}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+        {features.reports.showDailySales && (
+          <Card>
+            <CardContent className="p-6">
+              <h3 className="text-h3 mb-6 text-black">Report Daily Sales</h3>
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="product" className="text-sm mb-2 block">
+                      Product
+                    </Label>
+                    <Select value={selectedProduct} onValueChange={setSelectedProduct}>
+                      <SelectTrigger id="product">
+                        <SelectValue placeholder="Select product" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {inventory.map((item) => (
+                          <SelectItem key={item.id} value={item.product_variant_id}>
+                            {item.name || 'Unknown Product'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="amount" className="text-sm mb-2 block">
+                      Amount
+                    </Label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      placeholder="0.00"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
                 </div>
-                
-                <div>
-                  <Label htmlFor="amount" className="text-sm mb-2 block">
-                    Amount
-                  </Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    placeholder="0.00"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-              </div>
 
-              <Button 
-                type="button"
-                onClick={handleSubmitSale} 
-                disabled={submitting || loading || !selectedProduct || !amount}
-                className="w-full"
-              >
-                {submitting ? "Submitting..." : "Submit Sale"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                <Button 
+                  type="button"
+                  onClick={handleSubmitSale} 
+                  disabled={submitting || loading || !selectedProduct || !amount}
+                  className="w-full"
+                >
+                  {submitting ? "Submitting..." : "Submit Sale"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardContent className="p-6">
