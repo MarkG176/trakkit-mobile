@@ -23,10 +23,16 @@ export interface PageFeatures {
 
 export interface ReportFeatures {
   showDailySales: boolean;
+  showStockReports: boolean;
 }
 
 export interface InventoryFeatures {
   showQuantity: boolean;
+}
+
+export interface AttendanceFeatures {
+  showStockReportOnCheckIn: boolean;
+  showStockReportOnCheckOut: boolean;
 }
 
 export interface MetricFeatures {
@@ -41,6 +47,7 @@ export interface ProjectFeatureConfig {
   metrics: MetricFeatures;
   reports: ReportFeatures;
   inventory: InventoryFeatures;
+  attendance: AttendanceFeatures;
 }
 
 export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = {
@@ -62,8 +69,9 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
       showSurveyCount: false, 
       showTasksToday: true 
     },
-    reports: { showDailySales: true },
-    inventory: { showQuantity: true }
+    reports: { showDailySales: true, showStockReports: false },
+    inventory: { showQuantity: true },
+    attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false }
   },
   survey_campaign: {
     quickActions: { 
@@ -83,8 +91,9 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
       showSurveyCount: true, 
       showTasksToday: true 
     },
-    reports: { showDailySales: true },
-    inventory: { showQuantity: true }
+    reports: { showDailySales: true, showStockReports: false },
+    inventory: { showQuantity: true },
+    attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false }
   },
   brand_activation: {
     quickActions: { 
@@ -104,8 +113,9 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
       showSurveyCount: true, 
       showTasksToday: true 
     },
-    reports: { showDailySales: true },
-    inventory: { showQuantity: true }
+    reports: { showDailySales: true, showStockReports: false },
+    inventory: { showQuantity: true },
+    attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false }
   },
   door_to_door: {
     quickActions: { 
@@ -125,8 +135,9 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
       showSurveyCount: true, 
       showTasksToday: true 
     },
-    reports: { showDailySales: true },
-    inventory: { showQuantity: true }
+    reports: { showDailySales: true, showStockReports: false },
+    inventory: { showQuantity: true },
+    attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false }
   },
   sampling: {
     quickActions: { 
@@ -146,8 +157,9 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
       showSurveyCount: false, 
       showTasksToday: true 
     },
-    reports: { showDailySales: true },
-    inventory: { showQuantity: true }
+    reports: { showDailySales: true, showStockReports: false },
+    inventory: { showQuantity: true },
+    attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false }
   },
   wholesale: {
     quickActions: { 
@@ -167,8 +179,9 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
       showSurveyCount: false, 
       showTasksToday: true 
     },
-    reports: { showDailySales: false },
-    inventory: { showQuantity: false }
+    reports: { showDailySales: false, showStockReports: true },
+    inventory: { showQuantity: false },
+    attendance: { showStockReportOnCheckIn: true, showStockReportOnCheckOut: true }
   },
   hybrid: {
     quickActions: { 
@@ -188,8 +201,9 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
       showSurveyCount: true, 
       showTasksToday: true 
     },
-    reports: { showDailySales: true },
-    inventory: { showQuantity: true }
+    reports: { showDailySales: true, showStockReports: false },
+    inventory: { showQuantity: true },
+    attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false }
   }
 };
 

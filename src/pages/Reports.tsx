@@ -14,6 +14,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { workspaceService } from "@/services/workspaceService";
 import { toast } from "sonner";
 import { useProjectConfig } from "@/hooks/useProjectConfig";
+import { StockReportsCard } from "@/components/reports/StockReportsCard";
 
 interface InventoryItem {
   id: string;
@@ -258,6 +259,10 @@ export const Reports = () => {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {features.reports.showStockReports && (
+          <StockReportsCard />
         )}
 
         <Card>
