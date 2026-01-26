@@ -70,7 +70,7 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
       showTasksToday: true 
     },
     reports: { showDailySales: true, showStockReports: false },
-    inventory: { showQuantity: true },
+    inventory: { showQuantity: false },
     attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false }
   },
   survey_campaign: {
@@ -92,7 +92,7 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
       showTasksToday: true 
     },
     reports: { showDailySales: true, showStockReports: false },
-    inventory: { showQuantity: true },
+    inventory: { showQuantity: false },
     attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false }
   },
   brand_activation: {
@@ -114,7 +114,7 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
       showTasksToday: true 
     },
     reports: { showDailySales: true, showStockReports: false },
-    inventory: { showQuantity: true },
+    inventory: { showQuantity: false },
     attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false }
   },
   door_to_door: {
@@ -202,7 +202,7 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
       showTasksToday: true 
     },
     reports: { showDailySales: true, showStockReports: false },
-    inventory: { showQuantity: true },
+    inventory: { showQuantity: false },
     attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false }
   }
 };
