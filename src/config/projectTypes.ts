@@ -4,6 +4,7 @@ export type ProjectType =
   | 'brand_activation'      // Focus: All features
   | 'door_to_door'          // Focus: Sales + Surveys + Interactions
   | 'sampling'              // Focus: Giveaways only
+  | 'instore'               // Focus: In-store activations with assigned locations
   | 'wholesale'             // Focus: Inventory without quantity, no routes, no daily sales
   | 'hybrid';               // All features enabled (default)
 
@@ -172,6 +173,29 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
     attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false },
     routes: { showAssignedLocation: false, showAddLocation: true }
   },
+  instore: {
+    quickActions: { 
+      recordSale: true, 
+      giveProducts: true, 
+      startSurvey: false, 
+      logInteraction: true 
+    },
+    pages: { 
+      surveys: false, 
+      inventory: true, 
+      routes: false, 
+      reports: true 
+    },
+    metrics: { 
+      showSalesTarget: true, 
+      showSurveyCount: false, 
+      showTasksToday: true 
+    },
+    reports: { showDailySales: false, showStockReports: true },
+    inventory: { showQuantity: false },
+    attendance: { showStockReportOnCheckIn: true, showStockReportOnCheckOut: true },
+    routes: { showAssignedLocation: true, showAddLocation: false }
+  },
   wholesale: {
     quickActions: { 
       recordSale: true, 
@@ -226,6 +250,7 @@ export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
   brand_activation: 'Brand Activation',
   door_to_door: 'Door to Door',
   sampling: 'Product Sampling',
+  instore: 'In-Store',
   wholesale: 'Wholesale',
   hybrid: 'Hybrid (All Features)'
 };
