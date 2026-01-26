@@ -3,12 +3,12 @@ import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Package, ShoppingCart, Gift, ArrowLeft } from "lucide-react";
 import { useInventory, InventoryItem } from "@/hooks/useInventory";
-import { useProjectConfig } from "@/hooks/useProjectConfig";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 export const Inventory = () => {
   const [selectedProduct, setSelectedProduct] = useState<InventoryItem | null>(null);
   const { inventory, loading } = useInventory();
-  const { features } = useProjectConfig();
+  const { features } = useWorkspace();
   const showQuantity = features.inventory.showQuantity;
 
   if (loading) {

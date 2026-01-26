@@ -1,12 +1,12 @@
 import { Plus, ShoppingCart, Gift, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { useProjectConfig } from "@/hooks/useProjectConfig";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const QuickActions = () => {
   const navigate = useNavigate();
-  const { features, isLoading } = useProjectConfig();
+  const { features, isLoading } = useWorkspace();
 
   const actions = [
     {

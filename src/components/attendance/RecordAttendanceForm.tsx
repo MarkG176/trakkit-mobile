@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { useAgentStatus } from "@/hooks/useAgentStatus";
 import { useToast } from "@/hooks/use-toast";
-import { useProjectConfig } from "@/hooks/useProjectConfig";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { CheckCircle, Clock, MapPin, Camera } from "lucide-react";
 import { CameraCapture } from "@/components/CameraCapture";
 import { StockReportDialog } from "./StockReportDialog";
@@ -15,7 +15,7 @@ export const RecordAttendanceForm = () => {
   const { user } = useAuth();
   const { currentStatus, loading, updateStatus } = useAgentStatus();
   const { toast } = useToast();
-  const { features } = useProjectConfig();
+  const { features } = useWorkspace();
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<'checked_in' | 'lunch' | 'checked_out' | null>(null);

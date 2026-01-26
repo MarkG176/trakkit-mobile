@@ -1,7 +1,7 @@
 import { Calendar, CheckCircle, Target } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Label } from "@/components/ui/label";
-import { useProjectConfig } from "@/hooks/useProjectConfig";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface PerformanceData {
@@ -15,7 +15,7 @@ interface PerformanceCardsProps {
 }
 
 export const PerformanceCards = ({ data }: PerformanceCardsProps) => {
-  const { features, isLoading } = useProjectConfig();
+  const { features, isLoading } = useWorkspace();
   const salesProgress = data.salesTarget.target > 0 ? (data.salesTarget.current / data.salesTarget.target) * 100 : 0;
 
   if (isLoading) {

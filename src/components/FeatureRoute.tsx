@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useProjectConfig } from '@/hooks/useProjectConfig';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { PageFeatures } from '@/config/projectTypes';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -15,7 +15,7 @@ export const FeatureRoute = ({
   children, 
   fallbackPath = '/agent' 
 }: FeatureRouteProps) => {
-  const { features, isLoading } = useProjectConfig();
+  const { features, isLoading } = useWorkspace();
 
   if (isLoading) {
     return (

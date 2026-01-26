@@ -13,7 +13,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { workspaceService } from "@/services/workspaceService";
 import { toast } from "sonner";
-import { useProjectConfig } from "@/hooks/useProjectConfig";
 import { StockReportsCard } from "@/components/reports/StockReportsCard";
 
 interface InventoryItem {
@@ -26,8 +25,7 @@ interface InventoryItem {
 export const Reports = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { currentWorkspaceId } = useWorkspace();
-  const { features } = useProjectConfig();
+  const { currentWorkspaceId, features } = useWorkspace();
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
