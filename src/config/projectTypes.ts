@@ -21,6 +21,10 @@ export interface PageFeatures {
   reports: boolean;
 }
 
+export interface RoutesFeatures {
+  showAssignedLocation: boolean;
+}
+
 export interface ReportFeatures {
   showDailySales: boolean;
   showStockReports: boolean;
@@ -48,6 +52,7 @@ export interface ProjectFeatureConfig {
   reports: ReportFeatures;
   inventory: InventoryFeatures;
   attendance: AttendanceFeatures;
+  routes: RoutesFeatures;
 }
 
 export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = {
@@ -71,7 +76,8 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
     },
     reports: { showDailySales: true, showStockReports: false },
     inventory: { showQuantity: false },
-    attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false }
+    attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false },
+    routes: { showAssignedLocation: false }
   },
   survey_campaign: {
     quickActions: { 
@@ -93,7 +99,8 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
     },
     reports: { showDailySales: true, showStockReports: false },
     inventory: { showQuantity: false },
-    attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false }
+    attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false },
+    routes: { showAssignedLocation: false }
   },
   brand_activation: {
     quickActions: { 
@@ -115,7 +122,8 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
     },
     reports: { showDailySales: true, showStockReports: false },
     inventory: { showQuantity: false },
-    attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false }
+    attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false },
+    routes: { showAssignedLocation: false }
   },
   door_to_door: {
     quickActions: { 
@@ -137,7 +145,8 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
     },
     reports: { showDailySales: true, showStockReports: false },
     inventory: { showQuantity: true },
-    attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false }
+    attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false },
+    routes: { showAssignedLocation: false }
   },
   sampling: {
     quickActions: { 
@@ -159,7 +168,8 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
     },
     reports: { showDailySales: true, showStockReports: false },
     inventory: { showQuantity: true },
-    attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false }
+    attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false },
+    routes: { showAssignedLocation: false }
   },
   wholesale: {
     quickActions: { 
@@ -181,7 +191,8 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
     },
     reports: { showDailySales: false, showStockReports: true },
     inventory: { showQuantity: false },
-    attendance: { showStockReportOnCheckIn: true, showStockReportOnCheckOut: true }
+    attendance: { showStockReportOnCheckIn: true, showStockReportOnCheckOut: true },
+    routes: { showAssignedLocation: true }
   },
   hybrid: {
     quickActions: { 
@@ -203,7 +214,8 @@ export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeatureConfig> = 
     },
     reports: { showDailySales: true, showStockReports: false },
     inventory: { showQuantity: false },
-    attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false }
+    attendance: { showStockReportOnCheckIn: false, showStockReportOnCheckOut: false },
+    routes: { showAssignedLocation: false }
   }
 };
 
