@@ -3290,6 +3290,7 @@ export type Database = {
           name: string | null
           project_id: string | null
           team_lead_id: string | null
+          team_type: string | null
           workspace_id: string | null
         }
         Insert: {
@@ -3301,6 +3302,7 @@ export type Database = {
           name?: string | null
           project_id?: string | null
           team_lead_id?: string | null
+          team_type?: string | null
           workspace_id?: string | null
         }
         Update: {
@@ -3312,6 +3314,7 @@ export type Database = {
           name?: string | null
           project_id?: string | null
           team_lead_id?: string | null
+          team_type?: string | null
           workspace_id?: string | null
         }
         Relationships: [
