@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Mail, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Loader2, Mail, CheckCircle } from 'lucide-react';
 import trakkitLogo from '@/assets/trakkit-logo.png';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -17,24 +17,6 @@ export const Login = () => {
   const { signInWithMagicLink, user, loading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  
-  const errorParam = searchParams.get('error');
-  const errorMessage = errorParam === 'invalid_link' 
-    ? 'Invalid login link. Please request a new one.'
-    : errorParam === 'auth_failed'
-    ? 'Login failed. Please try again.'
-    : null;
-
-  // Clear error from URL after displaying
-  useEffect(() => {
-    if (errorParam) {
-      const timer = setTimeout(() => {
-        setSearchParams({}, { replace: true });
-      }, 10000); // Clear after 10 seconds
-      return () => clearTimeout(timer);
-    }
-  }, [errorParam, setSearchParams]);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -139,12 +121,6 @@ export const Login = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {errorMessage && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>{errorMessage}</AlertDescription>
-            </Alert>
-          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email address</Label>
