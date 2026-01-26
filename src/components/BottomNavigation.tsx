@@ -16,10 +16,10 @@ interface NavItem {
 
 const allNavItems: NavItem[] = [
   { id: "dashboard", label: "Dashboard", icon: Home, path: "/" },
-  { id: "reports", label: "Reports", icon: Clipboard, path: "/reports", featureKey: 'reports' },
+  { id: "inventory", label: "Inventory", icon: Package, path: "/inventory", featureKey: 'inventory' },
   { id: "surveys", label: "Surveys", icon: ClipboardList, path: "/surveys", featureKey: 'surveys' },
   { id: "routes", label: "Routes", icon: Map, path: "/routes", featureKey: 'routes' },
-  { id: "inventory", label: "Inventory", icon: Package, path: "/inventory", featureKey: 'inventory' },
+  { id: "reports", label: "Reports", icon: Clipboard, path: "/reports", featureKey: 'reports' },
   { id: "more", label: "More", icon: MoreHorizontal, path: "/more" },
 ];
 
