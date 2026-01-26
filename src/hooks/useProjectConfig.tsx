@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useWorkspace } from './useWorkspace';
+import { useAuth } from './useAuth';
 import { 
   ProjectType, 
   ProjectFeatureConfig, 
@@ -16,52 +16,45 @@ interface UseProjectConfigReturn {
 }
 
 export const useProjectConfig = (): UseProjectConfigReturn => {
-  const { currentProjectId, currentWorkspaceId } = useWorkspace();
+  const { user } = useAuth();
 
   const { data: projectType, isLoading, error } = useQuery({
-    queryKey: ['project-type', currentProjectId, currentWorkspaceId],
+    queryKey: ['project-type', user?.id],
     queryFn: async (): Promise<ProjectType> => {
-      if (!currentProjectId && !currentWorkspaceId) {
+      if (!user?.id) {
         return DEFAULT_PROJECT_TYPE;
       }
 
-      // Try to get project type from current project first
-      if (currentProjectId) {
-        const { data: project, error: projectError } = await supabase
-          .from('project_plans')
-          .select('project_type')
-          .eq('id', currentProjectId)
-          .maybeSingle();
+      // Query 1: Get agent's team and its project_id
+      const { data: teamMember } = await supabase
+        .from('team_members')
+        .select('team_id, teams(project_id)')
+        .eq('agent_id', user.id)
+        .eq('is_deleted', false)
+        .limit(1)
+        .maybeSingle();
 
-        if (!projectError && project?.project_type) {
-          return project.project_type as ProjectType;
-        }
+      const projectId = (teamMember?.teams as { project_id: string } | null)?.project_id;
+
+      if (!projectId) {
+        return DEFAULT_PROJECT_TYPE;
       }
 
-      // Fallback: get the most recent active project for the workspace
-      if (currentWorkspaceId) {
-        const today = new Date().toISOString().split('T')[0];
-        
-        const { data: activeProject, error: activeError } = await supabase
-          .from('project_plans')
-          .select('project_type')
-          .eq('workspace_id', currentWorkspaceId)
-          .eq('is_deleted', false)
-          .lte('start_date', today)
-          .gte('end_date', today)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+      // Query 2: Get project_type from project_plans
+      const { data: project } = await supabase
+        .from('project_plans')
+        .select('project_type')
+        .eq('id', projectId)
+        .maybeSingle();
 
-        if (!activeError && activeProject?.project_type) {
-          return activeProject.project_type as ProjectType;
-        }
+      if (project?.project_type) {
+        return project.project_type as ProjectType;
       }
 
       return DEFAULT_PROJECT_TYPE;
     },
-    enabled: true,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
 
