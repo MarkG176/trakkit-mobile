@@ -4,19 +4,24 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { useAgentStatus } from "@/hooks/useAgentStatus";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, Clock, MapPin, Camera } from "lucide-react";
 import { CameraCapture } from "@/components/CameraCapture";
+import { StockReportDialog } from "@/components/attendance/StockReportDialog";
 import { supabase } from "@/integrations/supabase/client";
 
 export const RecordAttendanceForm = () => {
   const { user } = useAuth();
   const { currentStatus, loading, updateStatus } = useAgentStatus();
+  const { currentTeamType } = useWorkspace();
   const { toast } = useToast();
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<'checked_in' | 'lunch' | 'checked_out' | null>(null);
   const [loadingOverride, setLoadingOverride] = useState(false);
+  const [showStockReport, setShowStockReport] = useState(false);
+  const [stockReportType, setStockReportType] = useState<'morning' | 'evening'>('morning');
   const cameraRef = useRef<HTMLInputElement>(null);
   // Ref-based guard to prevent duplicate calls (survives re-renders and is synchronous)
   const isProcessingRef = useRef(false);
@@ -79,6 +84,22 @@ export const RecordAttendanceForm = () => {
           title: 'Success',
           description: successMessage,
         });
+
+        // Check if we need to show stock report dialog for wholesale team_type
+        const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
+        
+        if (isWholesale) {
+          // Show stock report after check-in (morning) or check-out (evening)
+          if (statusToSet === 'checked_in' && previousStatus === 'checked_out') {
+            // Morning check-in
+            setStockReportType('morning');
+            setShowStockReport(true);
+          } else if (statusToSet === 'checked_out') {
+            // Evening check-out
+            setStockReportType('evening');
+            setShowStockReport(true);
+          }
+        }
       } else {
         toast({
           title: 'Error',
@@ -101,7 +122,7 @@ export const RecordAttendanceForm = () => {
         isProcessingRef.current = false;
       }, 1000);
     }
-  }, [user, pendingStatus, currentStatus, updateStatus, toast]);
+  }, [user, pendingStatus, currentStatus, updateStatus, toast, currentTeamType]);
 
   const getCurrentLocation = (): Promise<{ lat: number; lng: number }> => {
     return new Promise((resolve, reject) => {
@@ -260,6 +281,16 @@ export const RecordAttendanceForm = () => {
         onCapture={handleCameraCapture}
         mode="status"
         variant="inline"
+      />
+
+      {/* Stock Report Dialog for Wholesale */}
+      <StockReportDialog
+        open={showStockReport}
+        onOpenChange={setShowStockReport}
+        reportType={stockReportType}
+        onComplete={() => {
+          console.log('Stock report completed');
+        }}
       />
     </Card>
   );
