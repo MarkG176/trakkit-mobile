@@ -105,6 +105,21 @@
     @apply bg-background text-foreground;
     font-family: 'Roboto', sans-serif;
   }
+
+  /* Hide scrollbars globally for mobile experience while keeping scrollability */
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+  
+  *::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+  
+  /* Hide Radix ScrollArea scrollbars */
+  [data-radix-scroll-area-scrollbar] {
+    display: none !important;
+  }
 }
 
 @layer components {
