@@ -1072,9 +1072,10 @@ export type Database = {
           id: string
           notes: string | null
           product_variant_id: string
+          quantity_sold: number | null
           report_type: string
           reported_at: string
-          stock_level: string
+          stock_level: string | null
           store_id: string | null
           work_date: string
           workspace_id: string | null
@@ -1085,9 +1086,10 @@ export type Database = {
           id?: string
           notes?: string | null
           product_variant_id: string
+          quantity_sold?: number | null
           report_type: string
           reported_at?: string
-          stock_level: string
+          stock_level?: string | null
           store_id?: string | null
           work_date?: string
           workspace_id?: string | null
@@ -1098,9 +1100,10 @@ export type Database = {
           id?: string
           notes?: string | null
           product_variant_id?: string
+          quantity_sold?: number | null
           report_type?: string
           reported_at?: string
-          stock_level?: string
+          stock_level?: string | null
           store_id?: string | null
           work_date?: string
           workspace_id?: string | null

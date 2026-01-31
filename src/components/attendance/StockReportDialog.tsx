@@ -146,6 +146,7 @@ export const StockReportDialog = ({
           agent_id: user.id,
           product_variant_id: item.product_variant_id,
           stock_level: stockLevels[item.product_variant_id],
+          quantity_sold: null,
           report_type: reportType,
           work_date: today,
           workspace_id: currentWorkspaceId,
@@ -161,11 +162,11 @@ export const StockReportDialog = ({
         const reports = inventory.map((item) => ({
           agent_id: user.id,
           product_variant_id: item.product_variant_id,
-          stock_level: "reported",
+          stock_level: null,
+          quantity_sold: salesData[item.product_variant_id] || 0,
           report_type: reportType,
           work_date: today,
           workspace_id: currentWorkspaceId,
-          notes: `Sold: ${salesData[item.product_variant_id] || 0}`,
         }));
 
         const { error } = await supabase
