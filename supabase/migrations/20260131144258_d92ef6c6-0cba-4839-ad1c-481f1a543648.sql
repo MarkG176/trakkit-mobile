@@ -1,0 +1,26 @@
+-- Insert store data from CSV with corrected store_type values
+INSERT INTO stores (store_name, store_lat, store_long, county, store_type, address)
+VALUES
+  ('Sam West Distributors Ltd', -1.2861, 36.7214, 'Nairobi', 'General Trade', '100 Dagoretti Rd, Nairobi'),
+  ('Laxmi Wholesalers Ltd', -1.2825, 36.8285, 'Nairobi', 'General Trade', 'River Road, Nairobi CBD'),
+  ('Tucha Trading Limited', -1.3144, 36.8194, 'Nairobi', 'General Trade', 'Muthaiti Ave, Langata, Nairobi'),
+  ('Danab Kilimani Wholesalers', -1.2594, 36.8028, 'Nairobi', 'General Trade', 'E Church Rd, Westlands, Nairobi'),
+  ('Lukman Wholesalers Ltd', -4.0625, 39.6625, 'Mombasa', 'General Trade', 'Mombasa'),
+  ('Mt Kenya Wholesalers', -1.1375, 37.5425, 'Machakos', 'General Trade', 'Matuu, Yatta Plateau'),
+  ('Hilwa General Stores', -1.2725, 36.8485, 'Nairobi', 'General Trade', '14th St, Eastleigh, Nairobi'),
+  ('Umiya Stores Limited', -1.2825, 36.8285, 'Nairobi', 'General Trade', 'CBD, Nairobi'),
+  ('Salama Two Wholesalers', -1.2725, 36.8485, 'Nairobi', 'General Trade', 'Galore Road, Eastleigh, Nairobi'),
+  ('Kanini Haraka (Thika)', -1.0333, 37.0667, 'Kiambu', 'General Trade', 'Thika Town'),
+  ('Sublime Wholesalers', -1.3125, 36.8325, 'Nairobi', 'General Trade', 'Mchumbi Rd, South B, Nairobi'),
+  ('Gilanis Ltd: Wholesale', -0.2825, 36.0625, 'Nakuru', 'General Trade', 'Nakuru Town'),
+  ('Kanini Haraka Naivasha', -0.7167, 36.4359, 'Nakuru', 'General Trade', 'Naivasha Town'),
+  ('Eldomatt Supermarket', 0.5197, 35.2693, 'Uasin Gishu', 'Modern Trade', 'Eldo Center Mall, Eldoret'),
+  ('New Adatia Wholesalers', 0.5667, 34.5667, 'Bungoma', 'General Trade', 'Bungoma Town'),
+  ('Moyale Stores Naivasha', -0.7167, 36.4359, 'Nakuru', 'General Trade', 'Naivasha Town'),
+  ('Chego Wholesalers Ltd', 0.5145, 35.2745, 'Uasin Gishu', 'General Trade', 'Eldoret Town'),
+  ('Maguna-Andu Wholesalers', -0.7225, 37.1525, 'Murang''a', 'General Trade', 'Murang''a Town'),
+  ('Bansi Wholesalers Ltd', -0.6745, 34.7745, 'Kisii', 'General Trade', 'Kisii Town'),
+  ('New Mahitaji Mega Suppliers', -1.2425, 36.8825, 'Nairobi', 'General Trade', 'Baba Dogo Rd, Nairobi'),
+  ('Kibuye Matt Ltd', -0.1025, 34.7525, 'Kisumu', 'General Trade', 'Kisumu Town'),
+  ('Khetia Drapers Ltd', 1.0167, 35, 'Trans-Nzoia', 'General Trade', 'Kenyatta Rd, Kitale Town'),
+  ('Sharim Store', -4.0525, 39.6725, 'Mombasa', 'General Trade', 'Mombasa CBD');
