@@ -126,7 +126,7 @@ export const useAgentStatus = () => {
         assignedLocation.lat,
         assignedLocation.lng
       );
-      inRange = distance <= 500;
+      inRange = distance <= 600;
       
       // For check-in, set success based on distance
       if (newStatus === 'checked_in') {
