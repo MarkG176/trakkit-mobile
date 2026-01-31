@@ -1,108 +1,168 @@
 
 
-# Add Dedicated Fields to `daily_stock_reports` Table
+# Plan: Change Evening Report Behavior and Hide Reports Page for Wholesale
 
 ## Overview
-The current `daily_stock_reports` table uses a single `stock_level` field with a check constraint that only allows `available`, `low_stock`, or `unavailable`. This works for morning reports but causes evening reports to fail (since they store sales quantities, not stock levels).
-
-This plan adds dedicated fields so both report types can store their data properly in the same table.
-
----
-
-## Database Changes
-
-### New Columns to Add
-
-| Column | Type | Purpose |
-|--------|------|---------|
-| `quantity_sold` | `INTEGER` | Stores the number of units sold (evening report) |
-
-### Modifications
-
-| Change | Details |
-|--------|---------|
-| Make `stock_level` nullable | Allow evening reports to skip this field |
-| Remove/Update check constraint | Allow `stock_level` to be `NULL` for evening reports |
-
-### Migration SQL
-
-```sql
--- Make stock_level nullable for evening reports
-ALTER TABLE public.daily_stock_reports 
-  ALTER COLUMN stock_level DROP NOT NULL;
-
--- Add quantity_sold column for evening reports
-ALTER TABLE public.daily_stock_reports 
-  ADD COLUMN quantity_sold INTEGER DEFAULT NULL;
-
--- Update check constraint to allow NULL stock_level
-ALTER TABLE public.daily_stock_reports 
-  DROP CONSTRAINT IF EXISTS daily_stock_reports_stock_level_check;
-
-ALTER TABLE public.daily_stock_reports 
-  ADD CONSTRAINT daily_stock_reports_stock_level_check 
-  CHECK (stock_level IS NULL OR stock_level IN ('available', 'low_stock', 'unavailable'));
-```
+This plan modifies the evening stock report flow for wholesale team types. Instead of submitting to `daily_stock_reports`, the evening report will:
+1. Display the sales summary (already tracked in `daily_sales_tracking`)
+2. Show a notes input that submits to the `notes` table
+3. Hide the Reports page from navigation when `team_type` is `wholesale`
 
 ---
 
-## Code Changes
-
-### File: `src/components/attendance/StockReportDialog.tsx`
-
-Update the `handleSubmit` function to use the new field structure:
-
-**Morning Report Insert:**
-```typescript
-const reports = inventory.map((item) => ({
-  agent_id: user.id,
-  product_variant_id: item.product_variant_id,
-  stock_level: stockLevels[item.product_variant_id],  // Required for morning
-  quantity_sold: null,  // Not used for morning
-  report_type: "morning",
-  work_date: today,
-  workspace_id: currentWorkspaceId,
-}));
-```
-
-**Evening Report Insert:**
-```typescript
-const reports = inventory.map((item) => ({
-  agent_id: user.id,
-  product_variant_id: item.product_variant_id,
-  stock_level: null,  // Not used for evening
-  quantity_sold: salesData[item.product_variant_id] || 0,  // Required for evening
-  report_type: "evening",
-  work_date: today,
-  workspace_id: currentWorkspaceId,
-}));
-```
-
----
-
-## Data Flow Summary
+## Current Behavior
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│                    daily_stock_reports                       │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  MORNING REPORT                  EVENING REPORT              │
-│  ─────────────                  ──────────────               │
-│  report_type: "morning"         report_type: "evening"       │
-│  stock_level: "available" |     stock_level: NULL            │
-│               "low_stock" |     quantity_sold: 5             │
-│               "unavailable"                                  │
-│  quantity_sold: NULL                                         │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
+Evening Check-Out Flow (Wholesale):
+┌─────────────────┐     ┌──────────────────────┐     ┌────────────────────┐
+│   Check Out     │ --> │  StockReportDialog   │ --> │ daily_stock_reports│
+│   (Selfie)      │     │  (Evening)           │     │    (INSERT)        │
+└─────────────────┘     └──────────────────────┘     └────────────────────┘
+```
+
+---
+
+## New Behavior
+
+```text
+Evening Check-Out Flow (Wholesale):
+┌─────────────────┐     ┌──────────────────────────────────────┐     
+│   Check Out     │ --> │  EveningReportDialog                 │
+│   (Selfie)      │     │  ┌────────────────────────────────┐  │
+└─────────────────┘     │  │ Sales Summary (read-only)      │  │
+                        │  │ from daily_sales_tracking      │  │
+                        │  └────────────────────────────────┘  │
+                        │  ┌────────────────────────────────┐  │
+                        │  │ Notes Input                    │  │ --> notes table
+                        │  │ (textarea)                     │  │     (INSERT)
+                        │  └────────────────────────────────┘  │
+                        └──────────────────────────────────────┘
 ```
 
 ---
 
 ## Implementation Steps
 
-1. **Apply database migration** - Add `quantity_sold` column and update constraints
-2. **Update StockReportDialog** - Modify submit logic to use appropriate fields per report type
-3. **Types auto-update** - Supabase types will regenerate automatically after migration
+### 1. Create New Evening Report Dialog Component
+
+**File:** `src/components/attendance/EveningReportDialog.tsx`
+
+Create a new dialog that:
+- Fetches and displays today's sales summary from `daily_sales_tracking` (read-only)
+- Provides a notes textarea for the agent to add daily notes
+- On submit, saves notes to the `notes` table (same as Reports page)
+- Does NOT submit to `daily_stock_reports`
+
+**Key Fields:**
+| Data | Source | Action |
+|------|--------|--------|
+| Sales Summary | `daily_sales_tracking` | Display only (read-only) |
+| Notes | User input | Submit to `notes` table |
+
+### 2. Update RecordAttendanceForm to Use New Dialog for Evening
+
+**File:** `src/components/attendance/RecordAttendanceForm.tsx`
+
+Modify the check-out flow for wholesale:
+- Morning check-in: Keep using `StockReportDialog` (morning report to `daily_stock_reports`)
+- Evening check-out: Switch to new `EveningReportDialog`
+
+Changes:
+- Add state for `showEveningReport`
+- Import and render `EveningReportDialog`
+- Update the conditional logic after successful check-out
+
+### 3. Update BottomNavigation to Hide Reports for Wholesale
+
+**File:** `src/components/BottomNavigation.tsx`
+
+Modify to:
+- Accept `currentTeamType` prop from `useWorkspace`
+- Filter out the "Reports" nav item when `currentTeamType === 'wholesale'`
+
+### 4. Update MobileLayout to Pass Team Type
+
+**File:** `src/components/MobileLayout.tsx`
+
+Modify to:
+- Use `useWorkspace` hook to get `currentTeamType`
+- Pass it down to `BottomNavigation`
+
+---
+
+## Technical Details
+
+### EveningReportDialog Component Structure
+
+```text
+Dialog
+├── DialogHeader
+│   └── Title: "Evening Report"
+│
+├── Sales Summary Section (read-only)
+│   └── List of products with quantities sold today
+│       (fetched from daily_sales_tracking, grouped by product)
+│
+├── Notes Section
+│   └── Textarea for daily notes
+│
+└── DialogFooter
+    └── Submit button (saves notes to `notes` table)
+```
+
+### Notes Table Insert (Same as Reports Page)
+
+```typescript
+await supabase
+  .from('notes')
+  .insert({
+    agent_id: user.id,
+    workspace_id: currentWorkspaceId,
+    content: notes,
+    note_type: 'daily_report'  // Optional: categorize as daily report
+  });
+```
+
+### Navigation Filter Logic
+
+```typescript
+// In BottomNavigation
+const filteredNavItems = navItems.filter(item => {
+  if (item.id === 'reports' && currentTeamType === 'wholesale') {
+    return false;
+  }
+  return true;
+});
+```
+
+---
+
+## Files to Create/Modify
+
+| File | Action | Description |
+|------|--------|-------------|
+| `src/components/attendance/EveningReportDialog.tsx` | Create | New dialog for evening check-out with sales summary + notes |
+| `src/components/attendance/RecordAttendanceForm.tsx` | Modify | Use EveningReportDialog for evening check-out |
+| `src/components/BottomNavigation.tsx` | Modify | Hide Reports tab for wholesale team_type |
+| `src/components/MobileLayout.tsx` | Modify | Pass team_type to BottomNavigation |
+
+---
+
+## Data Flow Summary
+
+```text
+Morning Check-In (Wholesale)
+─────────────────────────────
+StockReportDialog → daily_stock_reports (stock levels)
+
+Evening Check-Out (Wholesale - NEW)
+───────────────────────────────────
+EveningReportDialog:
+  1. READ: daily_sales_tracking → Display sales summary
+  2. WRITE: notes table → Save agent's daily notes
+  
+Navigation (Wholesale)
+──────────────────────
+Reports page hidden from bottom nav when team_type = 'wholesale'
+```
 
