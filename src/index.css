@@ -104,6 +104,14 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'Roboto', sans-serif;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  }
+
+  html {
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   /* Hide scrollbars globally for mobile experience while keeping scrollability */
