@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { ArrowLeft, Search, ShoppingCart, Plus, Minus, Trash2 } from "lucide-react";
+import { ArrowLeft, Search, ShoppingCart, Plus, Minus, Trash2, Edit2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSalesForm } from "@/hooks/useSalesForm";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,11 +21,31 @@ interface CartItem {
   quantity: number;
 }
 
+// Cache key for storing custom prices
+const CUSTOM_PRICES_CACHE_KEY = 'wholesale_custom_prices';
+
+// Helper to get cached prices
+const getCachedPrices = (): Record<string, number> => {
+  try {
+    const cached = localStorage.getItem(CUSTOM_PRICES_CACHE_KEY);
+    return cached ? JSON.parse(cached) : {};
+  } catch {
+    return {};
+  }
+};
+
+// Helper to save price to cache
+const savePriceToCache = (productId: string, price: number) => {
+  const cached = getCachedPrices();
+  cached[productId] = price;
+  localStorage.setItem(CUSTOM_PRICES_CACHE_KEY, JSON.stringify(cached));
+};
+
 export const RecordSale = () => {
   const navigate = useNavigate();
   const { submitSale, loading: submitting } = useSalesForm();
   const { user } = useAuth();
-  const { currentWorkspaceId } = useWorkspace();
+  const { currentWorkspaceId, currentTeamType } = useWorkspace();
   const { inventory, loading } = useInventory();
   const [searchTerm, setSearchTerm] = useState("");
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -35,14 +55,31 @@ export const RecordSale = () => {
   const [showCart, setShowCart] = useState(false);
   const [showCustomerInfo, setShowCustomerInfo] = useState(false);
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
+  const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
   const [pendingSaleData, setPendingSaleData] = useState<{
     totalAmount: number;
     itemCount: number;
     customerName: string;
   } | null>(null);
 
+  // Check if current team type is wholesale
+  const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
+
+  // Get price for a product, using cached price for wholesale
+  const getProductPrice = useCallback((item: InventoryItem): number => {
+    if (isWholesale) {
+      const cached = getCachedPrices();
+      if (cached[item.product_variant_id] !== undefined) {
+        return cached[item.product_variant_id];
+      }
+    }
+    return item.price || 0;
+  }, [isWholesale]);
+
   const addToCart = (item: InventoryItem) => {
     const existingItem = cartItems.find(cartItem => cartItem.id === item.product_variant_id);
+    const itemPrice = getProductPrice(item);
+    
     if (existingItem) {
       setCartItems(cartItems.map(cartItem => 
         cartItem.id === item.product_variant_id 
@@ -53,7 +90,7 @@ export const RecordSale = () => {
       setCartItems([...cartItems, { 
         id: item.product_variant_id, 
         name: item.name || 'Unknown Product', 
-        price: item.price || 0, 
+        price: itemPrice, 
         quantity: 1 
       }]);
     }
@@ -68,6 +105,17 @@ export const RecordSale = () => {
         item.id === id ? { ...item, quantity: newQuantity } : item
       ));
     }
+  };
+
+  const updatePrice = (id: string, newPrice: number) => {
+    setCartItems(cartItems.map(item => 
+      item.id === id ? { ...item, price: newPrice } : item
+    ));
+    // Cache the price for wholesale
+    if (isWholesale) {
+      savePriceToCache(id, newPrice);
+    }
+    setEditingPriceId(null);
   };
 
   const handleCompleteSale = async () => {
@@ -335,7 +383,39 @@ export const RecordSale = () => {
                 
                 <div className="flex-1">
                   <h4 className="font-medium">{item.name}</h4>
-                  <p className="text-sm text-muted-foreground">KES {item.price}</p>
+                  {isWholesale && editingPriceId === item.id ? (
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-sm text-muted-foreground">KES</span>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        defaultValue={item.price}
+                        onBlur={(e) => updatePrice(item.id, parseFloat(e.target.value) || 0)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            updatePrice(item.id, parseFloat((e.target as HTMLInputElement).value) || 0);
+                          }
+                        }}
+                        autoFocus
+                        className="w-24 h-7 text-sm p-1"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-muted-foreground">KES {item.price}</p>
+                      {isWholesale && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-6 w-6"
+                          onClick={() => setEditingPriceId(item.id)}
+                        >
+                          <Edit2 size={12} />
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2">
