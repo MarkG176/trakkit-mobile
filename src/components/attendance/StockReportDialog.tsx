@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -23,7 +23,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Package, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
+import { Package, CheckCircle2, AlertTriangle, XCircle, Loader2 } from "lucide-react";
 
 type StockLevel = "available" | "low_stock" | "unavailable";
 
@@ -45,20 +45,54 @@ export const StockReportDialog = ({
   const { inventory, loading: inventoryLoading } = useInventory();
   const { toast } = useToast();
   const [stockLevels, setStockLevels] = useState<Record<string, StockLevel>>({});
-  const [numbersSold, setNumbersSold] = useState<Record<string, number>>({});
+  const [salesData, setSalesData] = useState<Record<string, number>>({});
+  const [loadingSales, setLoadingSales] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Fetch sales data for evening report
+  useEffect(() => {
+    const fetchSalesData = async () => {
+      if (!open || reportType !== "evening" || !user) return;
+      
+      setLoadingSales(true);
+      try {
+        const today = new Date().toISOString().split("T")[0];
+        
+        const { data, error } = await supabase
+          .from("daily_sales_tracking")
+          .select("product_variant_id, quantity_sold")
+          .eq("agent_id", user.id)
+          .eq("work_date", today);
+
+        if (error) throw error;
+
+        // Aggregate sales by product variant (in case of multiple entries)
+        const salesByProduct: Record<string, number> = {};
+        (data || []).forEach((sale) => {
+          const currentQty = salesByProduct[sale.product_variant_id] || 0;
+          salesByProduct[sale.product_variant_id] = currentQty + sale.quantity_sold;
+        });
+
+        setSalesData(salesByProduct);
+      } catch (error) {
+        console.error("Error fetching sales data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load sales data",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingSales(false);
+      }
+    };
+
+    fetchSalesData();
+  }, [open, reportType, user]);
 
   const handleStockLevelChange = (productVariantId: string, level: StockLevel) => {
     setStockLevels((prev) => ({
       ...prev,
       [productVariantId]: level,
-    }));
-  };
-
-  const handleNumberSoldChange = (productVariantId: string, value: number) => {
-    setNumbersSold((prev) => ({
-      ...prev,
-      [productVariantId]: value,
     }));
   };
 
@@ -123,15 +157,15 @@ export const StockReportDialog = ({
 
         if (error) throw error;
       } else {
-        // Evening report - numbers sold
+        // Evening report - numbers sold (read from sales data)
         const reports = inventory.map((item) => ({
           agent_id: user.id,
           product_variant_id: item.product_variant_id,
-          stock_level: "reported", // Default value for evening
+          stock_level: "reported",
           report_type: reportType,
           work_date: today,
           workspace_id: currentWorkspaceId,
-          notes: `Sold: ${numbersSold[item.product_variant_id] || 0}`,
+          notes: `Sold: ${salesData[item.product_variant_id] || 0}`,
         }));
 
         const { error } = await supabase
@@ -148,7 +182,7 @@ export const StockReportDialog = ({
 
       // Reset state and close
       setStockLevels({});
-      setNumbersSold({});
+      setSalesData({});
       onComplete();
       onOpenChange(false);
     } catch (error) {
@@ -166,10 +200,10 @@ export const StockReportDialog = ({
   const allMorningReported = inventory.length > 0 && 
     inventory.every((item) => stockLevels[item.product_variant_id]);
   
-  // Evening report doesn't require all fields - 0 is valid
-  const canSubmitEvening = inventory.length > 0;
-
+  const canSubmitEvening = inventory.length > 0 && !loadingSales;
   const canSubmit = reportType === "morning" ? allMorningReported : canSubmitEvening;
+
+  const isLoading = inventoryLoading || (reportType === "evening" && loadingSales);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -182,13 +216,14 @@ export const StockReportDialog = ({
           <DialogDescription>
             {reportType === "morning" 
               ? "Report the current stock level for each product in your inventory."
-              : "Enter the number of units sold for each product today."}
+              : "Review the number of units sold for each product today."}
           </DialogDescription>
         </DialogHeader>
 
-        {inventoryLoading ? (
-          <div className="py-8 text-center text-muted-foreground">
-            Loading inventory...
+        {isLoading ? (
+          <div className="py-8 text-center text-muted-foreground flex items-center justify-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading {reportType === "evening" ? "sales data" : "inventory"}...
           </div>
         ) : inventory.length === 0 ? (
           <div className="py-8 text-center text-muted-foreground">
@@ -241,23 +276,17 @@ export const StockReportDialog = ({
                       </Select>
                     </div>
                   ) : (
-                    // Evening layout - vertical stack with number input
+                    // Evening layout - read-only sales display
                     <div className="space-y-2">
                       <Label className="font-medium leading-tight block">{item.name}</Label>
                       <div className="flex items-center gap-2">
                         <Label className="text-sm text-muted-foreground shrink-0">Number sold:</Label>
                         <Input
                           type="number"
-                          min="0"
-                          placeholder="0"
-                          value={numbersSold[item.product_variant_id] || ""}
-                          onChange={(e) =>
-                            handleNumberSoldChange(
-                              item.product_variant_id,
-                              parseInt(e.target.value) || 0
-                            )
-                          }
-                          className="w-24"
+                          value={salesData[item.product_variant_id] || 0}
+                          readOnly
+                          disabled
+                          className="w-24 bg-muted"
                         />
                       </div>
                     </div>
