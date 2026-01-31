@@ -231,7 +231,7 @@ export const StockReportDialog = ({
             No products in your inventory to report.
           </div>
         ) : (
-          <ScrollArea className="max-h-[50vh] pr-4">
+          <ScrollArea className="max-h-[50vh] pr-4 [&>div>div]:!block [&_[data-radix-scroll-area-scrollbar]]:hidden">
             <div className="space-y-3">
               {inventory.map((item) => (
                 <div
