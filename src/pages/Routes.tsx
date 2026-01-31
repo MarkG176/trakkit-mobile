@@ -105,9 +105,10 @@ export const Routes = () => {
     }
   };
 
-  const filteredStores = selectedCounty === "all" 
+  const filteredStores = (selectedCounty === "all" 
     ? stores 
-    : stores.filter(store => store.county === selectedCounty);
+    : stores.filter(store => store.county === selectedCounty))
+    .sort((a, b) => a.store_name.localeCompare(b.store_name));
 
 
   const getCurrentLocation = (): Promise<{ latitude: number; longitude: number }> => {
