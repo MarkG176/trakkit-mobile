@@ -26,6 +26,14 @@ export interface Coordinates {
  * @param lon2 - Longitude of second point in decimal degrees
  * @returns Promise<Distance in meters>
  */
+/**
+ * Round coordinate to specified decimal places
+ */
+const roundCoordinate = (coord: number, decimals: number = 3): number => {
+  const factor = Math.pow(10, decimals);
+  return Math.round(coord * factor) / factor;
+};
+
 export const calculateDistance = async (
   lat1: number, 
   lon1: number, 
@@ -38,9 +46,13 @@ export const calculateDistance = async (
     throw new Error('Invalid coordinates provided');
   }
 
-  // For now, return a fallback calculation if Google Maps is not available
-  // This will be replaced with actual Google Maps API call
-  return calculateDistanceFallback(lat1, lon1, lat2, lon2);
+  // Round coordinates to 3 decimal places (~110m precision)
+  const roundedLat1 = roundCoordinate(lat1, 3);
+  const roundedLon1 = roundCoordinate(lon1, 3);
+  const roundedLat2 = roundCoordinate(lat2, 3);
+  const roundedLon2 = roundCoordinate(lon2, 3);
+
+  return calculateDistanceFallback(roundedLat1, roundedLon1, roundedLat2, roundedLon2);
 };
 
 /**
