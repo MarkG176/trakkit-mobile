@@ -2705,6 +2705,47 @@ export type Database = {
           },
         ]
       }
+      stock_report_templates: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          questions: Json
+          updated_at: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          questions?: Json
+          updated_at?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          questions?: Json
+          updated_at?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_report_templates_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_reports: {
         Row: {
           agent_id: string
@@ -2714,8 +2755,10 @@ export type Database = {
           product_variant_id: string
           report_type: string
           reported_at: string
+          responses: Json | null
           stock_level: string
           store_id: string | null
+          template_id: string | null
           workspace_id: string | null
         }
         Insert: {
@@ -2726,8 +2769,10 @@ export type Database = {
           product_variant_id: string
           report_type: string
           reported_at?: string
+          responses?: Json | null
           stock_level: string
           store_id?: string | null
+          template_id?: string | null
           workspace_id?: string | null
         }
         Update: {
@@ -2738,8 +2783,10 @@ export type Database = {
           product_variant_id?: string
           report_type?: string
           reported_at?: string
+          responses?: Json | null
           stock_level?: string
           store_id?: string | null
+          template_id?: string | null
           workspace_id?: string | null
         }
         Relationships: [
@@ -2755,6 +2802,13 @@ export type Database = {
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_reports_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "stock_report_templates"
             referencedColumns: ["id"]
           },
           {
