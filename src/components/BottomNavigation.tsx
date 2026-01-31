@@ -1,8 +1,10 @@
 import { Home, ClipboardList, Map, Package, MoreHorizontal, Clipboard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useMemo } from "react";
 
 interface BottomNavigationProps {
   currentPage: string;
+  currentTeamType?: string | null;
 }
 
 const navItems = [
@@ -14,13 +16,24 @@ const navItems = [
   { id: "more", label: "More", icon: MoreHorizontal, path: "/more" },
 ];
 
-export const BottomNavigation = ({ currentPage }: BottomNavigationProps) => {
+export const BottomNavigation = ({ currentPage, currentTeamType }: BottomNavigationProps) => {
   const navigate = useNavigate();
+
+  // Filter nav items based on team type
+  const filteredNavItems = useMemo(() => {
+    return navItems.filter(item => {
+      // Hide Reports for wholesale team type
+      if (item.id === 'reports' && currentTeamType?.toLowerCase() === 'wholesale') {
+        return false;
+      }
+      return true;
+    });
+  }, [currentTeamType]);
 
   return (
     <div className="bottom-nav">
       <div className="flex justify-around items-center h-16">
-        {navItems.map((item) => {
+        {filteredNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentPage === item.id;
           

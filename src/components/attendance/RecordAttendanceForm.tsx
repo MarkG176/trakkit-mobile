@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, Clock, MapPin, Camera } from "lucide-react";
 import { CameraCapture } from "@/components/CameraCapture";
 import { StockReportDialog } from "@/components/attendance/StockReportDialog";
+import { EveningReportDialog } from "@/components/attendance/EveningReportDialog";
 import { supabase } from "@/integrations/supabase/client";
 
 export const RecordAttendanceForm = () => {
@@ -22,6 +23,7 @@ export const RecordAttendanceForm = () => {
   const [loadingOverride, setLoadingOverride] = useState(false);
   const [showStockReport, setShowStockReport] = useState(false);
   const [stockReportType, setStockReportType] = useState<'morning' | 'evening'>('morning');
+  const [showEveningReport, setShowEveningReport] = useState(false);
   const cameraRef = useRef<HTMLInputElement>(null);
   // Ref-based guard to prevent duplicate calls (survives re-renders and is synchronous)
   const isProcessingRef = useRef(false);
@@ -89,15 +91,14 @@ export const RecordAttendanceForm = () => {
         const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
         
         if (isWholesale) {
-          // Show stock report after check-in (morning) or check-out (evening)
+          // Show stock report after check-in (morning) or evening report after check-out
           if (statusToSet === 'checked_in' && previousStatus === 'checked_out') {
-            // Morning check-in
+            // Morning check-in - show stock report
             setStockReportType('morning');
             setShowStockReport(true);
           } else if (statusToSet === 'checked_out') {
-            // Evening check-out
-            setStockReportType('evening');
-            setShowStockReport(true);
+            // Evening check-out - show evening report (sales summary + notes)
+            setShowEveningReport(true);
           }
         }
       } else {
@@ -283,13 +284,22 @@ export const RecordAttendanceForm = () => {
         variant="inline"
       />
 
-      {/* Stock Report Dialog for Wholesale */}
+      {/* Stock Report Dialog for Wholesale (Morning only) */}
       <StockReportDialog
         open={showStockReport}
         onOpenChange={setShowStockReport}
         reportType={stockReportType}
         onComplete={() => {
           console.log('Stock report completed');
+        }}
+      />
+
+      {/* Evening Report Dialog for Wholesale */}
+      <EveningReportDialog
+        open={showEveningReport}
+        onOpenChange={setShowEveningReport}
+        onComplete={() => {
+          console.log('Evening report completed');
         }}
       />
     </Card>
