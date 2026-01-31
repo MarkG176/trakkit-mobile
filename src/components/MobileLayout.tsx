@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { BottomNavigation } from "./BottomNavigation";
-import { useToast } from "@/hooks/use-toast";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface MobileLayoutProps {
   children: ReactNode;
@@ -9,10 +9,12 @@ interface MobileLayoutProps {
 }
 
 export const MobileLayout = ({ children, currentPage, onCameraCapture }: MobileLayoutProps) => {
+  const { currentTeamType } = useWorkspace();
+
   return (
     <div className="min-h-screen bg-background pb-20">
       {children}
-      <BottomNavigation currentPage={currentPage} />
+      <BottomNavigation currentPage={currentPage} currentTeamType={currentTeamType} />
     </div>
   );
 };
