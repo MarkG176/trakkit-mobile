@@ -52,7 +52,10 @@ export const Routes = () => {
   const [addedStore, setAddedStore] = useState<{ id: string; name: string; county: string } | null>(null);
   const { toast } = useToast();
   const { recordLocationSet } = useAgentActions();
-  const { currentWorkspaceId } = useWorkspace();
+  const { currentWorkspaceId, currentTeamType } = useWorkspace();
+
+  // Check if current team type is wholesale - hide Add Location for wholesale
+  const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
 
   useEffect(() => {
     fetchStores();
@@ -432,7 +435,8 @@ export const Routes = () => {
           </div>
         </Card>
 
-        {/* Add Location Form */}
+        {/* Add Location Form - Hidden for wholesale */}
+        {!isWholesale && (
         <Card className="p-4 mt-4">
           <div className="flex items-center gap-2 mb-4">
             <Plus size={20} className="text-primary" />
@@ -533,6 +537,7 @@ export const Routes = () => {
             </div>
           )}
         </Card>
+        )}
       </div>
 
       {addedStore && (
