@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -44,6 +45,7 @@ export const StockReportDialog = ({
   const { inventory, loading: inventoryLoading } = useInventory();
   const { toast } = useToast();
   const [stockLevels, setStockLevels] = useState<Record<string, StockLevel>>({});
+  const [numbersSold, setNumbersSold] = useState<Record<string, number>>({});
   const [submitting, setSubmitting] = useState(false);
 
   const handleStockLevelChange = (productVariantId: string, level: StockLevel) => {
@@ -53,14 +55,21 @@ export const StockReportDialog = ({
     }));
   };
 
+  const handleNumberSoldChange = (productVariantId: string, value: number) => {
+    setNumbersSold((prev) => ({
+      ...prev,
+      [productVariantId]: value,
+    }));
+  };
+
   const getStockIcon = (level: StockLevel | undefined) => {
     switch (level) {
       case "available":
-        return <CheckCircle2 className="h-4 w-4 text-green-600" />;
+        return <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />;
       case "low_stock":
-        return <AlertTriangle className="h-4 w-4 text-yellow-600" />;
+        return <AlertTriangle className="h-4 w-4 text-yellow-600 shrink-0" />;
       case "unavailable":
-        return <XCircle className="h-4 w-4 text-red-600" />;
+        return <XCircle className="h-4 w-4 text-red-600 shrink-0" />;
       default:
         return null;
     }
@@ -76,18 +85,20 @@ export const StockReportDialog = ({
       return;
     }
 
-    // Check if all products have been reported
-    const unreportedProducts = inventory.filter(
-      (item) => !stockLevels[item.product_variant_id]
-    );
+    if (reportType === "morning") {
+      // Check if all products have been reported for morning
+      const unreportedProducts = inventory.filter(
+        (item) => !stockLevels[item.product_variant_id]
+      );
 
-    if (unreportedProducts.length > 0) {
-      toast({
-        title: "Incomplete Report",
-        description: `Please report stock level for all ${unreportedProducts.length} remaining product(s)`,
-        variant: "destructive",
-      });
-      return;
+      if (unreportedProducts.length > 0) {
+        toast({
+          title: "Incomplete Report",
+          description: `Please report stock level for all ${unreportedProducts.length} remaining product(s)`,
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -95,21 +106,40 @@ export const StockReportDialog = ({
     try {
       const today = new Date().toISOString().split("T")[0];
       
-      // Prepare batch insert
-      const reports = inventory.map((item) => ({
-        agent_id: user.id,
-        product_variant_id: item.product_variant_id,
-        stock_level: stockLevels[item.product_variant_id],
-        report_type: reportType,
-        work_date: today,
-        workspace_id: currentWorkspaceId,
-      }));
+      if (reportType === "morning") {
+        // Morning report - stock levels
+        const reports = inventory.map((item) => ({
+          agent_id: user.id,
+          product_variant_id: item.product_variant_id,
+          stock_level: stockLevels[item.product_variant_id],
+          report_type: reportType,
+          work_date: today,
+          workspace_id: currentWorkspaceId,
+        }));
 
-      const { error } = await supabase
-        .from("daily_stock_reports")
-        .insert(reports);
+        const { error } = await supabase
+          .from("daily_stock_reports")
+          .insert(reports);
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        // Evening report - numbers sold
+        const reports = inventory.map((item) => ({
+          agent_id: user.id,
+          product_variant_id: item.product_variant_id,
+          stock_level: "reported", // Default value for evening
+          report_type: reportType,
+          work_date: today,
+          workspace_id: currentWorkspaceId,
+          notes: `Sold: ${numbersSold[item.product_variant_id] || 0}`,
+        }));
+
+        const { error } = await supabase
+          .from("daily_stock_reports")
+          .insert(reports);
+
+        if (error) throw error;
+      }
 
       toast({
         title: "Stock Report Submitted",
@@ -118,6 +148,7 @@ export const StockReportDialog = ({
 
       // Reset state and close
       setStockLevels({});
+      setNumbersSold({});
       onComplete();
       onOpenChange(false);
     } catch (error) {
@@ -132,8 +163,13 @@ export const StockReportDialog = ({
     }
   };
 
-  const allReported = inventory.length > 0 && 
+  const allMorningReported = inventory.length > 0 && 
     inventory.every((item) => stockLevels[item.product_variant_id]);
+  
+  // Evening report doesn't require all fields - 0 is valid
+  const canSubmitEvening = inventory.length > 0;
+
+  const canSubmit = reportType === "morning" ? allMorningReported : canSubmitEvening;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -144,7 +180,9 @@ export const StockReportDialog = ({
             {reportType === "morning" ? "Morning" : "Evening"} Stock Report
           </DialogTitle>
           <DialogDescription>
-            Report the current stock level for each product in your inventory.
+            {reportType === "morning" 
+              ? "Report the current stock level for each product in your inventory."
+              : "Enter the number of units sold for each product today."}
           </DialogDescription>
         </DialogHeader>
 
@@ -158,46 +196,72 @@ export const StockReportDialog = ({
           </div>
         ) : (
           <ScrollArea className="max-h-[50vh] pr-4">
-            <div className="space-y-4">
+            <div className="space-y-3">
               {inventory.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between gap-4 p-3 rounded-lg border bg-card"
+                  className="p-3 rounded-lg border bg-card"
                 >
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    {getStockIcon(stockLevels[item.product_variant_id])}
-                    <Label className="font-medium truncate">{item.name}</Label>
-                  </div>
-                  <Select
-                    value={stockLevels[item.product_variant_id] || ""}
-                    onValueChange={(value) =>
-                      handleStockLevelChange(item.product_variant_id, value as StockLevel)
-                    }
-                  >
-                    <SelectTrigger className="w-[140px]">
-                      <SelectValue placeholder="Select..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="available">
-                        <span className="flex items-center gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-green-600" />
-                          Available
-                        </span>
-                      </SelectItem>
-                      <SelectItem value="low_stock">
-                        <span className="flex items-center gap-2">
-                          <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                          Low Stock
-                        </span>
-                      </SelectItem>
-                      <SelectItem value="unavailable">
-                        <span className="flex items-center gap-2">
-                          <XCircle className="h-4 w-4 text-red-600" />
-                          Unavailable
-                        </span>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {reportType === "morning" ? (
+                    // Morning layout - vertical stack for mobile
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-2">
+                        {getStockIcon(stockLevels[item.product_variant_id])}
+                        <Label className="font-medium leading-tight">{item.name}</Label>
+                      </div>
+                      <Select
+                        value={stockLevels[item.product_variant_id] || ""}
+                        onValueChange={(value) =>
+                          handleStockLevelChange(item.product_variant_id, value as StockLevel)
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select stock level..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="available">
+                            <span className="flex items-center gap-2">
+                              <CheckCircle2 className="h-4 w-4 text-green-600" />
+                              Available
+                            </span>
+                          </SelectItem>
+                          <SelectItem value="low_stock">
+                            <span className="flex items-center gap-2">
+                              <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                              Low Stock
+                            </span>
+                          </SelectItem>
+                          <SelectItem value="unavailable">
+                            <span className="flex items-center gap-2">
+                              <XCircle className="h-4 w-4 text-red-600" />
+                              Unavailable
+                            </span>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    // Evening layout - vertical stack with number input
+                    <div className="space-y-2">
+                      <Label className="font-medium leading-tight block">{item.name}</Label>
+                      <div className="flex items-center gap-2">
+                        <Label className="text-sm text-muted-foreground shrink-0">Number sold:</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={numbersSold[item.product_variant_id] || ""}
+                          onChange={(e) =>
+                            handleNumberSoldChange(
+                              item.product_variant_id,
+                              parseInt(e.target.value) || 0
+                            )
+                          }
+                          className="w-24"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -207,7 +271,7 @@ export const StockReportDialog = ({
         <DialogFooter>
           <Button
             onClick={handleSubmit}
-            disabled={submitting || !allReported || inventory.length === 0}
+            disabled={submitting || !canSubmit || inventory.length === 0}
             className="w-full"
           >
             {submitting ? "Submitting..." : "Submit Report"}
