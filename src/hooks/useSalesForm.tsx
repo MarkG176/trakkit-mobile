@@ -18,6 +18,7 @@ interface SaleFormData {
   engagementType: string;
   notes: string;
   sentiment: number;
+  imageUrl?: string; // Sale photo URL for wholesale
 }
 
 export const useSalesForm = () => {
@@ -66,6 +67,12 @@ export const useSalesForm = () => {
             sale_value: item.price * item.quantity,
             outcome: 'sale',
             workspace_id: workspaceService.getCurrentWorkspaceId(),
+            image_url: formData.imageUrl || null, // Sale photo for wholesale
+            image_metadata: formData.imageUrl ? {
+              type: 'sale_photo',
+              captured_at: new Date().toISOString(),
+              team_type: 'wholesale'
+            } : null,
             metadata: {
               engagement_type: formData.engagementType,
               notes: formData.notes,

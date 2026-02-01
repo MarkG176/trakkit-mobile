@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { ArrowLeft, Search, ShoppingCart, Plus, Minus, Trash2, Edit2 } from "lucide-react";
+import { ArrowLeft, Search, ShoppingCart, Plus, Minus, Trash2, Edit2, Camera, X, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSalesForm } from "@/hooks/useSalesForm";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +13,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useInventory, InventoryItem } from "@/hooks/useInventory";
 import { SaleFeedbackDialog, FeedbackData } from "@/components/dashboard/SaleFeedbackDialog";
-
+import { useToast } from "@/hooks/use-toast";
+import { workspaceService } from "@/services/workspaceService";
 interface CartItem {
   id: string;
   name: string;
@@ -47,6 +48,7 @@ export const RecordSale = () => {
   const { user } = useAuth();
   const { currentWorkspaceId, currentTeamType } = useWorkspace();
   const { inventory, loading } = useInventory();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState("");
@@ -61,6 +63,11 @@ export const RecordSale = () => {
     itemCount: number;
     customerName: string;
   } | null>(null);
+
+  // Wholesale photo capture state
+  const [salePhotoUrl, setSalePhotoUrl] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check if current team type is wholesale
   const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
@@ -118,8 +125,99 @@ export const RecordSale = () => {
     setEditingPriceId(null);
   };
 
+  // Upload sale photo to storage
+  const uploadSalePhoto = async (file: File): Promise<string | null> => {
+    if (!user) return null;
+    
+    setIsUploadingPhoto(true);
+    try {
+      const workspaceName = workspaceService.getWorkspaceName();
+      const projectName = await workspaceService.getProjectNameAsync();
+      
+      // Create folder structure: workspaceName/projectName/userId/timestamp
+      let folderPath = '';
+      
+      if (workspaceName && workspaceName !== 'Unknown Workspace') {
+        const sanitizedWorkspaceName = workspaceName.replace(/[^a-zA-Z0-9-_]/g, '_');
+        folderPath += sanitizedWorkspaceName;
+      } else {
+        folderPath = user.id;
+      }
+      
+      if (projectName && projectName !== 'No Project') {
+        const sanitizedProjectName = projectName.replace(/[^a-zA-Z0-9-_]/g, '_');
+        folderPath += `/${sanitizedProjectName}`;
+      }
+      
+      folderPath += `/${user.id}`;
+      
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const fileName = `${folderPath}/sale_${timestamp}.jpg`;
+      
+      const { data, error } = await supabase.storage
+        .from('sale-photos')
+        .upload(fileName, file);
+      
+      if (error) {
+        console.error('Upload error:', error);
+        toast({
+          title: "Upload Failed",
+          description: "Could not upload sale photo. Please try again.",
+          variant: "destructive"
+        });
+        return null;
+      }
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('sale-photos')
+        .getPublicUrl(fileName);
+      
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading sale photo:', error);
+      return null;
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  // Handle photo capture
+  const handlePhotoCapture = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    
+    const photoUrl = await uploadSalePhoto(file);
+    if (photoUrl) {
+      setSalePhotoUrl(photoUrl);
+      toast({
+        title: "Photo Captured",
+        description: "Sale photo uploaded successfully.",
+      });
+    }
+  };
+
+  // Remove captured photo
+  const removeSalePhoto = () => {
+    setSalePhotoUrl(null);
+  };
+
   const handleCompleteSale = async () => {
     if (cartItems.length === 0) {
+      return;
+    }
+    
+    // For wholesale, require photo before proceeding
+    if (isWholesale && !salePhotoUrl) {
+      toast({
+        title: "Photo Required",
+        description: "Please capture a photo of the sale before completing.",
+        variant: "destructive"
+      });
       return;
     }
     
@@ -205,7 +303,8 @@ export const RecordSale = () => {
         customerEmail,
         engagementType: feedbackData.engagementType,
         notes: feedbackData.notes,
-        sentiment: feedbackData.sentiment
+        sentiment: feedbackData.sentiment,
+        imageUrl: salePhotoUrl || undefined // Pass sale photo URL for wholesale
       });
 
       // Record customer purchases if customer was created
@@ -474,12 +573,12 @@ export const RecordSale = () => {
       </Sheet>
 
       <Sheet open={showCustomerInfo} onOpenChange={setShowCustomerInfo}>
-        <SheetContent side="bottom" className="h-[60vh]">
+        <SheetContent side="bottom" className="h-[75vh]">
           <SheetHeader>
             <SheetTitle className="text-left">Customer Information</SheetTitle>
           </SheetHeader>
           
-          <div className="mt-6 space-y-4">
+          <div className="mt-6 space-y-4 overflow-y-auto max-h-[45vh]">
             <div>
               <Label htmlFor="customer-name" className="text-sm font-medium">Customer Name</Label>
               <Input
@@ -502,14 +601,90 @@ export const RecordSale = () => {
               />
             </div>
 
+            {/* Wholesale Photo Capture Section */}
+            {isWholesale && (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Camera size={16} />
+                  Sale Photo <span className="text-destructive">*</span>
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Required: Take a photo of the sale for verification
+                </p>
+                
+                {salePhotoUrl ? (
+                  <div className="relative">
+                    <img 
+                      src={salePhotoUrl} 
+                      alt="Sale photo" 
+                      className="w-full h-40 object-cover rounded-lg border"
+                    />
+                    <div className="absolute top-2 right-2 flex gap-2">
+                      <Button
+                        size="icon"
+                        variant="secondary"
+                        className="h-8 w-8 bg-green-500 hover:bg-green-600 text-white"
+                        disabled
+                      >
+                        <CheckCircle size={16} />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="h-8 w-8"
+                        onClick={removeSalePhoto}
+                      >
+                        <X size={16} />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer transition-colors ${
+                      isUploadingPhoto ? 'bg-muted' : 'hover:bg-muted/50 border-primary/50'
+                    }`}
+                  >
+                    {isUploadingPhoto ? (
+                      <>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-2" />
+                        <p className="text-sm text-muted-foreground">Uploading...</p>
+                      </>
+                    ) : (
+                      <>
+                        <Camera size={32} className="text-primary mb-2" />
+                        <p className="text-sm font-medium">Tap to capture photo</p>
+                        <p className="text-xs text-muted-foreground">Take a photo of the sale</p>
+                      </>
+                    )}
+                  </div>
+                )}
+                
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handlePhotoCapture}
+                  className="hidden"
+                  disabled={isUploadingPhoto}
+                />
+              </div>
+            )}
           </div>
 
           <div className="mt-8 space-y-3">
             <Button
               onClick={handleCompleteSale}
-              className="w-full h-12 text-lg bg-primary hover:bg-primary/90"
+              disabled={isWholesale && !salePhotoUrl}
+              className="w-full h-12 text-lg bg-primary hover:bg-primary/90 disabled:opacity-50"
             >
-              Complete Sale • KES {totalAmount.toFixed(2)}
+              {isWholesale && !salePhotoUrl ? (
+                'Photo Required to Complete'
+              ) : (
+                `Complete Sale • KES ${totalAmount.toFixed(2)}`
+              )}
             </Button>
             <Button
               variant="outline"
