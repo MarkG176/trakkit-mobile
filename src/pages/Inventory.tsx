@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
-import { Package, ShoppingCart, Gift, ArrowLeft } from "lucide-react";
+import { Package, Gift, ArrowLeft } from "lucide-react";
 import { useInventory, InventoryItem } from "@/hooks/useInventory";
 
 export const Inventory = () => {
@@ -82,10 +82,6 @@ export const Inventory = () => {
 
             {/* Actions */}
             <div className="space-y-3">
-              <Button className="w-full h-12">
-                <ShoppingCart size={20} className="mr-2" />
-                Record a Sale
-              </Button>
               <Button variant="outline" className="w-full h-12">
                 <Gift size={20} className="mr-2" />
                 Record a Giveaway
