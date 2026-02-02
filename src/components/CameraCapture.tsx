@@ -8,9 +8,8 @@ import { useWorkspace } from '@/hooks/useWorkspace';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { addTextOverlayWithFallback, ImageOverlayData, formatTimestamp } from '@/utils/imageOverlay';
+import { addTextOverlayToImage, ImageOverlayData, formatTimestamp } from '@/utils/imageOverlay';
 import { workspaceService } from '@/services/workspaceService';
-import { compressImage, isMemoryError } from '@/utils/imageCompressor';
 
 interface CameraCaptureProps {
   onCapture?: (imageData: string) => void;
@@ -109,13 +108,6 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
       const workspaceName = workspaceService.getWorkspaceName();
       const projectName = await workspaceService.getProjectNameAsync();
 
-      // STEP 1: Compress image FIRST to reduce memory usage (12MP → ~1280px)
-      // This reduces peak memory from ~120MB to ~15MB
-      const compressedFile = await compressImage(file, {
-        maxDimension: 1280,
-        quality: 0.8
-      });
-
       // Create overlay data
       const overlayData: ImageOverlayData = {
         agentName: displayName || user.email?.split('@')[0] || 'Unknown Agent',
@@ -125,8 +117,8 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
         projectName: projectName || 'No Project'
       };
 
-      // STEP 2: Add text overlay to already-compressed image (uses fallback if memory fails)
-      const imageWithOverlay = await addTextOverlayWithFallback(compressedFile, overlayData);
+      // Add text overlay to image
+      const imageWithOverlay = await addTextOverlayToImage(file, overlayData);
 
       // Create folder structure: workspaceName/projectName/userId
       let folderPath = '';
@@ -160,7 +152,7 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
 
       if (error) {
         console.error('Upload error:', error);
-        throw error;
+        return null;
       }
 
       const { data: { publicUrl } } = supabase.storage
@@ -170,7 +162,7 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
       return publicUrl;
     } catch (error) {
       console.error('Error processing image with overlay:', error);
-      throw error;
+      return null;
     }
   };
 
@@ -224,7 +216,7 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
       // Get current location first
       const location = await getCurrentLocation();
 
-      // Upload to agent-selfies bucket with coordinates (compression happens inside uploadToStorage)
+      // Upload to agent-selfies bucket with coordinates
       const imageUrl = await uploadToStorage(currentFile, location);
 
       if (!imageUrl) {
@@ -276,21 +268,11 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
 
     } catch (error) {
       console.error('Error:', error);
-      
-      // Handle memory errors with specific message
-      if (isMemoryError(error)) {
-        toast({
-          title: 'Low Memory',
-          description: 'Could not process image. Please close other apps and try again.',
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Error',
-          description: error instanceof Error ? error.message : 'Failed to process image',
-          variant: 'destructive',
-        });
-      }
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to process image',
+        variant: 'destructive',
+      });
     } finally {
       // Add delay before allowing next capture to prevent rapid re-triggering on budget devices
       setTimeout(() => {
