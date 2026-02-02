@@ -22,8 +22,9 @@ export const BottomNavigation = ({ currentPage, currentTeamType }: BottomNavigat
   // Filter nav items based on team type
   const filteredNavItems = useMemo(() => {
     return navItems.filter(item => {
-      // Hide Reports for wholesale team type
-      if (item.id === 'reports' && currentTeamType?.toLowerCase() === 'wholesale') {
+      const teamType = currentTeamType?.toLowerCase();
+      // Hide Reports and Inventory for wholesale team type
+      if (teamType === 'wholesale' && (item.id === 'reports' || item.id === 'inventory')) {
         return false;
       }
       return true;
