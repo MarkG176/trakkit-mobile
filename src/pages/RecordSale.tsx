@@ -15,6 +15,7 @@ import { useInventory, InventoryItem } from "@/hooks/useInventory";
 import { SaleFeedbackDialog, FeedbackData } from "@/components/dashboard/SaleFeedbackDialog";
 import { useToast } from "@/hooks/use-toast";
 import { workspaceService } from "@/services/workspaceService";
+import { compressImage, isMemoryError } from "@/utils/imageCompressor";
 interface CartItem {
   id: string;
   name: string;
@@ -125,11 +126,10 @@ export const RecordSale = () => {
     setEditingPriceId(null);
   };
 
-  // Upload sale photo to storage
+  // Upload sale photo to storage (expects already compressed file)
   const uploadSalePhoto = async (file: File): Promise<string | null> => {
     if (!user) return null;
     
-    setIsUploadingPhoto(true);
     try {
       const workspaceName = workspaceService.getWorkspaceName();
       const projectName = await workspaceService.getProjectNameAsync();
@@ -160,12 +160,7 @@ export const RecordSale = () => {
       
       if (error) {
         console.error('Upload error:', error);
-        toast({
-          title: "Upload Failed",
-          description: "Could not upload sale photo. Please try again.",
-          variant: "destructive"
-        });
-        return null;
+        throw new Error('Could not upload sale photo. Please try again.');
       }
       
       const { data: { publicUrl } } = supabase.storage
@@ -175,29 +170,62 @@ export const RecordSale = () => {
       return publicUrl;
     } catch (error) {
       console.error('Error uploading sale photo:', error);
-      return null;
-    } finally {
-      setIsUploadingPhoto(false);
+      throw error;
     }
   };
 
-  // Handle photo capture
+  // Handle photo capture with compression for memory efficiency
   const handlePhotoCapture = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     
-    // Reset input
+    // Reset input immediately to prevent duplicate events
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
     
-    const photoUrl = await uploadSalePhoto(file);
-    if (photoUrl) {
-      setSalePhotoUrl(photoUrl);
-      toast({
-        title: "Photo Captured",
-        description: "Sale photo uploaded successfully.",
+    // Prevent double processing
+    if (isUploadingPhoto) {
+      console.log('RecordSale: Already processing photo, ignoring');
+      return;
+    }
+    
+    setIsUploadingPhoto(true);
+    
+    try {
+      // Compress image before upload (no overlay for sale photos - saves memory)
+      const compressedFile = await compressImage(file, {
+        maxDimension: 1280,
+        quality: 0.8
       });
+      
+      const photoUrl = await uploadSalePhoto(compressedFile);
+      if (photoUrl) {
+        setSalePhotoUrl(photoUrl);
+        toast({
+          title: "Photo Captured",
+          description: "Sale photo uploaded successfully.",
+        });
+      }
+    } catch (error) {
+      console.error('Photo capture error:', error);
+      
+      // Handle memory errors gracefully
+      if (isMemoryError(error)) {
+        toast({
+          title: "Low Memory",
+          description: "Could not process image. Please close other apps and try again.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Photo Failed",
+          description: error instanceof Error ? error.message : "Could not capture photo. Please try again.",
+          variant: "destructive"
+        });
+      }
+    } finally {
+      setIsUploadingPhoto(false);
     }
   };
 
