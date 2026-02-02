@@ -55,29 +55,52 @@ export const EveningReportDialog = ({
     setIsLoading(true);
     try {
       const today = new Date().toISOString().split('T')[0];
+      const todayStart = new Date(today);
+      const todayEnd = new Date(today);
+      todayEnd.setDate(todayEnd.getDate() + 1);
       
-      const { data, error } = await supabase
+      // Fetch from daily_sales_tracking
+      const { data: salesTrackingData, error: salesError } = await supabase
         .from('daily_sales_tracking')
         .select('product_name, quantity_sold, total_value')
         .eq('agent_id', user.id)
         .eq('work_date', today);
 
-      if (error) throw error;
+      if (salesError) throw salesError;
 
-      // Aggregate by product name
-      const aggregated = (data || []).reduce((acc: Record<string, SalesSummaryItem>, item) => {
+      // Fetch from customer_purchases with product variant details
+      const { data: purchasesData, error: purchasesError } = await supabase
+        .from('customer_purchases')
+        .select('quantity, total_value, product_variant_id, product_variants(name)')
+        .eq('agent_id', user.id)
+        .gte('purchase_date', todayStart.toISOString())
+        .lt('purchase_date', todayEnd.toISOString());
+
+      if (purchasesError) throw purchasesError;
+
+      // Aggregate all data by product name
+      const aggregated: Record<string, SalesSummaryItem> = {};
+
+      // Add daily_sales_tracking data
+      (salesTrackingData || []).forEach(item => {
         const name = item.product_name || 'Unknown Product';
-        if (!acc[name]) {
-          acc[name] = {
-            product_name: name,
-            quantity_sold: 0,
-            total_value: 0,
-          };
+        if (!aggregated[name]) {
+          aggregated[name] = { product_name: name, quantity_sold: 0, total_value: 0 };
         }
-        acc[name].quantity_sold += item.quantity_sold || 0;
-        acc[name].total_value += Number(item.total_value) || 0;
-        return acc;
-      }, {});
+        aggregated[name].quantity_sold += item.quantity_sold || 0;
+        aggregated[name].total_value += Number(item.total_value) || 0;
+      });
+
+      // Add customer_purchases data
+      (purchasesData || []).forEach(item => {
+        const productVariant = item.product_variants as { name: string } | null;
+        const name = productVariant?.name || 'Unknown Product';
+        if (!aggregated[name]) {
+          aggregated[name] = { product_name: name, quantity_sold: 0, total_value: 0 };
+        }
+        aggregated[name].quantity_sold += item.quantity || 0;
+        aggregated[name].total_value += Number(item.total_value) || 0;
+      });
 
       setSalesSummary(Object.values(aggregated));
     } catch (error) {
