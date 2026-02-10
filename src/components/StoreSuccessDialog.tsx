@@ -242,6 +242,19 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
 
       if (interactionError) throw interactionError;
 
+      // Get team's project_id for this workspace
+      let projectId: string | null = null;
+      if (user.id && currentWorkspaceId) {
+        const { data: teamData } = await (supabase
+          .from('team_members') as any)
+          .select('team_id, teams(project_id)')
+          .eq('user_id', user.id)
+          .limit(1)
+          .maybeSingle();
+        const team = teamData?.teams as { project_id: string | null } | null;
+        projectId = team?.project_id || null;
+      }
+
       // Record customer purchase
       await supabase.from('customer_purchases').insert({
         customer_id: customer.id,
@@ -252,7 +265,8 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
         location_lat: location.latitude,
         location_lng: location.longitude,
         workspace_id: currentWorkspaceId,
-      });
+        project_id: projectId,
+      } as any);
 
       toast({
         title: "Sale Recorded",

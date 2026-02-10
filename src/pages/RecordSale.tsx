@@ -309,6 +309,19 @@ export const RecordSale = () => {
 
       // Record customer purchases if customer was created
       if (success && customerId) {
+        // Get team's project_id for this workspace
+        let projectId: string | null = null;
+        if (user?.id) {
+          const { data: teamData } = await supabase
+            .from('team_members')
+            .select('team_id, teams(project_id)')
+            .eq('user_id', user.id)
+            .limit(1)
+            .maybeSingle();
+          const team = teamData?.teams as { project_id: string | null } | null;
+          projectId = team?.project_id || null;
+        }
+
         for (const item of cartItems) {
           await supabase
             .from('customer_purchases')
@@ -320,8 +333,9 @@ export const RecordSale = () => {
               total_value: item.price * item.quantity,
               location_lat: location.latitude,
               location_lng: location.longitude,
-              workspace_id: currentWorkspaceId
-            });
+              workspace_id: currentWorkspaceId,
+              project_id: projectId,
+            } as any);
         }
       }
 
