@@ -890,6 +890,7 @@ export type Database = {
           location_lat: number | null
           location_lng: number | null
           product_variant_id: string | null
+          project_id: string | null
           purchase_date: string | null
           quantity: number
           store_id: string | null
@@ -904,6 +905,7 @@ export type Database = {
           location_lat?: number | null
           location_lng?: number | null
           product_variant_id?: string | null
+          project_id?: string | null
           purchase_date?: string | null
           quantity?: number
           store_id?: string | null
@@ -918,6 +920,7 @@ export type Database = {
           location_lat?: number | null
           location_lng?: number | null
           product_variant_id?: string | null
+          project_id?: string | null
           purchase_date?: string | null
           quantity?: number
           store_id?: string | null
@@ -938,6 +941,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "product_variants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_purchases_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_purchases_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_stats_view"
+            referencedColumns: ["project_id"]
           },
           {
             foreignKeyName: "customer_purchases_store_id_fkey"
