@@ -253,8 +253,8 @@ export const RecordSale = () => {
         }
       }
 
-      // Create or update customer record if customer info provided
-      let customerId = null;
+      // Create or update customer record
+      let customerId: string | null = null;
       if (customerName && customerPhone) {
         const { data: existingCustomer } = await supabase
           .from('customers')
@@ -263,7 +263,6 @@ export const RecordSale = () => {
           .maybeSingle();
 
         if (existingCustomer) {
-          // Update existing customer
           await supabase
             .from('customers')
             .update({
@@ -275,7 +274,6 @@ export const RecordSale = () => {
             .eq('id', existingCustomer.id);
           customerId = existingCustomer.id;
         } else {
-          // Create new customer
           const { data: newCustomer } = await supabase
             .from('customers')
             .insert({
@@ -289,6 +287,20 @@ export const RecordSale = () => {
             .single();
           customerId = newCustomer?.id;
         }
+      } else {
+        // Create anonymous customer so purchase can still be recorded
+        const { data: anonCustomer } = await supabase
+          .from('customers')
+          .insert({
+            name: customerName || 'Walk-in Customer',
+            phone: customerPhone || null,
+            location_lat: location.latitude,
+            location_lng: location.longitude,
+            workspace_id: currentWorkspaceId
+          })
+          .select()
+          .single();
+        customerId = anonCustomer?.id;
       }
 
       // Submit sale with feedback data
@@ -307,26 +319,35 @@ export const RecordSale = () => {
         imageUrl: salePhotoUrl || undefined // Pass sale photo URL for wholesale
       });
 
-      // Record customer purchases if customer was created
-      if (success && customerId) {
-        // Get team's project_id for this workspace
+      // Record customer purchases (even if no customer was created)
+      if (success) {
         let projectId: string | null = null;
         if (user?.id) {
-          const { data: teamData } = await supabase
+          // 1️⃣ Get team_id
+          const { data: member } = await (supabase as any)
             .from('team_members')
-            .select('team_id, teams(project_id)')
+            .select('team_id')
             .eq('user_id', user.id)
-            .limit(1)
-            .maybeSingle() as any;
-          projectId = teamData?.teams?.project_id || null;
+            .maybeSingle();
+
+          // 2️⃣ Get project_id from teams
+          if (member?.team_id) {
+            const { data: team } = await supabase
+              .from('teams')
+              .select('project_id')
+              .eq('id', member.team_id)
+              .maybeSingle();
+            projectId = team?.project_id ?? null;
+          }
         }
 
+        // 3️⃣ Insert purchases
         for (const item of cartItems) {
           await supabase
             .from('customer_purchases')
             .insert({
               customer_id: customerId,
-              agent_id: user?.id,
+              agent_id: user?.id ?? null,
               product_variant_id: item.id,
               quantity: item.quantity,
               total_value: item.price * item.quantity,
