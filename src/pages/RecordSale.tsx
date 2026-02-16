@@ -317,9 +317,8 @@ export const RecordSale = () => {
             .select('team_id, teams(project_id)')
             .eq('user_id', user.id)
             .limit(1)
-            .maybeSingle();
-          const team = teamData?.teams as { project_id: string | null } | null;
-          projectId = team?.project_id || null;
+            .maybeSingle() as any;
+          projectId = teamData?.teams?.project_id || null;
         }
 
         for (const item of cartItems) {
