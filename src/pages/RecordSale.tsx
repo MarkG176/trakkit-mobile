@@ -312,12 +312,12 @@ export const RecordSale = () => {
         // Get team's project_id for this workspace
         let projectId: string | null = null;
         if (user?.id) {
-          const { data: teamData } = await supabase
+          const { data: teamData } = await (supabase
             .from('team_members')
             .select('team_id, teams(project_id)')
             .eq('user_id', user.id)
             .limit(1)
-            .maybeSingle();
+            .maybeSingle() as any);
           const team = teamData?.teams as { project_id: string | null } | null;
           projectId = team?.project_id || null;
         }
