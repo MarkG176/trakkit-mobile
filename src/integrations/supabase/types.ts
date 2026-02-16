@@ -3809,6 +3809,7 @@ export type Database = {
         Returns: undefined
       }
       calculate_daily_kpis: { Args: { for_date: string }; Returns: undefined }
+      check_email_exists: { Args: { p_email: string }; Returns: boolean }
       check_rate_limit: {
         Args: {
           p_action: string

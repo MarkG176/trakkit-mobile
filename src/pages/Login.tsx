@@ -9,6 +9,7 @@ import { Loader2, Mail, CheckCircle, AlertTriangle } from 'lucide-react';
 import trakkitLogo from '@/assets/trakkit-logo.png';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export const Login = () => {
   const [email, setEmail] = useState('');
@@ -67,6 +68,31 @@ export const Login = () => {
     setIsLoading(true);
     
     try {
+      // Check if email exists in user_roles before sending magic link
+      const { data: emailExists, error: checkError } = await supabase
+        .rpc('check_email_exists', { p_email: email });
+
+      if (checkError) {
+        console.error('Email check error:', checkError);
+        toast({
+          title: "Error",
+          description: "Unable to verify account. Please try again.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (!emailExists) {
+        toast({
+          title: "Account not found",
+          description: "Please contact your administrator.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const { error } = await signInWithMagicLink(email);
       
       if (error) {
