@@ -347,6 +347,7 @@ export const RecordSale = () => {
             .from('customer_purchases')
             .insert({
               customer_id: customerId,
+              customer_name: customerName || 'Walk-in Customer',
               agent_id: user?.id ?? null,
               product_variant_id: item.id,
               quantity: item.quantity,

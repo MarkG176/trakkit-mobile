@@ -886,6 +886,7 @@ export type Database = {
           agent_id: string
           created_at: string | null
           customer_id: string
+          customer_name: string | null
           id: string
           location_lat: number | null
           location_lng: number | null
@@ -901,6 +902,7 @@ export type Database = {
           agent_id: string
           created_at?: string | null
           customer_id: string
+          customer_name?: string | null
           id?: string
           location_lat?: number | null
           location_lng?: number | null
@@ -916,6 +918,7 @@ export type Database = {
           agent_id?: string
           created_at?: string | null
           customer_id?: string
+          customer_name?: string | null
           id?: string
           location_lat?: number | null
           location_lng?: number | null
