@@ -1,48 +1,44 @@
 
-# Plan: Remove Record Sale Option from Inventory Page
 
-## Overview
-Remove the "Record a Sale" button from the Inventory page's product detail view. This button currently appears when a user clicks on an inventory item to view its details.
+## Fix: TS2589 Build Error in RecordSale.tsx
 
-## Changes Required
+### Problem
+Line 315 in `RecordSale.tsx` triggers a TypeScript error: "Type instantiation is excessively deep and possibly infinite." This happens because the Supabase `.select('team_id, teams(project_id)')` chain on the `team_members` table produces deeply nested generic types that TypeScript cannot resolve.
 
-### File: `src/pages/Inventory.tsx`
+### Solution
+Cast the Supabase query result to break the deep type chain, similar to how the insert on line 338 already uses `as any`.
 
-**What to remove:**
-- Remove the "Record a Sale" button (lines 85-88) from the Actions section in the product detail view
-- Remove the unused `ShoppingCart` icon import since it will no longer be used
+### Technical Details
 
-**Before:**
-```tsx
-{/* Actions */}
-<div className="space-y-3">
-  <Button className="w-full h-12">
-    <ShoppingCart size={20} className="mr-2" />
-    Record a Sale
-  </Button>
-  <Button variant="outline" className="w-full h-12">
-    <Gift size={20} className="mr-2" />
-    Record a Giveaway
-  </Button>
-</div>
+**File: `src/pages/RecordSale.tsx`**
+
+Change the team data query (around line 315) from:
+
+```typescript
+const { data: teamData } = await supabase
+  .from('team_members')
+  .select('team_id, teams(project_id)')
+  .eq('user_id', user.id)
+  .limit(1)
+  .maybeSingle();
 ```
 
-**After:**
-```tsx
-{/* Actions */}
-<div className="space-y-3">
-  <Button variant="outline" className="w-full h-12">
-    <Gift size={20} className="mr-2" />
-    Record a Giveaway
-  </Button>
-</div>
+To:
+
+```typescript
+const { data: teamData } = await supabase
+  .from('team_members')
+  .select('team_id, teams(project_id)')
+  .eq('user_id', user.id)
+  .limit(1)
+  .maybeSingle() as any;
 ```
 
-## Technical Details
-- The `ShoppingCart` icon import will be removed from the imports at line 4
-- Only the "Record a Giveaway" button will remain in the actions section
-- No other files are affected by this change
+Then simplify the subsequent type assertion (line 321) since `teamData` is already `any`:
 
-## Impact
-- Users will no longer see the "Record a Sale" option when viewing product details in the Inventory page
-- Sales recording functionality remains available through the dedicated Record Sale page (`/record-sale`)
+```typescript
+projectId = teamData?.teams?.project_id || null;
+```
+
+This is a one-line change that resolves the build error with no behavioral impact.
+
