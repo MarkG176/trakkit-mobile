@@ -309,25 +309,33 @@ export const RecordSale = () => {
 
       // Record customer purchases if customer was created
       if (success && customerId) {
-        // Get team's project_id for this workspace
         let projectId: string | null = null;
         if (user?.id) {
-          const { data: teamData } = await (supabase
-            .from('team_members')
-            .select('team_id, teams(project_id)')
+          // 1️⃣ Get team_id
+          const { data: member } = await (supabase
+            .from('team_members' as any)
+            .select('team_id')
             .eq('user_id', user.id)
-            .limit(1)
-            .maybeSingle() as any);
-          const team = teamData?.teams as { project_id: string | null } | null;
-          projectId = team?.project_id || null;
+            .maybeSingle() as unknown as Promise<{ data: { team_id: string } | null; error: any }>);
+
+          // 2️⃣ Get project_id from teams
+          if (member?.team_id) {
+            const { data: team } = await supabase
+              .from('teams')
+              .select('project_id')
+              .eq('id', member.team_id)
+              .maybeSingle();
+            projectId = team?.project_id ?? null;
+          }
         }
 
+        // 3️⃣ Insert purchases
         for (const item of cartItems) {
           await supabase
             .from('customer_purchases')
             .insert({
               customer_id: customerId,
-              agent_id: user?.id,
+              agent_id: user?.id ?? null,
               product_variant_id: item.id,
               quantity: item.quantity,
               total_value: item.price * item.quantity,
@@ -335,7 +343,7 @@ export const RecordSale = () => {
               location_lng: location.longitude,
               workspace_id: currentWorkspaceId,
               project_id: projectId,
-            } as any);
+            });
         }
       }
 
