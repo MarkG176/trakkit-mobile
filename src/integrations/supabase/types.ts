@@ -2461,6 +2461,7 @@ export type Database = {
           product_variant_id: string | null
           quantity: number
           sale_id: string | null
+          store_id: string | null
           total_price: number
           unit_price: number
           variant_name: string | null
@@ -2479,6 +2480,7 @@ export type Database = {
           product_variant_id?: string | null
           quantity: number
           sale_id?: string | null
+          store_id?: string | null
           total_price: number
           unit_price: number
           variant_name?: string | null
@@ -2497,6 +2499,7 @@ export type Database = {
           product_variant_id?: string | null
           quantity?: number
           sale_id?: string | null
+          store_id?: string | null
           total_price?: number
           unit_price?: number
           variant_name?: string | null
@@ -2522,6 +2525,13 @@ export type Database = {
             columns: ["sale_id"]
             isOneToOne: false
             referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
             referencedColumns: ["id"]
           },
           {
