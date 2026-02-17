@@ -46,7 +46,7 @@ export const RecordSale = () => {
   const navigate = useNavigate();
   const { submitSale, loading: submitting } = useSalesForm();
   const { user } = useAuth();
-  const { currentWorkspaceId, currentTeamType } = useWorkspace();
+  const { currentWorkspaceId, currentProjectId, currentTeamType } = useWorkspace();
   const { inventory, loading } = useInventory();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
@@ -321,25 +321,7 @@ export const RecordSale = () => {
 
       // Record customer purchases (even if no customer was created)
       if (success) {
-        let projectId: string | null = null;
-        if (user?.id) {
-          // 1️⃣ Get team_id
-          const { data: member } = await (supabase as any)
-            .from('team_members')
-            .select('team_id')
-            .eq('user_id', user.id)
-            .maybeSingle();
-
-          // 2️⃣ Get project_id from teams
-          if (member?.team_id) {
-            const { data: team } = await supabase
-              .from('teams')
-              .select('project_id')
-              .eq('id', member.team_id)
-              .maybeSingle();
-            projectId = team?.project_id ?? null;
-          }
-        }
+        const projectId = currentProjectId || null;
 
         // 3️⃣ Insert purchases
         for (const item of cartItems) {
