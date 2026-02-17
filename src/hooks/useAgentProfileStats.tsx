@@ -53,6 +53,13 @@ export interface AgentProfileStats {
   reportCheckInsCount: number;
   reportInteractionsCount: number;
   reportNotesCount: number;
+
+  // Wholesale-specific
+  todayWholesaleSales: number;
+  todayWholesaleRevenue: number;
+  weekWholesaleSales: number;
+  weekWholesaleRevenue: number;
+  hasSurveyAssigned: boolean;
   
   // Loading state
   isLoading: boolean;
@@ -79,7 +86,7 @@ const getTodayDateString = () => {
 
 export const useAgentProfileStats = (): AgentProfileStats => {
   const { user } = useAuth();
-  const { currentWorkspaceId, isInitialized } = useWorkspace();
+  const { currentWorkspaceId, currentProjectId, isInitialized } = useWorkspace();
   const [stats, setStats] = useState<AgentProfileStats>({
     displayName: "",
     email: "",
@@ -119,6 +126,11 @@ export const useAgentProfileStats = (): AgentProfileStats => {
     reportCheckInsCount: 0,
     reportInteractionsCount: 0,
     reportNotesCount: 0,
+    todayWholesaleSales: 0,
+    todayWholesaleRevenue: 0,
+    weekWholesaleSales: 0,
+    weekWholesaleRevenue: 0,
+    hasSurveyAssigned: false,
     isLoading: true,
   });
 
@@ -167,6 +179,9 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           weekLunchSegments,
           todayTasks,
           reportSummary,
+          todayWholesalePurchases,
+          weekWholesalePurchases,
+          surveyCheck,
         ] = await Promise.all([
           // User role and display name
           supabase
@@ -401,6 +416,33 @@ export const useAgentProfileStats = (): AgentProfileStats => {
             .eq('workspace_id', currentWorkspaceId)
             .eq('report_date', todayDate)
             .maybeSingle(),
+
+          // Today's wholesale sales (customer_purchases)
+          supabase
+            .from('customer_purchases')
+            .select('quantity, total_value')
+            .eq('agent_id', user.id)
+            .eq('workspace_id', currentWorkspaceId)
+            .gte('purchase_date', todayStart),
+
+          // Week's wholesale sales (customer_purchases)
+          supabase
+            .from('customer_purchases')
+            .select('quantity, total_value')
+            .eq('agent_id', user.id)
+            .eq('workspace_id', currentWorkspaceId)
+            .gte('purchase_date', weekStart),
+
+          // Check if project has survey templates assigned
+          ...(currentProjectId ? [
+            supabase
+              .from('interactions')
+              .select('id', { count: 'exact', head: true })
+              .eq('workspace_id', currentWorkspaceId)
+              .eq('interaction_type', 'survey')
+              .not('survey_template_id', 'is', null)
+              .limit(1)
+          ] : [Promise.resolve({ count: 0 })]),
         ]);
 
         // Calculate totals
@@ -437,6 +479,15 @@ export const useAgentProfileStats = (): AgentProfileStats => {
 
         // Report summary
         const report = reportSummary.data;
+
+        // Wholesale calculations
+        const todayWsPurchases = (todayWholesalePurchases as any)?.data || [];
+        const weekWsPurchases = (weekWholesalePurchases as any)?.data || [];
+        const todayWsSales = todayWsPurchases.reduce((sum: number, p: any) => sum + (Number(p.quantity) || 0), 0);
+        const todayWsRevenue = todayWsPurchases.reduce((sum: number, p: any) => sum + (Number(p.total_value) || 0), 0);
+        const weekWsSales = weekWsPurchases.reduce((sum: number, p: any) => sum + (Number(p.quantity) || 0), 0);
+        const weekWsRevenue = weekWsPurchases.reduce((sum: number, p: any) => sum + (Number(p.total_value) || 0), 0);
+        const hasSurvey = ((surveyCheck as any)?.count || 0) > 0;
 
         setStats({
           displayName,
@@ -477,6 +528,11 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           reportCheckInsCount: report?.check_ins_count || 0,
           reportInteractionsCount: report?.interactions_count || 0,
           reportNotesCount: report?.notes_count || 0,
+          todayWholesaleSales: todayWsSales,
+          todayWholesaleRevenue: todayWsRevenue,
+          weekWholesaleSales: weekWsSales,
+          weekWholesaleRevenue: weekWsRevenue,
+          hasSurveyAssigned: hasSurvey,
           isLoading: false,
         });
       } catch (error) {
