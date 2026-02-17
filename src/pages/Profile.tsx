@@ -5,6 +5,7 @@ import { ArrowLeft, Mail, LogOut, MapPin, Clock, ShoppingCart, FileText, Message
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAgentProfileStats } from "@/hooks/useAgentProfileStats";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -39,7 +40,9 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
 export const Profile = () => {
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const { currentTeamType } = useWorkspace();
   const stats = useAgentProfileStats();
+  const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
 
   const handleLogout = async () => {
     await signOut();
@@ -108,29 +111,40 @@ export const Profile = () => {
             <Card>
               <CardContent className="p-4">
                 <SectionTitle>Activity & Attendance</SectionTitle>
-                <MetricRow label="Check-ins" value={stats.todayCheckIns} icon={CheckCircle} />
-                <MetricRow label="Store Visits" value={stats.todayStoreVisits} icon={Store} />
+                {!isWholesale && <MetricRow label="Check-ins" value={stats.todayCheckIns} icon={CheckCircle} />}
+                {!isWholesale && <MetricRow label="Store Visits" value={stats.todayStoreVisits} icon={Store} />}
                 <MetricRow label="Work Time" value={formatWorkTime(stats.todayWorkMinutes)} icon={Clock} />
               </CardContent>
             </Card>
 
-            {/* Tasks */}
-            <Card>
-              <CardContent className="p-4">
-                <SectionTitle>Tasks</SectionTitle>
-                <MetricRow label="Total Tasks" value={stats.todayTotalTasks} icon={ListTodo} />
-                <MetricRow label="Completed" value={stats.todayCompletedTasks} icon={CheckCircle} />
-                <MetricRow label="Pending" value={stats.todayPendingTasks} icon={Clock} />
-              </CardContent>
-            </Card>
+            {/* Tasks - hide for wholesale */}
+            {!isWholesale && (
+              <Card>
+                <CardContent className="p-4">
+                  <SectionTitle>Tasks</SectionTitle>
+                  <MetricRow label="Total Tasks" value={stats.todayTotalTasks} icon={ListTodo} />
+                  <MetricRow label="Completed" value={stats.todayCompletedTasks} icon={CheckCircle} />
+                  <MetricRow label="Pending" value={stats.todayPendingTasks} icon={Clock} />
+                </CardContent>
+              </Card>
+            )}
 
             {/* Sales & Revenue */}
             <Card>
               <CardContent className="p-4">
                 <SectionTitle>Sales & Revenue</SectionTitle>
-                <MetricRow label="Sales Made" value={stats.todaySales} icon={ShoppingCart} />
-                <MetricRow label="Revenue" value={formatCurrency(stats.todayRevenue)} icon={ShoppingCart} />
-                <MetricRow label="Stores Added" value={stats.todayStoresAdded} icon={MapPin} />
+                {isWholesale ? (
+                  <>
+                    <MetricRow label="Products Sold" value={stats.todayWholesaleSales} icon={ShoppingCart} />
+                    <MetricRow label="Revenue" value={formatCurrency(stats.todayWholesaleRevenue)} icon={ShoppingCart} />
+                  </>
+                ) : (
+                  <>
+                    <MetricRow label="Sales Made" value={stats.todaySales} icon={ShoppingCart} />
+                    <MetricRow label="Revenue" value={formatCurrency(stats.todayRevenue)} icon={ShoppingCart} />
+                    <MetricRow label="Stores Added" value={stats.todayStoresAdded} icon={MapPin} />
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -138,10 +152,12 @@ export const Profile = () => {
             <Card>
               <CardContent className="p-4">
                 <SectionTitle>Engagement</SectionTitle>
-                <MetricRow label="Interactions" value={stats.todayInteractionsCount} icon={MessageSquare} />
-                <MetricRow label="Surveys Done" value={stats.todaySurveys} icon={FileText} />
+                {!isWholesale && <MetricRow label="Interactions" value={stats.todayInteractionsCount} icon={MessageSquare} />}
+                {(!isWholesale || stats.hasSurveyAssigned) && (
+                  <MetricRow label="Surveys Done" value={stats.todaySurveys} icon={FileText} />
+                )}
                 <MetricRow label="Giveaways" value={stats.todayGiveaways} icon={Star} />
-                <MetricRow label="Items Given" value={stats.todayGiveawayItems} icon={Star} />
+                {!isWholesale && <MetricRow label="Items Given" value={stats.todayGiveawayItems} icon={Star} />}
                 <MetricRow label="Notes" value={stats.todayNotesCount} icon={FileText} />
               </CardContent>
             </Card>
@@ -153,10 +169,10 @@ export const Profile = () => {
             <Card>
               <CardContent className="p-4">
                 <SectionTitle>Activity & Attendance</SectionTitle>
-                <MetricRow label="Check-ins" value={stats.weekCheckIns} icon={CheckCircle} />
-                <MetricRow label="Store Visits" value={stats.weekStoreVisits} icon={Store} />
+                {!isWholesale && <MetricRow label="Check-ins" value={stats.weekCheckIns} icon={CheckCircle} />}
+                {!isWholesale && <MetricRow label="Store Visits" value={stats.weekStoreVisits} icon={Store} />}
                 <MetricRow label="Work Time" value={formatWorkTime(stats.weekWorkMinutes)} icon={Clock} />
-                <MetricRow label="Lunch Time" value={formatWorkTime(stats.weekLunchMinutes)} icon={Clock} />
+                {!isWholesale && <MetricRow label="Lunch Time" value={formatWorkTime(stats.weekLunchMinutes)} icon={Clock} />}
               </CardContent>
             </Card>
 
@@ -164,9 +180,18 @@ export const Profile = () => {
             <Card>
               <CardContent className="p-4">
                 <SectionTitle>Sales & Revenue</SectionTitle>
-                <MetricRow label="Sales Made" value={stats.weekSales} icon={ShoppingCart} />
-                <MetricRow label="Revenue" value={formatCurrency(stats.weekRevenue)} icon={ShoppingCart} />
-                <MetricRow label="Stores Added" value={stats.weekStoresAdded} icon={MapPin} />
+                {isWholesale ? (
+                  <>
+                    <MetricRow label="Products Sold" value={stats.weekWholesaleSales} icon={ShoppingCart} />
+                    <MetricRow label="Revenue" value={formatCurrency(stats.weekWholesaleRevenue)} icon={ShoppingCart} />
+                  </>
+                ) : (
+                  <>
+                    <MetricRow label="Sales Made" value={stats.weekSales} icon={ShoppingCart} />
+                    <MetricRow label="Revenue" value={formatCurrency(stats.weekRevenue)} icon={ShoppingCart} />
+                    <MetricRow label="Stores Added" value={stats.weekStoresAdded} icon={MapPin} />
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -174,23 +199,27 @@ export const Profile = () => {
             <Card>
               <CardContent className="p-4">
                 <SectionTitle>Engagement</SectionTitle>
-                <MetricRow label="Interactions" value={stats.weekInteractionsCount} icon={MessageSquare} />
-                <MetricRow label="Surveys Done" value={stats.weekSurveys} icon={FileText} />
+                {!isWholesale && <MetricRow label="Interactions" value={stats.weekInteractionsCount} icon={MessageSquare} />}
+                {(!isWholesale || stats.hasSurveyAssigned) && (
+                  <MetricRow label="Surveys Done" value={stats.weekSurveys} icon={FileText} />
+                )}
                 <MetricRow label="Giveaways" value={stats.weekGiveaways} icon={Star} />
-                <MetricRow label="Items Given" value={stats.weekGiveawayItems} icon={Star} />
+                {!isWholesale && <MetricRow label="Items Given" value={stats.weekGiveawayItems} icon={Star} />}
                 <MetricRow label="Notes" value={stats.weekNotesCount} icon={FileText} />
               </CardContent>
             </Card>
 
-            {/* Points */}
-            <Card>
-              <CardContent className="p-4">
-                <SectionTitle>Points & Rank</SectionTitle>
-                <MetricRow label="Rank" value={stats.currentRank} icon={Trophy} />
-                <MetricRow label="Weekly Points" value={stats.weeklyPoints} icon={Star} />
-                <MetricRow label="Total Points" value={stats.totalPoints} icon={Star} />
-              </CardContent>
-            </Card>
+            {/* Points - hide for wholesale */}
+            {!isWholesale && (
+              <Card>
+                <CardContent className="p-4">
+                  <SectionTitle>Points & Rank</SectionTitle>
+                  <MetricRow label="Rank" value={stats.currentRank} icon={Trophy} />
+                  <MetricRow label="Weekly Points" value={stats.weeklyPoints} icon={Star} />
+                  <MetricRow label="Total Points" value={stats.totalPoints} icon={Star} />
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* REPORT TAB */}
