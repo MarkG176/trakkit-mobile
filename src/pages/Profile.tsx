@@ -1,12 +1,13 @@
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Mail, LogOut } from "lucide-react";
+import { ArrowLeft, Mail, LogOut, MapPin, Clock, ShoppingCart, FileText, MessageSquare, CheckCircle, Store, ListTodo, Trophy, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAgentProfileStats } from "@/hooks/useAgentProfileStats";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const formatWorkTime = (minutes: number) => {
   const hours = Math.floor(minutes / 60);
@@ -19,11 +20,20 @@ const formatCurrency = (amount: number) => {
   return `KES ${amount.toLocaleString()}`;
 };
 
-const MetricRow = ({ label, value }: { label: string; value: string | number }) => (
+const MetricRow = ({ label, value, icon: Icon }: { label: string; value: string | number; icon?: React.ElementType }) => (
   <div className="flex items-center justify-between py-2.5 border-b border-border last:border-b-0">
-    <span className="text-sm text-muted-foreground">{label}</span>
+    <div className="flex items-center gap-2">
+      {Icon && <Icon className="w-4 h-4 text-muted-foreground" />}
+      <span className="text-sm text-muted-foreground">{label}</span>
+    </div>
     <span className="text-sm font-semibold text-foreground">{value}</span>
   </div>
+);
+
+const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+  <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+    {children}
+  </h2>
 );
 
 export const Profile = () => {
@@ -83,49 +93,134 @@ export const Profile = () => {
       />
 
       <div className="p-4 space-y-4 -mt-4">
-        {/* Today's Metrics */}
-        <Card>
-          <CardContent className="p-4">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-              Today's Summary
-            </h2>
-            <p className="text-xs text-muted-foreground mb-3">{todayDate}</p>
-            <div>
-              <MetricRow label="Stores Added" value={stats.todayStoresAdded} />
-              <MetricRow label="Sales Made" value={stats.todaySales} />
-              <MetricRow label="Revenue" value={formatCurrency(stats.todayRevenue)} />
-              <MetricRow label="Surveys Done" value={stats.todaySurveys} />
-              <MetricRow label="Giveaways" value={stats.todayGiveaways} />
-              <MetricRow label="Items Given" value={stats.todayGiveawayItems} />
-              <MetricRow label="Work Time" value={formatWorkTime(stats.todayWorkMinutes)} />
-            </div>
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="today" className="w-full">
+          <TabsList className="w-full">
+            <TabsTrigger value="today" className="flex-1">Today</TabsTrigger>
+            <TabsTrigger value="week" className="flex-1">This Week</TabsTrigger>
+            <TabsTrigger value="report" className="flex-1">Report</TabsTrigger>
+          </TabsList>
 
-        {/* Weekly Metrics */}
-        <Card>
-          <CardContent className="p-4">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-              This Week
-            </h2>
-            <div>
-              <MetricRow label="Stores Added" value={stats.weekStoresAdded} />
-              <MetricRow label="Sales Made" value={stats.weekSales} />
-              <MetricRow label="Revenue" value={formatCurrency(stats.weekRevenue)} />
-              <MetricRow label="Surveys Done" value={stats.weekSurveys} />
-              <MetricRow label="Giveaways" value={stats.weekGiveaways} />
-              <MetricRow label="Items Given" value={stats.weekGiveawayItems} />
-              <MetricRow label="Work Time" value={formatWorkTime(stats.weekWorkMinutes)} />
-            </div>
-          </CardContent>
-        </Card>
+          {/* TODAY TAB */}
+          <TabsContent value="today" className="space-y-4 mt-4">
+            <p className="text-xs text-muted-foreground">{todayDate}</p>
 
-        {/* Profile & Account */}
+            {/* Activity & Attendance */}
+            <Card>
+              <CardContent className="p-4">
+                <SectionTitle>Activity & Attendance</SectionTitle>
+                <MetricRow label="Check-ins" value={stats.todayCheckIns} icon={CheckCircle} />
+                <MetricRow label="Store Visits" value={stats.todayStoreVisits} icon={Store} />
+                <MetricRow label="Work Time" value={formatWorkTime(stats.todayWorkMinutes)} icon={Clock} />
+              </CardContent>
+            </Card>
+
+            {/* Tasks */}
+            <Card>
+              <CardContent className="p-4">
+                <SectionTitle>Tasks</SectionTitle>
+                <MetricRow label="Total Tasks" value={stats.todayTotalTasks} icon={ListTodo} />
+                <MetricRow label="Completed" value={stats.todayCompletedTasks} icon={CheckCircle} />
+                <MetricRow label="Pending" value={stats.todayPendingTasks} icon={Clock} />
+              </CardContent>
+            </Card>
+
+            {/* Sales & Revenue */}
+            <Card>
+              <CardContent className="p-4">
+                <SectionTitle>Sales & Revenue</SectionTitle>
+                <MetricRow label="Sales Made" value={stats.todaySales} icon={ShoppingCart} />
+                <MetricRow label="Revenue" value={formatCurrency(stats.todayRevenue)} icon={ShoppingCart} />
+                <MetricRow label="Stores Added" value={stats.todayStoresAdded} icon={MapPin} />
+              </CardContent>
+            </Card>
+
+            {/* Engagement */}
+            <Card>
+              <CardContent className="p-4">
+                <SectionTitle>Engagement</SectionTitle>
+                <MetricRow label="Interactions" value={stats.todayInteractionsCount} icon={MessageSquare} />
+                <MetricRow label="Surveys Done" value={stats.todaySurveys} icon={FileText} />
+                <MetricRow label="Giveaways" value={stats.todayGiveaways} icon={Star} />
+                <MetricRow label="Items Given" value={stats.todayGiveawayItems} icon={Star} />
+                <MetricRow label="Notes" value={stats.todayNotesCount} icon={FileText} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* WEEK TAB */}
+          <TabsContent value="week" className="space-y-4 mt-4">
+            {/* Activity & Attendance */}
+            <Card>
+              <CardContent className="p-4">
+                <SectionTitle>Activity & Attendance</SectionTitle>
+                <MetricRow label="Check-ins" value={stats.weekCheckIns} icon={CheckCircle} />
+                <MetricRow label="Store Visits" value={stats.weekStoreVisits} icon={Store} />
+                <MetricRow label="Work Time" value={formatWorkTime(stats.weekWorkMinutes)} icon={Clock} />
+                <MetricRow label="Lunch Time" value={formatWorkTime(stats.weekLunchMinutes)} icon={Clock} />
+              </CardContent>
+            </Card>
+
+            {/* Sales & Revenue */}
+            <Card>
+              <CardContent className="p-4">
+                <SectionTitle>Sales & Revenue</SectionTitle>
+                <MetricRow label="Sales Made" value={stats.weekSales} icon={ShoppingCart} />
+                <MetricRow label="Revenue" value={formatCurrency(stats.weekRevenue)} icon={ShoppingCart} />
+                <MetricRow label="Stores Added" value={stats.weekStoresAdded} icon={MapPin} />
+              </CardContent>
+            </Card>
+
+            {/* Engagement */}
+            <Card>
+              <CardContent className="p-4">
+                <SectionTitle>Engagement</SectionTitle>
+                <MetricRow label="Interactions" value={stats.weekInteractionsCount} icon={MessageSquare} />
+                <MetricRow label="Surveys Done" value={stats.weekSurveys} icon={FileText} />
+                <MetricRow label="Giveaways" value={stats.weekGiveaways} icon={Star} />
+                <MetricRow label="Items Given" value={stats.weekGiveawayItems} icon={Star} />
+                <MetricRow label="Notes" value={stats.weekNotesCount} icon={FileText} />
+              </CardContent>
+            </Card>
+
+            {/* Points */}
+            <Card>
+              <CardContent className="p-4">
+                <SectionTitle>Points & Rank</SectionTitle>
+                <MetricRow label="Rank" value={stats.currentRank} icon={Trophy} />
+                <MetricRow label="Weekly Points" value={stats.weeklyPoints} icon={Star} />
+                <MetricRow label="Total Points" value={stats.totalPoints} icon={Star} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* REPORT TAB */}
+          <TabsContent value="report" className="space-y-4 mt-4">
+            <p className="text-xs text-muted-foreground">From today's report summary</p>
+
+            <Card>
+              <CardContent className="p-4">
+                <SectionTitle>Work Hours</SectionTitle>
+                <MetricRow label="Net Work Time" value={formatWorkTime(stats.reportNetWorkMinutes)} icon={Clock} />
+                <MetricRow label="Total Work Time" value={formatWorkTime(stats.reportTotalWorkMinutes)} icon={Clock} />
+                <MetricRow label="Lunch Time" value={formatWorkTime(stats.reportTotalLunchMinutes)} icon={Clock} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <SectionTitle>Activity Summary</SectionTitle>
+                <MetricRow label="Check-ins" value={stats.reportCheckInsCount} icon={CheckCircle} />
+                <MetricRow label="Interactions" value={stats.reportInteractionsCount} icon={MessageSquare} />
+                <MetricRow label="Notes" value={stats.reportNotesCount} icon={FileText} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Account Card - always visible */}
         <Card>
           <CardContent className="p-4">
-            <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">
-              Account
-            </h3>
+            <SectionTitle>Account</SectionTitle>
             <div className="flex items-center gap-3 mb-4">
               <Mail className="w-5 h-5 text-muted-foreground" />
               <span className="text-foreground text-sm">{stats.email}</span>

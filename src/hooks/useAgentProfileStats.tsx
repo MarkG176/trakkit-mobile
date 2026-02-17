@@ -22,6 +22,10 @@ export interface AgentProfileStats {
   todayGiveaways: number;
   todayGiveawayItems: number;
   todayWorkMinutes: number;
+  todayCheckIns: number;
+  todayNotesCount: number;
+  todayInteractionsCount: number;
+  todayStoreVisits: number;
   
   // Weekly Stats
   weekStoresAdded: number;
@@ -31,6 +35,24 @@ export interface AgentProfileStats {
   weekGiveaways: number;
   weekGiveawayItems: number;
   weekWorkMinutes: number;
+  weekCheckIns: number;
+  weekNotesCount: number;
+  weekInteractionsCount: number;
+  weekStoreVisits: number;
+  weekLunchMinutes: number;
+  
+  // Tasks
+  todayTotalTasks: number;
+  todayCompletedTasks: number;
+  todayPendingTasks: number;
+  
+  // Report summary (from agent_report_summary)
+  reportNetWorkMinutes: number;
+  reportTotalWorkMinutes: number;
+  reportTotalLunchMinutes: number;
+  reportCheckInsCount: number;
+  reportInteractionsCount: number;
+  reportNotesCount: number;
   
   // Loading state
   isLoading: boolean;
@@ -45,7 +67,7 @@ const getStartOfDay = () => {
 const getStartOfWeek = () => {
   const today = new Date();
   const dayOfWeek = today.getDay();
-  const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Monday
+  const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
   const monday = new Date(today.setDate(diff));
   monday.setHours(0, 0, 0, 0);
   return monday.toISOString();
@@ -72,6 +94,10 @@ export const useAgentProfileStats = (): AgentProfileStats => {
     todayGiveaways: 0,
     todayGiveawayItems: 0,
     todayWorkMinutes: 0,
+    todayCheckIns: 0,
+    todayNotesCount: 0,
+    todayInteractionsCount: 0,
+    todayStoreVisits: 0,
     weekStoresAdded: 0,
     weekSales: 0,
     weekRevenue: 0,
@@ -79,17 +105,26 @@ export const useAgentProfileStats = (): AgentProfileStats => {
     weekGiveaways: 0,
     weekGiveawayItems: 0,
     weekWorkMinutes: 0,
+    weekCheckIns: 0,
+    weekNotesCount: 0,
+    weekInteractionsCount: 0,
+    weekStoreVisits: 0,
+    weekLunchMinutes: 0,
+    todayTotalTasks: 0,
+    todayCompletedTasks: 0,
+    todayPendingTasks: 0,
+    reportNetWorkMinutes: 0,
+    reportTotalWorkMinutes: 0,
+    reportTotalLunchMinutes: 0,
+    reportCheckInsCount: 0,
+    reportInteractionsCount: 0,
+    reportNotesCount: 0,
     isLoading: true,
   });
 
   useEffect(() => {
     const fetchStats = async () => {
-      if (!user) {
-        setStats(prev => ({ ...prev, isLoading: false }));
-        return;
-      }
-
-      if (!currentWorkspaceId) {
+      if (!user || !currentWorkspaceId) {
         setStats(prev => ({ ...prev, isLoading: false }));
         return;
       }
@@ -120,6 +155,18 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           weekGiveaways,
           todayWorkSegments,
           weekWorkSegments,
+          // New queries
+          todayCheckIns,
+          weekCheckIns,
+          todayNotes,
+          weekNotes,
+          todayInteractions,
+          weekInteractions,
+          todayStoreVisits,
+          weekStoreVisits,
+          weekLunchSegments,
+          todayTasks,
+          reportSummary,
         ] = await Promise.all([
           // User role and display name
           supabase
@@ -240,6 +287,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
             .select('duration_minutes')
             .eq('agent_id', user.id)
             .eq('workspace_id', currentWorkspaceId)
+            .eq('segment_type', 'work')
             .eq('work_date', todayDate),
           
           // Week's work segments
@@ -248,26 +296,122 @@ export const useAgentProfileStats = (): AgentProfileStats => {
             .select('duration_minutes')
             .eq('agent_id', user.id)
             .eq('workspace_id', currentWorkspaceId)
+            .eq('segment_type', 'work')
             .gte('work_date', weekStartDate),
+
+          // ====== NEW QUERIES ======
+
+          // Today's check-ins (status = 'checked_in')
+          supabase
+            .from('agent_status_log')
+            .select('id', { count: 'exact', head: true })
+            .eq('agent_id', user.id)
+            .eq('workspace_id', currentWorkspaceId)
+            .eq('status', 'checked_in')
+            .gte('timestamp', todayStart),
+
+          // Week's check-ins
+          supabase
+            .from('agent_status_log')
+            .select('id', { count: 'exact', head: true })
+            .eq('agent_id', user.id)
+            .eq('workspace_id', currentWorkspaceId)
+            .eq('status', 'checked_in')
+            .gte('timestamp', weekStart),
+
+          // Today's notes
+          supabase
+            .from('notes')
+            .select('id', { count: 'exact', head: true })
+            .eq('agent_id', user.id)
+            .eq('workspace_id', currentWorkspaceId)
+            .not('is_deleted', 'is', true)
+            .gte('created_at', todayStart),
+
+          // Week's notes
+          supabase
+            .from('notes')
+            .select('id', { count: 'exact', head: true })
+            .eq('agent_id', user.id)
+            .eq('workspace_id', currentWorkspaceId)
+            .not('is_deleted', 'is', true)
+            .gte('created_at', weekStart),
+
+          // Today's all interactions count
+          supabase
+            .from('interactions')
+            .select('id', { count: 'exact', head: true })
+            .eq('agent_id', user.id)
+            .eq('workspace_id', currentWorkspaceId)
+            .not('is_deleted', 'is', true)
+            .gte('created_at', todayStart),
+
+          // Week's all interactions count
+          supabase
+            .from('interactions')
+            .select('id', { count: 'exact', head: true })
+            .eq('agent_id', user.id)
+            .eq('workspace_id', currentWorkspaceId)
+            .not('is_deleted', 'is', true)
+            .gte('created_at', weekStart),
+
+          // Today's store visits (check-ins with store_id)
+          supabase
+            .from('agent_status_log')
+            .select('id', { count: 'exact', head: true })
+            .eq('agent_id', user.id)
+            .eq('workspace_id', currentWorkspaceId)
+            .eq('status', 'checked_in')
+            .not('store_id', 'is', null)
+            .gte('timestamp', todayStart),
+
+          // Week's store visits
+          supabase
+            .from('agent_status_log')
+            .select('id', { count: 'exact', head: true })
+            .eq('agent_id', user.id)
+            .eq('workspace_id', currentWorkspaceId)
+            .eq('status', 'checked_in')
+            .not('store_id', 'is', null)
+            .gte('timestamp', weekStart),
+
+          // Week's lunch segments
+          supabase
+            .from('agent_work_segments')
+            .select('duration_minutes')
+            .eq('agent_id', user.id)
+            .eq('workspace_id', currentWorkspaceId)
+            .eq('segment_type', 'lunch')
+            .gte('work_date', weekStartDate),
+
+          // Today's tasks
+          supabase
+            .from('agent_tasks')
+            .select('id, status')
+            .eq('agent_id', user.id)
+            .eq('workspace_id', currentWorkspaceId)
+            .not('is_deleted', 'is', true)
+            .gte('created_at', todayStart),
+
+          // Today's report summary
+          supabase
+            .from('agent_report_summary')
+            .select('net_work_minutes, total_work_minutes, total_lunch_minutes, check_ins_count, interactions_count, notes_count')
+            .eq('agent_id', user.id)
+            .eq('workspace_id', currentWorkspaceId)
+            .eq('report_date', todayDate)
+            .maybeSingle(),
         ]);
 
         // Calculate totals
         const todayInteractionSalesUnits = todaySales.data?.reduce(
-          (sum, s) => sum + (Number(s.quantity_sold) || 0),
-          0
-        ) || 0;
+          (sum, s) => sum + (Number(s.quantity_sold) || 0), 0) || 0;
         const weekInteractionSalesUnits = weekSales.data?.reduce(
-          (sum, s) => sum + (Number(s.quantity_sold) || 0),
-          0
-        ) || 0;
+          (sum, s) => sum + (Number(s.quantity_sold) || 0), 0) || 0;
         const todayDailySalesUnits = todayDailySales.data?.reduce(
-          (sum, s) => sum + (Number(s.quantity_sold) || 0),
-          0
-        ) || 0;
+          (sum, s) => sum + (Number(s.quantity_sold) || 0), 0) || 0;
         const weekDailySalesUnits = weekDailySales.data?.reduce(
-          (sum, s) => sum + (Number(s.quantity_sold) || 0),
-          0
-        ) || 0;
+          (sum, s) => sum + (Number(s.quantity_sold) || 0), 0) || 0;
         const todayRevenueTotal =
           (todaySales.data?.reduce((sum, s) => sum + (Number(s.sale_value) || 0), 0) || 0) +
           (todayDailySales.data?.reduce((sum, s) => sum + (Number(s.total_value) || 0), 0) || 0);
@@ -278,11 +422,21 @@ export const useAgentProfileStats = (): AgentProfileStats => {
         const weekGiveawayItemsTotal = weekGiveaways.data?.reduce((sum, g) => sum + (g.total_items || 0), 0) || 0;
         const todayWorkMinutesTotal = todayWorkSegments.data?.reduce((sum, s) => sum + (s.duration_minutes || 0), 0) || 0;
         const weekWorkMinutesTotal = weekWorkSegments.data?.reduce((sum, s) => sum + (s.duration_minutes || 0), 0) || 0;
+        const weekLunchMinutesTotal = weekLunchSegments.data?.reduce((sum, s) => sum + (s.duration_minutes || 0), 0) || 0;
+        
         const displayName = userRoleData.data?.display_name
           || [userRoleData.data?.first_name, userRoleData.data?.last_name].filter(Boolean).join(' ')
           || user.user_metadata?.full_name
           || user.email?.split('@')[0]
           || "Agent";
+
+        // Tasks
+        const tasks = todayTasks.data || [];
+        const completedTasks = tasks.filter(t => t.status === 'completed').length;
+        const pendingTasks = tasks.filter(t => t.status === 'pending').length;
+
+        // Report summary
+        const report = reportSummary.data;
 
         setStats({
           displayName,
@@ -298,6 +452,10 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           todayGiveaways: todayGiveaways.data?.length || 0,
           todayGiveawayItems: todayGiveawayItemsTotal,
           todayWorkMinutes: todayWorkMinutesTotal,
+          todayCheckIns: todayCheckIns.count || 0,
+          todayNotesCount: todayNotes.count || 0,
+          todayInteractionsCount: todayInteractions.count || 0,
+          todayStoreVisits: todayStoreVisits.count || 0,
           weekStoresAdded: weekStores.count || 0,
           weekSales: weekInteractionSalesUnits + weekDailySalesUnits,
           weekRevenue: weekRevenueTotal,
@@ -305,6 +463,20 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           weekGiveaways: weekGiveaways.data?.length || 0,
           weekGiveawayItems: weekGiveawayItemsTotal,
           weekWorkMinutes: weekWorkMinutesTotal,
+          weekCheckIns: weekCheckIns.count || 0,
+          weekNotesCount: weekNotes.count || 0,
+          weekInteractionsCount: weekInteractions.count || 0,
+          weekStoreVisits: weekStoreVisits.count || 0,
+          weekLunchMinutes: weekLunchMinutesTotal,
+          todayTotalTasks: tasks.length,
+          todayCompletedTasks: completedTasks,
+          todayPendingTasks: pendingTasks,
+          reportNetWorkMinutes: report?.net_work_minutes || 0,
+          reportTotalWorkMinutes: report?.total_work_minutes || 0,
+          reportTotalLunchMinutes: report?.total_lunch_minutes || 0,
+          reportCheckInsCount: report?.check_ins_count || 0,
+          reportInteractionsCount: report?.interactions_count || 0,
+          reportNotesCount: report?.notes_count || 0,
           isLoading: false,
         });
       } catch (error) {
