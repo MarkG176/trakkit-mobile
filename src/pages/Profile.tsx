@@ -40,9 +40,28 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
 export const Profile = () => {
   const navigate = useNavigate();
   const { signOut } = useAuth();
-  const { currentTeamType } = useWorkspace();
+  const { currentTeamType, isInitialized, isLoading: isWorkspaceLoading } = useWorkspace();
   const stats = useAgentProfileStats();
   const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
+
+  if (!isInitialized || isWorkspaceLoading) {
+    return (
+      <MobileLayout currentPage="more">
+        <div className="bg-primary p-6 pb-8">
+          <div className="flex items-center gap-4 mb-4">
+            <Skeleton className="w-20 h-20 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+          </div>
+        </div>
+        <div className="p-4 space-y-4">
+          <Skeleton className="h-96 w-full" />
+        </div>
+      </MobileLayout>
+    );
+  }
 
   const handleLogout = async () => {
     await signOut();
