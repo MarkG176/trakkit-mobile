@@ -312,6 +312,7 @@ export const Routes = () => {
           distance_from_assigned: distance,
           in_range: inRange,
           workspace_id: currentWorkspaceId,
+          store_id: selectedStoreData.id,
         });
 
       if (error) throw error;
