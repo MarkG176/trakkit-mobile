@@ -39,7 +39,7 @@ interface InventoryItem {
 
 export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, storeCounty }: StoreSuccessDialogProps) => {
   const { toast } = useToast();
-  const { currentWorkspaceId } = useWorkspace();
+  const { currentWorkspaceId, currentProjectId } = useWorkspace();
   const [activeAction, setActiveAction] = useState<ActionType>(null);
   const [loading, setLoading] = useState(false);
 
@@ -242,18 +242,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
 
       if (interactionError) throw interactionError;
 
-      // Get team's project_id for this workspace
-      let projectId: string | null = null;
-      if (user.id && currentWorkspaceId) {
-        const { data: teamData } = await (supabase
-          .from('team_members') as any)
-          .select('team_id, teams(project_id)')
-          .eq('user_id', user.id)
-          .limit(1)
-          .maybeSingle();
-        const team = teamData?.teams as { project_id: string | null } | null;
-        projectId = team?.project_id || null;
-      }
+      const projectId = currentProjectId || null;
 
       // Record customer purchase
       await supabase.from('customer_purchases').insert({
