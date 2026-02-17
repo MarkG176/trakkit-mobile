@@ -188,6 +188,26 @@ export const Routes = () => {
         throw error;
       }
 
+      // Auto-add to project's target_stores
+      if (currentWorkspaceId) {
+        const { data: activeProject } = await supabase
+          .from('project_plans')
+          .select('id, target_stores')
+          .eq('workspace_id', currentWorkspaceId)
+          .eq('status', 'active')
+          .eq('is_deleted', false)
+          .limit(1)
+          .single();
+
+        if (activeProject) {
+          const updatedStores = [...(activeProject.target_stores || []), insertedStore.id];
+          await supabase
+            .from('project_plans')
+            .update({ target_stores: updatedStores })
+            .eq('id', activeProject.id);
+        }
+      }
+
       // Store the added store info and show success dialog
       setAddedStore({
         id: insertedStore.id,
