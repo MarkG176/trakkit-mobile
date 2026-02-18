@@ -56,6 +56,7 @@ export const Routes = () => {
 
   // Check if current team type is wholesale - hide Add Location for wholesale
   const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
+  const isSeeding = currentTeamType?.toLowerCase() === 'seeding';
 
   useEffect(() => {
     fetchStores();
@@ -386,6 +387,8 @@ export const Routes = () => {
 
 
       {/* Location Selection Form */}
+      {/* Set Assigned Location - Hidden for seeding */}
+      {!isSeeding && (
       <div className="px-4 pb-20">
         <Card className="p-4">
           <h2 className="text-h2 mb-4">Set Your Assigned Location</h2>
@@ -455,7 +458,10 @@ export const Routes = () => {
             </Button>
           </div>
         </Card>
+      </div>
+      )}
 
+      <div className="px-4 pb-20">
         {/* Add Location Form - Hidden for wholesale */}
         {!isWholesale && (
         <Card className="p-4 mt-4">
