@@ -1,44 +1,23 @@
 
 
-## Fix: TS2589 Build Error in RecordSale.tsx
+## Filter Inventory Page by Workspace
 
-### Problem
-Line 315 in `RecordSale.tsx` triggers a TypeScript error: "Type instantiation is excessively deep and possibly infinite." This happens because the Supabase `.select('team_id, teams(project_id)')` chain on the `team_members` table produces deeply nested generic types that TypeScript cannot resolve.
+**What this changes:**
+The Inventory page currently shows all inventory items assigned to the logged-in agent, regardless of which workspace is selected. After this change, it will only show items belonging to the currently selected workspace.
 
-### Solution
-Cast the Supabase query result to break the deep type chain, similar to how the insert on line 338 already uses `as any`.
+**How it works:**
+The `agent_task_inventory` table does not have a `workspace_id` column, but its linked `product_variants` table does. So we filter by matching `product_variants.workspace_id` to the current workspace.
+
+---
 
 ### Technical Details
 
-**File: `src/pages/RecordSale.tsx`**
+**File: `src/hooks/useInventory.tsx`**
 
-Change the team data query (around line 315) from:
+1. Import `useWorkspace` hook to get `currentWorkspaceId`
+2. Add a `.eq('product_variants.workspace_id', currentWorkspaceId)` filter to the existing query (since the query already joins `product_variants`)
+3. Add `currentWorkspaceId` to the `useEffect` dependency array so inventory refreshes when the user switches workspaces
+4. Skip fetching if `currentWorkspaceId` is not set (similar to the existing `user` check)
 
-```typescript
-const { data: teamData } = await supabase
-  .from('team_members')
-  .select('team_id, teams(project_id)')
-  .eq('user_id', user.id)
-  .limit(1)
-  .maybeSingle();
-```
-
-To:
-
-```typescript
-const { data: teamData } = await supabase
-  .from('team_members')
-  .select('team_id, teams(project_id)')
-  .eq('user_id', user.id)
-  .limit(1)
-  .maybeSingle() as any;
-```
-
-Then simplify the subsequent type assertion (line 321) since `teamData` is already `any`:
-
-```typescript
-projectId = teamData?.teams?.project_id || null;
-```
-
-This is a one-line change that resolves the build error with no behavioral impact.
+This follows the same workspace-filtering pattern used in `useProducts` and other hooks throughout the app.
 
