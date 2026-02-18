@@ -299,7 +299,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           // Today's work segments
           supabase
             .from('agent_work_segments')
-            .select('duration_minutes')
+            .select('duration_minutes, segment_start, segment_end, segment_type')
             .eq('agent_id', user.id)
             .eq('workspace_id', currentWorkspaceId)
             .eq('segment_type', 'work')
@@ -308,7 +308,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           // Week's work segments
           supabase
             .from('agent_work_segments')
-            .select('duration_minutes')
+            .select('duration_minutes, segment_start, segment_end, segment_type')
             .eq('agent_id', user.id)
             .eq('workspace_id', currentWorkspaceId)
             .eq('segment_type', 'work')
@@ -462,8 +462,22 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           (weekDailySales.data?.reduce((sum, s) => sum + (Number(s.total_value) || 0), 0) || 0);
         const todayGiveawayItemsTotal = todayGiveaways.data?.reduce((sum, g) => sum + (g.total_items || 0), 0) || 0;
         const weekGiveawayItemsTotal = weekGiveaways.data?.reduce((sum, g) => sum + (g.total_items || 0), 0) || 0;
-        const todayWorkMinutesTotal = todayWorkSegments.data?.reduce((sum, s) => sum + (s.duration_minutes || 0), 0) || 0;
-        const weekWorkMinutesTotal = weekWorkSegments.data?.reduce((sum, s) => sum + (s.duration_minutes || 0), 0) || 0;
+        const calcSegmentMinutes = (segments: any[] | null) => {
+          if (!segments) return 0;
+          return segments.reduce((sum, s) => {
+            if (s.duration_minutes && s.duration_minutes > 0) {
+              return sum + s.duration_minutes;
+            }
+            // For active segments (no end time), calculate elapsed time
+            if (s.segment_start && !s.segment_end) {
+              const elapsed = Math.floor((Date.now() - new Date(s.segment_start).getTime()) / 60000);
+              return sum + Math.max(0, elapsed);
+            }
+            return sum;
+          }, 0);
+        };
+        const todayWorkMinutesTotal = calcSegmentMinutes(todayWorkSegments.data);
+        const weekWorkMinutesTotal = calcSegmentMinutes(weekWorkSegments.data);
         const weekLunchMinutesTotal = weekLunchSegments.data?.reduce((sum, s) => sum + (s.duration_minutes || 0), 0) || 0;
         
         const displayName = userRoleData.data?.display_name

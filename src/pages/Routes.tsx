@@ -467,7 +467,7 @@ export const Routes = () => {
         <Card className="p-4 mt-4">
           <div className="flex items-center gap-2 mb-4">
             <Plus size={20} className="text-primary" />
-            <h2 className="text-h2">Add Location</h2>
+            <h2 className="text-h2">Add Store</h2>
           </div>
           
           {!showAddLocationForm ? (
@@ -536,6 +536,16 @@ export const Routes = () => {
                   <div className="text-xs text-muted-foreground">
                     <p className="text-orange-600">⚠ Location not available</p>
                     <p>Please enable location access to add a store</p>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={requestLocation}
+                      disabled={isLoadingLocation}
+                      className="mt-2"
+                    >
+                      <MapPin size={14} className="mr-1" />
+                      {isLoadingLocation ? "Getting location..." : "Refresh Location"}
+                    </Button>
                   </div>
                 )}
               </div>
