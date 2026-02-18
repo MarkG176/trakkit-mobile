@@ -2575,13 +2575,6 @@ export type Database = {
             referencedColumns: ["project_id"]
           },
           {
-            foreignKeyName: "sale_items_sale_id_fkey"
-            columns: ["sale_id"]
-            isOneToOne: false
-            referencedRelation: "sales"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "sale_items_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
