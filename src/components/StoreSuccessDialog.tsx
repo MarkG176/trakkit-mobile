@@ -592,22 +592,31 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
               <Label className="text-sm font-medium">Add Products</Label>
               <div className="space-y-2 mt-2">
                 {products.map((product) => (
-                  <div key={product.product_variant_id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{product.name || 'Unknown Product'}</p>
-                      <p className="text-xs text-muted-foreground">Available: {product.amount_issued}</p>
-                      {product.product_variants?.price > 0 && (
-                        <p className="text-xs font-medium text-primary">KES {product.product_variants.price}</p>
-                      )}
-                    </div>
-                    <Button
-                      size="sm"
-                      onClick={() => addToSaleCart(product)}
-                      className="shrink-0"
-                    >
-                      <Plus size={14} className="mr-1" /> Add
-                    </Button>
-                  </div>
+                  <Card key={product.product_variant_id} className="overflow-hidden">
+                    <CardContent className="p-3">
+                      <div className="flex gap-3">
+                        <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center shrink-0">
+                          <ShoppingCart size={16} className="text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{product.name || 'Unknown Product'}</p>
+                          <p className="text-xs text-muted-foreground">Available: {product.amount_issued}</p>
+                          {product.product_variants?.price > 0 && (
+                            <p className="text-xs font-medium text-primary">KES {product.product_variants.price}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center">
+                          <Button
+                            size="sm"
+                            onClick={() => addToSaleCart(product)}
+                            className="shrink-0"
+                          >
+                            <Plus size={14} className="mr-1" /> Add
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             </div>
@@ -618,24 +627,16 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                 <Label className="text-sm font-medium">Sale Items</Label>
                 <div className="space-y-3 mt-2">
                   {saleCartItems.map((item) => (
-                    <div key={item.productVariantId} className="p-4 bg-muted rounded-lg space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-sm">{item.name}</h4>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 text-destructive"
-                          onClick={() => updateSaleQuantity(item.productVariantId, 0)}
-                        >
-                          <Trash2 size={14} />
-                        </Button>
+                    <div key={item.productVariantId} className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                      <div className="w-10 h-10 bg-background rounded-lg flex items-center justify-center shrink-0">
+                        <ShoppingCart size={14} className="text-muted-foreground" />
                       </div>
                       
-                      {/* Price */}
-                      <div>
-                        <span className="text-xs text-muted-foreground">Price (KES)</span>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-sm">{item.name}</h4>
                         {editingSalePriceId === item.productVariantId ? (
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center gap-1 mt-1">
+                            <span className="text-xs text-muted-foreground">KES</span>
                             <Input
                               type="number"
                               min="0"
@@ -648,62 +649,63 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                                 }
                               }}
                               autoFocus
-                              className="w-28 h-8 text-sm"
+                              className="w-24 h-7 text-sm p-1"
                             />
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-sm font-medium">KES {item.price}</span>
+                          <div className="flex items-center gap-1">
+                            <p className="text-xs text-muted-foreground">KES {item.price}</p>
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-6 w-6"
+                              className="h-5 w-5"
                               onClick={() => setEditingSalePriceId(item.productVariantId)}
                             >
-                              <Edit2 size={12} />
+                              <Edit2 size={10} />
                             </Button>
                           </div>
                         )}
                       </div>
 
-                      {/* Quantity */}
-                      <div>
-                        <span className="text-xs text-muted-foreground">Quantity</span>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Button
-                            size="icon"
-                            variant="outline"
-                            className="h-8 w-8"
-                            onClick={() => updateSaleQuantity(item.productVariantId, item.quantity - 1)}
-                          >
-                            <Minus size={12} />
-                          </Button>
-                          <Input
-                            type="number"
-                            min="1"
-                            value={item.quantity}
-                            onChange={(e) => updateSaleQuantity(item.productVariantId, parseInt(e.target.value) || 1)}
-                            className="w-16 h-8 text-center p-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                          />
-                          <Button
-                            size="icon"
-                            variant="outline"
-                            className="h-8 w-8"
-                            onClick={() => updateSaleQuantity(item.productVariantId, item.quantity + 1)}
-                          >
-                            <Plus size={12} />
-                          </Button>
-                        </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="h-7 w-7"
+                          onClick={() => updateSaleQuantity(item.productVariantId, item.quantity - 1)}
+                        >
+                          <Minus size={12} />
+                        </Button>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={item.quantity}
+                          onChange={(e) => updateSaleQuantity(item.productVariantId, parseInt(e.target.value) || 1)}
+                          className="w-12 h-7 text-center p-0 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="h-7 w-7"
+                          onClick={() => updateSaleQuantity(item.productVariantId, item.quantity + 1)}
+                        >
+                          <Plus size={12} />
+                        </Button>
                       </div>
 
-                      <div className="text-right text-sm font-semibold text-primary">
-                        Subtotal: KES {(item.price * item.quantity).toFixed(2)}
-                      </div>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-destructive shrink-0"
+                        onClick={() => updateSaleQuantity(item.productVariantId, 0)}
+                      >
+                        <Minus size={12} />
+                      </Button>
                     </div>
                   ))}
                 </div>
 
-                <div className="flex justify-between items-center mt-3 pt-3 border-t font-bold">
+                <div className="flex justify-between items-center mt-3 pt-3 border-t text-base font-bold">
                   <span>Total:</span>
                   <span>KES {saleTotalAmount.toFixed(2)}</span>
                 </div>
