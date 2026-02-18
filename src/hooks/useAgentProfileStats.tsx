@@ -296,21 +296,21 @@ export const useAgentProfileStats = (): AgentProfileStats => {
             .not('is_deleted', 'is', true)
             .gte('recorded_at', weekStart),
           
-          // Today's work segments (all types: work + lunch)
+          // Today's status logs for work time calculation (same method as WorkHoursCard)
           supabase
-            .from('agent_work_segments')
-            .select('duration_minutes, segment_start, segment_end, segment_type')
+            .from('agent_status_log')
+            .select('status, created_at')
             .eq('agent_id', user.id)
-            .eq('workspace_id', currentWorkspaceId)
-            .eq('work_date', todayDate),
+            .gte('created_at', todayStart)
+            .order('created_at', { ascending: true }),
           
-          // Week's work segments (all types: work + lunch)
+          // Week's status logs for work time calculation
           supabase
-            .from('agent_work_segments')
-            .select('duration_minutes, segment_start, segment_end, segment_type')
+            .from('agent_status_log')
+            .select('status, created_at')
             .eq('agent_id', user.id)
-            .eq('workspace_id', currentWorkspaceId)
-            .gte('work_date', weekStartDate),
+            .gte('created_at', weekStart)
+            .order('created_at', { ascending: true }),
 
           // ====== NEW QUERIES ======
 
@@ -454,29 +454,35 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           (weekDailySales.data?.reduce((sum, s) => sum + (Number(s.total_value) || 0), 0) || 0);
         const todayGiveawayItemsTotal = todayGiveaways.data?.reduce((sum, g) => sum + (g.total_items || 0), 0) || 0;
         const weekGiveawayItemsTotal = weekGiveaways.data?.reduce((sum, g) => sum + (g.total_items || 0), 0) || 0;
-        const calcSegmentMinutes = (segments: any[] | null, typeFilter?: string) => {
-          if (!segments) return 0;
-          const filtered = typeFilter ? segments.filter(s => s.segment_type === typeFilter) : segments;
-          return filtered.reduce((sum, s) => {
-            if (s.duration_minutes && s.duration_minutes > 0) {
-              return sum + s.duration_minutes;
+        // Calculate work hours from status logs (same logic as WorkHoursCard)
+        const calculateWorkMinutesFromLogs = (logs: any[] | null) => {
+          if (!logs || logs.length === 0) return 0;
+          let totalMinutes = 0;
+          let currentCheckIn: any = null;
+
+          logs.forEach(log => {
+            if (log.status === 'checked_in' && !currentCheckIn) {
+              currentCheckIn = log;
+            } else if ((log.status === 'lunch' || log.status === 'checked_out') && currentCheckIn) {
+              const checkInTime = new Date(currentCheckIn.created_at).getTime();
+              const checkOutTime = new Date(log.created_at).getTime();
+              totalMinutes += Math.max(0, (checkOutTime - checkInTime) / 60000);
+              currentCheckIn = null;
             }
-            // For active segments (no end time), calculate elapsed time
-            if (s.segment_start && !s.segment_end) {
-              const elapsed = Math.floor((Date.now() - new Date(s.segment_start).getTime()) / 60000);
-              return sum + Math.max(0, elapsed);
-            }
-            return sum;
-          }, 0);
+          });
+
+          // If still checked in
+          if (currentCheckIn) {
+            const checkInTime = new Date(currentCheckIn.created_at).getTime();
+            totalMinutes += Math.max(0, (Date.now() - checkInTime) / 60000);
+          }
+
+          return Math.round(totalMinutes);
         };
-        // net_work_minutes = total_work_minutes - total_lunch_minutes
-        const todayTotalWork = calcSegmentMinutes(todayWorkSegments.data, 'work');
-        const todayTotalLunch = calcSegmentMinutes(todayWorkSegments.data, 'lunch');
-        const todayWorkMinutesTotal = todayTotalWork - todayTotalLunch;
-        const weekTotalWork = calcSegmentMinutes(weekWorkSegments.data, 'work');
-        const weekTotalLunch = calcSegmentMinutes(weekWorkSegments.data, 'lunch');
-        const weekWorkMinutesTotal = weekTotalWork - weekTotalLunch;
-        const weekLunchMinutesTotal = weekTotalLunch;
+
+        const todayWorkMinutesTotal = calculateWorkMinutesFromLogs(todayWorkSegments.data);
+        const weekWorkMinutesTotal = calculateWorkMinutesFromLogs(weekWorkSegments.data);
+        const weekLunchMinutesTotal = 0; // Lunch is already excluded from work time calculation
         
         const displayName = userRoleData.data?.display_name
           || [userRoleData.data?.first_name, userRoleData.data?.last_name].filter(Boolean).join(' ')
