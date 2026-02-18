@@ -1030,6 +1030,7 @@ export type Database = {
           id: string
           product_name: string | null
           product_variant_id: string
+          project_id: string | null
           quantity_sold: number
           recorded_at: string
           status_event: string
@@ -1045,6 +1046,7 @@ export type Database = {
           id?: string
           product_name?: string | null
           product_variant_id: string
+          project_id?: string | null
           quantity_sold?: number
           recorded_at?: string
           status_event: string
@@ -1060,6 +1062,7 @@ export type Database = {
           id?: string
           product_name?: string | null
           product_variant_id?: string
+          project_id?: string | null
           quantity_sold?: number
           recorded_at?: string
           status_event?: string
@@ -1075,6 +1078,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "product_variants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_sales_tracking_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_sales_tracking_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_stats_view"
+            referencedColumns: ["project_id"]
           },
           {
             foreignKeyName: "daily_sales_tracking_workspace_id_fkey"
@@ -1243,6 +1260,7 @@ export type Database = {
           location_lng: number | null
           notes: string | null
           products_given: Json
+          project_id: string | null
           recipient_name: string | null
           recipient_phone: string | null
           recorded_at: string
@@ -1264,6 +1282,7 @@ export type Database = {
           location_lng?: number | null
           notes?: string | null
           products_given?: Json
+          project_id?: string | null
           recipient_name?: string | null
           recipient_phone?: string | null
           recorded_at?: string
@@ -1285,6 +1304,7 @@ export type Database = {
           location_lng?: number | null
           notes?: string | null
           products_given?: Json
+          project_id?: string | null
           recipient_name?: string | null
           recipient_phone?: string | null
           recorded_at?: string
@@ -1294,6 +1314,20 @@ export type Database = {
           workspace_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "giveaways_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "giveaways_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_stats_view"
+            referencedColumns: ["project_id"]
+          },
           {
             foreignKeyName: "giveaways_store_id_fkey"
             columns: ["store_id"]
@@ -2090,7 +2124,7 @@ export type Database = {
           phases: Json
           product_focus: string
           project_name: string | null
-          project_type: string | null
+          project_type: string
           resource_requirements: Json | null
           sales_target: number
           start_date: string | null
@@ -2124,7 +2158,7 @@ export type Database = {
           phases?: Json
           product_focus: string
           project_name?: string | null
-          project_type?: string | null
+          project_type?: string
           resource_requirements?: Json | null
           sales_target: number
           start_date?: string | null
@@ -2158,7 +2192,7 @@ export type Database = {
           phases?: Json
           product_focus?: string
           project_name?: string | null
-          project_type?: string | null
+          project_type?: string
           resource_requirements?: Json | null
           sales_target?: number
           start_date?: string | null
@@ -2459,6 +2493,7 @@ export type Database = {
           product_id: string | null
           product_name: string | null
           product_variant_id: string | null
+          project_id: string | null
           quantity: number
           sale_id: string | null
           store_id: string | null
@@ -2478,6 +2513,7 @@ export type Database = {
           product_id?: string | null
           product_name?: string | null
           product_variant_id?: string | null
+          project_id?: string | null
           quantity: number
           sale_id?: string | null
           store_id?: string | null
@@ -2497,6 +2533,7 @@ export type Database = {
           product_id?: string | null
           product_name?: string | null
           product_variant_id?: string | null
+          project_id?: string | null
           quantity?: number
           sale_id?: string | null
           store_id?: string | null
@@ -2519,6 +2556,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "product_variants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_stats_view"
+            referencedColumns: ["project_id"]
           },
           {
             foreignKeyName: "sale_items_sale_id_fkey"
@@ -3444,7 +3495,7 @@ export type Database = {
           name: string | null
           project_id: string | null
           team_lead_id: string | null
-          team_type: string | null
+          team_type: string
           workspace_id: string | null
         }
         Insert: {
@@ -3456,7 +3507,7 @@ export type Database = {
           name?: string | null
           project_id?: string | null
           team_lead_id?: string | null
-          team_type?: string | null
+          team_type?: string
           workspace_id?: string | null
         }
         Update: {
@@ -3468,7 +3519,7 @@ export type Database = {
           name?: string | null
           project_id?: string | null
           team_lead_id?: string | null
-          team_type?: string | null
+          team_type?: string
           workspace_id?: string | null
         }
         Relationships: [
@@ -3612,7 +3663,7 @@ export type Database = {
           is_deleted: boolean | null
           name: string | null
           role: string
-          team_type: string | null
+          team_type: string
           updated_at: string | null
           user_id: string | null
           workspace_id: string | null
@@ -3625,7 +3676,7 @@ export type Database = {
           is_deleted?: boolean | null
           name?: string | null
           role: string
-          team_type?: string | null
+          team_type?: string
           updated_at?: string | null
           user_id?: string | null
           workspace_id?: string | null
@@ -3638,7 +3689,7 @@ export type Database = {
           is_deleted?: boolean | null
           name?: string | null
           role?: string
-          team_type?: string | null
+          team_type?: string
           updated_at?: string | null
           user_id?: string | null
           workspace_id?: string | null
