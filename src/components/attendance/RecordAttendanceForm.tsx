@@ -10,6 +10,7 @@ import { CheckCircle, Clock, MapPin, Camera } from "lucide-react";
 import { CameraCapture } from "@/components/CameraCapture";
 import { StockReportDialog } from "@/components/attendance/StockReportDialog";
 import { EveningReportDialog } from "@/components/attendance/EveningReportDialog";
+import { SeedingEveningReportDialog } from "@/components/attendance/SeedingEveningReportDialog";
 import { supabase } from "@/integrations/supabase/client";
 
 export const RecordAttendanceForm = () => {
@@ -24,6 +25,7 @@ export const RecordAttendanceForm = () => {
   const [showStockReport, setShowStockReport] = useState(false);
   const [stockReportType, setStockReportType] = useState<'morning' | 'evening'>('morning');
   const [showEveningReport, setShowEveningReport] = useState(false);
+  const [showSeedingEveningReport, setShowSeedingEveningReport] = useState(false);
   const cameraRef = useRef<HTMLInputElement>(null);
   // Ref-based guard to prevent duplicate calls (survives re-renders and is synchronous)
   const isProcessingRef = useRef(false);
@@ -89,6 +91,7 @@ export const RecordAttendanceForm = () => {
 
         // Check if we need to show stock report dialog for wholesale team_type
         const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
+        const isSeeding = currentTeamType?.toLowerCase() === 'seeding';
         
         if (isWholesale) {
           // Show stock report after check-in (morning) or evening report after check-out
@@ -100,6 +103,9 @@ export const RecordAttendanceForm = () => {
             // Evening check-out - show evening report (sales summary + notes)
             setShowEveningReport(true);
           }
+        } else if (isSeeding && statusToSet === 'checked_out') {
+          // Seeding check-out - show seeding evening report (sales + notes + photos)
+          setShowSeedingEveningReport(true);
         }
       } else {
         toast({
@@ -300,6 +306,15 @@ export const RecordAttendanceForm = () => {
         onOpenChange={setShowEveningReport}
         onComplete={() => {
           console.log('Evening report completed');
+        }}
+      />
+
+      {/* Seeding Evening Report Dialog */}
+      <SeedingEveningReportDialog
+        open={showSeedingEveningReport}
+        onOpenChange={setShowSeedingEveningReport}
+        onComplete={() => {
+          console.log('Seeding evening report completed');
         }}
       />
     </Card>
