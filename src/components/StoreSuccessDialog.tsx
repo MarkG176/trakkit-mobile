@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShoppingCart, Gift, MessageSquare, ClipboardList, Star, Plus, Minus, CheckCircle2 } from "lucide-react";
+import { ShoppingCart, Gift, MessageSquare, ClipboardList, Star, Plus, Minus, CheckCircle2, Trash2, Edit2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -21,6 +21,13 @@ interface StoreSuccessDialogProps {
 
 type ActionType = null | "survey" | "sale" | "giveaway" | "interaction";
 
+interface SaleCartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  productVariantId: string;
+}
 
 interface SelectedProduct {
   id: string;
@@ -50,9 +57,9 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
   const [surveyResponses, setSurveyResponses] = useState<{ [questionId: string]: any }>({});
 
   // Sale state
-  const [productVariantId, setProductVariantId] = useState("");
-  const [quantity, setQuantity] = useState("");
+  const [saleCartItems, setSaleCartItems] = useState<SaleCartItem[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+  const [editingSalePriceId, setEditingSalePriceId] = useState<string | null>(null);
 
   // Giveaway state
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
@@ -91,7 +98,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
       if (user) {
         const { data } = await supabase
           .from('agent_task_inventory')
-          .select('id, product_variant_id, amount_issued, name, product_variants!inner(workspace_id)')
+          .select('id, product_variant_id, amount_issued, name, product_variants!inner(workspace_id, price)')
           .eq('agent_id', user.id)
           .eq('is_deleted', false)
           .eq('product_variants.workspace_id', currentWorkspaceId);
@@ -195,8 +202,46 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
     }
   };
 
+  const addToSaleCart = (product: any) => {
+    const existing = saleCartItems.find(item => item.productVariantId === product.product_variant_id);
+    if (existing) {
+      setSaleCartItems(saleCartItems.map(item =>
+        item.productVariantId === product.product_variant_id
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      ));
+    } else {
+      setSaleCartItems([...saleCartItems, {
+        id: product.id,
+        name: product.name || 'Unknown Product',
+        price: product.product_variants?.price || 0,
+        quantity: 1,
+        productVariantId: product.product_variant_id
+      }]);
+    }
+  };
+
+  const updateSaleQuantity = (productVariantId: string, newQuantity: number) => {
+    if (newQuantity === 0) {
+      setSaleCartItems(saleCartItems.filter(item => item.productVariantId !== productVariantId));
+    } else {
+      setSaleCartItems(saleCartItems.map(item =>
+        item.productVariantId === productVariantId ? { ...item, quantity: newQuantity } : item
+      ));
+    }
+  };
+
+  const updateSalePrice = (productVariantId: string, newPrice: number) => {
+    setSaleCartItems(saleCartItems.map(item =>
+      item.productVariantId === productVariantId ? { ...item, price: newPrice } : item
+    ));
+    setEditingSalePriceId(null);
+  };
+
+  const saleTotalAmount = saleCartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
   const handleSubmitSale = async () => {
-    if (!productVariantId || !quantity) return;
+    if (saleCartItems.length === 0) return;
     
     setLoading(true);
     try {
@@ -204,8 +249,6 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
       if (!user) throw new Error("Not authenticated");
 
       const location = await getCurrentLocation();
-      const product = products.find(p => p.id === productVariantId);
-      const totalValue = product ? product.price * parseInt(quantity) : 0;
 
       // Create or get customer
       const { data: customer, error: customerError } = await supabase
@@ -224,49 +267,49 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
 
       if (customerError) throw customerError;
 
-      // Record interaction
-      const { error: interactionError } = await supabase.from('interactions').insert({
-        task_id: null,
-        agent_id: user.id,
-        interaction_type: 'sale',
-        store_id: storeId,
-        customer_name: storeName,
-        product_variant_id: productVariantId,
-        quantity_sold: parseInt(quantity),
-        sale_value: totalValue,
-        outcome: 'completed',
-        latitude: location.latitude,
-        longitude: location.longitude,
-        timestamp: new Date().toISOString(),
-        workspace_id: currentWorkspaceId
-      } as any);
-
-      if (interactionError) throw interactionError;
-
       const projectId = currentProjectId || null;
 
-      // Record customer purchase
-      await supabase.from('customer_purchases').insert({
-        customer_id: customer.id,
-        agent_id: user.id,
-        product_variant_id: productVariantId,
-        quantity: parseInt(quantity),
-        total_value: totalValue,
-        location_lat: location.latitude,
-        location_lng: location.longitude,
-        workspace_id: currentWorkspaceId,
-        project_id: projectId,
-      } as any);
+      // Record each cart item as a separate interaction + customer purchase
+      for (const item of saleCartItems) {
+        const { error: interactionError } = await supabase.from('interactions').insert({
+          task_id: null,
+          agent_id: user.id,
+          interaction_type: 'sale',
+          store_id: storeId,
+          customer_name: storeName,
+          product_variant_id: item.productVariantId,
+          quantity_sold: item.quantity,
+          sale_value: item.price * item.quantity,
+          outcome: 'completed',
+          latitude: location.latitude,
+          longitude: location.longitude,
+          timestamp: new Date().toISOString(),
+          workspace_id: currentWorkspaceId
+        } as any);
+
+        if (interactionError) throw interactionError;
+
+        await supabase.from('customer_purchases').insert({
+          customer_id: customer.id,
+          agent_id: user.id,
+          product_variant_id: item.productVariantId,
+          quantity: item.quantity,
+          total_value: item.price * item.quantity,
+          location_lat: location.latitude,
+          location_lng: location.longitude,
+          workspace_id: currentWorkspaceId,
+          project_id: projectId,
+        } as any);
+      }
 
       toast({
         title: "Sale Recorded",
-        description: "Sale has been recorded successfully.",
+        description: `${saleCartItems.length} item(s) recorded. Total: KES ${saleTotalAmount.toFixed(2)}`,
       });
       
       // Reset and return to actions
       setActiveAction(null);
-      setProductVariantId("");
-      setQuantity("");
+      setSaleCartItems([]);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -544,33 +587,131 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
       case "sale":
         return (
           <div className="space-y-4 mt-4">
+            {/* Product List to Add */}
             <div>
-              <Label>Product</Label>
-              <Select value={productVariantId} onValueChange={setProductVariantId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select product" />
-                </SelectTrigger>
-                <SelectContent>
-                  {products.map((product) => (
-                    <SelectItem key={product.product_variant_id} value={product.product_variant_id}>
-                      {product.name || 'Unknown Product'}
-                    </SelectItem>
+              <Label className="text-sm font-medium">Add Products</Label>
+              <div className="space-y-2 mt-2">
+                {products.map((product) => (
+                  <div key={product.product_variant_id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{product.name || 'Unknown Product'}</p>
+                      <p className="text-xs text-muted-foreground">Available: {product.amount_issued}</p>
+                      {product.product_variants?.price > 0 && (
+                        <p className="text-xs font-medium text-primary">KES {product.product_variants.price}</p>
+                      )}
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => addToSaleCart(product)}
+                      className="shrink-0"
+                    >
+                      <Plus size={14} className="mr-1" /> Add
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Cart Items */}
+            {saleCartItems.length > 0 && (
+              <div>
+                <Label className="text-sm font-medium">Sale Items</Label>
+                <div className="space-y-3 mt-2">
+                  {saleCartItems.map((item) => (
+                    <div key={item.productVariantId} className="p-4 bg-muted rounded-lg space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-sm">{item.name}</h4>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-destructive"
+                          onClick={() => updateSaleQuantity(item.productVariantId, 0)}
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                      
+                      {/* Price */}
+                      <div>
+                        <span className="text-xs text-muted-foreground">Price (KES)</span>
+                        {editingSalePriceId === item.productVariantId ? (
+                          <div className="flex items-center gap-2 mt-1">
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              defaultValue={item.price}
+                              onBlur={(e) => updateSalePrice(item.productVariantId, parseFloat(e.target.value) || 0)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  updateSalePrice(item.productVariantId, parseFloat((e.target as HTMLInputElement).value) || 0);
+                                }
+                              }}
+                              autoFocus
+                              className="w-28 h-8 text-sm"
+                            />
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-sm font-medium">KES {item.price}</span>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-6 w-6"
+                              onClick={() => setEditingSalePriceId(item.productVariantId)}
+                            >
+                              <Edit2 size={12} />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Quantity */}
+                      <div>
+                        <span className="text-xs text-muted-foreground">Quantity</span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8"
+                            onClick={() => updateSaleQuantity(item.productVariantId, item.quantity - 1)}
+                          >
+                            <Minus size={12} />
+                          </Button>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            onChange={(e) => updateSaleQuantity(item.productVariantId, parseInt(e.target.value) || 1)}
+                            className="w-16 h-8 text-center p-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          />
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8"
+                            onClick={() => updateSaleQuantity(item.productVariantId, item.quantity + 1)}
+                          >
+                            <Plus size={12} />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="text-right text-sm font-semibold text-primary">
+                        Subtotal: KES {(item.price * item.quantity).toFixed(2)}
+                      </div>
+                    </div>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Quantity</Label>
-              <Input
-                type="number"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                placeholder="Enter quantity"
-                min="1"
-              />
-            </div>
-            <Button onClick={handleSubmitSale} disabled={!productVariantId || !quantity || loading} className="w-full">
-              {loading ? "Recording..." : "Record Sale"}
+                </div>
+
+                <div className="flex justify-between items-center mt-3 pt-3 border-t font-bold">
+                  <span>Total:</span>
+                  <span>KES {saleTotalAmount.toFixed(2)}</span>
+                </div>
+              </div>
+            )}
+
+            <Button onClick={handleSubmitSale} disabled={saleCartItems.length === 0 || loading} className="w-full">
+              {loading ? "Recording..." : `Record Sale • KES ${saleTotalAmount.toFixed(2)}`}
             </Button>
           </div>
         );
