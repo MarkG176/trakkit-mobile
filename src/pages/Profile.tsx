@@ -46,7 +46,7 @@ export const Profile = () => {
 
   if (!isInitialized || isWorkspaceLoading) {
     return (
-      <MobileLayout currentPage="more">
+      <MobileLayout currentPage="profile">
         <div className="bg-primary p-6 pb-8">
           <div className="flex items-center gap-4 mb-4">
             <Skeleton className="w-20 h-20 rounded-full" />
@@ -70,7 +70,7 @@ export const Profile = () => {
 
   if (stats.isLoading) {
     return (
-      <MobileLayout currentPage="more">
+      <MobileLayout currentPage="profile">
         <div className="bg-primary p-6 pb-8">
           <div className="flex items-center gap-4 mb-4">
             <Skeleton className="w-20 h-20 rounded-full" />
@@ -95,18 +95,7 @@ export const Profile = () => {
   });
 
   return (
-    <MobileLayout currentPage="more">
-      {/* Back Button */}
-      <div className="absolute top-4 left-4 z-10">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate("/more")}
-          className="text-primary-foreground hover:bg-primary-foreground/20"
-        >
-          <ArrowLeft size={20} />
-        </Button>
-      </div>
+    <MobileLayout currentPage="profile">
 
       <ProfileHeader
         displayName={stats.displayName}

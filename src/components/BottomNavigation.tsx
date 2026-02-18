@@ -1,4 +1,4 @@
-import { Home, ClipboardList, Map, Package, MoreHorizontal, Clipboard } from "lucide-react";
+import { Home, ClipboardList, Map, Package, User, Clipboard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMemo } from "react";
 
@@ -13,7 +13,7 @@ const navItems = [
   { id: "surveys", label: "Surveys", icon: ClipboardList, path: "/surveys" },
   { id: "routes", label: "Routes", icon: Map, path: "/routes" },
   { id: "inventory", label: "Inventory", icon: Package, path: "/inventory" },
-  { id: "more", label: "More", icon: MoreHorizontal, path: "/more" },
+  { id: "profile", label: "Profile", icon: User, path: "/profile" },
 ];
 
 export const BottomNavigation = ({ currentPage, currentTeamType }: BottomNavigationProps) => {
