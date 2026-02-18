@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { toast } from "sonner";
 
 export interface InventoryItem {
@@ -14,11 +15,12 @@ export interface InventoryItem {
 
 export const useInventory = () => {
   const { user } = useAuth();
+  const { currentWorkspaceId } = useWorkspace();
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchInventory = async () => {
-    if (!user) {
+    if (!user || !currentWorkspaceId) {
       setLoading(false);
       return;
     }
@@ -32,15 +34,17 @@ export const useInventory = () => {
           name,
           product_variant_id,
           amount_issued,
-          product_variants (
+          product_variants!inner (
             id,
             name,
             sku,
-            price
+            price,
+            workspace_id
           )
         `)
         .eq('agent_id', user.id)
-        .eq('is_deleted', false);
+        .eq('is_deleted', false)
+        .eq('product_variants.workspace_id', currentWorkspaceId);
 
       if (error) throw error;
 
@@ -65,7 +69,7 @@ export const useInventory = () => {
 
   useEffect(() => {
     fetchInventory();
-  }, [user]);
+  }, [user, currentWorkspaceId]);
 
   return { inventory, loading, refetch: fetchInventory };
 };
