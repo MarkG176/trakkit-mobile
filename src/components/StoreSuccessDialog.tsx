@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShoppingCart, Gift, MessageSquare, ClipboardList, Star, Plus, Minus, CheckCircle2, Trash2, Edit2 } from "lucide-react";
+import { ShoppingCart, Gift, MessageSquare, ClipboardList, Star, Plus, Minus, CheckCircle2, Trash2, Edit2, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -60,6 +60,8 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
   const [saleCartItems, setSaleCartItems] = useState<SaleCartItem[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [editingSalePriceId, setEditingSalePriceId] = useState<string | null>(null);
+  const [saleSearchTerm, setSaleSearchTerm] = useState("");
+  const [showSaleCart, setShowSaleCart] = useState(false);
 
   // Giveaway state
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
@@ -585,53 +587,76 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
         );
 
       case "sale":
+        const filteredSaleProducts = products.filter(p =>
+          (p.name || '').toLowerCase().includes(saleSearchTerm.toLowerCase())
+        );
         return (
           <div className="space-y-4 mt-4">
-            {/* Product List to Add */}
-            <div>
-              <Label className="text-sm font-medium">Add Products</Label>
-              <div className="space-y-2 mt-2">
-                {products.map((product) => (
-                  <Card key={product.product_variant_id} className="overflow-hidden">
-                    <CardContent className="p-3">
-                      <div className="flex gap-3">
-                        <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center shrink-0">
-                          <ShoppingCart size={16} className="text-muted-foreground" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{product.name || 'Unknown Product'}</p>
-                          <p className="text-xs text-muted-foreground">Available: {product.amount_issued}</p>
-                          {product.product_variants?.price > 0 && (
-                            <p className="text-xs font-medium text-primary">KES {product.product_variants.price}</p>
-                          )}
-                        </div>
-                        <div className="flex items-center">
-                          <Button
-                            size="sm"
-                            onClick={() => addToSaleCart(product)}
-                            className="shrink-0"
-                          >
-                            <Plus size={14} className="mr-1" /> Add
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
+            {!showSaleCart ? (
+              <>
+                {/* Search Bar */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={16} />
+                  <Input
+                    placeholder="Search products..."
+                    value={saleSearchTerm}
+                    onChange={(e) => setSaleSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
 
-            {/* Cart Items */}
-            {saleCartItems.length > 0 && (
-              <div>
-                <Label className="text-sm font-medium">Sale Items</Label>
-                <div className="space-y-3 mt-2">
+                {/* Product List */}
+                <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                  {filteredSaleProducts.map((product) => (
+                    <Card key={product.product_variant_id} className="overflow-hidden">
+                      <CardContent className="p-3">
+                        <div className="flex gap-3">
+                          <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center shrink-0">
+                            <ShoppingCart size={16} className="text-muted-foreground" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{product.name || 'Unknown Product'}</p>
+                            <p className="text-xs text-muted-foreground">Available: {product.amount_issued}</p>
+                            {product.product_variants?.price > 0 && (
+                              <p className="text-xs font-medium text-primary">KES {product.product_variants.price}</p>
+                            )}
+                          </div>
+                          <div className="flex items-center">
+                            <Button size="sm" onClick={() => { addToSaleCart(product); setShowSaleCart(true); }}>
+                              <Plus size={14} className="mr-1" /> Add
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                {/* Cart indicator */}
+                {saleCartItems.length > 0 && (
+                  <Button onClick={() => setShowSaleCart(true)} className="w-full">
+                    View Cart ({saleCartItems.reduce((s, i) => s + i.quantity, 0)} items) • KES {saleTotalAmount.toFixed(2)}
+                  </Button>
+                )}
+              </>
+            ) : (
+              <>
+                {/* Sale Items Cart View */}
+                <div>
+                  <h3 className="text-lg font-bold">Sale Items</h3>
+                  <div className="flex justify-between items-center text-xl font-bold mt-1">
+                    <span>Total:</span>
+                    <span>KES {saleTotalAmount.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-3 max-h-[40vh] overflow-y-auto">
                   {saleCartItems.map((item) => (
                     <div key={item.productVariantId} className="flex items-center gap-3 p-3 bg-muted rounded-lg">
                       <div className="w-10 h-10 bg-background rounded-lg flex items-center justify-center shrink-0">
                         <ShoppingCart size={14} className="text-muted-foreground" />
                       </div>
-                      
+
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-sm">{item.name}</h4>
                         {editingSalePriceId === item.productVariantId ? (
@@ -655,12 +680,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                         ) : (
                           <div className="flex items-center gap-1">
                             <p className="text-xs text-muted-foreground">KES {item.price}</p>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-5 w-5"
-                              onClick={() => setEditingSalePriceId(item.productVariantId)}
-                            >
+                            <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => setEditingSalePriceId(item.productVariantId)}>
                               <Edit2 size={10} />
                             </Button>
                           </div>
@@ -668,53 +688,34 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                       </div>
 
                       <div className="flex items-center gap-1">
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          className="h-7 w-7"
-                          onClick={() => updateSaleQuantity(item.productVariantId, item.quantity - 1)}
-                        >
-                          <Minus size={12} />
+                        <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => updateSaleQuantity(item.productVariantId, item.quantity - 1)}>
+                          <Minus size={14} />
                         </Button>
                         <Input
                           type="number"
                           min="1"
                           value={item.quantity}
                           onChange={(e) => updateSaleQuantity(item.productVariantId, parseInt(e.target.value) || 1)}
-                          className="w-12 h-7 text-center p-0 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          className="w-12 h-8 text-center p-0 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          className="h-7 w-7"
-                          onClick={() => updateSaleQuantity(item.productVariantId, item.quantity + 1)}
-                        >
-                          <Plus size={12} />
+                        <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => updateSaleQuantity(item.productVariantId, item.quantity + 1)}>
+                          <Plus size={14} />
                         </Button>
                       </div>
-
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7 text-destructive shrink-0"
-                        onClick={() => updateSaleQuantity(item.productVariantId, 0)}
-                      >
-                        <Minus size={12} />
-                      </Button>
                     </div>
                   ))}
                 </div>
 
-                <div className="flex justify-between items-center mt-3 pt-3 border-t text-base font-bold">
-                  <span>Total:</span>
-                  <span>KES {saleTotalAmount.toFixed(2)}</span>
-                </div>
-              </div>
-            )}
+                {/* Add Product button */}
+                <Button variant="outline" onClick={() => setShowSaleCart(false)} className="w-full">
+                  <Plus size={16} className="mr-2" /> Add Product
+                </Button>
 
-            <Button onClick={handleSubmitSale} disabled={saleCartItems.length === 0 || loading} className="w-full">
-              {loading ? "Recording..." : `Record Sale • KES ${saleTotalAmount.toFixed(2)}`}
-            </Button>
+                <Button onClick={handleSubmitSale} disabled={saleCartItems.length === 0 || loading} className="w-full">
+                  {loading ? "Recording..." : `Record Sale • KES ${saleTotalAmount.toFixed(2)}`}
+                </Button>
+              </>
+            )}
           </div>
         );
 
