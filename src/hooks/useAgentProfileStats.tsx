@@ -296,22 +296,20 @@ export const useAgentProfileStats = (): AgentProfileStats => {
             .not('is_deleted', 'is', true)
             .gte('recorded_at', weekStart),
           
-          // Today's work segments
+          // Today's work segments (all types: work + lunch)
           supabase
             .from('agent_work_segments')
             .select('duration_minutes, segment_start, segment_end, segment_type')
             .eq('agent_id', user.id)
             .eq('workspace_id', currentWorkspaceId)
-            .eq('segment_type', 'work')
             .eq('work_date', todayDate),
           
-          // Week's work segments
+          // Week's work segments (all types: work + lunch)
           supabase
             .from('agent_work_segments')
             .select('duration_minutes, segment_start, segment_end, segment_type')
             .eq('agent_id', user.id)
             .eq('workspace_id', currentWorkspaceId)
-            .eq('segment_type', 'work')
             .gte('work_date', weekStartDate),
 
           // ====== NEW QUERIES ======
@@ -390,14 +388,8 @@ export const useAgentProfileStats = (): AgentProfileStats => {
             .not('store_id', 'is', null)
             .gte('timestamp', weekStart),
 
-          // Week's lunch segments
-          supabase
-            .from('agent_work_segments')
-            .select('duration_minutes')
-            .eq('agent_id', user.id)
-            .eq('workspace_id', currentWorkspaceId)
-            .eq('segment_type', 'lunch')
-            .gte('work_date', weekStartDate),
+          // Week's lunch segments (now covered by weekWorkSegments above)
+          Promise.resolve({ data: [] }),
 
           // Today's tasks
           supabase
@@ -462,9 +454,10 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           (weekDailySales.data?.reduce((sum, s) => sum + (Number(s.total_value) || 0), 0) || 0);
         const todayGiveawayItemsTotal = todayGiveaways.data?.reduce((sum, g) => sum + (g.total_items || 0), 0) || 0;
         const weekGiveawayItemsTotal = weekGiveaways.data?.reduce((sum, g) => sum + (g.total_items || 0), 0) || 0;
-        const calcSegmentMinutes = (segments: any[] | null) => {
+        const calcSegmentMinutes = (segments: any[] | null, typeFilter?: string) => {
           if (!segments) return 0;
-          return segments.reduce((sum, s) => {
+          const filtered = typeFilter ? segments.filter(s => s.segment_type === typeFilter) : segments;
+          return filtered.reduce((sum, s) => {
             if (s.duration_minutes && s.duration_minutes > 0) {
               return sum + s.duration_minutes;
             }
@@ -476,9 +469,14 @@ export const useAgentProfileStats = (): AgentProfileStats => {
             return sum;
           }, 0);
         };
-        const todayWorkMinutesTotal = calcSegmentMinutes(todayWorkSegments.data);
-        const weekWorkMinutesTotal = calcSegmentMinutes(weekWorkSegments.data);
-        const weekLunchMinutesTotal = weekLunchSegments.data?.reduce((sum, s) => sum + (s.duration_minutes || 0), 0) || 0;
+        // net_work_minutes = total_work_minutes - total_lunch_minutes
+        const todayTotalWork = calcSegmentMinutes(todayWorkSegments.data, 'work');
+        const todayTotalLunch = calcSegmentMinutes(todayWorkSegments.data, 'lunch');
+        const todayWorkMinutesTotal = todayTotalWork - todayTotalLunch;
+        const weekTotalWork = calcSegmentMinutes(weekWorkSegments.data, 'work');
+        const weekTotalLunch = calcSegmentMinutes(weekWorkSegments.data, 'lunch');
+        const weekWorkMinutesTotal = weekTotalWork - weekTotalLunch;
+        const weekLunchMinutesTotal = weekTotalLunch;
         
         const displayName = userRoleData.data?.display_name
           || [userRoleData.data?.first_name, userRoleData.data?.last_name].filter(Boolean).join(' ')
