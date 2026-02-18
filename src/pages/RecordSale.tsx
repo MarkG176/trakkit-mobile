@@ -569,13 +569,20 @@ export const RecordSale = () => {
                   className="h-8 w-8 text-destructive"
                   onClick={() => updateQuantity(item.id, 0)}
                 >
-                  <Trash2 size={16} />
+                  <Minus size={14} />
                 </Button>
               </div>
             ))}
           </div>
 
-          <div className="mt-6 space-y-4">
+          <div className="mt-6 space-y-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowCart(false)}
+              className="w-full h-10"
+            >
+              <Plus size={16} className="mr-2" /> Add Product
+            </Button>
             <Button
               onClick={() => {
                 setShowCart(false);

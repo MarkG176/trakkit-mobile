@@ -2484,6 +2484,7 @@ export type Database = {
       sale_items: {
         Row: {
           agent_id: string | null
+          category: string | null
           created_at: string | null
           customer_name: string | null
           customer_phone: string | null
@@ -2504,6 +2505,7 @@ export type Database = {
         }
         Insert: {
           agent_id?: string | null
+          category?: string | null
           created_at?: string | null
           customer_name?: string | null
           customer_phone?: string | null
@@ -2524,6 +2526,7 @@ export type Database = {
         }
         Update: {
           agent_id?: string | null
+          category?: string | null
           created_at?: string | null
           customer_name?: string | null
           customer_phone?: string | null
