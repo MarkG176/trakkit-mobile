@@ -27,6 +27,10 @@ export const BottomNavigation = ({ currentPage, currentTeamType }: BottomNavigat
       if (teamType === 'wholesale' && (item.id === 'reports' || item.id === 'inventory')) {
         return false;
       }
+      // Hide Reports and Surveys for seeding team type
+      if (teamType === 'seeding' && (item.id === 'reports' || item.id === 'surveys')) {
+        return false;
+      }
       return true;
     });
   }, [currentTeamType]);
