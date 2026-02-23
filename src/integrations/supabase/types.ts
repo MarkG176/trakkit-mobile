@@ -3066,8 +3066,12 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          image_url: string | null
           is_deleted: boolean
           is_read: boolean
+          location_label: string | null
+          location_lat: number | null
+          location_lng: number | null
           message: string
           recipient_id: string
           sender_id: string
@@ -3077,8 +3081,12 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          image_url?: string | null
           is_deleted?: boolean
           is_read?: boolean
+          location_label?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
           message: string
           recipient_id: string
           sender_id: string
@@ -3088,8 +3096,12 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          image_url?: string | null
           is_deleted?: boolean
           is_read?: boolean
+          location_label?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
           message?: string
           recipient_id?: string
           sender_id?: string

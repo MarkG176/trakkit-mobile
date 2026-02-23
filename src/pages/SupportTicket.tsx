@@ -4,13 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Bug, Package, BarChart3, Upload, X, CheckCircle2, Inbox, Trash2, MessageSquare } from "lucide-react";
+import { ArrowLeft, Bug, Package, BarChart3, Upload, X, CheckCircle2, Inbox, Trash2, MessageSquare, MapPin, Image as ImageIcon, Send, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +48,16 @@ interface SupervisorMessage {
   message: string;
   created_at: string;
   is_read: boolean;
+  image_url: string | null;
+  location_lat: number | null;
+  location_lng: number | null;
+  location_label: string | null;
+}
+
+interface WorkspaceMember {
+  user_id: string;
+  name: string | null;
+  email: string | null;
 }
 
 const ticketOptions = [
@@ -103,6 +121,39 @@ export const SupportTicket = () => {
   const [supervisorMessages, setSupervisorMessages] = useState<SupervisorMessage[]>([]);
   const [loadingMessages, setLoadingMessages] = useState(true);
 
+  // Agent reply compose state
+  const [showReplyCompose, setShowReplyCompose] = useState(false);
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
+  const [recipientSearch, setRecipientSearch] = useState("");
+  const [selectedRecipient, setSelectedRecipient] = useState<WorkspaceMember | null>(null);
+  const [replyMessage, setReplyMessage] = useState("");
+  const [replySending, setReplySending] = useState(false);
+  const [recipientOpen, setRecipientOpen] = useState(false);
+  const [replyImage, setReplyImage] = useState<File | null>(null);
+  const [replyImagePreview, setReplyImagePreview] = useState<string | null>(null);
+  const [replyLocation, setReplyLocation] = useState<{ lat: number; lng: number; label: string } | null>(null);
+  const [gettingLocation, setGettingLocation] = useState(false);
+
+  const filteredMembers = (() => {
+    const filtered = members.filter(m => m.user_id !== user?.id);
+    if (!recipientSearch.trim()) return filtered;
+    const q = recipientSearch.toLowerCase();
+    return filtered.filter(m =>
+      m.name?.toLowerCase().includes(q) || m.email?.toLowerCase().includes(q)
+    );
+  })();
+
+  const fetchMembers = async () => {
+    if (!currentWorkspaceId) return;
+    const { data } = await supabase
+      .from('user_workspaces')
+      .select('user_id, name, email')
+      .eq('workspace_id', currentWorkspaceId)
+      .eq('is_deleted', false)
+      .eq('is_active', true);
+    setMembers((data as WorkspaceMember[]) || []);
+  };
+
   const fetchMyTickets = async () => {
     if (!user) return;
     setLoadingTickets(true);
@@ -121,7 +172,7 @@ export const SupportTicket = () => {
     setLoadingMessages(true);
     const { data } = await supabase
       .from('supervisor_messages')
-      .select('id, sender_name, message, created_at, is_read')
+      .select('id, sender_name, message, created_at, is_read, image_url, location_lat, location_lng, location_label')
       .eq('recipient_id', user.id)
       .eq('is_deleted', false)
       .order('created_at', { ascending: false });
@@ -143,8 +194,8 @@ export const SupportTicket = () => {
   useEffect(() => {
     fetchMyTickets();
     fetchSupervisorMessages();
+    fetchMembers();
 
-    // Subscribe to realtime changes for tickets
     const ticketChannel = supabase
       .channel('my-tickets')
       .on('postgres_changes', {
@@ -157,7 +208,6 @@ export const SupportTicket = () => {
       })
       .subscribe();
 
-    // Subscribe to realtime changes for supervisor messages
     const messageChannel = supabase
       .channel('my-supervisor-messages')
       .on('postgres_changes', {
@@ -173,12 +223,15 @@ export const SupportTicket = () => {
           message: newMsg.message,
           created_at: newMsg.created_at,
           is_read: false,
+          image_url: newMsg.image_url,
+          location_lat: newMsg.location_lat,
+          location_lng: newMsg.location_lng,
+          location_label: newMsg.location_label,
         }, ...prev]);
         toast({
           title: `Message from ${newMsg.sender_name || 'Supervisor'}`,
           description: newMsg.message.slice(0, 100),
         });
-        // Mark as read
         supabase.from('supervisor_messages').update({ is_read: true }).eq('id', newMsg.id);
       })
       .subscribe();
@@ -285,6 +338,86 @@ export const SupportTicket = () => {
     }
   };
 
+  const handleReplyImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setReplyImage(file);
+      const reader = new FileReader();
+      reader.onload = () => setReplyImagePreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleReplyAttachLocation = () => {
+    if (!navigator.geolocation) {
+      toast({ title: "Geolocation not supported", variant: "destructive" });
+      return;
+    }
+    setGettingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setReplyLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          label: `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`,
+        });
+        setGettingLocation(false);
+      },
+      (err) => {
+        toast({ title: "Location error", description: err.message, variant: "destructive" });
+        setGettingLocation(false);
+      }
+    );
+  };
+
+  const handleSendReply = async () => {
+    if (!selectedRecipient || !replyMessage.trim() || !user) return;
+    setReplySending(true);
+    try {
+      let imageUrl: string | null = null;
+      if (replyImage) {
+        const fileExt = replyImage.name.split('.').pop();
+        const filePath = `supervisor-messages/${user.id}/${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('check-in-selfies')
+          .upload(filePath, replyImage);
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage.from('check-in-selfies').getPublicUrl(filePath);
+          imageUrl = urlData.publicUrl;
+        }
+      }
+
+      const senderName = user.user_metadata?.display_name || user.email || 'Agent';
+      const { error } = await supabase.from('supervisor_messages').insert({
+        sender_id: user.id,
+        sender_name: senderName,
+        recipient_id: selectedRecipient.user_id,
+        message: replyMessage.trim(),
+        workspace_id: currentWorkspaceId,
+        image_url: imageUrl,
+        location_lat: replyLocation?.lat || null,
+        location_lng: replyLocation?.lng || null,
+        location_label: replyLocation?.label || null,
+      });
+      if (error) throw error;
+      toast({ title: "Message sent", description: `Sent to ${selectedRecipient.name || selectedRecipient.email}` });
+      setReplyMessage("");
+      setSelectedRecipient(null);
+      setShowReplyCompose(false);
+      setReplyImage(null);
+      setReplyImagePreview(null);
+      setReplyLocation(null);
+    } catch (err: any) {
+      toast({ title: "Failed to send", description: err.message, variant: "destructive" });
+    } finally {
+      setReplySending(false);
+    }
+  };
+
+  const openLocationInMaps = (lat: number, lng: number) => {
+    window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+  };
+
   if (submitted) {
     return (
       <MobileLayout currentPage="chat">
@@ -356,6 +489,19 @@ export const SupportTicket = () => {
                       </div>
                     </div>
                     <p className="text-sm">{msg.message}</p>
+                    {msg.image_url && (
+                      <img src={msg.image_url} alt="Attachment" className="mt-2 w-full max-w-xs rounded-lg border" />
+                    )}
+                    {msg.location_lat && msg.location_lng && (
+                      <button
+                        onClick={() => openLocationInMaps(msg.location_lat!, msg.location_lng!)}
+                        className="mt-2 flex items-center gap-1 text-xs text-primary hover:underline"
+                      >
+                        <MapPin className="w-3.5 h-3.5" />
+                        {msg.location_label || 'View Location'}
+                        <span className="text-muted-foreground ml-1">→ Open in Maps</span>
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -525,6 +671,133 @@ export const SupportTicket = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Floating + Button for agent reply */}
+      <button
+        onClick={() => setShowReplyCompose(true)}
+        className="fixed bottom-24 right-5 z-40 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors"
+      >
+        <Send className="w-6 h-6" />
+      </button>
+
+      {/* Agent Reply Compose Dialog */}
+      <Dialog open={showReplyCompose} onOpenChange={setShowReplyCompose}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="w-5 h-5 text-primary" />
+              Send Message
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">To</label>
+              {selectedRecipient ? (
+                <div className="flex items-center gap-2 border rounded-md px-3 py-2 bg-muted/50">
+                  <span className="text-sm flex-1">{selectedRecipient.name || selectedRecipient.email}</span>
+                  <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setSelectedRecipient(null)}>
+                    <X className="w-3 h-3" />
+                  </Button>
+                </div>
+              ) : (
+                <Popover open={recipientOpen} onOpenChange={setRecipientOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between text-sm font-normal text-muted-foreground">
+                      Select recipient...
+                      <ChevronDown className="w-4 h-4 ml-2" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[calc(100vw-4rem)] p-2 z-50 bg-popover" align="start">
+                    <Input
+                      placeholder="Search..."
+                      value={recipientSearch}
+                      onChange={(e) => setRecipientSearch(e.target.value)}
+                      className="mb-2 h-9"
+                      autoFocus
+                    />
+                    <div className="max-h-48 overflow-y-auto space-y-1">
+                      {filteredMembers.length === 0 ? (
+                        <p className="text-xs text-muted-foreground text-center py-3">No members found</p>
+                      ) : (
+                        filteredMembers.map((m) => (
+                          <button
+                            key={m.user_id}
+                            className="w-full text-left px-3 py-2 rounded-md hover:bg-accent text-sm transition-colors"
+                            onClick={() => {
+                              setSelectedRecipient(m);
+                              setRecipientOpen(false);
+                              setRecipientSearch("");
+                            }}
+                          >
+                            <span className="font-medium">{m.name || 'Unnamed'}</span>
+                            {m.email && <span className="text-xs text-muted-foreground ml-2">{m.email}</span>}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
+            </div>
+
+            <Textarea
+              placeholder="Type your message..."
+              value={replyMessage}
+              onChange={(e) => setReplyMessage(e.target.value)}
+              rows={3}
+            />
+
+            {/* Attachment options */}
+            <div className="flex items-center gap-2">
+              <label className="cursor-pointer">
+                <input type="file" accept="image/*" className="hidden" onChange={handleReplyImageSelect} />
+                <div className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground border rounded-md px-3 py-2 transition-colors">
+                  <Upload className="w-3.5 h-3.5" />
+                  Image
+                </div>
+              </label>
+              <button
+                onClick={handleReplyAttachLocation}
+                disabled={gettingLocation}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground border rounded-md px-3 py-2 transition-colors disabled:opacity-50"
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                {gettingLocation ? 'Getting...' : 'Location'}
+              </button>
+            </div>
+
+            {replyImagePreview && (
+              <div className="relative inline-block">
+                <img src={replyImagePreview} alt="Attachment" className="w-24 h-24 object-cover rounded-lg border" />
+                <button
+                  onClick={() => { setReplyImage(null); setReplyImagePreview(null); }}
+                  className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+            {replyLocation && (
+              <div className="flex items-center gap-2 bg-muted/50 rounded-md px-3 py-2">
+                <MapPin className="w-4 h-4 text-primary" />
+                <span className="text-xs flex-1">{replyLocation.label}</span>
+                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setReplyLocation(null)}>
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+            )}
+
+            <Button
+              className="w-full"
+              disabled={!selectedRecipient || !replyMessage.trim() || replySending}
+              onClick={handleSendReply}
+            >
+              <Send className="w-4 h-4 mr-2" />
+              {replySending ? 'Sending...' : 'Send Message'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </MobileLayout>
   );
 };
