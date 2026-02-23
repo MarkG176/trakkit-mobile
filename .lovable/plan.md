@@ -1,23 +1,39 @@
 
 
-## Filter Inventory Page by Workspace
+## Dynamic Help & FAQ by Team Type
 
-**What this changes:**
-The Inventory page currently shows all inventory items assigned to the logged-in agent, regardless of which workspace is selected. After this change, it will only show items belonging to the currently selected workspace.
+### Overview
+Update the Help & FAQ dialog to show different questions based on the agent's `team_type`. All team types share a common set of questions, plus a team-specific first question with placeholder answers.
 
-**How it works:**
-The `agent_task_inventory` table does not have a `workspace_id` column, but its linked `product_variants` table does. So we filter by matching `product_variants.workspace_id` to the current workspace.
+### Changes
 
----
+**1. `src/components/profile/HelpFAQDialog.tsx`**
+- Accept `teamType` as a prop
+- Restructure FAQ data: define shared questions (common to all types) and a team-specific first question
+- Shared questions (kept for all types):
+  - "How to install?" (new, with install instructions referencing trakkit-mobile.lovable.app)
+  - "How do I check in?" (existing answer)
+  - "My selfie won't upload -- what do I do?" (existing answer)
+  - "The app feels slow or is stuck" (existing answer)
+  - "How do I view my stats?" (existing answer)
+- Remove the other questions that are no longer needed (recording sales, giveaways, add location, evening report, data not showing)
+- First question is always: "How to use TraKKiT for [team_type display name] activations?" with a placeholder answer per type (e.g., "Guide coming soon for [type] activations.")
+- Map internal team_type values (e.g., `sales_activation`) to readable display names (e.g., "Sales Activation")
 
-### Technical Details
+**2. `src/components/profile/ProfileHeader.tsx`**
+- Import and render `HelpFAQDialog`, passing the `teamType` prop
+- Add a help icon button in the top-right corner of the header
+- Accept `teamType` as a prop from the parent
 
-**File: `src/hooks/useInventory.tsx`**
+**3. `src/pages/Profile.tsx`**
+- Remove `HelpFAQDialog` from the Account card
+- Pass `currentTeamType` to `ProfileHeader` so it can forward it to the FAQ dialog
 
-1. Import `useWorkspace` hook to get `currentWorkspaceId`
-2. Add a `.eq('product_variants.workspace_id', currentWorkspaceId)` filter to the existing query (since the query already joins `product_variants`)
-3. Add `currentWorkspaceId` to the `useEffect` dependency array so inventory refreshes when the user switches workspaces
-4. Skip fetching if `currentWorkspaceId` is not set (similar to the existing `user` check)
-
-This follows the same workspace-filtering pattern used in `useProducts` and other hooks throughout the app.
+### Question Order (final)
+1. "How to use TraKKiT for [Type] activations?" -- placeholder answer per team type
+2. "How to install?" -- fixed install instructions
+3. "How do I check in?" -- existing answer
+4. "My selfie won't upload -- what do I do?" -- existing answer
+5. "The app feels slow or is stuck" -- existing answer
+6. "How do I view my stats?" -- existing answer
 
