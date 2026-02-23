@@ -124,7 +124,7 @@ class WorkspaceService {
         .eq('user_id', this.user.id)
         .eq('is_active', true)
         .eq('workspace.is_active', true)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error loading user workspaces:', error);
