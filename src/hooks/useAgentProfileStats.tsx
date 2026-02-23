@@ -41,6 +41,20 @@ export interface AgentProfileStats {
   weekStoreVisits: number;
   weekLunchMinutes: number;
   
+  // All Time Stats
+  allTimeStoresAdded: number;
+  allTimeSales: number;
+  allTimeRevenue: number;
+  allTimeSurveys: number;
+  allTimeGiveaways: number;
+  allTimeGiveawayItems: number;
+  allTimeCheckIns: number;
+  allTimeNotesCount: number;
+  allTimeInteractionsCount: number;
+  allTimeStoreVisits: number;
+  allTimeWholesaleSales: number;
+  allTimeWholesaleRevenue: number;
+  
   // Tasks
   todayTotalTasks: number;
   todayCompletedTasks: number;
@@ -118,6 +132,18 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
     weekInteractionsCount: 0,
     weekStoreVisits: 0,
     weekLunchMinutes: 0,
+    allTimeStoresAdded: 0,
+    allTimeSales: 0,
+    allTimeRevenue: 0,
+    allTimeSurveys: 0,
+    allTimeGiveaways: 0,
+    allTimeGiveawayItems: 0,
+    allTimeCheckIns: 0,
+    allTimeNotesCount: 0,
+    allTimeInteractionsCount: 0,
+    allTimeStoreVisits: 0,
+    allTimeWholesaleSales: 0,
+    allTimeWholesaleRevenue: 0,
     todayTotalTasks: 0,
     todayCompletedTasks: 0,
     todayPendingTasks: 0,
@@ -182,6 +208,17 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
           reportSummary,
           todayWholesalePurchases,
           weekWholesalePurchases,
+          // All Time queries
+          allTimeStores,
+          allTimeSalesData,
+          allTimeDailySalesData,
+          allTimeSurveyData,
+          allTimeGiveawayData,
+          allTimeCheckInsData,
+          allTimeNotesData,
+          allTimeInteractionsData,
+          allTimeStoreVisitsData,
+          allTimeWholesaleData,
           surveyCheck,
         ] = await Promise.all([
           // User role and display name
@@ -426,6 +463,89 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
             .eq('workspace_id', currentWorkspaceId)
             .gte('purchase_date', weekStart),
 
+          // === ALL TIME QUERIES ===
+
+          // All time stores
+          supabase
+            .from('stores')
+            .select('id', { count: 'exact', head: true })
+            .eq('added_by', agentId)
+            .eq('workspace_id', currentWorkspaceId)
+            .not('is_deleted', 'is', true),
+
+          // All time sales (interaction-based)
+          supabase
+            .from('interactions')
+            .select('quantity_sold, sale_value')
+            .eq('agent_id', agentId)
+            .eq('interaction_type', 'sale')
+            .eq('workspace_id', currentWorkspaceId)
+            .not('is_deleted', 'is', true),
+
+          // All time sales (daily tracking)
+          supabase
+            .from('daily_sales_tracking')
+            .select('quantity_sold, total_value')
+            .eq('agent_id', agentId)
+            .eq('workspace_id', currentWorkspaceId),
+
+          // All time surveys
+          supabase
+            .from('survey_responses')
+            .select('id', { count: 'exact', head: true })
+            .eq('agent_id', agentId)
+            .eq('workspace_id', currentWorkspaceId)
+            .eq('is_completed', true)
+            .not('is_deleted', 'is', true),
+
+          // All time giveaways
+          supabase
+            .from('giveaways')
+            .select('id, total_items')
+            .eq('agent_id', agentId)
+            .eq('workspace_id', currentWorkspaceId)
+            .not('is_deleted', 'is', true),
+
+          // All time check-ins
+          supabase
+            .from('agent_status_log')
+            .select('id', { count: 'exact', head: true })
+            .eq('agent_id', agentId)
+            .eq('workspace_id', currentWorkspaceId)
+            .eq('status', 'checked_in'),
+
+          // All time notes
+          supabase
+            .from('notes')
+            .select('id', { count: 'exact', head: true })
+            .eq('agent_id', agentId)
+            .eq('workspace_id', currentWorkspaceId)
+            .not('is_deleted', 'is', true),
+
+          // All time interactions
+          supabase
+            .from('interactions')
+            .select('id', { count: 'exact', head: true })
+            .eq('agent_id', agentId)
+            .eq('workspace_id', currentWorkspaceId)
+            .not('is_deleted', 'is', true),
+
+          // All time store visits
+          supabase
+            .from('agent_status_log')
+            .select('id', { count: 'exact', head: true })
+            .eq('agent_id', agentId)
+            .eq('workspace_id', currentWorkspaceId)
+            .eq('status', 'checked_in')
+            .not('store_id', 'is', null),
+
+          // All time wholesale purchases
+          supabase
+            .from('customer_purchases')
+            .select('quantity, total_value')
+            .eq('agent_id', agentId)
+            .eq('workspace_id', currentWorkspaceId),
+
           // Check if project has survey templates assigned
           ...(currentProjectId ? [
             supabase
@@ -529,6 +649,18 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
         const weekWsRevenue = weekWsPurchases.reduce((sum: number, p: any) => sum + (Number(p.total_value) || 0), 0);
         const hasSurvey = ((surveyCheck as any)?.count || 0) > 0;
 
+        // All Time calculations
+        const allTimeSalesInteraction = (allTimeSalesData as any)?.data || [];
+        const allTimeSalesDaily = (allTimeDailySalesData as any)?.data || [];
+        const allTimeSalesUnits = allTimeSalesInteraction.reduce((sum: number, s: any) => sum + (Number(s.quantity_sold) || 0), 0)
+          + allTimeSalesDaily.reduce((sum: number, s: any) => sum + (Number(s.quantity_sold) || 0), 0);
+        const allTimeRevenueTotal = allTimeSalesInteraction.reduce((sum: number, s: any) => sum + (Number(s.sale_value) || 0), 0)
+          + allTimeSalesDaily.reduce((sum: number, s: any) => sum + (Number(s.total_value) || 0), 0);
+        const allTimeGiveawayItemsTotal = (allTimeGiveawayData as any)?.data?.reduce((sum: number, g: any) => sum + (g.total_items || 0), 0) || 0;
+        const allTimeWsPurchases = (allTimeWholesaleData as any)?.data || [];
+        const allTimeWsSales = allTimeWsPurchases.reduce((sum: number, p: any) => sum + (Number(p.quantity) || 0), 0);
+        const allTimeWsRevenue = allTimeWsPurchases.reduce((sum: number, p: any) => sum + (Number(p.total_value) || 0), 0);
+
         setStats({
           displayName,
           email: user?.email || "",
@@ -559,6 +691,18 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
           weekInteractionsCount: weekInteractions.count || 0,
           weekStoreVisits: weekStoreVisits.count || 0,
           weekLunchMinutes: weekLunchMinutesTotal,
+          allTimeStoresAdded: (allTimeStores as any)?.count || 0,
+          allTimeSales: allTimeSalesUnits,
+          allTimeRevenue: allTimeRevenueTotal,
+          allTimeSurveys: (allTimeSurveyData as any)?.count || 0,
+          allTimeGiveaways: (allTimeGiveawayData as any)?.data?.length || 0,
+          allTimeGiveawayItems: allTimeGiveawayItemsTotal,
+          allTimeCheckIns: (allTimeCheckInsData as any)?.count || 0,
+          allTimeNotesCount: (allTimeNotesData as any)?.count || 0,
+          allTimeInteractionsCount: (allTimeInteractionsData as any)?.count || 0,
+          allTimeStoreVisits: (allTimeStoreVisitsData as any)?.count || 0,
+          allTimeWholesaleSales: allTimeWsSales,
+          allTimeWholesaleRevenue: allTimeWsRevenue,
           todayTotalTasks: tasks.length,
           todayCompletedTasks: completedTasks,
           todayPendingTasks: pendingTasks,
