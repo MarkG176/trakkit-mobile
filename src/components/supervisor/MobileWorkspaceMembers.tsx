@@ -28,7 +28,9 @@ import {
   MessageSquare,
   Send,
   Check,
-  X
+  X,
+  Plus,
+  Minus
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -46,8 +48,15 @@ interface WorkspaceMember {
 interface MemberDetails {
   teams: { id: string; name: string }[];
   lastLocation: { lat: number; lng: number; timestamp: string } | null;
-  inventory: { name: string; quantity: number }[];
+  inventory: { name: string; quantity: number; product_variant_id?: string }[];
   sales: { units: number; value: number };
+}
+
+interface ProductVariant {
+  id: string;
+  name: string;
+  sku: string | null;
+  price: number;
 }
 
 export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
@@ -70,6 +79,12 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
   // Contact dialog
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
   const [contactMessage, setContactMessage] = useState('');
+
+  // Inventory assignment
+  const [assignInventoryOpen, setAssignInventoryOpen] = useState(false);
+  const [productVariants, setProductVariants] = useState<ProductVariant[]>([]);
+  const [assignQuantities, setAssignQuantities] = useState<Record<string, number>>({});
+  const [assigningInventory, setAssigningInventory] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
 
   const fetchMembers = async (showRefresh = false) => {
@@ -102,10 +117,52 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
     setAvailableTeams(data || []);
   };
 
+  const fetchProductVariants = async () => {
+    const { data } = await supabase
+      .from('product_variants')
+      .select('id, name, sku, price')
+      .eq('workspace_id', workspaceId)
+      .eq('is_deleted', false)
+      .order('name');
+    setProductVariants(data || []);
+  };
+
+  const handleAssignInventory = async () => {
+    if (!selectedMember) return;
+    const items = Object.entries(assignQuantities).filter(([_, qty]) => qty > 0);
+    if (items.length === 0) {
+      toast({ title: 'Select at least one product', variant: 'destructive' });
+      return;
+    }
+    setAssigningInventory(true);
+    try {
+      const inserts = items.map(([variantId, qty]) => {
+        const variant = productVariants.find(v => v.id === variantId);
+        return {
+          agent_id: selectedMember.user_id,
+          product_variant_id: variantId,
+          amount_issued: qty,
+          name: variant?.name || 'Unknown',
+        };
+      });
+      const { error } = await supabase.from('agent_task_inventory').insert(inserts);
+      if (error) throw error;
+      toast({ title: 'Inventory assigned', description: `${items.length} product(s) assigned to ${selectedMember.name || selectedMember.email}` });
+      setAssignQuantities({});
+      setAssignInventoryOpen(false);
+      fetchMemberDetails(selectedMember);
+    } catch (error: any) {
+      toast({ title: 'Failed to assign', description: error.message, variant: 'destructive' });
+    } finally {
+      setAssigningInventory(false);
+    }
+  };
+
   useEffect(() => {
     if (workspaceId) {
       fetchMembers();
       fetchAvailableTeams();
+      fetchProductVariants();
     }
   }, [workspaceId]);
 
@@ -481,6 +538,15 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
                   <CardTitle className="text-sm flex items-center gap-2">
                     <Package className="h-4 w-4" />
                     Current Inventory
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs gap-1 ml-auto"
+                      onClick={() => { setAssignQuantities({}); setAssignInventoryOpen(true); }}
+                    >
+                      <Plus className="h-3 w-3" />
+                      Assign
+                    </Button>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
@@ -551,6 +617,80 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
             >
               <Send className="h-4 w-4" />
               {sendingMessage ? 'Sending...' : 'Send'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Inventory Dialog */}
+      <Dialog open={assignInventoryOpen} onOpenChange={setAssignInventoryOpen}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Assign Inventory to {selectedMember?.name || selectedMember?.email?.split('@')[0]}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {productVariants.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No products available in this workspace</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                {productVariants.map((variant) => {
+                  const qty = assignQuantities[variant.id] || 0;
+                  return (
+                    <div
+                      key={variant.id}
+                      className={`border rounded-lg p-3 text-center space-y-2 transition-colors ${
+                        qty > 0 ? 'border-primary bg-primary/5' : 'border-border'
+                      }`}
+                    >
+                      <div className="w-10 h-10 mx-auto rounded-full bg-muted flex items-center justify-center">
+                        <Package className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <p className="text-xs font-medium truncate" title={variant.name}>{variant.name}</p>
+                      {variant.sku && <p className="text-[10px] text-muted-foreground">{variant.sku}</p>}
+                      <div className="flex items-center justify-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-7 w-7"
+                          disabled={qty <= 0}
+                          onClick={() => setAssignQuantities(prev => ({ ...prev, [variant.id]: Math.max(0, qty - 1) }))}
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={qty}
+                          onChange={(e) => setAssignQuantities(prev => ({ ...prev, [variant.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
+                          className="h-7 w-12 text-center text-sm px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => setAssignQuantities(prev => ({ ...prev, [variant.id]: qty + 1 }))}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignInventoryOpen(false)}>Cancel</Button>
+            <Button
+              onClick={handleAssignInventory}
+              disabled={assigningInventory || Object.values(assignQuantities).every(q => q <= 0)}
+              className="gap-2"
+            >
+              <Check className="h-4 w-4" />
+              {assigningInventory ? 'Assigning...' : 'Assign'}
             </Button>
           </DialogFooter>
         </DialogContent>
