@@ -88,6 +88,27 @@ serve(async (req) => {
       console.error("Error creating user_workspaces:", workspaceError);
     }
 
+    // Remove user from Default Workspace if they were invited to a different one
+    const { data: defaultWs } = await supabaseAdmin
+      .from('workspaces')
+      .select('id')
+      .eq('name', 'Default Workspace')
+      .single();
+
+    if (defaultWs && defaultWs.id !== workspaceId) {
+      const { error: deleteDefaultError } = await supabaseAdmin
+        .from('user_workspaces')
+        .delete()
+        .eq('user_id', userId)
+        .eq('workspace_id', defaultWs.id);
+
+      if (deleteDefaultError) {
+        console.error("Error removing default workspace:", deleteDefaultError);
+      } else {
+        console.log(`Removed user from Default Workspace (${defaultWs.id})`);
+      }
+    }
+
     // Add to team if teamId provided
     if (teamId) {
       // Check if already in team
