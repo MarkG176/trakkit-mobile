@@ -9,10 +9,10 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
+  { id: "inbox", label: "Inbox", icon: Inbox, path: "/supervisor/inbox" },
   { id: "dashboard", label: "Dashboard", icon: Home, path: "/supervisor" },
   { id: "users", label: "Users", icon: Users, path: "/supervisor/users" },
   { id: "sales", label: "Sales", icon: ShoppingCart, path: "/supervisor/sales" },
-  { id: "inbox", label: "Inbox", icon: Inbox, path: "/supervisor/inbox" },
   { id: "rankings", label: "Rankings", icon: Trophy, path: "/supervisor/rankings" },
   { id: "settings", label: "Settings", icon: Settings, path: "/settings" },
 ];
