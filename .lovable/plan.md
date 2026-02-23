@@ -1,29 +1,30 @@
 
 
-## Supervisor Bottom Nav Redesign
+## Fix: Supervisor Inbox "Send Message" Button Stays Greyed Out
 
-### What changes
-The supervisor bottom navigation will be updated to show exactly 4 items in this order:
+### Root Cause
 
-1. **Dashboard** (Home icon) -> `/supervisor`
-2. **Users** (Users icon) -> `/supervisor/users`
-3. **Inbox** (Inbox icon) -> `/supervisor/inbox`
-4. **Stats** (BarChart3 icon) -> `/supervisor/stats` (new page)
+The recipient selector uses a **Popover** component inside a **Dialog**. Both components render via portals (rendered outside the DOM tree into `document.body`). The Dialog's overlay intercepts all clicks, preventing the Popover dropdown from being clickable. This means:
 
-Sales, Rankings, and Settings items will be removed from the nav.
+1. User clicks "Select agent..." -- the Popover opens
+2. The Popover content renders in a portal, but the Dialog's modal overlay sits on top
+3. Clicking any agent in the dropdown is blocked by the overlay
+4. `selectedRecipient` stays `null`, so the Send button remains disabled
 
-### New Stats Page
-A new `StatsPage` will be created at `src/pages/supervisor/StatsPage.tsx` that consolidates key supervisor statistics. This page will include:
-- Sales summary data (previously accessed via the Sales nav item)
-- Rankings/leaderboard data (previously accessed via the Rankings nav item)
-- The page will use the `SupervisorBottomNav` and follow the same layout patterns as other supervisor pages
+### Solution
 
-### Technical Details
+Replace the Popover-based recipient selector with a simple inline dropdown that renders within the Dialog's DOM tree (no portal). This avoids z-index/portal conflicts entirely.
 
-**Files to modify:**
-- `src/components/supervisor/SupervisorBottomNav.tsx` -- Replace the `navItems` array with the 4 items listed above, using `BarChart3` icon for Stats
-- `src/App.tsx` -- Add route for `/supervisor/stats` pointing to the new `StatsPage`
+### Technical Changes
 
-**Files to create:**
-- `src/pages/supervisor/StatsPage.tsx` -- New page combining sales overview and rankings into a single stats view with tabs
+**File: `src/pages/supervisor/InboxPage.tsx`**
+
+- Remove the `Popover`, `PopoverTrigger`, and `PopoverContent` imports (if unused elsewhere in the file)
+- Replace the Popover-based recipient selector (lines 352-388) with a simple inline expandable div:
+  - A button toggles `recipientOpen` state
+  - When open, render a bordered div below the button containing the search input and member list
+  - Clicking a member sets `selectedRecipient` and closes the list
+- This keeps all elements within the Dialog's DOM, avoiding portal stacking issues
+
+No database changes needed. No new dependencies required.
 
