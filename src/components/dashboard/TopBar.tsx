@@ -5,9 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 export const TopBar = () => {
   const { user } = useAuth();
+  const { currentTeamType } = useWorkspace();
+  const showSetLocation = currentTeamType === 'wholesale' || currentTeamType === 'instore';
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState<string>("");
 
@@ -48,15 +51,17 @@ export const TopBar = () => {
           <span className="text-h3">Hello, {displayName}!</span>
         </div>
         
-        <Button 
-          onClick={handleSetLocation}
-          variant="default"
-          size="sm"
-          className="flex items-center gap-2"
-        >
-          <MapPin size={16} />
-          Set Location
-        </Button>
+        {showSetLocation && (
+          <Button 
+            onClick={handleSetLocation}
+            variant="default"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <MapPin size={16} />
+            Set Location
+          </Button>
+        )}
       </div>
       
       {/* Workspace Switcher */}
