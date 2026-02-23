@@ -84,9 +84,10 @@ const getTodayDateString = () => {
   return new Date().toISOString().split('T')[0];
 };
 
-export const useAgentProfileStats = (): AgentProfileStats => {
+export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStats => {
   const { user } = useAuth();
   const { currentWorkspaceId, currentProjectId, isInitialized } = useWorkspace();
+  const agentId = overrideAgentId || user?.id;
   const [stats, setStats] = useState<AgentProfileStats>({
     displayName: "",
     email: "",
@@ -136,7 +137,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
 
   useEffect(() => {
     const fetchStats = async () => {
-      if (!user || !currentWorkspaceId) {
+      if (!agentId || !currentWorkspaceId) {
         setStats(prev => ({ ...prev, isLoading: false }));
         return;
       }
@@ -187,7 +188,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('user_roles')
             .select('display_name, first_name, last_name')
-            .eq('user_id', user.id)
+            .eq('user_id', agentId)
             .eq('is_active', true)
             .eq('workspace_id', currentWorkspaceId)
             .order('created_at', { ascending: false })
@@ -198,7 +199,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('agent_ranks')
             .select('current_rank, total_points, weekly_points, monthly_points')
-            .eq('agent_id', user.id)
+             .eq('agent_id', agentId)
             .eq('workspace_id', currentWorkspaceId)
             .order('updated_at', { ascending: false })
             .limit(1)
@@ -208,7 +209,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('stores')
             .select('id', { count: 'exact', head: true })
-            .eq('added_by', user.id)
+             .eq('added_by', agentId)
             .eq('workspace_id', currentWorkspaceId)
             .not('is_deleted', 'is', true)
             .gte('created_at', todayStart),
@@ -217,7 +218,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('stores')
             .select('id', { count: 'exact', head: true })
-            .eq('added_by', user.id)
+            .eq('added_by', agentId)
             .eq('workspace_id', currentWorkspaceId)
             .not('is_deleted', 'is', true)
             .gte('created_at', weekStart),
@@ -226,7 +227,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('interactions')
             .select('quantity_sold, sale_value, timestamp, created_at')
-            .eq('agent_id', user.id)
+             .eq('agent_id', agentId)
             .eq('interaction_type', 'sale')
             .eq('workspace_id', currentWorkspaceId)
             .not('is_deleted', 'is', true)
@@ -236,7 +237,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('interactions')
             .select('quantity_sold, sale_value, timestamp, created_at')
-            .eq('agent_id', user.id)
+             .eq('agent_id', agentId)
             .eq('interaction_type', 'sale')
             .eq('workspace_id', currentWorkspaceId)
             .not('is_deleted', 'is', true)
@@ -246,7 +247,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('daily_sales_tracking')
             .select('quantity_sold, total_value')
-            .eq('agent_id', user.id)
+             .eq('agent_id', agentId)
             .eq('workspace_id', currentWorkspaceId)
             .eq('work_date', todayDate),
 
@@ -254,7 +255,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('daily_sales_tracking')
             .select('quantity_sold, total_value')
-            .eq('agent_id', user.id)
+             .eq('agent_id', agentId)
             .eq('workspace_id', currentWorkspaceId)
             .gte('work_date', weekStartDate),
           
@@ -262,7 +263,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('survey_responses')
             .select('id', { count: 'exact', head: true })
-            .eq('agent_id', user.id)
+             .eq('agent_id', agentId)
             .eq('workspace_id', currentWorkspaceId)
             .eq('is_completed', true)
             .not('is_deleted', 'is', true)
@@ -272,7 +273,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('survey_responses')
             .select('id', { count: 'exact', head: true })
-            .eq('agent_id', user.id)
+             .eq('agent_id', agentId)
             .eq('workspace_id', currentWorkspaceId)
             .eq('is_completed', true)
             .not('is_deleted', 'is', true)
@@ -282,7 +283,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('giveaways')
             .select('id, total_items')
-            .eq('agent_id', user.id)
+             .eq('agent_id', agentId)
             .eq('workspace_id', currentWorkspaceId)
             .not('is_deleted', 'is', true)
             .gte('recorded_at', todayStart),
@@ -291,7 +292,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('giveaways')
             .select('id, total_items')
-            .eq('agent_id', user.id)
+             .eq('agent_id', agentId)
             .eq('workspace_id', currentWorkspaceId)
             .not('is_deleted', 'is', true)
             .gte('recorded_at', weekStart),
@@ -300,7 +301,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('agent_status_log')
             .select('status, created_at')
-            .eq('agent_id', user.id)
+             .eq('agent_id', agentId)
             .gte('created_at', todayStart)
             .order('created_at', { ascending: true }),
           
@@ -308,7 +309,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('agent_status_log')
             .select('status, created_at')
-            .eq('agent_id', user.id)
+             .eq('agent_id', agentId)
             .gte('created_at', weekStart)
             .order('created_at', { ascending: true }),
 
@@ -318,7 +319,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('agent_status_log')
             .select('id', { count: 'exact', head: true })
-            .eq('agent_id', user.id)
+             .eq('agent_id', agentId)
             .eq('workspace_id', currentWorkspaceId)
             .eq('status', 'checked_in')
             .gte('timestamp', todayStart),
@@ -327,7 +328,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('agent_status_log')
             .select('id', { count: 'exact', head: true })
-            .eq('agent_id', user.id)
+             .eq('agent_id', agentId)
             .eq('workspace_id', currentWorkspaceId)
             .eq('status', 'checked_in')
             .gte('timestamp', weekStart),
@@ -336,7 +337,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('notes')
             .select('id', { count: 'exact', head: true })
-            .eq('agent_id', user.id)
+             .eq('agent_id', agentId)
             .eq('workspace_id', currentWorkspaceId)
             .not('is_deleted', 'is', true)
             .gte('created_at', todayStart),
@@ -345,7 +346,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('notes')
             .select('id', { count: 'exact', head: true })
-            .eq('agent_id', user.id)
+             .eq('agent_id', agentId)
             .eq('workspace_id', currentWorkspaceId)
             .not('is_deleted', 'is', true)
             .gte('created_at', weekStart),
@@ -354,7 +355,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('interactions')
             .select('id', { count: 'exact', head: true })
-            .eq('agent_id', user.id)
+             .eq('agent_id', agentId)
             .eq('workspace_id', currentWorkspaceId)
             .not('is_deleted', 'is', true)
             .gte('created_at', todayStart),
@@ -363,7 +364,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('interactions')
             .select('id', { count: 'exact', head: true })
-            .eq('agent_id', user.id)
+             .eq('agent_id', agentId)
             .eq('workspace_id', currentWorkspaceId)
             .not('is_deleted', 'is', true)
             .gte('created_at', weekStart),
@@ -372,7 +373,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('agent_status_log')
             .select('id', { count: 'exact', head: true })
-            .eq('agent_id', user.id)
+             .eq('agent_id', agentId)
             .eq('workspace_id', currentWorkspaceId)
             .eq('status', 'checked_in')
             .not('store_id', 'is', null)
@@ -382,7 +383,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('agent_status_log')
             .select('id', { count: 'exact', head: true })
-            .eq('agent_id', user.id)
+             .eq('agent_id', agentId)
             .eq('workspace_id', currentWorkspaceId)
             .eq('status', 'checked_in')
             .not('store_id', 'is', null)
@@ -395,7 +396,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('agent_tasks')
             .select('id, status')
-            .eq('agent_id', user.id)
+             .eq('agent_id', agentId)
             .eq('workspace_id', currentWorkspaceId)
             .not('is_deleted', 'is', true)
             .gte('created_at', todayStart),
@@ -404,7 +405,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('agent_report_summary')
             .select('net_work_minutes, total_work_minutes, total_lunch_minutes, check_ins_count, interactions_count, notes_count')
-            .eq('agent_id', user.id)
+             .eq('agent_id', agentId)
             .eq('workspace_id', currentWorkspaceId)
             .eq('report_date', todayDate)
             .maybeSingle(),
@@ -413,7 +414,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('customer_purchases')
             .select('quantity, total_value')
-            .eq('agent_id', user.id)
+             .eq('agent_id', agentId)
             .eq('workspace_id', currentWorkspaceId)
             .gte('purchase_date', todayStart),
 
@@ -421,7 +422,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
           supabase
             .from('customer_purchases')
             .select('quantity, total_value')
-            .eq('agent_id', user.id)
+            .eq('agent_id', agentId)
             .eq('workspace_id', currentWorkspaceId)
             .gte('purchase_date', weekStart),
 
@@ -507,8 +508,8 @@ export const useAgentProfileStats = (): AgentProfileStats => {
         
         const displayName = userRoleData.data?.display_name
           || [userRoleData.data?.first_name, userRoleData.data?.last_name].filter(Boolean).join(' ')
-          || user.user_metadata?.full_name
-          || user.email?.split('@')[0]
+          || user?.user_metadata?.full_name
+          || user?.email?.split('@')[0]
           || "Agent";
 
         // Tasks
@@ -530,7 +531,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
 
         setStats({
           displayName,
-          email: user.email || "",
+          email: user?.email || "",
           currentRank: rankData.data?.current_rank || "Agent",
           totalPoints: rankData.data?.total_points || 0,
           weeklyPoints: rankData.data?.weekly_points || 0,
@@ -583,7 +584,7 @@ export const useAgentProfileStats = (): AgentProfileStats => {
     if (isInitialized) {
       fetchStats();
     }
-  }, [user, currentWorkspaceId, isInitialized]);
+  }, [agentId, currentWorkspaceId, isInitialized]);
 
   return stats;
 };
