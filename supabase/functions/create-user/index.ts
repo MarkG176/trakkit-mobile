@@ -80,6 +80,8 @@ serve(async (req) => {
         role: "member",
         is_active: true,
         team_type: "wholesale",
+        name: displayName || email.split("@")[0],
+        email: email.toLowerCase(),
       }, { onConflict: "user_id,workspace_id" });
 
     if (workspaceError) {
