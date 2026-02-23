@@ -1,4 +1,4 @@
-import { Home, ClipboardList, Map, Package, User, Clipboard, HelpCircle } from "lucide-react";
+import { Home, ClipboardList, Map, Package, User, Clipboard, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMemo } from "react";
 
@@ -13,7 +13,7 @@ const navItems = [
   { id: "surveys", label: "Surveys", icon: ClipboardList, path: "/surveys" },
   { id: "routes", label: "Routes", icon: Map, path: "/routes" },
   { id: "inventory", label: "Inventory", icon: Package, path: "/inventory" },
-  { id: "support", label: "Support", icon: HelpCircle, path: "/support-ticket" },
+  { id: "chat", label: "Chat", icon: MessageSquare, path: "/support-ticket", alwaysShow: true },
   { id: "profile", label: "Profile", icon: User, path: "/profile" },
 ];
 
@@ -23,12 +23,12 @@ export const BottomNavigation = ({ currentPage, currentTeamType }: BottomNavigat
   // Filter nav items based on team type
   const filteredNavItems = useMemo(() => {
     return navItems.filter(item => {
+      // Chat is always visible
+      if ((item as any).alwaysShow) return true;
       const teamType = currentTeamType?.toLowerCase();
-      // Hide Reports and Inventory for wholesale team type
       if (teamType === 'wholesale' && (item.id === 'reports' || item.id === 'inventory')) {
         return false;
       }
-      // Hide Reports and Surveys for seeding team type
       if (teamType === 'seeding' && (item.id === 'reports' || item.id === 'surveys')) {
         return false;
       }
