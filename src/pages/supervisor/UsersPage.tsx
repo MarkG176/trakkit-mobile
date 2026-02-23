@@ -223,20 +223,24 @@ export const UsersPage = () => {
 
     setInviteLoading(true);
     try {
-      // Send magic link invitation
-      const { error: inviteError } = await supabase.auth.signInWithOtp({
-        email: inviteEmail.trim(),
-        options: {
-          emailRedirectTo: `${window.location.origin}/login`,
-          data: {
-            display_name: inviteDisplayName.trim() || undefined,
-            invited_role: inviteRole,
-            invited_workspace: currentWorkspaceId,
-          },
+      // Call the create-user edge function which:
+      // 1. Creates auth user (or finds existing)
+      // 2. Creates user_roles entry
+      // 3. Creates user_workspaces entry
+      // 4. Sends magic link
+      const { data: fnData, error: fnError } = await supabase.functions.invoke('create-user', {
+        body: {
+          email: inviteEmail.trim(),
+          displayName: inviteDisplayName.trim() || undefined,
+          role: inviteRole,
+          workspaceId: currentWorkspaceId,
         },
       });
 
-      if (inviteError) throw inviteError;
+      if (fnError) throw fnError;
+      if (fnData?.error) throw new Error(fnData.error);
+
+      const userId = fnData?.userId || null;
 
       toast({
         title: "Invitation sent!",
@@ -245,19 +249,7 @@ export const UsersPage = () => {
 
       // Store invited email for team assignment
       setInvitedUserEmail(inviteEmail.trim().toLowerCase());
-      
-      // Try to find user ID from user_roles (may exist if already in system)
-      const { data: existingUserRole } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('email', inviteEmail.trim().toLowerCase())
-        .single();
-      
-      if (existingUserRole) {
-        setInvitedUserId(existingUserRole.user_id);
-      } else {
-        setInvitedUserId(null);
-      }
+      setInvitedUserId(userId);
       
       setInviteDialogOpen(false);
       
@@ -270,7 +262,7 @@ export const UsersPage = () => {
       setInviteRole("agent");
       setExistingUser(null);
       
-      // Refresh users list
+      // Refresh users list - user should now appear immediately
       fetchUsers();
     } catch (error: any) {
       console.error('Error inviting user:', error);
