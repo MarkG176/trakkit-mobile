@@ -3062,6 +3062,50 @@ export type Database = {
           },
         ]
       }
+      supervisor_messages: {
+        Row: {
+          created_at: string
+          id: string
+          is_deleted: boolean
+          is_read: boolean
+          message: string
+          recipient_id: string
+          sender_id: string
+          sender_name: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          is_read?: boolean
+          message: string
+          recipient_id: string
+          sender_id: string
+          sender_name?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          is_read?: boolean
+          message?: string
+          recipient_id?: string
+          sender_id?: string
+          sender_name?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supervisor_messages_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_tickets: {
         Row: {
           agent_email: string | null
@@ -3796,6 +3840,59 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "workspace_invitations_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_messages: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          id: string
+          is_deleted: boolean
+          sender_email: string | null
+          sender_id: string
+          sender_name: string
+          status: string
+          title: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          category?: string
+          content: string
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          sender_email?: string | null
+          sender_id: string
+          sender_name: string
+          status?: string
+          title: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          sender_email?: string | null
+          sender_id?: string
+          sender_name?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_messages_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
