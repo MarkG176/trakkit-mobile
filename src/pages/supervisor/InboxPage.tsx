@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Search, Bug, Package, BarChart3, Inbox, Image as ImageIcon, Trash2, Send, ChevronDown, Plus, X } from "lucide-react";
+import { Search, Bug, Package, BarChart3, Inbox, Image as ImageIcon, Trash2, Send, ChevronDown, Plus, X, MapPin, Upload } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -82,13 +82,20 @@ export const InboxPage = () => {
   const [sending, setSending] = useState(false);
   const [recipientOpen, setRecipientOpen] = useState(false);
 
+  // Attachment state
+  const [attachImage, setAttachImage] = useState<File | null>(null);
+  const [attachImagePreview, setAttachImagePreview] = useState<string | null>(null);
+  const [attachLocation, setAttachLocation] = useState<{ lat: number; lng: number; label: string } | null>(null);
+  const [gettingLocation, setGettingLocation] = useState(false);
+
   const filteredMembers = useMemo(() => {
-    if (!recipientSearch.trim()) return members;
+    const filtered = members.filter(m => m.user_id !== user?.id);
+    if (!recipientSearch.trim()) return filtered;
     const q = recipientSearch.toLowerCase();
-    return members.filter(m =>
+    return filtered.filter(m =>
       m.name?.toLowerCase().includes(q) || m.email?.toLowerCase().includes(q)
     );
-  }, [members, recipientSearch]);
+  }, [members, recipientSearch, user?.id]);
 
   const fetchMembers = async () => {
     if (!currentWorkspaceId) return;
@@ -126,10 +133,55 @@ export const InboxPage = () => {
     fetchMembers();
   }, [currentWorkspaceId, currentProjectId]);
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAttachImage(file);
+      const reader = new FileReader();
+      reader.onload = () => setAttachImagePreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAttachLocation = () => {
+    if (!navigator.geolocation) {
+      toast({ title: "Geolocation not supported", variant: "destructive" });
+      return;
+    }
+    setGettingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setAttachLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          label: `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`,
+        });
+        setGettingLocation(false);
+      },
+      (err) => {
+        toast({ title: "Location error", description: err.message, variant: "destructive" });
+        setGettingLocation(false);
+      }
+    );
+  };
+
   const handleSendMessage = async () => {
     if (!selectedRecipient || !composeMessage.trim() || !user) return;
     setSending(true);
     try {
+      let imageUrl: string | null = null;
+      if (attachImage) {
+        const fileExt = attachImage.name.split('.').pop();
+        const filePath = `supervisor-messages/${user.id}/${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('check-in-selfies')
+          .upload(filePath, attachImage);
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage.from('check-in-selfies').getPublicUrl(filePath);
+          imageUrl = urlData.publicUrl;
+        }
+      }
+
       const senderName = user.user_metadata?.display_name || user.email || 'Supervisor';
       const { error } = await supabase.from('supervisor_messages').insert({
         sender_id: user.id,
@@ -137,12 +189,19 @@ export const InboxPage = () => {
         recipient_id: selectedRecipient.user_id,
         message: composeMessage.trim(),
         workspace_id: currentWorkspaceId,
+        image_url: imageUrl,
+        location_lat: attachLocation?.lat || null,
+        location_lng: attachLocation?.lng || null,
+        location_label: attachLocation?.label || null,
       });
       if (error) throw error;
       toast({ title: "Message sent", description: `Sent to ${selectedRecipient.name || selectedRecipient.email}` });
       setComposeMessage("");
       setSelectedRecipient(null);
       setShowCompose(false);
+      setAttachImage(null);
+      setAttachImagePreview(null);
+      setAttachLocation(null);
     } catch (err: any) {
       toast({ title: "Failed to send", description: err.message, variant: "destructive" });
     } finally {
@@ -192,15 +251,6 @@ export const InboxPage = () => {
             <h1 className="text-xl font-bold">Inbox</h1>
             <p className="text-sm opacity-90">Agent support tickets</p>
           </div>
-          <Button
-            size="sm"
-            variant="secondary"
-            className="bg-white/20 hover:bg-white/30"
-            onClick={() => setShowCompose(!showCompose)}
-          >
-            {showCompose ? <X className="w-4 h-4 mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
-            {showCompose ? 'Cancel' : 'Message'}
-          </Button>
         </div>
         <WorkspaceSwitcher className="w-full" />
       </div>
@@ -218,89 +268,8 @@ export const InboxPage = () => {
         </div>
       </div>
 
-      {/* Compose Message */}
-      {showCompose && (
-        <div className="px-4 pb-3">
-          <Card>
-            <CardContent className="p-4 space-y-3">
-              <div className="flex items-center gap-2 mb-1">
-                <Send className="w-4 h-4 text-primary" />
-                <span className="text-sm font-semibold">Send Message</span>
-              </div>
-
-              {/* Recipient selector */}
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">To</label>
-                {selectedRecipient ? (
-                  <div className="flex items-center gap-2 border rounded-md px-3 py-2 bg-muted/50">
-                    <span className="text-sm flex-1">{selectedRecipient.name || selectedRecipient.email}</span>
-                    <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setSelectedRecipient(null)}>
-                      <X className="w-3 h-3" />
-                    </Button>
-                  </div>
-                ) : (
-                  <Popover open={recipientOpen} onOpenChange={setRecipientOpen}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-full justify-between text-sm font-normal text-muted-foreground">
-                        Select agent...
-                        <ChevronDown className="w-4 h-4 ml-2" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[calc(100vw-4rem)] p-2 z-50 bg-popover" align="start">
-                      <Input
-                        placeholder="Search agents..."
-                        value={recipientSearch}
-                        onChange={(e) => setRecipientSearch(e.target.value)}
-                        className="mb-2 h-9"
-                        autoFocus
-                      />
-                      <div className="max-h-48 overflow-y-auto space-y-1">
-                        {filteredMembers.length === 0 ? (
-                          <p className="text-xs text-muted-foreground text-center py-3">No agents found</p>
-                        ) : (
-                          filteredMembers.map((m) => (
-                            <button
-                              key={m.user_id}
-                              className="w-full text-left px-3 py-2 rounded-md hover:bg-accent text-sm transition-colors"
-                              onClick={() => {
-                                setSelectedRecipient(m);
-                                setRecipientOpen(false);
-                                setRecipientSearch("");
-                              }}
-                            >
-                              <span className="font-medium">{m.name || 'Unnamed'}</span>
-                              {m.email && <span className="text-xs text-muted-foreground ml-2">{m.email}</span>}
-                            </button>
-                          ))
-                        )}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                )}
-              </div>
-
-              <Textarea
-                placeholder="Type your message..."
-                value={composeMessage}
-                onChange={(e) => setComposeMessage(e.target.value)}
-                rows={3}
-              />
-
-              <Button
-                className="w-full"
-                disabled={!selectedRecipient || !composeMessage.trim() || sending}
-                onClick={handleSendMessage}
-              >
-                <Send className="w-4 h-4 mr-2" />
-                {sending ? 'Sending...' : 'Send Message'}
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
       {/* Tickets List */}
-      <ScrollArea className="h-[calc(100vh-240px)]">
+      <ScrollArea className="h-[calc(100vh-220px)]">
         <div className="px-4 space-y-3 pb-4">
           {loading ? (
             <div className="text-center py-12 text-muted-foreground">Loading...</div>
@@ -350,6 +319,135 @@ export const InboxPage = () => {
           )}
         </div>
       </ScrollArea>
+
+      {/* Floating + Button */}
+      <button
+        onClick={() => setShowCompose(true)}
+        className="fixed bottom-24 right-5 z-40 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors"
+      >
+        <Plus className="w-6 h-6" />
+      </button>
+
+      {/* Compose Message Dialog */}
+      <Dialog open={showCompose} onOpenChange={setShowCompose}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="w-5 h-5 text-primary" />
+              Send Message
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {/* Recipient selector */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">To</label>
+              {selectedRecipient ? (
+                <div className="flex items-center gap-2 border rounded-md px-3 py-2 bg-muted/50">
+                  <span className="text-sm flex-1">{selectedRecipient.name || selectedRecipient.email}</span>
+                  <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setSelectedRecipient(null)}>
+                    <X className="w-3 h-3" />
+                  </Button>
+                </div>
+              ) : (
+                <Popover open={recipientOpen} onOpenChange={setRecipientOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between text-sm font-normal text-muted-foreground">
+                      Select agent...
+                      <ChevronDown className="w-4 h-4 ml-2" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[calc(100vw-4rem)] p-2 z-50 bg-popover" align="start">
+                    <Input
+                      placeholder="Search agents..."
+                      value={recipientSearch}
+                      onChange={(e) => setRecipientSearch(e.target.value)}
+                      className="mb-2 h-9"
+                      autoFocus
+                    />
+                    <div className="max-h-48 overflow-y-auto space-y-1">
+                      {filteredMembers.length === 0 ? (
+                        <p className="text-xs text-muted-foreground text-center py-3">No agents found</p>
+                      ) : (
+                        filteredMembers.map((m) => (
+                          <button
+                            key={m.user_id}
+                            className="w-full text-left px-3 py-2 rounded-md hover:bg-accent text-sm transition-colors"
+                            onClick={() => {
+                              setSelectedRecipient(m);
+                              setRecipientOpen(false);
+                              setRecipientSearch("");
+                            }}
+                          >
+                            <span className="font-medium">{m.name || 'Unnamed'}</span>
+                            {m.email && <span className="text-xs text-muted-foreground ml-2">{m.email}</span>}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
+            </div>
+
+            <Textarea
+              placeholder="Type your message..."
+              value={composeMessage}
+              onChange={(e) => setComposeMessage(e.target.value)}
+              rows={3}
+            />
+
+            {/* Attachment options */}
+            <div className="flex items-center gap-2">
+              <label className="cursor-pointer">
+                <input type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+                <div className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground border rounded-md px-3 py-2 transition-colors">
+                  <Upload className="w-3.5 h-3.5" />
+                  Image
+                </div>
+              </label>
+              <button
+                onClick={handleAttachLocation}
+                disabled={gettingLocation}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground border rounded-md px-3 py-2 transition-colors disabled:opacity-50"
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                {gettingLocation ? 'Getting...' : 'Location'}
+              </button>
+            </div>
+
+            {/* Attachment previews */}
+            {attachImagePreview && (
+              <div className="relative inline-block">
+                <img src={attachImagePreview} alt="Attachment" className="w-24 h-24 object-cover rounded-lg border" />
+                <button
+                  onClick={() => { setAttachImage(null); setAttachImagePreview(null); }}
+                  className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+            {attachLocation && (
+              <div className="flex items-center gap-2 bg-muted/50 rounded-md px-3 py-2">
+                <MapPin className="w-4 h-4 text-primary" />
+                <span className="text-xs flex-1">{attachLocation.label}</span>
+                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setAttachLocation(null)}>
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+            )}
+
+            <Button
+              className="w-full"
+              disabled={!selectedRecipient || !composeMessage.trim() || sending}
+              onClick={handleSendMessage}
+            >
+              <Send className="w-4 h-4 mr-2" />
+              {sending ? 'Sending...' : 'Send Message'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Ticket Detail Dialog */}
       <Dialog open={!!selectedTicket} onOpenChange={() => setSelectedTicket(null)}>
