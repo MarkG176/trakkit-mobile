@@ -375,13 +375,20 @@ export const InboxPage = () => {
             })
           )}
           {/* Sent Messages Section */}
-          {sentMessages.length > 0 && (
-            <div className="mt-4">
-              <div className="flex items-center gap-2 mb-3">
-                <MessageSquare className="w-4 h-4 text-primary" />
-                <h3 className="font-semibold text-sm">Sent Messages</h3>
-                <Badge variant="secondary" className="text-xs">{sentMessages.length}</Badge>
-              </div>
+          <div className="mt-6 pt-4 border-t">
+            <div className="flex items-center gap-2 mb-3">
+              <MessageSquare className="w-4 h-4 text-primary" />
+              <h3 className="font-semibold text-sm">Sent Messages</h3>
+              <Badge variant="secondary" className="text-xs">{sentMessages.length}</Badge>
+            </div>
+            {loadingSent ? (
+              <div className="text-center py-6 text-muted-foreground text-sm">Loading...</div>
+            ) : sentMessages.length === 0 ? (
+              <Card className="p-6 text-center">
+                <Send className="w-8 h-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                <p className="text-sm text-muted-foreground">No sent messages yet</p>
+              </Card>
+            ) : (
               <div className="space-y-3">
                 {sentMessages.map((msg) => (
                   <Card key={msg.id} className="border-l-4 border-l-primary/40">
@@ -425,8 +432,8 @@ export const InboxPage = () => {
                   </Card>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </ScrollArea>
 
