@@ -3854,6 +3854,7 @@ export type Database = {
           created_at: string
           id: string
           is_deleted: boolean
+          recipient_id: string | null
           sender_email: string | null
           sender_id: string
           sender_name: string
@@ -3868,6 +3869,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_deleted?: boolean
+          recipient_id?: string | null
           sender_email?: string | null
           sender_id: string
           sender_name: string
@@ -3882,6 +3884,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_deleted?: boolean
+          recipient_id?: string | null
           sender_email?: string | null
           sender_id?: string
           sender_name?: string
