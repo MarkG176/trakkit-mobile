@@ -1,14 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { SupervisorBottomNav } from "@/components/supervisor/SupervisorBottomNav";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Search, Bug, Package, BarChart3, Inbox, Image as ImageIcon, Trash2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Search, Bug, Package, BarChart3, Inbox, Image as ImageIcon, Trash2, Send, ChevronDown, Plus, X } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -55,13 +58,48 @@ const statusColors: Record<string, string> = {
   closed: 'bg-gray-100 text-gray-500',
 };
 
+interface WorkspaceMember {
+  user_id: string;
+  name: string | null;
+  email: string | null;
+}
+
 export const InboxPage = () => {
   const { currentWorkspaceId, currentProjectId } = useWorkspace();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+
+  // Compose message state
+  const [showCompose, setShowCompose] = useState(false);
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
+  const [recipientSearch, setRecipientSearch] = useState("");
+  const [selectedRecipient, setSelectedRecipient] = useState<WorkspaceMember | null>(null);
+  const [composeMessage, setComposeMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const [recipientOpen, setRecipientOpen] = useState(false);
+
+  const filteredMembers = useMemo(() => {
+    if (!recipientSearch.trim()) return members;
+    const q = recipientSearch.toLowerCase();
+    return members.filter(m =>
+      m.name?.toLowerCase().includes(q) || m.email?.toLowerCase().includes(q)
+    );
+  }, [members, recipientSearch]);
+
+  const fetchMembers = async () => {
+    if (!currentWorkspaceId) return;
+    const { data } = await supabase
+      .from('user_workspaces')
+      .select('user_id, name, email')
+      .eq('workspace_id', currentWorkspaceId)
+      .eq('is_deleted', false)
+      .eq('is_active', true);
+    setMembers((data as WorkspaceMember[]) || []);
+  };
 
   const fetchTickets = async () => {
     if (!currentWorkspaceId) return;
@@ -85,7 +123,32 @@ export const InboxPage = () => {
 
   useEffect(() => {
     fetchTickets();
+    fetchMembers();
   }, [currentWorkspaceId, currentProjectId]);
+
+  const handleSendMessage = async () => {
+    if (!selectedRecipient || !composeMessage.trim() || !user) return;
+    setSending(true);
+    try {
+      const senderName = user.user_metadata?.display_name || user.email || 'Supervisor';
+      const { error } = await supabase.from('supervisor_messages').insert({
+        sender_id: user.id,
+        sender_name: senderName,
+        recipient_id: selectedRecipient.user_id,
+        message: composeMessage.trim(),
+        workspace_id: currentWorkspaceId,
+      });
+      if (error) throw error;
+      toast({ title: "Message sent", description: `Sent to ${selectedRecipient.name || selectedRecipient.email}` });
+      setComposeMessage("");
+      setSelectedRecipient(null);
+      setShowCompose(false);
+    } catch (err: any) {
+      toast({ title: "Failed to send", description: err.message, variant: "destructive" });
+    } finally {
+      setSending(false);
+    }
+  };
 
   const filtered = tickets.filter((t) => {
     if (!search.trim()) return true;
@@ -129,9 +192,15 @@ export const InboxPage = () => {
             <h1 className="text-xl font-bold">Inbox</h1>
             <p className="text-sm opacity-90">Agent support tickets</p>
           </div>
-          <Badge variant="secondary" className="bg-white/20">
-            {filtered.length}
-          </Badge>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="bg-white/20 hover:bg-white/30"
+            onClick={() => setShowCompose(!showCompose)}
+          >
+            {showCompose ? <X className="w-4 h-4 mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
+            {showCompose ? 'Cancel' : 'Message'}
+          </Button>
         </div>
         <WorkspaceSwitcher className="w-full" />
       </div>
@@ -148,6 +217,87 @@ export const InboxPage = () => {
           />
         </div>
       </div>
+
+      {/* Compose Message */}
+      {showCompose && (
+        <div className="px-4 pb-3">
+          <Card>
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Send className="w-4 h-4 text-primary" />
+                <span className="text-sm font-semibold">Send Message</span>
+              </div>
+
+              {/* Recipient selector */}
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">To</label>
+                {selectedRecipient ? (
+                  <div className="flex items-center gap-2 border rounded-md px-3 py-2 bg-muted/50">
+                    <span className="text-sm flex-1">{selectedRecipient.name || selectedRecipient.email}</span>
+                    <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setSelectedRecipient(null)}>
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <Popover open={recipientOpen} onOpenChange={setRecipientOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-between text-sm font-normal text-muted-foreground">
+                        Select agent...
+                        <ChevronDown className="w-4 h-4 ml-2" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[calc(100vw-4rem)] p-2 z-50 bg-popover" align="start">
+                      <Input
+                        placeholder="Search agents..."
+                        value={recipientSearch}
+                        onChange={(e) => setRecipientSearch(e.target.value)}
+                        className="mb-2 h-9"
+                        autoFocus
+                      />
+                      <div className="max-h-48 overflow-y-auto space-y-1">
+                        {filteredMembers.length === 0 ? (
+                          <p className="text-xs text-muted-foreground text-center py-3">No agents found</p>
+                        ) : (
+                          filteredMembers.map((m) => (
+                            <button
+                              key={m.user_id}
+                              className="w-full text-left px-3 py-2 rounded-md hover:bg-accent text-sm transition-colors"
+                              onClick={() => {
+                                setSelectedRecipient(m);
+                                setRecipientOpen(false);
+                                setRecipientSearch("");
+                              }}
+                            >
+                              <span className="font-medium">{m.name || 'Unnamed'}</span>
+                              {m.email && <span className="text-xs text-muted-foreground ml-2">{m.email}</span>}
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </div>
+
+              <Textarea
+                placeholder="Type your message..."
+                value={composeMessage}
+                onChange={(e) => setComposeMessage(e.target.value)}
+                rows={3}
+              />
+
+              <Button
+                className="w-full"
+                disabled={!selectedRecipient || !composeMessage.trim() || sending}
+                onClick={handleSendMessage}
+              >
+                <Send className="w-4 h-4 mr-2" />
+                {sending ? 'Sending...' : 'Send Message'}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Tickets List */}
       <ScrollArea className="h-[calc(100vh-240px)]">
