@@ -1,4 +1,4 @@
-import { Home, Users, Settings, ShoppingCart, Image, Trophy, MessageSquare } from "lucide-react";
+import { Home, Users, Settings, ShoppingCart, Image, Trophy, Inbox } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 interface NavItem {
@@ -12,7 +12,7 @@ const navItems: NavItem[] = [
   { id: "dashboard", label: "Dashboard", icon: Home, path: "/supervisor" },
   { id: "users", label: "Users", icon: Users, path: "/supervisor/users" },
   { id: "sales", label: "Sales", icon: ShoppingCart, path: "/supervisor/sales" },
-  { id: "gallery", label: "Gallery", icon: Image, path: "/supervisor/gallery" },
+  { id: "inbox", label: "Inbox", icon: Inbox, path: "/supervisor/inbox" },
   { id: "rankings", label: "Rankings", icon: Trophy, path: "/supervisor/rankings" },
   { id: "settings", label: "Settings", icon: Settings, path: "/settings" },
 ];

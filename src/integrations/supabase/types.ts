@@ -3062,6 +3062,62 @@ export type Database = {
           },
         ]
       }
+      support_tickets: {
+        Row: {
+          agent_email: string | null
+          agent_id: string
+          agent_name: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          inventory_issue_type: string | null
+          message: string
+          project_id: string | null
+          status: string
+          ticket_type: string
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          agent_email?: string | null
+          agent_id: string
+          agent_name?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          inventory_issue_type?: string | null
+          message: string
+          project_id?: string | null
+          status?: string
+          ticket_type: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          agent_email?: string | null
+          agent_id?: string
+          agent_name?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          inventory_issue_type?: string | null
+          message?: string
+          project_id?: string | null
+          status?: string
+          ticket_type?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       survey_answers: {
         Row: {
           answer_number: number | null
