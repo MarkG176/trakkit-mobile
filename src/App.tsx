@@ -15,6 +15,8 @@ import { SalesPage } from "./pages/supervisor/SalesPage";
 import { GalleryPage } from "./pages/supervisor/GalleryPage";
 import { RankingsPage } from "./pages/supervisor/RankingsPage";
 import { FeedbackPage } from "./pages/supervisor/FeedbackPage";
+import { InboxPage } from "./pages/supervisor/InboxPage";
+import { SupportTicket } from "./pages/SupportTicket";
 import { Surveys } from "./pages/Surveys";
 import { Routes as RoutesPage } from "./pages/Routes";
 import { Inventory } from "./pages/Inventory";
@@ -92,6 +94,11 @@ const App = () => (
                 <FeedbackPage />
               </RoleBasedRoute>
             } />
+            <Route path="/supervisor/inbox" element={
+              <RoleBasedRoute allowedRoles={['supervisor']} redirectTo="/agent">
+                <InboxPage />
+              </RoleBasedRoute>
+            } />
             <Route path="/agent" element={
               <RoleBasedRoute allowedRoles={['agent']} redirectTo="/supervisor">
                 <AgentDashboard />
@@ -165,6 +172,11 @@ const App = () => (
             <Route path="/help-support" element={
               <ProtectedRoute>
                 <HelpSupport />
+              </ProtectedRoute>
+            } />
+            <Route path="/support-ticket" element={
+              <ProtectedRoute>
+                <SupportTicket />
               </ProtectedRoute>
             } />
             <Route path="/debug-kit" element={
