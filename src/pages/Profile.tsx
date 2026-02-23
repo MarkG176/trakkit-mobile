@@ -111,7 +111,6 @@ export const Profile = () => {
           <TabsList className="w-full">
             <TabsTrigger value="today" className="flex-1">Today</TabsTrigger>
             <TabsTrigger value="week" className="flex-1">This Week</TabsTrigger>
-            <TabsTrigger value="report" className="flex-1">Report</TabsTrigger>
           </TabsList>
 
           {/* TODAY TAB */}
@@ -247,28 +246,6 @@ export const Profile = () => {
             )}
           </TabsContent>
 
-          {/* REPORT TAB */}
-          <TabsContent value="report" className="space-y-4 mt-4">
-            <p className="text-xs text-muted-foreground">From today's report summary</p>
-
-            <Card>
-              <CardContent className="p-4">
-                <SectionTitle>Work Hours</SectionTitle>
-                <MetricRow label="Net Work Time" value={formatWorkTime(stats.reportNetWorkMinutes)} icon={Clock} />
-                <MetricRow label="Total Work Time" value={formatWorkTime(stats.reportTotalWorkMinutes)} icon={Clock} />
-                <MetricRow label="Lunch Time" value={formatWorkTime(stats.reportTotalLunchMinutes)} icon={Clock} />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <SectionTitle>Activity Summary</SectionTitle>
-                <MetricRow label="Check-ins" value={stats.reportCheckInsCount} icon={CheckCircle} />
-                <MetricRow label="Interactions" value={stats.reportInteractionsCount} icon={MessageSquare} />
-                <MetricRow label="Notes" value={stats.reportNotesCount} icon={FileText} />
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
 
         {/* Account Card - always visible */}
