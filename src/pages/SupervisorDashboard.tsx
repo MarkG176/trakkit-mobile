@@ -90,11 +90,11 @@ export const SupervisorDashboard = () => {
           switch (record.status) {
             case 'checked_in':
               type = 'check_in';
-              message = `${agentName} has checked in`;
+              message = `${agentName} checked in`;
               break;
             case 'checked_out':
               type = 'check_out';
-              message = `${agentName} has checked out`;
+              message = `${agentName} checked out`;
               break;
             case 'lunch':
             case 'break':
@@ -102,7 +102,7 @@ export const SupervisorDashboard = () => {
               message = `${agentName} started a break`;
               break;
             default:
-              message = `${agentName} status: ${record.status}`;
+              message = `${agentName} updated status to ${record.status}`;
           }
 
           addNotificationRef.current?.({
@@ -212,11 +212,46 @@ export const SupervisorDashboard = () => {
       )
       .subscribe();
 
+    // Subscribe to support tickets (non-bug only)
+    const ticketChannel = supabase
+      .channel('supervisor-tickets')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'support_tickets',
+          filter: `workspace_id=eq.${currentWorkspaceId}`,
+        },
+        async (payload) => {
+          const record = payload.new as any;
+          // Skip bug reports
+          if (record.ticket_type === 'bug_support') return;
+          
+          const agentName = record.agent_name || await getAgentName(record.agent_id);
+          const typeLabel = record.ticket_type === 'inventory_request' 
+            ? 'submitted an inventory request' 
+            : 'reported missing stats';
+          const message = `${agentName} ${typeLabel}`;
+
+          addNotificationRef.current?.({
+            id: record.id,
+            type: 'check_in', // reuse type for display
+            agentName,
+            message,
+            timestamp: new Date(record.created_at),
+            data: record,
+          });
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(statusChannel);
       supabase.removeChannel(salesChannel);
       supabase.removeChannel(giveawayChannel);
       supabase.removeChannel(interactionChannel);
+      supabase.removeChannel(ticketChannel);
     };
   }, [currentWorkspaceId, getAgentName]);
 

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Bug, Package, BarChart3, Upload, X, CheckCircle2, Inbox, Trash2 } from "lucide-react";
+import { ArrowLeft, Bug, Package, BarChart3, Upload, X, CheckCircle2, Inbox, Trash2, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -32,6 +32,14 @@ interface MyTicket {
   message: string;
   status: string;
   created_at: string;
+}
+
+interface SupervisorMessage {
+  id: string;
+  sender_name: string | null;
+  message: string;
+  created_at: string;
+  is_read: boolean;
 }
 
 const ticketOptions = [
@@ -92,6 +100,8 @@ export const SupportTicket = () => {
   const [submitted, setSubmitted] = useState(false);
   const [myTickets, setMyTickets] = useState<MyTicket[]>([]);
   const [loadingTickets, setLoadingTickets] = useState(true);
+  const [supervisorMessages, setSupervisorMessages] = useState<SupervisorMessage[]>([]);
+  const [loadingMessages, setLoadingMessages] = useState(true);
 
   const fetchMyTickets = async () => {
     if (!user) return;
@@ -106,11 +116,36 @@ export const SupportTicket = () => {
     setLoadingTickets(false);
   };
 
+  const fetchSupervisorMessages = async () => {
+    if (!user) return;
+    setLoadingMessages(true);
+    const { data } = await supabase
+      .from('supervisor_messages')
+      .select('id, sender_name, message, created_at, is_read')
+      .eq('recipient_id', user.id)
+      .eq('is_deleted', false)
+      .order('created_at', { ascending: false });
+    setSupervisorMessages((data as SupervisorMessage[]) || []);
+    setLoadingMessages(false);
+
+    // Mark unread messages as read
+    if (data && data.length > 0) {
+      const unread = data.filter((m: any) => !m.is_read).map((m: any) => m.id);
+      if (unread.length > 0) {
+        await supabase
+          .from('supervisor_messages')
+          .update({ is_read: true })
+          .in('id', unread);
+      }
+    }
+  };
+
   useEffect(() => {
     fetchMyTickets();
+    fetchSupervisorMessages();
 
-    // Subscribe to realtime changes
-    const channel = supabase
+    // Subscribe to realtime changes for tickets
+    const ticketChannel = supabase
       .channel('my-tickets')
       .on('postgres_changes', {
         event: '*',
@@ -122,7 +157,36 @@ export const SupportTicket = () => {
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    // Subscribe to realtime changes for supervisor messages
+    const messageChannel = supabase
+      .channel('my-supervisor-messages')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'supervisor_messages',
+        filter: `recipient_id=eq.${user?.id}`,
+      }, (payload) => {
+        const newMsg = payload.new as any;
+        setSupervisorMessages(prev => [{
+          id: newMsg.id,
+          sender_name: newMsg.sender_name,
+          message: newMsg.message,
+          created_at: newMsg.created_at,
+          is_read: false,
+        }, ...prev]);
+        toast({
+          title: `Message from ${newMsg.sender_name || 'Supervisor'}`,
+          description: newMsg.message.slice(0, 100),
+        });
+        // Mark as read
+        supabase.from('supervisor_messages').update({ is_read: true }).eq('id', newMsg.id);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ticketChannel);
+      supabase.removeChannel(messageChannel);
+    };
   }, [user]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -207,6 +271,20 @@ export const SupportTicket = () => {
     }
   };
 
+  const handleDeleteMessage = async (messageId: string) => {
+    const { error } = await supabase
+      .from('supervisor_messages')
+      .update({ is_deleted: true })
+      .eq('id', messageId);
+
+    if (error) {
+      toast({ title: "Failed to delete", description: error.message, variant: "destructive" });
+    } else {
+      setSupervisorMessages((prev) => prev.filter((m) => m.id !== messageId));
+      toast({ title: "Message deleted" });
+    }
+  };
+
   if (submitted) {
     return (
       <MobileLayout currentPage="chat">
@@ -242,6 +320,49 @@ export const SupportTicket = () => {
       </div>
 
       <div className="p-4 space-y-4">
+        {/* Supervisor Messages */}
+        {supervisorMessages.length > 0 && (
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <MessageSquare className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-sm">Messages</h3>
+                <Badge variant="secondary" className="ml-auto text-xs">{supervisorMessages.length}</Badge>
+              </div>
+              <div className="space-y-2">
+                {supervisorMessages.map((msg) => (
+                  <div key={msg.id} className="p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-semibold text-primary">{msg.sender_name || 'Supervisor'}</span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground">{format(new Date(msg.created_at), 'MMM d, HH:mm')}</span>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive">
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete this message?</AlertDialogTitle>
+                              <AlertDialogDescription>This will remove the message from your view.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteMessage(msg.id)}>Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
+                    <p className="text-sm">{msg.message}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Ticket Type Selection */}
         <div className="space-y-3">
           {ticketOptions.map((option) => {

@@ -6,6 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { 
   Search, 
   Users, 
@@ -15,9 +23,16 @@ import {
   ChevronRight,
   Phone,
   Mail,
-  RefreshCw
+  RefreshCw,
+  Pencil,
+  MessageSquare,
+  Send,
+  Check,
+  X
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 interface WorkspaceMember {
   id: string;
@@ -29,13 +44,15 @@ interface WorkspaceMember {
 }
 
 interface MemberDetails {
-  teams: string[];
+  teams: { id: string; name: string }[];
   lastLocation: { lat: number; lng: number; timestamp: string } | null;
   inventory: { name: string; quantity: number }[];
   sales: { units: number; value: number };
 }
 
 export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -44,7 +61,17 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
   const [memberDetails, setMemberDetails] = useState<MemberDetails | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
 
-  // Fetch workspace members
+  // Edit states
+  const [editingEmail, setEditingEmail] = useState(false);
+  const [editEmailValue, setEditEmailValue] = useState('');
+  const [editingTeam, setEditingTeam] = useState(false);
+  const [availableTeams, setAvailableTeams] = useState<{ id: string; name: string }[]>([]);
+
+  // Contact dialog
+  const [contactDialogOpen, setContactDialogOpen] = useState(false);
+  const [contactMessage, setContactMessage] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
+
   const fetchMembers = async (showRefresh = false) => {
     if (showRefresh) setRefreshing(true);
     else setLoading(true);
@@ -66,11 +93,22 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
     }
   };
 
+  const fetchAvailableTeams = async () => {
+    const { data } = await supabase
+      .from('teams')
+      .select('id, name')
+      .eq('workspace_id', workspaceId)
+      .eq('is_deleted', false);
+    setAvailableTeams(data || []);
+  };
+
   useEffect(() => {
-    if (workspaceId) fetchMembers();
+    if (workspaceId) {
+      fetchMembers();
+      fetchAvailableTeams();
+    }
   }, [workspaceId]);
 
-  // Filter members by search
   const filteredMembers = useMemo(() => {
     if (!searchQuery.trim()) return members;
     const query = searchQuery.toLowerCase();
@@ -80,20 +118,17 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
     );
   }, [members, searchQuery]);
 
-  // Fetch member details when selected
   const fetchMemberDetails = async (member: WorkspaceMember) => {
     setDetailsLoading(true);
     try {
-      // Fetch teams
       const { data: teamData } = await supabase
         .from('team_members')
-        .select('teams:teams!team_members_team_id_fkey(name)')
+        .select('teams:teams!team_members_team_id_fkey(id, name)')
         .eq('agent_id', member.user_id)
         .eq('workspace_id', workspaceId);
 
-      const teams = teamData?.map((t: any) => t.teams?.name).filter(Boolean) || [];
+      const teams = teamData?.map((t: any) => ({ id: t.teams?.id, name: t.teams?.name })).filter((t: any) => t.name) || [];
 
-      // Fetch last location
       const { data: locationData } = await supabase
         .from('agent_status_log')
         .select('location_lat, location_lng, timestamp')
@@ -103,7 +138,6 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
         .limit(1)
         .single();
 
-      // Fetch inventory
       const { data: inventoryData } = await supabase
         .from('agent_task_inventory')
         .select('amount_issued, product_variants:product_variant_id(name)')
@@ -115,7 +149,6 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
         quantity: i.amount_issued
       })) || [];
 
-      // Fetch sales summary
       const { data: salesData } = await supabase
         .from('daily_sales_tracking')
         .select('quantity_sold, total_value')
@@ -147,7 +180,82 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
   const handleMemberClick = (member: WorkspaceMember) => {
     setSelectedMember(member);
     setMemberDetails(null);
+    setEditingEmail(false);
+    setEditingTeam(false);
     fetchMemberDetails(member);
+  };
+
+  const handleSaveEmail = async () => {
+    if (!selectedMember || !editEmailValue.trim()) return;
+    const { error } = await supabase
+      .from('user_workspaces')
+      .update({ email: editEmailValue.trim() })
+      .eq('id', selectedMember.id);
+
+    if (error) {
+      toast({ title: 'Failed to update email', variant: 'destructive' });
+    } else {
+      setSelectedMember(prev => prev ? { ...prev, email: editEmailValue.trim() } : null);
+      setMembers(prev => prev.map(m => m.id === selectedMember.id ? { ...m, email: editEmailValue.trim() } : m));
+      toast({ title: 'Email updated' });
+    }
+    setEditingEmail(false);
+  };
+
+  const handleAssignTeam = async (teamId: string) => {
+    if (!selectedMember) return;
+    // Remove from current teams first
+    await supabase
+      .from('team_members')
+      .delete()
+      .eq('agent_id', selectedMember.user_id)
+      .eq('workspace_id', workspaceId);
+
+    // Add to new team
+    const { error } = await supabase
+      .from('team_members')
+      .insert({ team_id: teamId, agent_id: selectedMember.user_id, workspace_id: workspaceId });
+
+    if (error) {
+      toast({ title: 'Failed to update team', variant: 'destructive' });
+    } else {
+      toast({ title: 'Team updated' });
+      fetchMemberDetails(selectedMember);
+    }
+    setEditingTeam(false);
+  };
+
+  const handleSendMessage = async () => {
+    if (!selectedMember || !contactMessage.trim() || !user) return;
+    setSendingMessage(true);
+
+    // Get sender name
+    const { data: senderData } = await supabase
+      .from('user_roles')
+      .select('display_name, email')
+      .eq('user_id', user.id)
+      .single();
+
+    const senderName = senderData?.display_name || senderData?.email || 'Supervisor';
+
+    const { error } = await supabase
+      .from('supervisor_messages')
+      .insert({
+        sender_id: user.id,
+        sender_name: senderName,
+        recipient_id: selectedMember.user_id,
+        message: contactMessage.trim(),
+        workspace_id: workspaceId,
+      });
+
+    if (error) {
+      toast({ title: 'Failed to send message', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Message sent', description: `Message sent to ${selectedMember.name || selectedMember.email}` });
+      setContactMessage('');
+      setContactDialogOpen(false);
+    }
+    setSendingMessage(false);
   };
 
   const getInitials = (name: string | null, email: string | null) => {
@@ -172,28 +280,14 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
       <div className="p-4 space-y-3 border-b">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Team Members</h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => fetchMembers(true)}
-            disabled={refreshing}
-          >
+          <Button variant="ghost" size="icon" onClick={() => fetchMembers(true)} disabled={refreshing}>
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
           </Button>
         </div>
-        
-        {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search members..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+          <Input placeholder="Search members..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
         </div>
-
-        {/* Count */}
         <p className="text-sm text-muted-foreground">
           {filteredMembers.length} member{filteredMembers.length !== 1 ? 's' : ''}
         </p>
@@ -219,20 +313,12 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
                     {getInitials(member.name, member.email)}
                   </AvatarFallback>
                 </Avatar>
-                
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">
-                    {member.name || member.email?.split('@')[0] || 'Unknown'}
-                  </p>
-                  <p className="text-sm text-muted-foreground truncate">
-                    {member.email || 'No email'}
-                  </p>
+                  <p className="font-medium truncate">{member.name || member.email?.split('@')[0] || 'Unknown'}</p>
+                  <p className="text-sm text-muted-foreground truncate">{member.email || 'No email'}</p>
                 </div>
-
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs">
-                    {member.role}
-                  </Badge>
+                  <Badge variant="outline" className="text-xs">{member.role}</Badge>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
               </button>
@@ -241,7 +327,7 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
         )}
       </div>
 
-      {/* Member Details Sheet (Bottom Sheet) */}
+      {/* Member Details Sheet */}
       <Sheet open={!!selectedMember} onOpenChange={(open) => !open && setSelectedMember(null)}>
         <SheetContent side="bottom" className="h-[85vh] rounded-t-xl">
           <SheetHeader className="pb-4 border-b">
@@ -251,13 +337,22 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
                   {getInitials(selectedMember?.name || null, selectedMember?.email || null)}
                 </AvatarFallback>
               </Avatar>
-              <div className="text-left">
-                <p className="font-semibold">
-                  {selectedMember?.name || selectedMember?.email?.split('@')[0] || 'Unknown'}
-                </p>
-                <Badge variant="secondary" className="text-xs mt-1">
-                  {selectedMember?.role}
-                </Badge>
+              <div className="text-left flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold">
+                    {selectedMember?.name || selectedMember?.email?.split('@')[0] || 'Unknown'}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs gap-1"
+                    onClick={(e) => { e.stopPropagation(); setContactDialogOpen(true); }}
+                  >
+                    <MessageSquare className="h-3 w-3" />
+                    Contact
+                  </Button>
+                </div>
+                <Badge variant="secondary" className="text-xs mt-1">{selectedMember?.role}</Badge>
               </div>
             </SheetTitle>
           </SheetHeader>
@@ -270,15 +365,40 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
             </div>
           ) : memberDetails ? (
             <div className="space-y-4 py-4 overflow-auto max-h-[calc(85vh-120px)]">
-              {/* Contact Info */}
+              {/* Contact Info with Edit */}
               <Card>
                 <CardContent className="p-4 space-y-2">
-                  {selectedMember?.email && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      {selectedMember.email}
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2 text-sm">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    {editingEmail ? (
+                      <div className="flex items-center gap-2 flex-1">
+                        <Input
+                          value={editEmailValue}
+                          onChange={(e) => setEditEmailValue(e.target.value)}
+                          className="h-7 text-sm"
+                          autoFocus
+                        />
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleSaveEmail}>
+                          <Check className="h-3 w-3 text-green-600" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingEmail(false)}>
+                          <X className="h-3 w-3 text-destructive" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 flex-1">
+                        <span className="flex-1">{selectedMember?.email || 'No email'}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => { setEditEmailValue(selectedMember?.email || ''); setEditingEmail(true); }}
+                        >
+                          <Pencil className="h-3 w-3 text-muted-foreground" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Phone className="h-4 w-4" />
                     Contact via app
@@ -286,19 +406,47 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
                 </CardContent>
               </Card>
 
-              {/* Teams */}
+              {/* Teams with Edit */}
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <Users className="h-4 w-4" />
                     Teams
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 ml-auto"
+                      onClick={() => setEditingTeam(!editingTeam)}
+                    >
+                      <Pencil className="h-3 w-3 text-muted-foreground" />
+                    </Button>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  {memberDetails.teams.length > 0 ? (
+                  {editingTeam ? (
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground">Select a team to assign:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {availableTeams.map(team => (
+                          <Button
+                            key={team.id}
+                            variant={memberDetails.teams.some(t => t.id === team.id) ? 'default' : 'outline'}
+                            size="sm"
+                            className="text-xs"
+                            onClick={() => handleAssignTeam(team.id)}
+                          >
+                            {team.name}
+                          </Button>
+                        ))}
+                      </div>
+                      {availableTeams.length === 0 && (
+                        <p className="text-xs text-muted-foreground">No teams available</p>
+                      )}
+                    </div>
+                  ) : memberDetails.teams.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
                       {memberDetails.teams.map((team, i) => (
-                        <Badge key={i} variant="secondary">{team}</Badge>
+                        <Badge key={i} variant="secondary">{team.name}</Badge>
                       ))}
                     </div>
                   ) : (
@@ -380,6 +528,37 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
           ) : null}
         </SheetContent>
       </Sheet>
+
+      {/* Contact Message Dialog */}
+      <Dialog open={contactDialogOpen} onOpenChange={setContactDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              Message {selectedMember?.name || selectedMember?.email?.split('@')[0]}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Textarea
+              placeholder="Type your message..."
+              value={contactMessage}
+              onChange={(e) => setContactMessage(e.target.value)}
+              rows={4}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setContactDialogOpen(false)}>Cancel</Button>
+            <Button
+              onClick={handleSendMessage}
+              disabled={!contactMessage.trim() || sendingMessage}
+              className="gap-2"
+            >
+              <Send className="h-4 w-4" />
+              {sendingMessage ? 'Sending...' : 'Send'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
