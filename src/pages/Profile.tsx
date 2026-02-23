@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAgentProfileStats } from "@/hooks/useAgentProfileStats";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
-import { HelpFAQDialog } from "@/components/profile/HelpFAQDialog";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -103,6 +103,7 @@ export const Profile = () => {
         displayName={stats.displayName}
         currentRank={stats.currentRank}
         totalPoints={stats.totalPoints}
+        teamType={currentTeamType || undefined}
       />
 
       <div className="p-4 space-y-4 -mt-4">
@@ -278,7 +279,7 @@ export const Profile = () => {
               <Mail className="w-5 h-5 text-muted-foreground" />
               <span className="text-foreground text-sm">{stats.email}</span>
             </div>
-            <HelpFAQDialog />
+            
             <Button
               variant="outline"
               className="w-full justify-start text-destructive border-destructive/30 hover:bg-destructive/10 mt-2"
