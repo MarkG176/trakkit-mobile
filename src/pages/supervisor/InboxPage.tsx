@@ -8,14 +8,26 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Search, Bug, Package, BarChart3, Inbox, Image as ImageIcon, X } from "lucide-react";
+import { Search, Bug, Package, BarChart3, Inbox, Image as ImageIcon, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Ticket {
   id: string;
@@ -45,6 +57,7 @@ const statusColors: Record<string, string> = {
 
 export const InboxPage = () => {
   const { currentWorkspaceId, currentProjectId } = useWorkspace();
+  const { toast } = useToast();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -58,6 +71,7 @@ export const InboxPage = () => {
       .from('support_tickets')
       .select('*')
       .eq('workspace_id', currentWorkspaceId)
+      .eq('is_deleted', false)
       .order('created_at', { ascending: false });
 
     if (currentProjectId) {
@@ -88,6 +102,21 @@ export const InboxPage = () => {
     setTickets((prev) => prev.map((t) => (t.id === ticketId ? { ...t, status: newStatus } : t)));
     if (selectedTicket?.id === ticketId) {
       setSelectedTicket((prev) => prev ? { ...prev, status: newStatus } : null);
+    }
+  };
+
+  const handleDeleteTicket = async (ticketId: string) => {
+    const { error } = await supabase
+      .from('support_tickets')
+      .update({ is_deleted: true })
+      .eq('id', ticketId);
+
+    if (error) {
+      toast({ title: "Failed to delete", description: error.message, variant: "destructive" });
+    } else {
+      setTickets((prev) => prev.filter((t) => t.id !== ticketId));
+      setSelectedTicket(null);
+      toast({ title: "Ticket deleted" });
     }
   };
 
@@ -227,6 +256,24 @@ export const InboxPage = () => {
                       ))}
                     </div>
                   </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="sm" className="w-full mt-2">
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete Ticket
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete this ticket?</AlertDialogTitle>
+                        <AlertDialogDescription>This will remove the ticket from the inbox.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeleteTicket(selectedTicket.id)}>Delete</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </>
             );

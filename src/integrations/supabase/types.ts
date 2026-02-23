@@ -3071,6 +3071,7 @@ export type Database = {
           id: string
           image_url: string | null
           inventory_issue_type: string | null
+          is_deleted: boolean
           message: string
           project_id: string | null
           status: string
@@ -3086,6 +3087,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           inventory_issue_type?: string | null
+          is_deleted?: boolean
           message: string
           project_id?: string | null
           status?: string
@@ -3101,6 +3103,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           inventory_issue_type?: string | null
+          is_deleted?: boolean
           message?: string
           project_id?: string | null
           status?: string

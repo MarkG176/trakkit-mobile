@@ -1,17 +1,38 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Bug, Package, BarChart3, Upload, X, CheckCircle2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Bug, Package, BarChart3, Upload, X, CheckCircle2, Inbox, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type TicketType = 'bug_support' | 'inventory_request' | 'missing_stats';
 type InventoryIssueType = 'missing_inventory' | 'incorrect_inventory_details';
+
+interface MyTicket {
+  id: string;
+  ticket_type: string;
+  message: string;
+  status: string;
+  created_at: string;
+}
 
 const ticketOptions = [
   {
@@ -43,6 +64,19 @@ const ticketOptions = [
   },
 ];
 
+const statusColors: Record<string, string> = {
+  open: 'bg-green-100 text-green-700',
+  in_progress: 'bg-yellow-100 text-yellow-700',
+  resolved: 'bg-gray-100 text-gray-600',
+  closed: 'bg-gray-100 text-gray-500',
+};
+
+const typeLabels: Record<string, string> = {
+  bug_support: 'Bug Support',
+  inventory_request: 'Inventory',
+  missing_stats: 'Missing Stats',
+};
+
 export const SupportTicket = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -56,6 +90,40 @@ export const SupportTicket = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [myTickets, setMyTickets] = useState<MyTicket[]>([]);
+  const [loadingTickets, setLoadingTickets] = useState(true);
+
+  const fetchMyTickets = async () => {
+    if (!user) return;
+    setLoadingTickets(true);
+    const { data } = await supabase
+      .from('support_tickets')
+      .select('id, ticket_type, message, status, created_at')
+      .eq('agent_id', user.id)
+      .eq('is_deleted', false)
+      .order('created_at', { ascending: false });
+    setMyTickets((data as MyTicket[]) || []);
+    setLoadingTickets(false);
+  };
+
+  useEffect(() => {
+    fetchMyTickets();
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('my-tickets')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'support_tickets',
+        filter: `agent_id=eq.${user?.id}`,
+      }, () => {
+        fetchMyTickets();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -86,7 +154,6 @@ export const SupportTicket = () => {
     try {
       let imageUrl: string | null = null;
 
-      // Upload image if present
       if (imageFile) {
         const fileExt = imageFile.name.split('.').pop();
         const filePath = `support-tickets/${user.id}/${Date.now()}.${fileExt}`;
@@ -126,12 +193,26 @@ export const SupportTicket = () => {
     }
   };
 
+  const handleDeleteTicket = async (ticketId: string) => {
+    const { error } = await supabase
+      .from('support_tickets')
+      .update({ is_deleted: true })
+      .eq('id', ticketId);
+
+    if (error) {
+      toast({ title: "Failed to delete", description: error.message, variant: "destructive" });
+    } else {
+      setMyTickets((prev) => prev.filter((t) => t.id !== ticketId));
+      toast({ title: "Ticket deleted" });
+    }
+  };
+
   if (submitted) {
     return (
-      <MobileLayout currentPage="more">
+      <MobileLayout currentPage="chat">
         <div className="bg-primary text-primary-foreground p-4">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/help-support")} className="text-primary-foreground hover:bg-primary-foreground/20">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/support-ticket")} className="text-primary-foreground hover:bg-primary-foreground/20">
               <ArrowLeft size={20} />
             </Button>
             <h1 className="text-xl font-bold">Ticket Submitted</h1>
@@ -143,11 +224,8 @@ export const SupportTicket = () => {
           <p className="text-muted-foreground mb-6">
             Our team is already working on your request. We'll get back to you as soon as possible.
           </p>
-          <Button variant="outline" onClick={() => navigate("/profile")} className="mb-3 w-full">
-            Check the FAQ page
-          </Button>
-          <Button onClick={() => navigate("/help-support")} className="w-full">
-            Back to Help & Support
+          <Button onClick={() => { setSubmitted(false); setSelectedType(null); setMessage(""); setImageFile(null); setImagePreview(null); fetchMyTickets(); }} className="w-full">
+            Back to Chat
           </Button>
         </div>
       </MobileLayout>
@@ -155,15 +233,12 @@ export const SupportTicket = () => {
   }
 
   return (
-    <MobileLayout currentPage="more">
+    <MobileLayout currentPage="chat">
       <div className="bg-primary text-primary-foreground p-4">
         <div className="flex items-center gap-3 mb-1">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/help-support")} className="text-primary-foreground hover:bg-primary-foreground/20">
-            <ArrowLeft size={20} />
-          </Button>
-          <h1 className="text-xl font-bold">Submit a Ticket</h1>
+          <h1 className="text-xl font-bold">Chat</h1>
         </div>
-        <p className="text-sm opacity-90 ml-11">Choose the type of issue you're experiencing</p>
+        <p className="text-sm opacity-90">Choose the type of issue you're experiencing</p>
       </div>
 
       <div className="p-4 space-y-4">
@@ -278,6 +353,56 @@ export const SupportTicket = () => {
             {submitting ? "Submitting..." : "Submit Ticket"}
           </Button>
         )}
+
+        {/* My Requests */}
+        <Card className="mt-4">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Inbox className="w-5 h-5 text-primary" />
+              <h3 className="font-semibold text-sm">My Requests</h3>
+              <Badge variant="secondary" className="ml-auto text-xs">{myTickets.length}</Badge>
+            </div>
+            {loadingTickets ? (
+              <p className="text-xs text-muted-foreground text-center py-4">Loading...</p>
+            ) : myTickets.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-4">No requests yet</p>
+            ) : (
+              <div className="space-y-2">
+                {myTickets.map((ticket) => (
+                  <div key={ticket.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-medium">{typeLabels[ticket.ticket_type] || ticket.ticket_type}</span>
+                        <Badge variant="outline" className={`text-xs ${statusColors[ticket.status] || ''}`}>
+                          {ticket.status.replace('_', ' ')}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">{ticket.message}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{format(new Date(ticket.created_at), 'MMM d, HH:mm')}</p>
+                    </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete this ticket?</AlertDialogTitle>
+                          <AlertDialogDescription>This will remove the ticket from your view.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteTicket(ticket.id)}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </MobileLayout>
   );
