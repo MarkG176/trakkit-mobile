@@ -34,7 +34,7 @@ const teamTypeAnswers: Record<string, string> = {
   sampling: "Guide coming soon for Sampling activations.",
   instore: "Guide coming soon for Instore activations.",
   wholesale: "Guide coming soon for Wholesale activations.",
-  seeding: "Guide coming soon for Seeding activations.",
+  seeding: "First, check in on the Dashboard, using the Record Attendance form. Next, add stores that you visit on the Routes page using the Add Location form. Carry out all interactions with the store. At the end of the day, check out on the Dashboard.",
   hybrid: "Guide coming soon for Hybrid activations.",
 };
 
