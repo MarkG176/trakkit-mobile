@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAgentProfileStats } from "@/hooks/useAgentProfileStats";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
+import { HelpFAQDialog } from "@/components/profile/HelpFAQDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -277,9 +278,10 @@ export const Profile = () => {
               <Mail className="w-5 h-5 text-muted-foreground" />
               <span className="text-foreground text-sm">{stats.email}</span>
             </div>
+            <HelpFAQDialog />
             <Button
               variant="outline"
-              className="w-full justify-start text-destructive border-destructive/30 hover:bg-destructive/10"
+              className="w-full justify-start text-destructive border-destructive/30 hover:bg-destructive/10 mt-2"
               onClick={handleLogout}
             >
               <LogOut className="w-4 h-4 mr-2" />
