@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Search, Bug, Package, BarChart3, Inbox, Image as ImageIcon, Trash2, Send, ChevronDown, Plus, X, MapPin, Upload } from "lucide-react";
+import { Search, Bug, Package, BarChart3, Inbox, Image as ImageIcon, Trash2, Send, ChevronDown, Plus, X, MapPin, Upload, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -44,6 +44,19 @@ interface Ticket {
   project_id: string | null;
 }
 
+interface SentMessage {
+  id: string;
+  recipient_id: string;
+  recipient_name: string | null;
+  message: string;
+  image_url: string | null;
+  location_lat: number | null;
+  location_lng: number | null;
+  location_label: string | null;
+  created_at: string;
+  is_read: boolean;
+}
+
 const typeConfig: Record<string, { label: string; icon: typeof Bug; color: string; badgeClass: string }> = {
   bug_support: { label: 'Bug Support', icon: Bug, color: 'text-red-600', badgeClass: 'bg-red-100 text-red-700 border-red-200' },
   inventory_request: { label: 'Inventory', icon: Package, color: 'text-amber-600', badgeClass: 'bg-amber-100 text-amber-700 border-amber-200' },
@@ -71,6 +84,8 @@ export const InboxPage = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [sentMessages, setSentMessages] = useState<SentMessage[]>([]);
+  const [loadingSent, setLoadingSent] = useState(true);
 
   // Compose message state
   const [showCompose, setShowCompose] = useState(false);
@@ -127,10 +142,38 @@ export const InboxPage = () => {
     setLoading(false);
   };
 
+  const fetchSentMessages = async () => {
+    if (!user || !currentWorkspaceId) return;
+    setLoadingSent(true);
+    const { data } = await supabase
+      .from('supervisor_messages')
+      .select('id, recipient_id, message, created_at, is_read, image_url, location_lat, location_lng, location_label')
+      .eq('sender_id', user.id)
+      .eq('workspace_id', currentWorkspaceId)
+      .eq('is_deleted', false)
+      .order('created_at', { ascending: false });
+
+    const enriched: SentMessage[] = (data || []).map((msg: any) => {
+      const member = members.find(m => m.user_id === msg.recipient_id);
+      return {
+        ...msg,
+        recipient_name: member?.name || member?.email || null,
+      };
+    });
+    setSentMessages(enriched);
+    setLoadingSent(false);
+  };
+
   useEffect(() => {
     fetchTickets();
     fetchMembers();
   }, [currentWorkspaceId, currentProjectId]);
+
+  useEffect(() => {
+    if (members.length > 0) {
+      fetchSentMessages();
+    }
+  }, [members, currentWorkspaceId]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -201,6 +244,7 @@ export const InboxPage = () => {
       setAttachImage(null);
       setAttachImagePreview(null);
       setAttachLocation(null);
+      fetchSentMessages();
     } catch (err: any) {
       toast({ title: "Failed to send", description: err.message, variant: "destructive" });
     } finally {
@@ -238,6 +282,20 @@ export const InboxPage = () => {
       setTickets((prev) => prev.filter((t) => t.id !== ticketId));
       setSelectedTicket(null);
       toast({ title: "Ticket deleted" });
+    }
+  };
+
+  const handleDeleteSentMessage = async (messageId: string) => {
+    const { error } = await supabase
+      .from('supervisor_messages')
+      .update({ is_deleted: true })
+      .eq('id', messageId);
+
+    if (error) {
+      toast({ title: "Failed to delete", description: error.message, variant: "destructive" });
+    } else {
+      setSentMessages((prev) => prev.filter((m) => m.id !== messageId));
+      toast({ title: "Message deleted" });
     }
   };
 
@@ -315,6 +373,59 @@ export const InboxPage = () => {
                 </Card>
               );
             })
+          )}
+          {/* Sent Messages Section */}
+          {sentMessages.length > 0 && (
+            <div className="mt-4">
+              <div className="flex items-center gap-2 mb-3">
+                <MessageSquare className="w-4 h-4 text-primary" />
+                <h3 className="font-semibold text-sm">Sent Messages</h3>
+                <Badge variant="secondary" className="text-xs">{sentMessages.length}</Badge>
+              </div>
+              <div className="space-y-3">
+                {sentMessages.map((msg) => (
+                  <Card key={msg.id} className="border-l-4 border-l-primary/40">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-1">
+                        <span className="font-semibold text-sm">To: {msg.recipient_name || 'Agent'}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(msg.created_at), 'MMM d, HH:mm')}
+                          </span>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive">
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete this message?</AlertDialogTitle>
+                                <AlertDialogDescription>This will remove the message from your sent view.</AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteSentMessage(msg.id)}>Delete</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 mb-1">
+                        {msg.is_read ? (
+                          <Badge variant="outline" className="text-xs bg-muted text-muted-foreground">Read</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs bg-accent text-accent-foreground">Unread</Badge>
+                        )}
+                        {msg.image_url && <ImageIcon className="w-3 h-3 text-muted-foreground" />}
+                        {msg.location_lat && <MapPin className="w-3 h-3 text-muted-foreground" />}
+                      </div>
+                      <p className="text-xs text-muted-foreground line-clamp-2">{msg.message}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       </ScrollArea>
