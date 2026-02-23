@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Search, Bug, Package, BarChart3, Inbox, Image as ImageIcon, Trash2, Send, ChevronDown, Plus, X, MapPin, Upload } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -349,43 +348,47 @@ export const InboxPage = () => {
                   </Button>
                 </div>
               ) : (
-                <Popover open={recipientOpen} onOpenChange={setRecipientOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-between text-sm font-normal text-muted-foreground">
-                      Select agent...
-                      <ChevronDown className="w-4 h-4 ml-2" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[calc(100vw-4rem)] p-2 z-50 bg-popover" align="start">
-                    <Input
-                      placeholder="Search agents..."
-                      value={recipientSearch}
-                      onChange={(e) => setRecipientSearch(e.target.value)}
-                      className="mb-2 h-9"
-                      autoFocus
-                    />
-                    <div className="max-h-48 overflow-y-auto space-y-1">
-                      {filteredMembers.length === 0 ? (
-                        <p className="text-xs text-muted-foreground text-center py-3">No agents found</p>
-                      ) : (
-                        filteredMembers.map((m) => (
-                          <button
-                            key={m.user_id}
-                            className="w-full text-left px-3 py-2 rounded-md hover:bg-accent text-sm transition-colors"
-                            onClick={() => {
-                              setSelectedRecipient(m);
-                              setRecipientOpen(false);
-                              setRecipientSearch("");
-                            }}
-                          >
-                            <span className="font-medium">{m.name || 'Unnamed'}</span>
-                            {m.email && <span className="text-xs text-muted-foreground ml-2">{m.email}</span>}
-                          </button>
-                        ))
-                      )}
+                <div className="relative">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between text-sm font-normal text-muted-foreground"
+                    onClick={() => setRecipientOpen(!recipientOpen)}
+                  >
+                    Select agent...
+                    <ChevronDown className="w-4 h-4 ml-2" />
+                  </Button>
+                  {recipientOpen && (
+                    <div className="mt-1 w-full rounded-md border bg-popover shadow-lg p-2">
+                      <Input
+                        placeholder="Search agents..."
+                        value={recipientSearch}
+                        onChange={(e) => setRecipientSearch(e.target.value)}
+                        className="mb-2 h-9"
+                        autoFocus
+                      />
+                      <div className="max-h-48 overflow-y-auto space-y-1">
+                        {filteredMembers.length === 0 ? (
+                          <p className="text-xs text-muted-foreground text-center py-3">No agents found</p>
+                        ) : (
+                          filteredMembers.map((m) => (
+                            <button
+                              key={m.user_id}
+                              className="w-full text-left px-3 py-2 rounded-md hover:bg-accent text-sm transition-colors"
+                              onClick={() => {
+                                setSelectedRecipient(m);
+                                setRecipientOpen(false);
+                                setRecipientSearch("");
+                              }}
+                            >
+                              <span className="font-medium">{m.name || 'Unnamed'}</span>
+                              {m.email && <span className="text-xs text-muted-foreground ml-2">{m.email}</span>}
+                            </button>
+                          ))
+                        )}
+                      </div>
                     </div>
-                  </PopoverContent>
-                </Popover>
+                  )}
+                </div>
               )}
             </div>
 
