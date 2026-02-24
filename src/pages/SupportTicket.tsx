@@ -672,14 +672,6 @@ export const SupportTicket = () => {
         </Card>
       </div>
 
-      {/* Floating + Button for agent reply */}
-      <button
-        onClick={() => setShowReplyCompose(true)}
-        className="fixed bottom-24 right-5 z-40 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors"
-      >
-        <Send className="w-6 h-6" />
-      </button>
-
       {/* Agent Reply Compose Dialog */}
       <Dialog open={showReplyCompose} onOpenChange={setShowReplyCompose}>
         <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
