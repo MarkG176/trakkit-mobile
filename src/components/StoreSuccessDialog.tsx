@@ -875,7 +875,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                   onClick={() => handleActionClick("interaction")}
                 >
                   <MessageSquare size={24} />
-                  <span className="text-xs">Log Interaction</span>
+                  <span className="text-xs">Collect Feedback</span>
                 </Button>
               </div>
               <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full">
