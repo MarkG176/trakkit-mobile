@@ -6,10 +6,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, Trash2 } from "lucide-react";
+import { Bell, Trash2, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SupervisorBottomNav } from "@/components/supervisor/SupervisorBottomNav";
 import { ActivityCard } from "@/components/supervisor/ActivityCard";
+import { useAuth } from "@/hooks/useAuth";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface Notification {
   id: string;
@@ -33,6 +36,7 @@ const notificationLabels: Record<Notification['type'], string> = {
 export const SupervisorDashboard = () => {
   const { currentWorkspaceId } = useWorkspace();
   const { toast } = useToast();
+  const { user, signOut } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const agentCacheRef = useRef<Map<string, string>>(new Map());
 
@@ -268,11 +272,36 @@ export const SupervisorDashboard = () => {
             <h1 className="text-xl font-bold">Supervisor Dashboard</h1>
             <p className="text-sm opacity-90">Real-time agent activity</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Bell className="w-5 h-5" />
-            <Badge variant="secondary" className="bg-white/20">
-              {notifications.length}
-            </Badge>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Bell className="w-5 h-5" />
+              <Badge variant="secondary" className="bg-white/20">
+                {notifications.length}
+              </Badge>
+            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="focus:outline-none">
+                  <Avatar className="h-9 w-9 border-2 border-white/30">
+                    <AvatarFallback className="bg-white/20 text-primary-foreground text-sm font-semibold">
+                      {user?.email?.charAt(0).toUpperCase() || 'S'}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-2" align="end">
+                <p className="text-xs text-muted-foreground px-2 py-1 truncate">{user?.email}</p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start text-destructive hover:text-destructive"
+                  onClick={() => signOut()}
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </Button>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
         <div className="mt-3">
