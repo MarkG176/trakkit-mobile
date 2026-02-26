@@ -41,12 +41,21 @@ export const SeedingEveningReportDialog = ({ open, onOpenChange, onComplete }: S
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
+  const resetFormState = () => {
+    setNotes("");
+    setImages([]);
+    setUploadProgress(0);
+  };
+
+  useEffect(() => {
+    if (open) {
+      resetFormState();
+    }
+  }, [open]);
+
   useEffect(() => {
     if (open && user) {
       fetchSalesSummary();
-      setNotes("");
-      setImages([]);
-      setUploadProgress(0);
     }
   }, [open, user]);
 
@@ -147,9 +156,21 @@ export const SeedingEveningReportDialog = ({ open, onOpenChange, onComplete }: S
         });
         if (error) throw error;
       }
+    } catch (error) {
+      console.error("Error saving notes:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to save notes",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+      return;
+    }
 
-      // 2. Upload engagement photos to agent-selfies bucket (same path as Report page)
-      if (images.length > 0) {
+    // 2. Upload engagement photos to agent-selfies bucket (same path as Report page)
+    let imageUploadFailed = false;
+    if (images.length > 0) {
+      try {
         let uploaded = 0;
         const uploadPromises = images.map(async (image) => {
           const fileExt = image.name.split(".").pop();
@@ -172,28 +193,30 @@ export const SeedingEveningReportDialog = ({ open, onOpenChange, onComplete }: S
         });
 
         await Promise.all(uploadPromises);
+      } catch (error) {
+        console.error("Error uploading images:", error);
+        imageUploadFailed = true;
       }
+    }
 
+    setIsSubmitting(false);
+
+    if (imageUploadFailed) {
+      toast({
+        title: "Partial Success",
+        description: "Notes saved, but some photos failed to upload. Please try uploading photos again.",
+        variant: "destructive",
+      });
+    } else {
       toast({
         title: "Success",
         description: "Evening report submitted successfully",
       });
-
-      setNotes("");
-      setImages([]);
-      setUploadProgress(0);
-      onOpenChange(false);
-      onComplete?.();
-    } catch (error) {
-      console.error("Error submitting evening report:", error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to submit evening report",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
     }
+
+    resetFormState();
+    onOpenChange(false);
+    onComplete?.();
   };
 
   const totalQuantity = salesSummary.reduce((sum, item) => sum + item.quantity_sold, 0);
