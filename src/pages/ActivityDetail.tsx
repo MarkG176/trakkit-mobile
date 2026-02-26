@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ActivityData {
   id: string;
@@ -32,6 +33,7 @@ export const ActivityDetail = () => {
   const navigate = useNavigate();
   const { activityId } = useParams();
   const { currentWorkspaceId } = useWorkspace();
+  const { user } = useAuth();
   const [activity, setActivity] = useState<ActivityData | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
   const [images, setImages] = useState<string[]>([]);
@@ -85,25 +87,30 @@ export const ActivityDetail = () => {
   }, [activityId]);
 
   const handleSaveNote = async () => {
-    if (!activityId || !noteContent.trim()) return;
+    if (!activityId || !noteContent.trim() || !user) return;
 
     try {
       if (notes.length > 0) {
-        await supabase
+        const { error } = await supabase
           .from('notes')
           .update({ content: noteContent })
           .eq('id', notes[0].id);
+
+        if (error) throw error;
       } else {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('notes')
           .insert({
             interaction_id: activityId,
             content: noteContent,
             customer_name: activity?.customer_name,
-            workspace_id: currentWorkspaceId
+            workspace_id: currentWorkspaceId,
+            agent_id: user.id
           })
           .select()
           .single();
+
+        if (error) throw error;
 
         if (data) {
           setNotes([data]);
