@@ -29,11 +29,7 @@ interface SeedingEveningReportDialogProps {
   onComplete?: () => void;
 }
 
-export const SeedingEveningReportDialog = ({
-  open,
-  onOpenChange,
-  onComplete,
-}: SeedingEveningReportDialogProps) => {
+export const SeedingEveningReportDialog = ({ open, onOpenChange, onComplete }: SeedingEveningReportDialogProps) => {
   const { user } = useAuth();
   const { currentWorkspaceId } = useWorkspace();
   const { toast } = useToast();
@@ -160,12 +156,10 @@ export const SeedingEveningReportDialog = ({
           const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
           const filePath = `${user.id}/Capwell/${fileName}`;
 
-          const { error } = await supabase.storage
-            .from("agent-selfies")
-            .upload(filePath, image, {
-              cacheControl: "3600",
-              upsert: false,
-            });
+          const { error } = await supabase.storage.from("agent-selfies").upload(filePath, image, {
+            cacheControl: "3600",
+            upsert: false,
+          });
 
           if (error) {
             console.error("Upload error for", filePath, ":", error);
@@ -192,6 +186,7 @@ export const SeedingEveningReportDialog = ({
       onComplete?.();
     } catch (error) {
       console.error("Error submitting evening report:", error);
+      console.error("Seeding evening report error details:", JSON.stringify(error));
       toast({
         title: "Error",
         description: "Failed to submit evening report",
@@ -210,9 +205,7 @@ export const SeedingEveningReportDialog = ({
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Evening Report</DialogTitle>
-          <DialogDescription>
-            Review your sales, add notes, and upload engagement photos
-          </DialogDescription>
+          <DialogDescription>Review your sales, add notes, and upload engagement photos</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -235,9 +228,7 @@ export const SeedingEveningReportDialog = ({
                   {salesSummary.map((item, index) => (
                     <div key={index} className="flex justify-between items-center text-sm">
                       <span className="text-foreground">{item.product_name}</span>
-                      <span className="text-muted-foreground font-medium">
-                        {item.quantity_sold} units
-                      </span>
+                      <span className="text-muted-foreground font-medium">{item.quantity_sold} units</span>
                     </div>
                   ))}
                 </div>
@@ -272,23 +263,13 @@ export const SeedingEveningReportDialog = ({
               <Camera className="h-4 w-4" />
               Engagement Photos
             </Label>
-            <p className="text-xs text-muted-foreground">
-              Upload photos from today's field engagement
-            </p>
+            <p className="text-xs text-muted-foreground">Upload photos from today's field engagement</p>
 
-            <Input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImageSelect}
-              className="cursor-pointer"
-            />
+            <Input type="file" accept="image/*" multiple onChange={handleImageSelect} className="cursor-pointer" />
 
             {images.length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs text-muted-foreground font-medium">
-                  {images.length} photo(s) selected
-                </p>
+                <p className="text-xs text-muted-foreground font-medium">{images.length} photo(s) selected</p>
                 <div className="grid grid-cols-4 gap-2">
                   {images.map((file, index) => (
                     <div key={index} className="relative group">
@@ -314,21 +295,14 @@ export const SeedingEveningReportDialog = ({
 
             {isSubmitting && uploadProgress > 0 && uploadProgress < 100 && (
               <div className="w-full bg-muted rounded-full h-2">
-                <div
-                  className="bg-primary h-2 rounded-full transition-all"
-                  style={{ width: `${uploadProgress}%` }}
-                />
+                <div className="bg-primary h-2 rounded-full transition-all" style={{ width: `${uploadProgress}%` }} />
               </div>
             )}
           </div>
         </div>
 
         <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isSubmitting}
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
