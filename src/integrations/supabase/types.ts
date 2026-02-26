@@ -4033,6 +4033,10 @@ export type Database = {
       }
     }
     Functions: {
+      append_store_to_project_target: {
+        Args: { p_project_id: string; p_store_id: string }
+        Returns: undefined
+      }
       approve_checkout_request: {
         Args: { request_id: string; reviewer_id: string }
         Returns: undefined
