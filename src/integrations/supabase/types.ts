@@ -3545,7 +3545,6 @@ export type Database = {
           agent_id: string | null
           created_at: string
           id: string
-          is_active: boolean
           is_deleted: boolean | null
           team_id: string | null
           workspace_id: string | null
@@ -3554,7 +3553,6 @@ export type Database = {
           agent_id?: string | null
           created_at?: string
           id?: string
-          is_active?: boolean
           is_deleted?: boolean | null
           team_id?: string | null
           workspace_id?: string | null
@@ -3563,7 +3561,6 @@ export type Database = {
           agent_id?: string | null
           created_at?: string
           id?: string
-          is_active?: boolean
           is_deleted?: boolean | null
           team_id?: string | null
           workspace_id?: string | null
@@ -3604,7 +3601,6 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
-          is_active: boolean
           is_deleted: boolean | null
           member_count: number
           name: string | null
@@ -3617,7 +3613,6 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
-          is_active?: boolean
           is_deleted?: boolean | null
           member_count?: number
           name?: string | null
@@ -3630,7 +3625,6 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
-          is_active?: boolean
           is_deleted?: boolean | null
           member_count?: number
           name?: string | null
