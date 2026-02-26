@@ -281,20 +281,28 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
             .or(salesDateFilter(weekStart)),
 
           // Today's sales (daily tracking)
-          supabase
-            .from('daily_sales_tracking')
-            .select('quantity_sold, total_value')
-             .eq('agent_id', agentId)
-            .eq('workspace_id', currentWorkspaceId)
-            .eq('work_date', todayDate),
+          (() => {
+            let q = supabase
+              .from('daily_sales_tracking')
+              .select('quantity_sold, total_value')
+              .eq('agent_id', agentId)
+              .eq('workspace_id', currentWorkspaceId)
+              .eq('work_date', todayDate);
+            if (currentProjectId) q = q.eq('project_id', currentProjectId);
+            return q;
+          })(),
 
           // Week's sales (daily tracking)
-          supabase
-            .from('daily_sales_tracking')
-            .select('quantity_sold, total_value')
-             .eq('agent_id', agentId)
-            .eq('workspace_id', currentWorkspaceId)
-            .gte('work_date', weekStartDate),
+          (() => {
+            let q = supabase
+              .from('daily_sales_tracking')
+              .select('quantity_sold, total_value')
+              .eq('agent_id', agentId)
+              .eq('workspace_id', currentWorkspaceId)
+              .gte('work_date', weekStartDate);
+            if (currentProjectId) q = q.eq('project_id', currentProjectId);
+            return q;
+          })(),
           
           // Today's surveys
           supabase
@@ -317,22 +325,30 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
             .or(surveyDateFilter(weekStart)),
           
           // Today's giveaways
-          supabase
-            .from('giveaways')
-            .select('id, total_items')
-             .eq('agent_id', agentId)
-            .eq('workspace_id', currentWorkspaceId)
-            .not('is_deleted', 'is', true)
-            .gte('recorded_at', todayStart),
+          (() => {
+            let q = supabase
+              .from('giveaways')
+              .select('id, total_items')
+              .eq('agent_id', agentId)
+              .eq('workspace_id', currentWorkspaceId)
+              .not('is_deleted', 'is', true)
+              .gte('recorded_at', todayStart);
+            if (currentProjectId) q = q.eq('project_id', currentProjectId);
+            return q;
+          })(),
           
           // Week's giveaways
-          supabase
-            .from('giveaways')
-            .select('id, total_items')
-             .eq('agent_id', agentId)
-            .eq('workspace_id', currentWorkspaceId)
-            .not('is_deleted', 'is', true)
-            .gte('recorded_at', weekStart),
+          (() => {
+            let q = supabase
+              .from('giveaways')
+              .select('id, total_items')
+              .eq('agent_id', agentId)
+              .eq('workspace_id', currentWorkspaceId)
+              .not('is_deleted', 'is', true)
+              .gte('recorded_at', weekStart);
+            if (currentProjectId) q = q.eq('project_id', currentProjectId);
+            return q;
+          })(),
           
           // Today's status logs for work time (same calculation as WorkHoursCard)
           supabase
@@ -448,20 +464,28 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
             .maybeSingle(),
 
           // Today's wholesale sales (customer_purchases)
-          supabase
-            .from('customer_purchases')
-            .select('quantity, total_value')
-             .eq('agent_id', agentId)
-            .eq('workspace_id', currentWorkspaceId)
-            .gte('purchase_date', todayStart),
+          (() => {
+            let q = supabase
+              .from('customer_purchases')
+              .select('quantity, total_value')
+              .eq('agent_id', agentId)
+              .eq('workspace_id', currentWorkspaceId)
+              .gte('purchase_date', todayStart);
+            if (currentProjectId) q = q.eq('project_id', currentProjectId);
+            return q;
+          })(),
 
           // Week's wholesale sales (customer_purchases)
-          supabase
-            .from('customer_purchases')
-            .select('quantity, total_value')
-            .eq('agent_id', agentId)
-            .eq('workspace_id', currentWorkspaceId)
-            .gte('purchase_date', weekStart),
+          (() => {
+            let q = supabase
+              .from('customer_purchases')
+              .select('quantity, total_value')
+              .eq('agent_id', agentId)
+              .eq('workspace_id', currentWorkspaceId)
+              .gte('purchase_date', weekStart);
+            if (currentProjectId) q = q.eq('project_id', currentProjectId);
+            return q;
+          })(),
 
           // === ALL TIME QUERIES ===
 
@@ -483,11 +507,15 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
             .not('is_deleted', 'is', true),
 
           // All time sales (daily tracking)
-          supabase
-            .from('daily_sales_tracking')
-            .select('quantity_sold, total_value')
-            .eq('agent_id', agentId)
-            .eq('workspace_id', currentWorkspaceId),
+          (() => {
+            let q = supabase
+              .from('daily_sales_tracking')
+              .select('quantity_sold, total_value')
+              .eq('agent_id', agentId)
+              .eq('workspace_id', currentWorkspaceId);
+            if (currentProjectId) q = q.eq('project_id', currentProjectId);
+            return q;
+          })(),
 
           // All time surveys
           supabase
@@ -499,12 +527,16 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
             .not('is_deleted', 'is', true),
 
           // All time giveaways
-          supabase
-            .from('giveaways')
-            .select('id, total_items')
-            .eq('agent_id', agentId)
-            .eq('workspace_id', currentWorkspaceId)
-            .not('is_deleted', 'is', true),
+          (() => {
+            let q = supabase
+              .from('giveaways')
+              .select('id, total_items')
+              .eq('agent_id', agentId)
+              .eq('workspace_id', currentWorkspaceId)
+              .not('is_deleted', 'is', true);
+            if (currentProjectId) q = q.eq('project_id', currentProjectId);
+            return q;
+          })(),
 
           // All time check-ins
           supabase
@@ -540,11 +572,15 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
             .not('store_id', 'is', null),
 
           // All time wholesale purchases
-          supabase
-            .from('customer_purchases')
-            .select('quantity, total_value')
-            .eq('agent_id', agentId)
-            .eq('workspace_id', currentWorkspaceId),
+          (() => {
+            let q = supabase
+              .from('customer_purchases')
+              .select('quantity, total_value')
+              .eq('agent_id', agentId)
+              .eq('workspace_id', currentWorkspaceId);
+            if (currentProjectId) q = q.eq('project_id', currentProjectId);
+            return q;
+          })(),
 
           // Check if project has survey templates assigned
           ...(currentProjectId ? [
@@ -728,7 +764,7 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
     if (isInitialized) {
       fetchStats();
     }
-  }, [agentId, currentWorkspaceId, isInitialized]);
+  }, [agentId, currentWorkspaceId, currentProjectId, isInitialized]);
 
   return stats;
 };
