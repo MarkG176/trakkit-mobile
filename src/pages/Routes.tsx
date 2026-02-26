@@ -23,7 +23,6 @@ interface Store {
   contact?: string;
 }
 
-
 export const Routes = () => {
   const [stores, setStores] = useState<Store[]>([]);
   const [selectedCounty, setSelectedCounty] = useState<string>("all");
@@ -40,7 +39,7 @@ export const Routes = () => {
 
   // Load last selected county from localStorage on mount
   useEffect(() => {
-    const lastCounty = localStorage.getItem('lastSelectedCounty');
+    const lastCounty = localStorage.getItem("lastSelectedCounty");
     if (lastCounty && counties.includes(lastCounty)) {
       setNewStoreCounty(lastCounty);
     } else if (counties.length > 0 && !newStoreCounty) {
@@ -55,8 +54,8 @@ export const Routes = () => {
   const { currentWorkspaceId, currentTeamType } = useWorkspace();
 
   // Check if current team type is wholesale - hide Add Location for wholesale
-  const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
-  const isSeeding = currentTeamType?.toLowerCase() === 'seeding';
+  const isWholesale = currentTeamType?.toLowerCase() === "wholesale";
+  const isSeeding = currentTeamType?.toLowerCase() === "seeding";
 
   useEffect(() => {
     fetchStores();
@@ -65,7 +64,7 @@ export const Routes = () => {
 
   const requestLocation = () => {
     if (!navigator.geolocation) {
-      setLocationError('Geolocation is not supported by your browser');
+      setLocationError("Geolocation is not supported by your browser");
       return;
     }
 
@@ -87,38 +86,34 @@ export const Routes = () => {
       {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 0
-      }
+        maximumAge: 0,
+      },
     );
   };
 
   const fetchStores = async () => {
-    const { data, error } = await supabase
-      .from('stores')
-      .select('*');
+    const { data, error } = await supabase.from("stores").select("*");
 
     if (error) {
-      console.error('Error fetching stores:', error);
+      console.error("Error fetching stores:", error);
       return;
     }
 
     if (data) {
       setStores(data);
-      const uniqueCounties = Array.from(new Set(data.map(store => store.county)));
+      const uniqueCounties = Array.from(new Set(data.map((store) => store.county)));
       setCounties(uniqueCounties);
     }
   };
 
-  const filteredStores = (selectedCounty === "all" 
-    ? stores 
-    : stores.filter(store => store.county === selectedCounty))
-    .sort((a, b) => a.store_name.localeCompare(b.store_name));
-
+  const filteredStores = (
+    selectedCounty === "all" ? stores : stores.filter((store) => store.county === selectedCounty)
+  ).sort((a, b) => a.store_name.localeCompare(b.store_name));
 
   const getCurrentLocation = (): Promise<{ latitude: number; longitude: number }> => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
-        reject(new Error('Geolocation is not supported'));
+        reject(new Error("Geolocation is not supported"));
         return;
       }
 
@@ -135,12 +130,11 @@ export const Routes = () => {
         {
           enableHighAccuracy: true,
           timeout: 10000,
-          maximumAge: 0
-        }
+          maximumAge: 0,
+        },
       );
     });
   };
-
 
   const handleAddLocation = async () => {
     if (!newStoreName.trim() || !newStoreCounty.trim()) {
@@ -165,13 +159,15 @@ export const Routes = () => {
       setIsSubmittingStore(true);
 
       // Save selected county to localStorage
-      localStorage.setItem('lastSelectedCounty', newStoreCounty.trim());
+      localStorage.setItem("lastSelectedCounty", newStoreCounty.trim());
 
       // Get current user for added_by field
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       const { data: insertedStore, error } = await supabase
-        .from('stores')
+        .from("stores")
         .insert({
           store_name: newStoreName.trim(),
           county: newStoreCounty.trim(),
@@ -180,9 +176,9 @@ export const Routes = () => {
           contact: newStoreContact.trim() || null,
           products: [], // Empty products array for new store
           added_by: user?.id || null,
-          workspace_id: currentWorkspaceId
+          workspace_id: currentWorkspaceId,
         })
-        .select('id')
+        .select("id")
         .single();
 
       if (error) {
@@ -192,20 +188,17 @@ export const Routes = () => {
       // Auto-add to project's target_stores
       if (currentWorkspaceId) {
         const { data: activeProject } = await supabase
-          .from('project_plans')
-          .select('id, target_stores')
-          .eq('workspace_id', currentWorkspaceId)
-          .eq('status', 'active')
-          .eq('is_deleted', false)
+          .from("project_plans")
+          .select("id, target_stores")
+          .eq("workspace_id", currentWorkspaceId)
+          .eq("status", "active")
+          .eq("is_deleted", false)
           .limit(1)
           .single();
 
         if (activeProject) {
           const updatedStores = [...(activeProject.target_stores || []), insertedStore.id];
-          await supabase
-            .from('project_plans')
-            .update({ target_stores: updatedStores })
-            .eq('id', activeProject.id);
+          await supabase.from("project_plans").update({ target_stores: updatedStores }).eq("id", activeProject.id);
         }
       }
 
@@ -213,7 +206,7 @@ export const Routes = () => {
       setAddedStore({
         id: insertedStore.id,
         name: newStoreName.trim(),
-        county: newStoreCounty.trim()
+        county: newStoreCounty.trim(),
       });
       setShowSuccessDialog(true);
 
@@ -225,9 +218,8 @@ export const Routes = () => {
 
       // Refresh stores list
       await fetchStores();
-
     } catch (error: any) {
-      console.error('Error adding store:', error);
+      console.error("Error adding store:", error);
       toast({
         title: "Error adding location",
         description: error.message || "Failed to add the new store. Please try again.",
@@ -248,11 +240,12 @@ export const Routes = () => {
       return;
     }
 
-
     setIsSubmitting(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         toast({
           title: "Not authenticated",
@@ -266,7 +259,7 @@ export const Routes = () => {
       if (!userLocation) {
         userLocation = await getCurrentLocation();
       }
-      const selectedStoreData = stores.find(s => s.id === selectedStore);
+      const selectedStoreData = stores.find((s) => s.id === selectedStore);
 
       if (!selectedStoreData) {
         toast({
@@ -283,31 +276,26 @@ export const Routes = () => {
       const roundedStoreLat = Math.round(selectedStoreData.store_lat * 10) / 10;
       const roundedStoreLng = Math.round(selectedStoreData.store_long * 10) / 10;
 
-      console.log('📍 Location coordinates:', {
-        original: { 
+      console.log("📍 Location coordinates:", {
+        original: {
           user: { lat: userLocation.latitude, lng: userLocation.longitude },
-          store: { lat: selectedStoreData.store_lat, lng: selectedStoreData.store_long }
+          store: { lat: selectedStoreData.store_lat, lng: selectedStoreData.store_long },
         },
-        rounded: { 
+        rounded: {
           user: { lat: roundedUserLat, lng: roundedUserLng },
-          store: { lat: roundedStoreLat, lng: roundedStoreLng }
-        }
+          store: { lat: roundedStoreLat, lng: roundedStoreLng },
+        },
       });
 
       // Calculate distance using Haversine formula with rounded coordinates
-      const distance = await calculateDistance(
-        roundedUserLat,
-        roundedUserLng,
-        roundedStoreLat,
-        roundedStoreLng
-      );
+      const distance = await calculateDistance(roundedUserLat, roundedUserLng, roundedStoreLat, roundedStoreLng);
 
-      console.log('✅ Haversine distance calculation:', {
+      console.log("✅ Haversine distance calculation:", {
         distanceMeters: Math.round(distance),
         distanceText: formatDistance(distance),
         roundedUserCoords: { lat: roundedUserLat, lng: roundedUserLng },
         roundedStoreCoords: { lat: roundedStoreLat, lng: roundedStoreLng },
-        store: selectedStoreData.store_name
+        store: selectedStoreData.store_name,
       });
 
       // Enhanced debug logging
@@ -316,25 +304,23 @@ export const Routes = () => {
         roundedUserLng,
         roundedStoreLat,
         roundedStoreLng,
-        'Set Location (Haversine with 1dp Rounded Coords)'
+        "Set Location (Haversine with 1dp Rounded Coords)",
       );
 
       const inRange = distance <= 100;
 
-      const { error } = await supabase
-        .from('agent_status_log')
-        .insert({
-          agent_id: user.id,
-          status: 'set_location',
-          location_lat: userLocation.latitude,
-          location_lng: userLocation.longitude,
-          assigned_location_lat: selectedStoreData.store_lat,
-          assigned_location_lng: selectedStoreData.store_long,
-          distance_from_assigned: distance,
-          in_range: inRange,
-          workspace_id: currentWorkspaceId,
-          store_id: selectedStoreData.id,
-        });
+      const { error } = await supabase.from("agent_status_log").insert({
+        agent_id: user.id,
+        status: "set_location",
+        location_lat: userLocation.latitude,
+        location_lng: userLocation.longitude,
+        assigned_location_lat: selectedStoreData.store_lat,
+        assigned_location_lng: selectedStoreData.store_long,
+        distance_from_assigned: distance,
+        in_range: inRange,
+        workspace_id: currentWorkspaceId,
+        store_id: selectedStoreData.id,
+      });
 
       if (error) throw error;
 
@@ -359,15 +345,15 @@ export const Routes = () => {
             distance_from_store: distance,
             store_coordinates: {
               lat: selectedStoreData.store_lat,
-              lng: selectedStoreData.store_long
-            }
-          }
+              lng: selectedStoreData.store_long,
+            },
+          },
         );
       }
 
       setSelectedStore("all");
     } catch (error: any) {
-      console.error('Error setting location:', error);
+      console.error("Error setting location:", error);
       toast({
         title: "Error setting location",
         description: error.message || "Failed to set your location. Please try again.",
@@ -385,195 +371,187 @@ export const Routes = () => {
         <p className="text-sm opacity-90">Manage and optimize your routes</p>
       </div>
 
-
       {/* Location Selection Form */}
       {/* Set Assigned Location - Hidden for seeding */}
       {!isSeeding && (
-      <div className="px-4 pb-20">
-        <Card className="p-4">
-          <h2 className="text-h2 mb-4">Set Your Assigned Location</h2>
-          
-          
-          {/* Current Location Display */}
-          <div className="mb-4 p-3 bg-muted rounded-lg">
-            <p className="text-sm font-medium text-foreground mb-2">Current Location</p>
-            {isLoadingLocation && (
-              <p className="text-xs text-muted-foreground">Getting your location...</p>
-            )}
-            {locationError && (
-              <div>
-                <p className="text-xs text-destructive mb-2">{locationError}</p>
-                <Button size="sm" variant="outline" onClick={requestLocation}>
-                  Retry
-                </Button>
-              </div>
-            )}
-            {currentLocation && !isLoadingLocation && (
-              <div className="text-xs text-muted-foreground space-y-1">
-                <p>Latitude: {currentLocation.latitude.toFixed(6)}</p>
-                <p>Longitude: {currentLocation.longitude.toFixed(6)}</p>
-              </div>
-            )}
-          </div>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">County</label>
-              <Select value={selectedCounty} onValueChange={setSelectedCounty}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Counties</SelectItem>
-                  {counties.map(county => (
-                    <SelectItem key={county} value={county}>{county}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">Store</label>
-              <Select value={selectedStore} onValueChange={setSelectedStore}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Select a store</SelectItem>
-                  {filteredStores.map(store => (
-                    <SelectItem key={store.id} value={store.id}>
-                      {store.store_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <div className="px-4 pb-20">
+          <Card className="p-4">
+            <h2 className="text-h2 mb-4">Set Your Assigned Location</h2>
+
+            {/* Current Location Display */}
+            <div className="mb-4 p-3 bg-muted rounded-lg">
+              <p className="text-sm font-medium text-foreground mb-2">Current Location</p>
+              {isLoadingLocation && <p className="text-xs text-muted-foreground">Getting your location...</p>}
+              {locationError && (
+                <div>
+                  <p className="text-xs text-destructive mb-2">{locationError}</p>
+                  <Button size="sm" variant="outline" onClick={requestLocation}>
+                    Retry
+                  </Button>
+                </div>
+              )}
+              {currentLocation && !isLoadingLocation && (
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p>Latitude: {currentLocation.latitude.toFixed(6)}</p>
+                  <p>Longitude: {currentLocation.longitude.toFixed(6)}</p>
+                </div>
+              )}
             </div>
 
-            <Button 
-              onClick={handleSubmit} 
-              disabled={isSubmitting || selectedStore === "all"}
-              className="w-full"
-            >
-              {isSubmitting ? "Setting Location..." : "Submit Location"}
-            </Button>
-          </div>
-        </Card>
-      </div>
-      )}
-
-      <div className="px-4 pb-20">
-        {/* Add Location Form - Hidden for wholesale */}
-        {!isWholesale && (
-        <Card className="p-4 mt-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Plus size={20} className="text-primary" />
-            <h2 className="text-h2">Add Store</h2>
-          </div>
-          
-          {!showAddLocationForm ? (
-            <Button 
-              onClick={() => setShowAddLocationForm(true)}
-              variant="outline"
-              className="w-full"
-            >
-              <Plus size={16} className="mr-2" />
-              Add New Store Location
-            </Button>
-          ) : (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="store-name" className="text-sm font-medium text-foreground mb-2 block">
-                  Store Name
-                </Label>
-                <Input
-                  id="store-name"
-                  value={newStoreName}
-                  onChange={(e) => setNewStoreName(e.target.value)}
-                  placeholder="Enter store name"
-                  className="w-full"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="store-county" className="text-sm font-medium text-foreground mb-2 block">
-                  County
-                </Label>
-                <Select value={newStoreCounty} onValueChange={setNewStoreCounty}>
+                <label className="text-sm font-medium text-foreground mb-2 block">County</label>
+                <Select value={selectedCounty} onValueChange={setSelectedCounty}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select county" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {counties.map(county => (
-                      <SelectItem key={county} value={county}>{county}</SelectItem>
+                    <SelectItem value="all">All Counties</SelectItem>
+                    {counties.map((county) => (
+                      <SelectItem key={county} value={county}>
+                        {county}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label htmlFor="store-contact" className="text-sm font-medium text-foreground mb-2 block">
-                  Contact Number
-                </Label>
-                <Input
-                  id="store-contact"
-                  type="tel"
-                  value={newStoreContact}
-                  onChange={(e) => setNewStoreContact(e.target.value)}
-                  placeholder="Enter contact number"
-                  className="w-full"
-                />
+                <label className="text-sm font-medium text-foreground mb-2 block">Store</label>
+                <Select value={selectedStore} onValueChange={setSelectedStore}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Select a store</SelectItem>
+                    {filteredStores.map((store) => (
+                      <SelectItem key={store.id} value={store.id}>
+                        {store.store_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div className="p-3 bg-muted rounded-lg">
-                <p className="text-sm font-medium text-foreground mb-2">Location Coordinates</p>
-                {currentLocation ? (
-                  <div className="text-xs text-muted-foreground space-y-1">
-                    <p>Latitude: {currentLocation.latitude.toFixed(6)}</p>
-                    <p>Longitude: {currentLocation.longitude.toFixed(6)}</p>
-                    <p className="text-green-600">✓ Using current location</p>
-                  </div>
-                ) : (
-                  <div className="text-xs text-muted-foreground">
-                    <p className="text-orange-600">⚠ Location not available</p>
-                    <p>Please enable location access to add a store</p>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={requestLocation}
-                      disabled={isLoadingLocation}
-                      className="mt-2"
-                    >
-                      <MapPin size={14} className="mr-1" />
-                      {isLoadingLocation ? "Getting location..." : "Refresh Location"}
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-3">
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setShowAddLocationForm(false);
-                    setNewStoreName("");
-                    setNewStoreCounty("");
-                    setNewStoreContact("");
-                  }}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleAddLocation}
-                  disabled={isSubmittingStore || !currentLocation}
-                  className="flex-1"
-                >
-                  {isSubmittingStore ? "Adding..." : "Add Store"}
-                </Button>
-              </div>
+              <Button onClick={handleSubmit} disabled={isSubmitting || selectedStore === "all"} className="w-full">
+                {isSubmitting ? "Setting Location..." : "Submit Location"}
+              </Button>
             </div>
-          )}
-        </Card>
+          </Card>
+        </div>
+      )}
+
+      <div className="px-4 pb-20">
+        {/* Add Location Form - Hidden for wholesale */}
+        {!isWholesale && (
+          <Card className="p-4 mt-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Plus size={20} className="text-primary" />
+              <h2 className="text-h2">Add Store</h2>
+            </div>
+
+            {!showAddLocationForm ? (
+              <Button onClick={() => setShowAddLocationForm(true)} variant="outline" className="w-full">
+                <Plus size={16} className="mr-2" />
+                Add New Store Location
+              </Button>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="store-name" className="text-sm font-medium text-foreground mb-2 block">
+                    Store Name
+                  </Label>
+                  <Input
+                    id="store-name"
+                    value={newStoreName}
+                    onChange={(e) => setNewStoreName(e.target.value)}
+                    placeholder="Enter store name"
+                    className="w-full"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="store-county" className="text-sm font-medium text-foreground mb-2 block">
+                    County
+                  </Label>
+                  <Select value={newStoreCounty} onValueChange={setNewStoreCounty}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select county" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {counties.map((county) => (
+                        <SelectItem key={county} value={county}>
+                          {county}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="store-contact" className="text-sm font-medium text-foreground mb-2 block">
+                    Contact Number
+                  </Label>
+                  <Input
+                    id="store-contact"
+                    type="tel"
+                    value={newStoreContact}
+                    onChange={(e) => setNewStoreContact(e.target.value)}
+                    placeholder="Enter contact number"
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="text-sm font-medium text-foreground mb-2">Location Coordinates</p>
+                  {currentLocation ? (
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p>Latitude: {currentLocation.latitude.toFixed(6)}</p>
+                      <p>Longitude: {currentLocation.longitude.toFixed(6)}</p>
+                      <p className="text-green-600">✓ Using current location</p>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-muted-foreground">
+                      <p className="text-orange-600">⚠ Location not available</p>
+                      <p>Please enable location access to add a store</p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={requestLocation}
+                        disabled={isLoadingLocation}
+                        className="mt-2"
+                      >
+                        <MapPin size={14} className="mr-1" />
+                        {isLoadingLocation ? "Getting location..." : "Refresh Location"}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowAddLocationForm(false);
+                      setNewStoreName("");
+                      setNewStoreCounty("");
+                      setNewStoreContact("");
+                    }}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleAddLocation}
+                    disabled={isSubmittingStore || !currentLocation}
+                    className="flex-1"
+                  >
+                    {isSubmittingStore ? "Adding..." : "Add Store"}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Card>
         )}
       </div>
 
