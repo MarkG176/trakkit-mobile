@@ -12,8 +12,8 @@ SET search_path = public
 AS $$
 BEGIN
   UPDATE public.project_plans
-  SET target_stores = array_append(COALESCE(target_stores, '{}'), p_store_id)
+  SET target_stores = array_append(COALESCE(target_stores, ARRAY[]::uuid[]), p_store_id)
   WHERE id = p_project_id
-    AND NOT (target_stores @> ARRAY[p_store_id]);
+    AND (target_stores IS NULL OR NOT (target_stores @> ARRAY[p_store_id]));
 END;
 $$;
