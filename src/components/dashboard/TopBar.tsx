@@ -1,4 +1,4 @@
-import { MapPin } from "lucide-react";
+import { MapPin, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,9 +6,11 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export const TopBar = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { currentTeamType } = useWorkspace();
   const showSetLocation = currentTeamType === 'wholesale' || currentTeamType === 'instore';
   const navigate = useNavigate();
@@ -51,17 +53,42 @@ export const TopBar = () => {
           <span className="text-h3">Hello, {displayName}!</span>
         </div>
         
-        {showSetLocation && (
-          <Button 
-            onClick={handleSetLocation}
-            variant="default"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <MapPin size={16} />
-            Set Location
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {showSetLocation && (
+            <Button 
+              onClick={handleSetLocation}
+              variant="default"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <MapPin size={16} />
+              Set Location
+            </Button>
+          )}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="focus:outline-none">
+                <Avatar className="h-9 w-9 border-2 border-border">
+                  <AvatarFallback className="bg-muted text-muted-foreground text-sm font-semibold">
+                    {user?.email?.charAt(0).toUpperCase() || 'A'}
+                  </AvatarFallback>
+                </Avatar>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 p-2" align="end">
+              <p className="text-xs text-muted-foreground px-2 py-1 truncate">{user?.email}</p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start text-destructive hover:text-destructive"
+                onClick={() => signOut()}
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </Button>
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
       
       {/* Workspace Switcher */}
