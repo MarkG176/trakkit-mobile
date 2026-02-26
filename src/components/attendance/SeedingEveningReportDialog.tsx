@@ -106,7 +106,7 @@ export const SeedingEveningReportDialog = ({ open, onOpenChange, onComplete }: S
       console.error("Error fetching sales summary:", error);
       toast({
         title: "Error",
-        description: "Failed to load sales summary",
+        description: error instanceof Error ? error.message : "Failed to load sales summary",
         variant: "destructive",
       });
     } finally {
@@ -186,10 +186,9 @@ export const SeedingEveningReportDialog = ({ open, onOpenChange, onComplete }: S
       onComplete?.();
     } catch (error) {
       console.error("Error submitting evening report:", error);
-      console.error("Seeding evening report error details:", JSON.stringify(error));
       toast({
         title: "Error",
-        description: "Failed to submit evening report",
+        description: error instanceof Error ? error.message : "Failed to submit evening report",
         variant: "destructive",
       });
     } finally {
