@@ -88,6 +88,16 @@ export const SeedingEveningReportDialog = ({ open, onOpenChange, onComplete }: S
 
       if (purchasesError) throw purchasesError;
 
+      // Fetch from sale_items
+      const { data: saleItemsData, error: saleItemsError } = await supabase
+        .from("sale_items")
+        .select("product_name, quantity, total_price")
+        .eq("agent_id", user.id)
+        .gte("created_at", todayStart.toISOString())
+        .lt("created_at", todayEnd.toISOString());
+
+      if (saleItemsError) throw saleItemsError;
+
       // Aggregate all data by product name
       const aggregated: Record<string, SalesSummaryItem> = {};
 
@@ -108,6 +118,16 @@ export const SeedingEveningReportDialog = ({ open, onOpenChange, onComplete }: S
         }
         aggregated[name].quantity_sold += item.quantity || 0;
         aggregated[name].total_value += Number(item.total_value) || 0;
+      });
+
+      // Add sale_items data
+      (saleItemsData || []).forEach((item) => {
+        const name = item.product_name || "Unknown Product";
+        if (!aggregated[name]) {
+          aggregated[name] = { product_name: name, quantity_sold: 0, total_value: 0 };
+        }
+        aggregated[name].quantity_sold += item.quantity || 0;
+        aggregated[name].total_value += Number(item.total_price) || 0;
       });
 
       setSalesSummary(Object.values(aggregated));
