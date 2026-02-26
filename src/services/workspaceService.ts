@@ -156,9 +156,14 @@ class WorkspaceService {
         console.log('🏢 Default workspace set to:', this.userWorkspaces[0].workspace.name);
         await this.loadProjectsForWorkspace(this.currentWorkspaceId);
       } else if (this.currentWorkspaceId && this.userWorkspaces.length > 0) {
-        // If workspace is already set, just ensure projects are loaded
+        // The previously stored workspace is no longer accessible (e.g. removed
+        // from the workspace or is_active set to false).  Reset to the first
+        // available workspace so inserts don't use a stale workspace_id that
+        // would fail RLS checks.
+        this.currentWorkspaceId = this.userWorkspaces[0].workspace_id;
+        this.saveWorkspaceId(this.currentWorkspaceId);
         this.updateTeamTypeFromWorkspace(this.currentWorkspaceId);
-        console.log('🏢 Workspace already set, maintaining:', this.getWorkspaceName());
+        console.log('🏢 Workspace reset to accessible workspace:', this.getWorkspaceName());
         await this.loadProjectsForWorkspace(this.currentWorkspaceId);
       }
     } catch (error) {
