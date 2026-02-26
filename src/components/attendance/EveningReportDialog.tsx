@@ -42,15 +42,15 @@ export const EveningReportDialog = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch today's sales summary when dialog opens
+  // Fetch today's sales summary when dialog opens or workspace changes
   useEffect(() => {
-    if (open && user) {
+    if (open && user && currentWorkspaceId) {
       fetchSalesSummary();
     }
-  }, [open, user]);
+  }, [open, user, currentWorkspaceId]);
 
   const fetchSalesSummary = async () => {
-    if (!user) return;
+    if (!user || !currentWorkspaceId) return;
     
     setIsLoading(true);
     try {
@@ -64,6 +64,7 @@ export const EveningReportDialog = ({
         .from('daily_sales_tracking')
         .select('product_name, quantity_sold, total_value')
         .eq('agent_id', user.id)
+        .eq('workspace_id', currentWorkspaceId)
         .eq('work_date', today);
 
       if (salesError) throw salesError;
@@ -73,6 +74,7 @@ export const EveningReportDialog = ({
         .from('customer_purchases')
         .select('quantity, total_value, product_variant_id, product_variants(name)')
         .eq('agent_id', user.id)
+        .eq('workspace_id', currentWorkspaceId)
         .gte('purchase_date', todayStart.toISOString())
         .lt('purchase_date', todayEnd.toISOString());
 
@@ -83,6 +85,7 @@ export const EveningReportDialog = ({
         .from('sale_items')
         .select('product_name, quantity, total_price')
         .eq('agent_id', user.id)
+        .eq('workspace_id', currentWorkspaceId)
         .gte('created_at', todayStart.toISOString())
         .lt('created_at', todayEnd.toISOString());
 
