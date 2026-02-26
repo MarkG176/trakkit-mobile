@@ -170,8 +170,7 @@ export const EveningReportDialog = ({
       onOpenChange(false);
       onComplete?.();
     } catch (error) {
-  console.error('Error submitting evening report:', error);
- 
+      console.error('Error submitting evening report:', error);
       toast({
         title: 'Error',
         description: 'Failed to submit evening report',
@@ -258,7 +257,7 @@ export const EveningReportDialog = ({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting}.error
+            disabled={isSubmitting}
           >
             {isSubmitting ? (
               <>
