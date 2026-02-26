@@ -178,7 +178,6 @@ export const Routes = () => {
           store_lat: currentLocation.latitude,
           store_long: currentLocation.longitude,
           contact: newStoreContact.trim() || null,
-          products: [], // Empty products array for new store
           added_by: user?.id || null,
           workspace_id: currentWorkspaceId
         })
@@ -193,7 +192,7 @@ export const Routes = () => {
       if (currentWorkspaceId) {
         const { data: activeProject } = await supabase
           .from('project_plans')
-          .select('id, target_stores')
+          .select('id')
           .eq('workspace_id', currentWorkspaceId)
           .eq('status', 'active')
           .eq('is_deleted', false)
@@ -201,11 +200,10 @@ export const Routes = () => {
           .single();
 
         if (activeProject) {
-          const updatedStores = [...(activeProject.target_stores || []), insertedStore.id];
-          await supabase
-            .from('project_plans')
-            .update({ target_stores: updatedStores })
-            .eq('id', activeProject.id);
+          await supabase.rpc('append_store_to_project_target', {
+            p_project_id: activeProject.id,
+            p_store_id: insertedStore.id
+          });
         }
       }
 
