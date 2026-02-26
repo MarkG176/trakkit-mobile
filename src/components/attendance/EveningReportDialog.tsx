@@ -171,8 +171,7 @@ export const EveningReportDialog = ({
       onComplete?.();
     } catch (error) {
   console.error('Error submitting evening report:', error);
-  console.error("Seeding evening report error details:", JSON.stringify(error)),
-      
+ 
       toast({
         title: 'Error',
         description: 'Failed to submit evening report',
