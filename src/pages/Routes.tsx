@@ -190,22 +190,21 @@ export const Routes = () => {
       }
 
       // Auto-add to project's target_stores
-      if (currentWorkspaceId) {
-        const { data: activeProject } = await supabase
-          .from('project_plans')
-          .select('id, target_stores')
-          .eq('workspace_id', currentWorkspaceId)
-          .eq('status', 'active')
-          .eq('is_deleted', false)
-          .limit(1)
-          .single();
-
-        if (activeProject) {
-          const updatedStores = [...(activeProject.target_stores || []), insertedStore.id];
-          await supabase
+      if (activeProject && insertedStore) {
+          // Use direct update instead of RPC
+          const { data: currentProject } = await supabase
             .from('project_plans')
-            .update({ target_stores: updatedStores })
-            .eq('id', activeProject.id);
+            .select('target_stores')
+            .eq('id', activeProject.id)
+            .single();
+
+          const currentStores = (currentProject?.target_stores as string[]) || [];
+          if (!currentStores.includes(insertedStore.id)) {
+            await supabase
+              .from('project_plans')
+              .update({ target_stores: [...currentStores, insertedStore.id] })
+              .eq('id', activeProject.id);
+          }
         }
       }
 
