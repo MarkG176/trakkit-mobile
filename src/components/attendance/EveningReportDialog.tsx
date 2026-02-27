@@ -40,7 +40,7 @@
       // 🔍 ADDED: Show real Supabase error message
       toast({
         title: 'Error',
-        description: error?.message || 'Failed to submit evening report',
+        description: (error as any).message,
         variant: 'destructive',
       });
     } finally {
