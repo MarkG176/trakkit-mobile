@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { workspaceService } from "@/services/workspaceService";
 import { Loader2, Package } from "lucide-react";
 
 interface SalesSummaryItem {
@@ -97,12 +98,23 @@ export const EveningReportDialog = ({ open, onOpenChange, onComplete }: EveningR
       return;
     }
 
+    const workspaceId = currentWorkspaceId || workspaceService.getCurrentWorkspaceId();
+
+    if (!workspaceId) {
+      toast({
+        title: "Error",
+        description: "No workspace selected. Please select a workspace first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       if (notes.trim()) {
         const { error } = await supabase.from("notes").insert({
           agent_id: user.id,
-          workspace_id: currentWorkspaceId,
+          workspace_id: workspaceId,
           content: notes.trim(),
           note_type: "daily_report",
         });
