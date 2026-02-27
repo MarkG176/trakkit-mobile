@@ -1,4 +1,4 @@
-import { Home, ClipboardList, Map, Package, User, Clipboard, MessageSquare } from "lucide-react";
+import { Home, ClipboardList, Map, Package, User, Clipboard, MessageSquare, MoreHorizontal } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMemo } from "react";
 
@@ -15,6 +15,7 @@ const navItems = [
   { id: "inventory", label: "Inventory", icon: Package, path: "/inventory" },
   { id: "chat", label: "Chat", icon: MessageSquare, path: "/support-ticket", alwaysShow: true },
   { id: "profile", label: "Profile", icon: User, path: "/profile" },
+  { id: "more", label: "More", icon: MoreHorizontal, path: "/more" },
 ];
 
 export const BottomNavigation = ({ currentPage, currentTeamType }: BottomNavigationProps) => {
@@ -31,6 +32,9 @@ export const BottomNavigation = ({ currentPage, currentTeamType }: BottomNavigat
       }
       if (teamType === 'seeding' && (item.id === 'reports' || item.id === 'surveys')) {
         return false;
+      }
+      if (item.id === 'more') {
+        return teamType === 'instore';
       }
       return true;
     });
