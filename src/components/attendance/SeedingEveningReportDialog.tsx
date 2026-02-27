@@ -8,7 +8,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -35,14 +34,12 @@ export const SeedingEveningReportDialog = ({ open, onOpenChange, onComplete }: S
   const { toast } = useToast();
 
   const [salesSummary, setSalesSummary] = useState<SalesSummaryItem[]>([]);
-  const [notes, setNotes] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const resetFormState = () => {
-    setNotes("");
     setImages([]);
     setUploadProgress(0);
   };
@@ -147,29 +144,7 @@ export const SeedingEveningReportDialog = ({ open, onOpenChange, onComplete }: S
     }
 
     setIsSubmitting(true);
-    try {
-      // 1. Save notes if provided
-      if (notes.trim()) {
-        const { error } = await supabase.from("notes").insert({
-          agent_id: user.id,
-          workspace_id: currentWorkspaceId,
-          content: notes.trim(),
-          note_type: "daily_report",
-        });
-        if (error) throw error;
-      }
-    } catch (error) {
-      console.error("Error saving notes:", error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to save notes",
-        variant: "destructive",
-      });
-      setIsSubmitting(false);
-      return;
-    }
 
-    // 2. Upload engagement photos to agent-selfies bucket (same path as Report page)
     let imageUploadFailed = false;
     if (images.length > 0) {
       try {
@@ -206,7 +181,7 @@ export const SeedingEveningReportDialog = ({ open, onOpenChange, onComplete }: S
     if (imageUploadFailed) {
       toast({
         title: "Partial Success",
-        description: "Notes saved, but some photos failed to upload. Please try uploading photos again.",
+        description: "Some photos failed to upload. Please try uploading photos again.",
         variant: "destructive",
       });
     } else {
@@ -229,7 +204,7 @@ export const SeedingEveningReportDialog = ({ open, onOpenChange, onComplete }: S
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Evening Report</DialogTitle>
-          <DialogDescription>Review your sales, add notes, and upload engagement photos</DialogDescription>
+          <DialogDescription>Review your sales and upload engagement photos</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -267,18 +242,6 @@ export const SeedingEveningReportDialog = ({ open, onOpenChange, onComplete }: S
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Notes */}
-          <div className="space-y-2">
-            <Label htmlFor="seeding-notes">Daily Notes (Optional)</Label>
-            <Textarea
-              id="seeding-notes"
-              placeholder="Add any notes about your day, challenges, or feedback..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="min-h-[80px] resize-none"
-            />
           </div>
 
           {/* Engagement Photos */}
