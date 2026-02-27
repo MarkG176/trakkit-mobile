@@ -124,7 +124,8 @@ export const Reports = () => {
         .insert({
           agent_id: user.id,
           workspace_id: workspaceId,
-          content: notes
+          content: notes,
+          note_type: 'daily_report',
         })
         .select();
 
