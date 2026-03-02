@@ -136,17 +136,37 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
     }
     setAssigningInventory(true);
     try {
-      const inserts = items.map(([variantId, qty]) => {
+      for (const [variantId, qty] of items) {
         const variant = productVariants.find(v => v.id === variantId);
-        return {
-          agent_id: selectedMember.user_id,
-          product_variant_id: variantId,
-          amount_issued: qty,
-          name: variant?.name || 'Unknown',
-        };
-      });
-      const { error } = await supabase.from('agent_task_inventory').insert(inserts);
-      if (error) throw error;
+
+        // Step 1: Create agent_task
+        const { data: task, error: taskError } = await supabase
+          .from('agent_tasks')
+          .insert({
+            agent_id: selectedMember.user_id,
+            individual_sales_target: qty,
+            workspace_id: workspaceId,
+            status: 'pending',
+            assigned_product_variant_id: variantId,
+          })
+          .select('id')
+          .single();
+
+        if (taskError) throw taskError;
+
+        // Step 2: Create agent_task_inventory referencing the task
+        const { error: invError } = await supabase
+          .from('agent_task_inventory')
+          .insert({
+            agent_id: selectedMember.user_id,
+            task_id: task.id,
+            product_variant_id: variantId,
+            amount_issued: qty,
+            name: variant?.name || 'Unknown',
+          });
+
+        if (invError) throw invError;
+      }
       toast({ title: 'Inventory assigned', description: `${items.length} product(s) assigned to ${selectedMember.name || selectedMember.email}` });
       setAssignQuantities({});
       setAssignInventoryOpen(false);
