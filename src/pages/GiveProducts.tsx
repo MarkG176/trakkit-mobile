@@ -3,6 +3,7 @@ import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { RecordingIndicator } from "@/components/RecordingIndicator";
 import { ArrowLeft, Plus, Minus, Search, Star } from "lucide-react";
@@ -397,6 +398,16 @@ export const GiveProducts = () => {
                   />
                 </button>
               ))}
+            </div>
+            <div className="mt-4">
+              <Label htmlFor="feedback-notes">Feedback</Label>
+              <Textarea
+                id="feedback-notes"
+                placeholder="Add customer feedback..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={3}
+              />
             </div>
           </CardContent>
         </Card>
