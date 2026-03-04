@@ -18,6 +18,7 @@ interface Store {
   id: string;
   store_name: string;
   county: string;
+  country?: string;
   store_lat: number;
   store_long: number;
   contact?: string;
@@ -25,11 +26,12 @@ interface Store {
 
 export const Routes = () => {
   const [stores, setStores] = useState<Store[]>([]);
-  const [selectedCounty, setSelectedCounty] = useState<string>("all");
+  const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [selectedStore, setSelectedStore] = useState<string>("all");
   const [storeSearchText, setStoreSearchText] = useState<string>("");
   const [showStoreList, setShowStoreList] = useState<boolean>(false);
   const [counties, setCounties] = useState<string[]>([]);
+  const [countries, setCountries] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
@@ -105,11 +107,17 @@ export const Routes = () => {
       setStores(data);
       const uniqueCounties = Array.from(new Set(data.map((store) => store.county)));
       setCounties(uniqueCounties);
+      const uniqueCountries = Array.from(new Set(data.map((store) => store.country).filter(Boolean))) as string[];
+      setCountries(uniqueCountries);
+      // Auto-select first country if none selected
+      if (!selectedCountry && uniqueCountries.length > 0) {
+        setSelectedCountry(uniqueCountries[0]);
+      }
     }
   };
 
   const filteredStores = (
-    selectedCounty === "all" ? stores : stores.filter((store) => store.county === selectedCounty)
+    selectedCountry ? stores.filter((store) => store.country === selectedCountry) : stores
   ).sort((a, b) => a.store_name.localeCompare(b.store_name));
 
   const storeSearchResults = filteredStores.filter((store) =>
@@ -432,15 +440,14 @@ export const Routes = () => {
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">Country</label>
-                <Select value={selectedCounty} onValueChange={(val) => { setSelectedCounty(val); setSelectedStore("all"); setStoreSearchText(""); }}>
+                <Select value={selectedCountry} onValueChange={(val) => { setSelectedCountry(val); setSelectedStore("all"); setStoreSearchText(""); }}>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select country" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Countries</SelectItem>
-                    {counties.map((county) => (
-                      <SelectItem key={county} value={county}>
-                        {county}
+                    {countries.map((country) => (
+                      <SelectItem key={country} value={country}>
+                        {country}
                       </SelectItem>
                     ))}
                   </SelectContent>
