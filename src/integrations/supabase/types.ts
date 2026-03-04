@@ -2992,6 +2992,7 @@ export type Database = {
           added_by: string | null
           address: string | null
           contact: string | null
+          country: string | null
           county: string
           created_at: string | null
           id: string
@@ -3011,6 +3012,7 @@ export type Database = {
           added_by?: string | null
           address?: string | null
           contact?: string | null
+          country?: string | null
           county: string
           created_at?: string | null
           id?: string
@@ -3030,6 +3032,7 @@ export type Database = {
           added_by?: string | null
           address?: string | null
           contact?: string | null
+          country?: string | null
           county?: string
           created_at?: string | null
           id?: string
