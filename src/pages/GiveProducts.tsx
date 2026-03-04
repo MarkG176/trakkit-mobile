@@ -2,12 +2,15 @@ import { useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
 import { RecordingIndicator } from "@/components/RecordingIndicator";
-import { ArrowLeft, Plus, Minus, Search } from "lucide-react";
+import { ArrowLeft, Plus, Minus, Search, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useInventory, InventoryItem } from "@/hooks/useInventory";
+import { useInteractionForm } from "@/hooks/useInteractionForm";
 import { supabase } from "@/integrations/supabase/client";
 
 interface SelectedProduct {
@@ -23,10 +26,12 @@ export const GiveProducts = () => {
   const { toast } = useToast();
   const { currentWorkspaceId } = useWorkspace();
   const { inventory, loading } = useInventory();
+  const { submitInteraction } = useInteractionForm();
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
   const [recipientName, setRecipientName] = useState("");
   const [recipientPhone, setRecipientPhone] = useState("");
   const [notes, setNotes] = useState("");
+  const [sentiment, setSentiment] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
@@ -104,6 +109,15 @@ export const GiveProducts = () => {
       return;
     }
 
+    if (!recipientName) {
+      toast({
+        title: "Customer Name Required",
+        description: "Please enter the customer's name",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (isRecording) {
       stopRecording();
     }
@@ -156,6 +170,33 @@ export const GiveProducts = () => {
       if (error) {
         console.error('Error saving giveaway:', error);
         throw error;
+      }
+
+      // Save customer to customers table
+      const customerData = {
+        name: recipientName,
+        phone: recipientPhone || null,
+        location_lat: location.latitude,
+        location_lng: location.longitude,
+        workspace_id: currentWorkspaceId,
+      };
+      const customerResult = recipientPhone
+        ? await supabase.from('customers').upsert(customerData, { onConflict: 'phone' })
+        : await supabase.from('customers').insert(customerData);
+      if (customerResult.error) {
+        console.error('Error saving customer:', customerResult.error);
+      }
+
+      // Save feedback (sentiment) to interactions table
+      const interactionSuccess = await submitInteraction({
+        interactionType: 'give_products',
+        customerName: recipientName,
+        customerPhone: recipientPhone,
+        notes: notes,
+        sentiment,
+      });
+      if (!interactionSuccess) {
+        console.error('Error saving interaction feedback');
       }
 
       toast({
@@ -304,12 +345,69 @@ export const GiveProducts = () => {
         )}
       </div>
 
+      {/* Customer Information */}
+      <div className="p-4 border-b">
+        <Card>
+          <CardContent className="p-4">
+            <h2 className="text-h3 mb-4 text-black">Customer Information</h2>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="recipient-name">Customer Name *</Label>
+                <Input
+                  id="recipient-name"
+                  value={recipientName}
+                  onChange={(e) => setRecipientName(e.target.value)}
+                  placeholder="Enter customer name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="recipient-phone">Phone Number</Label>
+                <Input
+                  id="recipient-phone"
+                  value={recipientPhone}
+                  onChange={(e) => setRecipientPhone(e.target.value)}
+                  placeholder="Enter phone number"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Customer Sentiment */}
+      <div className="p-4 border-b">
+        <Card>
+          <CardContent className="p-4">
+            <h2 className="text-h3 mb-4 text-black">Customer Feedback</h2>
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((rating) => (
+                <button
+                  key={rating}
+                  onClick={() => setSentiment(rating)}
+                  className="p-1"
+                  aria-label={`Rate ${rating} out of 5`}
+                >
+                  <Star
+                    size={32}
+                    className={`${
+                      rating <= sentiment
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "text-gray-300"
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Bottom Action Button */}
       <div className="p-4 border-t bg-background">
         <Button
           onClick={handleRecordGiveaway}
           className="w-full h-12 text-lg"
-          disabled={selectedProducts.length === 0}
+          disabled={selectedProducts.length === 0 || !recipientName}
         >
           {selectedProducts.length === 0 
             ? "Select Products to Give Away" 
