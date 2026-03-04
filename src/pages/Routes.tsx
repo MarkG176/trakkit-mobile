@@ -27,6 +27,8 @@ export const Routes = () => {
   const [stores, setStores] = useState<Store[]>([]);
   const [selectedCounty, setSelectedCounty] = useState<string>("all");
   const [selectedStore, setSelectedStore] = useState<string>("all");
+  const [storeSearchText, setStoreSearchText] = useState<string>("");
+  const [showStoreList, setShowStoreList] = useState<boolean>(false);
   const [counties, setCounties] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -109,6 +111,10 @@ export const Routes = () => {
   const filteredStores = (
     selectedCounty === "all" ? stores : stores.filter((store) => store.county === selectedCounty)
   ).sort((a, b) => a.store_name.localeCompare(b.store_name));
+
+  const storeSearchResults = filteredStores.filter((store) =>
+    store.store_name.toLowerCase().includes(storeSearchText.toLowerCase())
+  );
 
   const getCurrentLocation = (): Promise<{ latitude: number; longitude: number }> => {
     return new Promise((resolve, reject) => {
@@ -376,6 +382,7 @@ export const Routes = () => {
       }
 
       setSelectedStore("all");
+      setStoreSearchText("");
     } catch (error: any) {
       console.error("Error setting location:", error);
       toast({
@@ -424,13 +431,13 @@ export const Routes = () => {
 
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-foreground mb-2 block">County</label>
-                <Select value={selectedCounty} onValueChange={setSelectedCounty}>
+                <label className="text-sm font-medium text-foreground mb-2 block">Country</label>
+                <Select value={selectedCounty} onValueChange={(val) => { setSelectedCounty(val); setSelectedStore("all"); setStoreSearchText(""); }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Counties</SelectItem>
+                    <SelectItem value="all">All Countries</SelectItem>
                     {counties.map((county) => (
                       <SelectItem key={county} value={county}>
                         {county}
@@ -442,19 +449,40 @@ export const Routes = () => {
 
               <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">Store</label>
-                <Select value={selectedStore} onValueChange={setSelectedStore}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Select a store</SelectItem>
-                    {filteredStores.map((store) => (
-                      <SelectItem key={store.id} value={store.id}>
-                        {store.store_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="relative">
+                  <Input
+                    placeholder="Search stores..."
+                    value={storeSearchText}
+                    onChange={(e) => {
+                      setStoreSearchText(e.target.value);
+                      setSelectedStore("all");
+                      setShowStoreList(true);
+                    }}
+                    onFocus={() => setShowStoreList(true)}
+                    onBlur={() => setTimeout(() => setShowStoreList(false), 150)}
+                  />
+                  {showStoreList && (
+                    <div className="absolute z-10 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                      {storeSearchResults.length === 0 ? (
+                        <div className="px-3 py-2 text-sm text-muted-foreground">No stores found</div>
+                      ) : (
+                        storeSearchResults.map((store) => (
+                            <div
+                              key={store.id}
+                              className="px-3 py-2 text-sm cursor-pointer hover:bg-accent"
+                              onMouseDown={() => {
+                                setSelectedStore(store.id);
+                                setStoreSearchText(store.store_name);
+                                setShowStoreList(false);
+                              }}
+                            >
+                              {store.store_name}
+                            </div>
+                          ))
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <Button onClick={handleSubmit} disabled={isSubmitting || selectedStore === "all"} className="w-full">
