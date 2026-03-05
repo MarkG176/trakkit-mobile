@@ -19,6 +19,7 @@ export const Dashboard = () => {
   const { user } = useAuth();
   const { currentWorkspaceId, currentTeamType } = useWorkspace();
   const isSeeding = currentTeamType?.toLowerCase() === 'seeding';
+  const isSampling = currentTeamType?.toLowerCase() === 'sampling';
   const [stats, setStats] = useState<DashboardStats>({
     tasksToday: 0,
     surveysCompleted: 0,
@@ -144,8 +145,8 @@ export const Dashboard = () => {
         <RecordAttendanceForm />
       </div>
 
-      {/* Performance Cards - hidden for seeding */}
-      {!isSeeding && <PerformanceCards data={stats} />}
+      {/* Performance Cards - hidden for seeding and sampling */}
+      {!isSeeding && !isSampling && <PerformanceCards data={stats} />}
 
       {!isSeeding && <QuickActions />}
       

@@ -2913,7 +2913,7 @@ export type Database = {
           check_out_time: string | null
           created_at: string | null
           distance_from_store: number | null
-          estimated_duration: unknown
+          estimated_duration: string | null
           id: string
           notes: string | null
           planned_date: string
@@ -2935,7 +2935,7 @@ export type Database = {
           check_out_time?: string | null
           created_at?: string | null
           distance_from_store?: number | null
-          estimated_duration?: unknown
+          estimated_duration?: string | null
           id?: string
           notes?: string | null
           planned_date: string
@@ -2957,7 +2957,7 @@ export type Database = {
           check_out_time?: string | null
           created_at?: string | null
           distance_from_store?: number | null
-          estimated_duration?: unknown
+          estimated_duration?: string | null
           id?: string
           notes?: string | null
           planned_date?: string

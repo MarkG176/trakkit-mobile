@@ -32,6 +32,9 @@ export const BottomNavigation = ({ currentPage, currentTeamType }: BottomNavigat
       if (teamType === 'seeding' && (item.id === 'reports' || item.id === 'surveys')) {
         return false;
       }
+      if (teamType === 'sampling' && (item.id === 'reports' || item.id === 'surveys' || item.id === 'inventory')) {
+        return false;
+      }
       return true;
     });
   }, [currentTeamType]);

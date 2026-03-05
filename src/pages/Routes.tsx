@@ -60,6 +60,7 @@ export const Routes = () => {
   // Check if current team type is wholesale - hide Add Location for wholesale
   const isWholesale = currentTeamType?.toLowerCase() === "wholesale";
   const isSeeding = currentTeamType?.toLowerCase() === "seeding";
+  const isSampling = currentTeamType?.toLowerCase() === "sampling";
 
   useEffect(() => {
     fetchStores();
@@ -502,7 +503,7 @@ export const Routes = () => {
 
       <div className="px-4 pb-20">
         {/* Add Location Form - Hidden for wholesale */}
-        {!isWholesale && (
+        {!isWholesale && !isSampling && (
           <Card className="p-4 mt-4">
             <div className="flex items-center gap-2 mb-4">
               <Plus size={20} className="text-primary" />

@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 export const TopBar = () => {
   const { user, signOut } = useAuth();
   const { currentTeamType } = useWorkspace();
-  const showSetLocation = currentTeamType === 'wholesale' || currentTeamType === 'instore';
+  const showSetLocation = currentTeamType === 'wholesale' || currentTeamType === 'instore' || currentTeamType === 'sampling';
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState<string>("");
 
