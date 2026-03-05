@@ -2,18 +2,24 @@ import { useEffect, useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, FileText, Camera } from "lucide-react";
+import { ArrowLeft, Gift } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 
+interface ProductGiven {
+  product_variant_id: string;
+  product_name: string;
+  quantity: number;
+}
+
 interface GiveawayActivity {
   id: string;
   timestamp: string;
   customer_name: string | null;
-  has_notes: boolean;
-  has_images: boolean;
+  total_items: number;
+  products_given: ProductGiven[];
 }
 
 export const GiveawayActivityList = () => {
@@ -27,39 +33,24 @@ export const GiveawayActivityList = () => {
       if (!user) return;
       setLoading(true);
       try {
-        const { data: tasks } = await supabase
-          .from('agent_tasks')
-          .select('id')
-          .eq('agent_id', user.id);
+        const { data: giveaways, error } = await supabase
+          .from('giveaways')
+          .select('id, recorded_at, recipient_name, total_items, products_given')
+          .eq('agent_id', user.id)
+          .eq('is_deleted', false)
+          .order('recorded_at', { ascending: false });
 
-        const taskIds = tasks?.map(t => t.id) || [];
+        if (error) throw error;
 
-        const { data: interactions } = await supabase
-          .from('interactions')
-          .select('id, timestamp, customer_name, image_url')
-          .eq('interaction_type', 'giveaway')
-          .in('task_id', taskIds)
-          .order('timestamp', { ascending: false });
-
-        if (interactions) {
-          const activitiesWithMeta = await Promise.all(
-            interactions.map(async (interaction) => {
-              const { data: notes } = await supabase
-                .from('notes')
-                .select('id')
-                .eq('interaction_id', interaction.id)
-                .limit(1);
-
-              return {
-                ...interaction,
-                has_notes: (notes?.length || 0) > 0,
-                has_images: !!interaction.image_url
-              };
-            })
-          );
-
-          setActivities(activitiesWithMeta);
-        }
+        setActivities(
+          (giveaways || []).map(g => ({
+            id: g.id,
+            timestamp: g.recorded_at,
+            customer_name: g.recipient_name,
+            total_items: g.total_items,
+            products_given: g.products_given,
+          }))
+        );
       } catch (err) {
         console.error('Failed to fetch giveaway activities', err);
       } finally {
@@ -90,19 +81,21 @@ export const GiveawayActivityList = () => {
         {loading ? (
           <p className="text-center text-muted-foreground">Loading...</p>
         ) : activities.length === 0 ? (
-          <p className="text-center text-muted-foreground">No giveaway activities found</p>
+          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+            <Gift size={48} className="mb-2 opacity-50" />
+            <p className="text-sm">No giveaway activities found</p>
+          </div>
         ) : (
           activities.map((activity) => (
             <Card
               key={activity.id}
-              className="cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => navigate(`/activity-detail/${activity.id}`)}
+              className="hover:shadow-md transition-shadow"
             >
               <CardContent className="p-4">
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <p className="font-medium text-foreground">
-                      Giveaway: {activity.customer_name || 'Recipient'}
+                      {activity.customer_name || 'Recipient'}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {format(new Date(activity.timestamp), 'MMM dd, yyyy • HH:mm')}
@@ -110,19 +103,9 @@ export const GiveawayActivityList = () => {
                   </div>
                 </div>
 
-                <div className="flex gap-3 mt-3">
-                  {activity.has_notes && (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <FileText size={14} />
-                      <span>Notes</span>
-                    </div>
-                  )}
-                  {activity.has_images && (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Camera size={14} />
-                      <span>Pictures</span>
-                    </div>
-                  )}
+                <div className="flex items-center gap-1 text-sm text-muted-foreground mt-2">
+                  <Gift size={14} />
+                  <span>{activity.total_items} item{activity.total_items !== 1 ? 's' : ''} given</span>
                 </div>
               </CardContent>
             </Card>

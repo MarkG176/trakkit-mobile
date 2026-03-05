@@ -173,6 +173,30 @@ export const GiveProducts = () => {
         throw error;
       }
 
+      // Record inventory transactions to deduct given products from inventory
+      const inventoryResults = await Promise.all(
+        selectedProducts.map(product =>
+          supabase
+            .from('inventory_transactions')
+            .insert({
+              agent_id: user.id,
+              product_id: product.productVariantId,
+              qty: -product.quantity,
+              type: 'giveaway',
+              reference: `Giveaway to ${recipientName || 'Customer'}`,
+              workspace_id: currentWorkspaceId,
+              metadata: {
+                recipient_name: recipientName,
+                product_name: product.name,
+              },
+            })
+        )
+      );
+      const inventoryErrors = inventoryResults.filter(r => r.error);
+      if (inventoryErrors.length > 0) {
+        console.error('Error recording inventory transactions:', inventoryErrors.map(r => r.error));
+      }
+
       // Save customer to customers table
       const customerData = {
         name: recipientName,
