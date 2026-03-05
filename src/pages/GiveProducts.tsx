@@ -25,7 +25,7 @@ interface SelectedProduct {
 export const GiveProducts = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { currentWorkspaceId } = useWorkspace();
+  const { currentWorkspaceId, currentProjectId } = useWorkspace();
   const { inventory, loading } = useInventory();
   const { submitInteraction } = useInteractionForm();
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
@@ -166,6 +166,7 @@ export const GiveProducts = () => {
           location_lat: location.latitude,
           location_lng: location.longitude,
           workspace_id: currentWorkspaceId,
+          project_id: currentProjectId || null,
         });
 
       if (error) {
