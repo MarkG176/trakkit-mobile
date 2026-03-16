@@ -5,6 +5,7 @@ import { useWorkspace } from '@/hooks/useWorkspace';
 import { supabase } from '@/integrations/supabase/client';
 
 const INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
+const EXCLUDED_EMAILS = ['mark@darajaplus.com'];
 
 export const BackgroundLocationTracker = () => {
   const { user } = useAuth();
