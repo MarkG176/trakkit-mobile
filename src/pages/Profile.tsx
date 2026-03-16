@@ -166,7 +166,8 @@ export const Profile = () => {
               </CardContent>
             </Card>
 
-            {/* Engagement */}
+            {/* Engagement - hide for instore */}
+            {!isInstore && (
             <Card>
               <CardContent className="p-4">
                 <SectionTitle>Engagement</SectionTitle>
@@ -179,6 +180,7 @@ export const Profile = () => {
                 {!isSeeding && <MetricRow label="Notes" value={stats.todayNotesCount} icon={FileText} />}
               </CardContent>
             </Card>
+            )}
           </TabsContent>
 
           {/* ALL TIME TAB */}
