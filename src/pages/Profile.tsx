@@ -236,8 +236,8 @@ export const Profile = () => {
             </Card>
             )}
 
-            {/* Points - hide for wholesale and seeding */}
-            {!isWholesale && !isSeeding && (
+            {/* Points - hide for wholesale, seeding, and instore */}
+            {!isWholesale && !isSeeding && !isInstore && (
               <Card>
                 <CardContent className="p-4">
                   <SectionTitle>Points & Rank</SectionTitle>
