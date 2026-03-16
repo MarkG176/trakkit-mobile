@@ -5,6 +5,7 @@ import { useWorkspace } from '@/hooks/useWorkspace';
 import { supabase } from '@/integrations/supabase/client';
 
 const INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
+const EXCLUDED_EMAILS = ['mark@darajaplus.com'];
 
 export const BackgroundLocationTracker = () => {
   const { user } = useAuth();
@@ -13,6 +14,7 @@ export const BackgroundLocationTracker = () => {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const isCheckedIn = currentStatus === 'checked_in' || currentStatus === 'lunch';
+  const isExcluded = user?.email && EXCLUDED_EMAILS.includes(user.email.toLowerCase());
 
   const recordLocation = async () => {
     if (!user || !navigator.geolocation) return;
@@ -51,7 +53,7 @@ export const BackgroundLocationTracker = () => {
   };
 
   useEffect(() => {
-    if (isCheckedIn && user) {
+    if (isCheckedIn && user && !isExcluded) {
       // Record immediately on check-in
       recordLocation();
 
