@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+declare const google: any;
+
 /**
  * Google Maps Distance Matrix API integration
  * Uses the Distance Matrix API to calculate accurate travel distances

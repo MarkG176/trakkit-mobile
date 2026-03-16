@@ -45,6 +45,7 @@ export const Profile = () => {
   const stats = useAgentProfileStats();
   const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
   const isSeeding = currentTeamType?.toLowerCase() === 'seeding';
+  const isInstore = currentTeamType?.toLowerCase() === 'instore';
 
   if (!isInitialized || isWorkspaceLoading) {
     return (
@@ -128,8 +129,8 @@ export const Profile = () => {
               </CardContent>
             </Card>
 
-            {/* Tasks - hide for wholesale and seeding */}
-            {!isWholesale && !isSeeding && (
+            {/* Tasks - hide for wholesale, seeding, and instore */}
+            {!isWholesale && !isSeeding && !isInstore && (
               <Card>
                 <CardContent className="p-4">
                   <SectionTitle>Tasks</SectionTitle>
@@ -165,7 +166,8 @@ export const Profile = () => {
               </CardContent>
             </Card>
 
-            {/* Engagement */}
+            {/* Engagement - hide for instore */}
+            {!isInstore && (
             <Card>
               <CardContent className="p-4">
                 <SectionTitle>Engagement</SectionTitle>
@@ -178,6 +180,7 @@ export const Profile = () => {
                 {!isSeeding && <MetricRow label="Notes" value={stats.todayNotesCount} icon={FileText} />}
               </CardContent>
             </Card>
+            )}
           </TabsContent>
 
           {/* ALL TIME TAB */}
@@ -217,7 +220,8 @@ export const Profile = () => {
               </CardContent>
             </Card>
 
-            {/* Engagement */}
+            {/* Engagement - hide for instore */}
+            {!isInstore && (
             <Card>
               <CardContent className="p-4">
                 <SectionTitle>Engagement</SectionTitle>
@@ -230,9 +234,10 @@ export const Profile = () => {
                 {!isSeeding && <MetricRow label="Notes" value={stats.allTimeNotesCount} icon={FileText} />}
               </CardContent>
             </Card>
+            )}
 
-            {/* Points - hide for wholesale and seeding */}
-            {!isWholesale && !isSeeding && (
+            {/* Points - hide for wholesale, seeding, and instore */}
+            {!isWholesale && !isSeeding && !isInstore && (
               <Card>
                 <CardContent className="p-4">
                   <SectionTitle>Points & Rank</SectionTitle>

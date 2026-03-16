@@ -20,6 +20,7 @@ export const Dashboard = () => {
   const { currentWorkspaceId, currentTeamType } = useWorkspace();
   const isSeeding = currentTeamType?.toLowerCase() === 'seeding';
   const isSampling = currentTeamType?.toLowerCase() === 'sampling';
+  const isInstore = currentTeamType?.toLowerCase() === 'instore';
   const [stats, setStats] = useState<DashboardStats>({
     tasksToday: 0,
     surveysCompleted: 0,
@@ -145,10 +146,10 @@ export const Dashboard = () => {
         <RecordAttendanceForm />
       </div>
 
-      {/* Performance Cards - hidden for seeding and sampling */}
-      {!isSeeding && !isSampling && <PerformanceCards data={stats} />}
+      {/* Performance Cards - hidden for seeding, sampling, and instore */}
+      {!isSeeding && !isSampling && !isInstore && <PerformanceCards data={stats} />}
 
-      {!isSeeding && <QuickActions />}
+      {!isSeeding && !isInstore && <QuickActions />}
       
       {/* Work Hours Card */}
       <div className="px-4 pb-4">
