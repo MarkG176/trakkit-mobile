@@ -53,7 +53,7 @@ export const BackgroundLocationTracker = () => {
   };
 
   useEffect(() => {
-    if (isCheckedIn && user) {
+    if (isCheckedIn && user && !isExcluded) {
       // Record immediately on check-in
       recordLocation();
 
