@@ -129,8 +129,8 @@ export const Profile = () => {
               </CardContent>
             </Card>
 
-            {/* Tasks - hide for wholesale and seeding */}
-            {!isWholesale && !isSeeding && (
+            {/* Tasks - hide for wholesale, seeding, and instore */}
+            {!isWholesale && !isSeeding && !isInstore && (
               <Card>
                 <CardContent className="p-4">
                   <SectionTitle>Tasks</SectionTitle>
