@@ -14,6 +14,7 @@ export const BackgroundLocationTracker = () => {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const isCheckedIn = currentStatus === 'checked_in' || currentStatus === 'lunch';
+  const isExcluded = user?.email && EXCLUDED_EMAILS.includes(user.email.toLowerCase());
 
   const recordLocation = async () => {
     if (!user || !navigator.geolocation) return;
