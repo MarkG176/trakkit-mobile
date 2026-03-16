@@ -45,6 +45,7 @@ export const Profile = () => {
   const stats = useAgentProfileStats();
   const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
   const isSeeding = currentTeamType?.toLowerCase() === 'seeding';
+  const isInstore = currentTeamType?.toLowerCase() === 'instore';
 
   if (!isInitialized || isWorkspaceLoading) {
     return (

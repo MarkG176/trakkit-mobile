@@ -146,10 +146,10 @@ export const Dashboard = () => {
         <RecordAttendanceForm />
       </div>
 
-      {/* Performance Cards - hidden for seeding and sampling */}
-      {!isSeeding && !isSampling && <PerformanceCards data={stats} />}
+      {/* Performance Cards - hidden for seeding, sampling, and instore */}
+      {!isSeeding && !isSampling && !isInstore && <PerformanceCards data={stats} />}
 
-      {!isSeeding && <QuickActions />}
+      {!isSeeding && !isInstore && <QuickActions />}
       
       {/* Work Hours Card */}
       <div className="px-4 pb-4">
