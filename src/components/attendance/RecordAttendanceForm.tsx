@@ -322,6 +322,14 @@ export const RecordAttendanceForm = () => {
           console.log('Seeding evening report completed');
         }}
       />
+      {/* Instore Closing Report Dialog */}
+      <InstoreClosingReportDialog
+        open={showInstoreClosingReport}
+        onOpenChange={setShowInstoreClosingReport}
+        onComplete={() => {
+          console.log('Instore closing report completed');
+        }}
+      />
     </Card>
   );
 };
