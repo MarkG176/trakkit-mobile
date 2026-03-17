@@ -25,6 +25,8 @@ export const Login = () => {
     ? 'Invalid login link. Please request a new one.'
     : errorParam === 'auth_failed'
     ? 'Login failed. Please try again.'
+    : errorParam === 'account_not_found'
+    ? 'Account not found. Please contact your administrator.'
     : null;
 
   // Clear error from URL after displaying
