@@ -1105,9 +1105,11 @@ export type Database = {
       daily_stock_reports: {
         Row: {
           agent_id: string
+          closing_stock: number | null
           created_at: string
           id: string
           notes: string | null
+          opening_stock: number | null
           product_variant_id: string
           quantity_sold: number | null
           report_type: string
@@ -1119,9 +1121,11 @@ export type Database = {
         }
         Insert: {
           agent_id: string
+          closing_stock?: number | null
           created_at?: string
           id?: string
           notes?: string | null
+          opening_stock?: number | null
           product_variant_id: string
           quantity_sold?: number | null
           report_type: string
@@ -1133,9 +1137,11 @@ export type Database = {
         }
         Update: {
           agent_id?: string
+          closing_stock?: number | null
           created_at?: string
           id?: string
           notes?: string | null
+          opening_stock?: number | null
           product_variant_id?: string
           quantity_sold?: number | null
           report_type?: string

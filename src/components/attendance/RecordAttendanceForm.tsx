@@ -11,6 +11,7 @@ import { CameraCapture } from "@/components/CameraCapture";
 import { StockReportDialog } from "@/components/attendance/StockReportDialog";
 import { EveningReportDialog } from "@/components/attendance/EveningReportDialog";
 import { SeedingEveningReportDialog } from "@/components/attendance/SeedingEveningReportDialog";
+import { InstoreClosingReportDialog } from "@/components/attendance/InstoreClosingReportDialog";
 import { supabase } from "@/integrations/supabase/client";
 
 export const RecordAttendanceForm = () => {
@@ -26,6 +27,7 @@ export const RecordAttendanceForm = () => {
   const [stockReportType, setStockReportType] = useState<'morning' | 'evening'>('morning');
   const [showEveningReport, setShowEveningReport] = useState(false);
   const [showSeedingEveningReport, setShowSeedingEveningReport] = useState(false);
+  const [showInstoreClosingReport, setShowInstoreClosingReport] = useState(false);
   const cameraRef = useRef<HTMLInputElement>(null);
   // Ref-based guard to prevent duplicate calls (survives re-renders and is synchronous)
   const isProcessingRef = useRef(false);
@@ -106,6 +108,9 @@ export const RecordAttendanceForm = () => {
         } else if (isSeeding && statusToSet === 'checked_out') {
           // Seeding check-out - show seeding evening report (sales + notes + photos)
           setShowSeedingEveningReport(true);
+        } else if (currentTeamType?.toLowerCase() === 'instore' && statusToSet === 'checked_out') {
+          // Instore check-out - show closing stock report
+          setShowInstoreClosingReport(true);
         }
       } else {
         toast({
@@ -315,6 +320,14 @@ export const RecordAttendanceForm = () => {
         onOpenChange={setShowSeedingEveningReport}
         onComplete={() => {
           console.log('Seeding evening report completed');
+        }}
+      />
+      {/* Instore Closing Report Dialog */}
+      <InstoreClosingReportDialog
+        open={showInstoreClosingReport}
+        onOpenChange={setShowInstoreClosingReport}
+        onComplete={() => {
+          console.log('Instore closing report completed');
         }}
       />
     </Card>
