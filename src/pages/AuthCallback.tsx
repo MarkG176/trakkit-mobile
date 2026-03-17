@@ -30,6 +30,19 @@ export default function AuthCallback() {
         return;
       }
 
+      // Validate that the user's email exists in user_roles
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        const { data: emailExists } = await supabase
+          .rpc('check_email_exists', { p_email: user.email });
+
+        if (!emailExists) {
+          await supabase.auth.signOut();
+          navigate('/login?error=account_not_found', { replace: true });
+          return;
+        }
+      }
+
       // Redirect to home page
       navigate('/', { replace: true });
     };
