@@ -108,6 +108,9 @@ export const RecordAttendanceForm = () => {
         } else if (isSeeding && statusToSet === 'checked_out') {
           // Seeding check-out - show seeding evening report (sales + notes + photos)
           setShowSeedingEveningReport(true);
+        } else if (currentTeamType?.toLowerCase() === 'instore' && statusToSet === 'checked_out') {
+          // Instore check-out - show closing stock report
+          setShowInstoreClosingReport(true);
         }
       } else {
         toast({
