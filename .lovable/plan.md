@@ -1,41 +1,34 @@
 
 
-## Fix: Invited Users Should Default to Their Invited Workspace
+## Problem
 
-### Problem
-When a new user is invited via the Supervisor Users page, a database trigger (`on_auth_user_created_add_to_workspace`) automatically adds them to a "Default Workspace" first. Then the `create-user` edge function adds them to the correct invited workspace. On first login, `workspaceService` sorts by `created_at ASC` and picks the first entry -- which is always the Default Workspace because it was created milliseconds earlier by the trigger.
+Google's OAuth account picker is controlled by Google — we cannot filter which accounts appear. However, we **can** validate the user's email after OAuth completes and before granting access.
 
-### Changes
+Currently, the magic link flow checks `check_email_exists` RPC before sending the link. The Google OAuth flow has no such check — any Google account can sign in and land on the home page.
 
-**1. `supabase/functions/create-user/index.ts`**
-- After creating the `user_workspaces` entry for the invited workspace, delete any "Default Workspace" entry for that user (so there's no competing record)
-- Look up the default workspace by name ("Default Workspace") and remove the user from it, but only if the invited workspace is different from the default
+## Approach
 
-**2. `src/services/workspaceService.ts`**
-- Change the sort order from `created_at ASC` to `created_at DESC` on line 127
-- This ensures that if multiple workspace entries exist, the most recently assigned one (the invited workspace) is selected as the default on first login
+After the Google OAuth redirect completes in `AuthCallback.tsx`, we already have the session established. We need to:
 
-### Technical Details
+1. **After `setSession` succeeds**, get the user's email from the session
+2. **Call `check_email_exists` RPC** with that email
+3. **If the email is NOT in `user_roles`**: sign the user out immediately, then redirect to `/login?error=account_not_found`
+4. **If it exists**: proceed to home page as normal
 
-In `create-user/index.ts`, after the existing `user_workspaces` upsert (around line 85), add:
+This mirrors the existing magic link guard but happens post-authentication rather than pre-authentication (since we can't intercept Google's picker).
 
-```text
-// Remove user from Default Workspace if they were invited to a different one
-const { data: defaultWs } = await supabaseAdmin
-  .from('workspaces')
-  .select('id')
-  .eq('name', 'Default Workspace')
-  .single();
+## Changes
 
-if (defaultWs && defaultWs.id !== workspaceId) {
-  await supabaseAdmin
-    .from('user_workspaces')
-    .delete()
-    .eq('user_id', userId)
-    .eq('workspace_id', defaultWs.id);
-}
-```
+### 1. `src/pages/AuthCallback.tsx`
+After successfully setting the session:
+- Get user email from `supabase.auth.getUser()`
+- Call `check_email_exists` RPC
+- If not found: `supabase.auth.signOut()` then redirect to `/login?error=account_not_found`
+- If found: navigate to `/`
 
-In `workspaceService.ts`, line 127:
-- Change `.order('created_at', { ascending: true })` to `.order('created_at', { ascending: false })`
+### 2. `src/pages/Login.tsx`
+Add an error message mapping for the new `account_not_found` error param:
+- `"Account not found. Please contact your administrator."`
+
+This keeps the same UX pattern as the magic link restriction — unauthorized users see a clear "contact your admin" message.
 
