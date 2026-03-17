@@ -11,6 +11,7 @@ import { CameraCapture } from "@/components/CameraCapture";
 import { StockReportDialog } from "@/components/attendance/StockReportDialog";
 import { EveningReportDialog } from "@/components/attendance/EveningReportDialog";
 import { SeedingEveningReportDialog } from "@/components/attendance/SeedingEveningReportDialog";
+import { InstoreClosingReportDialog } from "@/components/attendance/InstoreClosingReportDialog";
 import { supabase } from "@/integrations/supabase/client";
 
 export const RecordAttendanceForm = () => {
