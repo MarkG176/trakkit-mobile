@@ -15,7 +15,7 @@ export const Login = () => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isEmailSent, setIsEmailSent] = useState(false);
-  const { signInWithMagicLink, user, loading } = useAuth();
+  const { signInWithMagicLink, signInWithGoogle, user, loading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
