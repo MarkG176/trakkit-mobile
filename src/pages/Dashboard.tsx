@@ -21,6 +21,7 @@ export const Dashboard = () => {
   const isSeeding = currentTeamType?.toLowerCase() === 'seeding';
   const isSampling = currentTeamType?.toLowerCase() === 'sampling';
   const isInstore = currentTeamType?.toLowerCase() === 'instore';
+  const isSurvey = currentTeamType?.toLowerCase() === 'survey_campaign';
   const [stats, setStats] = useState<DashboardStats>({
     tasksToday: 0,
     surveysCompleted: 0,
@@ -147,9 +148,9 @@ export const Dashboard = () => {
       </div>
 
       {/* Performance Cards - hidden for seeding, sampling, and instore */}
-      {!isSeeding && !isSampling && !isInstore && <PerformanceCards data={stats} />}
+      {!isSeeding && !isSampling && !isInstore && !isSurvey && <PerformanceCards data={stats} />}
 
-      {!isSeeding && !isInstore && <QuickActions />}
+      {!isSeeding && !isInstore && !isSurvey && <QuickActions />}
       
       {/* Work Hours Card */}
       <div className="px-4 pb-4">

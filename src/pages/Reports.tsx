@@ -24,7 +24,8 @@ interface InventoryItem {
 export const Reports = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { currentWorkspaceId } = useWorkspace();
+  const { currentWorkspaceId, currentTeamType } = useWorkspace();
+  const isSurvey = currentTeamType?.toLowerCase() === 'survey_campaign';
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -197,13 +198,14 @@ export const Reports = () => {
           >
             <ArrowLeft size={20} />
           </Button>
-          <h1 className="text-h1">Sales Report</h1>
+          <h1 className="text-h1">{isSurvey ? 'Notes & Images' : 'Sales Report'}</h1>
         </div>
         
-        <p className="text-sm opacity-90">Record your sales for the day</p>
+        <p className="text-sm opacity-90">{isSurvey ? 'Add notes and attach images' : 'Record your sales for the day'}</p>
       </div>
 
       <div className="p-4 space-y-6">
+        {!isSurvey && (
         <Card>
           <CardContent className="p-6">
             <h3 className="text-h3 mb-6 text-black">Report Daily Sales</h3>
@@ -255,6 +257,7 @@ export const Reports = () => {
             </div>
           </CardContent>
         </Card>
+        )}
 
         <Card>
           <CardContent className="p-6">
@@ -319,6 +322,7 @@ export const Reports = () => {
           </CardContent>
         </Card>
 
+        {!isSurvey && (
         <Card>
           <CardContent className="p-6">
             <h3 className="text-h3 mb-6 text-black">Export Report</h3>
@@ -333,6 +337,7 @@ export const Reports = () => {
             </Button>
           </CardContent>
         </Card>
+        )}
 
         {loading && (
           <div className="text-center text-muted-foreground">
