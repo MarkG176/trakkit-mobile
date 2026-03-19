@@ -371,7 +371,7 @@ export const Surveys = () => {
     
     let finalRecordingUrl = recordingUrl;
     if (isRecording) {
-      finalRecordingUrl = await stopRecording();
+      finalRecordingUrl = await stopRecordingAndGetUrl();
     }
     
     await submitSurveyResponse({}, finalRecordingUrl);
