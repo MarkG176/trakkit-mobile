@@ -600,6 +600,9 @@ export const Surveys = () => {
                         <h2 className="text-h3 text-black mb-1">
                           {question.text || question.question || question.title || question.label || `Question ${index + 1}`}
                         </h2>
+                        {question.description && (
+                          <p className="text-xs text-muted-foreground mb-1">{question.description}</p>
+                        )}
                         {question.required && (
                           <span className="inline-block bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">
                             Required
