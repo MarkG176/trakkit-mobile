@@ -44,7 +44,7 @@ export const BottomNavigation = ({ currentPage, currentTeamType }: BottomNavigat
       if (teamType === 'sampling' && (item.id === 'reports' || item.id === 'surveys' || item.id === 'inventory')) {
         return false;
       }
-      if (['survey', 'survey_campaign'].includes(teamType ?? '') && (item.id === 'inventory')) {
+      if (['survey', 'survey_campaign'].includes(teamType ?? '') && (item.id === 'inventory' || item.id === 'reports')) {
         return false;
       }
       if (teamType === 'instore' && (item.id === 'surveys' || item.id === 'inventory')) {
