@@ -1,6 +1,7 @@
 import { Home, ClipboardList, Map, Package, User, Clipboard, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMemo } from "react";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface BottomNavigationProps {
   currentPage: string;
@@ -19,9 +20,17 @@ const navItems = [
 
 export const BottomNavigation = ({ currentPage, currentTeamType }: BottomNavigationProps) => {
   const navigate = useNavigate();
+  const { isInitialized } = useWorkspace();
 
   // Filter nav items based on team type
   const filteredNavItems = useMemo(() => {
+    // If workspace not initialized yet, show only dashboard, chat, and profile
+    if (!isInitialized) {
+      return navItems.filter(item => 
+        item.id === 'dashboard' || item.id === 'profile' || (item as any).alwaysShow
+      );
+    }
+
     return navItems.filter(item => {
       // Chat is always visible
       if ((item as any).alwaysShow) return true;
@@ -43,7 +52,7 @@ export const BottomNavigation = ({ currentPage, currentTeamType }: BottomNavigat
       }
       return true;
     });
-  }, [currentTeamType]);
+  }, [currentTeamType, isInitialized]);
 
   return (
     <div className="bottom-nav">
