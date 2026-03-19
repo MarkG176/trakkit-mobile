@@ -6,13 +6,14 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { RecordingIndicator } from "@/components/RecordingIndicator";
 import { EngagementModal } from "@/components/EngagementModal";
-import { ArrowLeft, ArrowRight, Mic, MicOff, Star } from "lucide-react";
+import { ArrowLeft, ArrowRight, Mic, MicOff, Star, Square, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useAgentActions } from "@/hooks/useAgentActions";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { supabase } from "@/integrations/supabase/client";
 
 interface SurveyTemplate {
@@ -217,26 +218,17 @@ export const Surveys = () => {
       description: "Survey photo captured successfully!",
     });
   };
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingDuration, setRecordingDuration] = useState(0);
+  const {
+    isRecording,
+    duration: recordingDuration,
+    audioUrl: recordingUrl,
+    startRecording,
+    stopRecording,
+    resetRecording,
+    uploading: recordingUploading,
+  } = useAudioRecorder();
   const [showEngagementModal, setShowEngagementModal] = useState(false);
   const [showPreSurvey, setShowPreSurvey] = useState(false);
-
-  const startRecording = () => {
-    setIsRecording(true);
-    const interval = setInterval(() => {
-      setRecordingDuration((prev) => prev + 1);
-    }, 1000);
-    (window as any).recordingInterval = interval;
-  };
-
-  const stopRecording = () => {
-    setIsRecording(false);
-    if ((window as any).recordingInterval) {
-      clearInterval((window as any).recordingInterval);
-    }
-    setRecordingDuration(0);
-  };
 
   const handleStartSurvey = (survey: Survey) => {
     setActiveSurvey(survey);
@@ -261,14 +253,16 @@ export const Surveys = () => {
 
   const handleSubmitSurvey = async () => {
     if (isSubmitting) return;
+    
+    let finalRecordingUrl = recordingUrl;
     if (isRecording) {
-      stopRecording();
+      finalRecordingUrl = await stopRecording();
     }
-    // Submit directly without engagement modal
-    await submitSurveyResponse({});
+    
+    await submitSurveyResponse({}, finalRecordingUrl);
   };
 
-  const submitSurveyResponse = async (engagementData: any) => {
+  const submitSurveyResponse = async (engagementData: any, audioUrl?: string | null) => {
     if (!user || !activeSurvey) {
       toast({
         title: "Error",
@@ -326,7 +320,8 @@ export const Surveys = () => {
           quantity_sold: 0,
           metadata: {
             survey_template_id: activeSurvey.id,
-            recording_duration: recordingDuration
+            recording_duration: recordingDuration,
+            recordingUrl: audioUrl || undefined,
           },
           workspace_id: currentWorkspaceId
         })
@@ -456,7 +451,7 @@ export const Surveys = () => {
               variant="ghost"
               size="icon"
               onClick={() => {
-                if (isRecording) stopRecording();
+                if (isRecording) resetRecording();
                 setActiveSurvey(null);
               }}
               className="text-primary-foreground hover:bg-primary-foreground/20"
@@ -563,9 +558,9 @@ export const Surveys = () => {
             <Button 
               className="flex-1"
               onClick={handleSubmitSurvey}
-              disabled={isSubmitting}
+              disabled={isSubmitting || recordingUploading}
             >
-              {isSubmitting ? "Submitting..." : "Submit Survey"}
+              {recordingUploading ? "Uploading recording..." : isSubmitting ? "Submitting..." : "Submit Survey"}
               {!isSubmitting && <ArrowRight size={16} className="ml-2" />}
             </Button>
           </div>
