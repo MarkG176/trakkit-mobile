@@ -6,13 +6,14 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { RecordingIndicator } from "@/components/RecordingIndicator";
 import { EngagementModal } from "@/components/EngagementModal";
-import { ArrowLeft, ArrowRight, Mic, MicOff, Star } from "lucide-react";
+import { ArrowLeft, ArrowRight, Mic, MicOff, Star, Square, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useAgentActions } from "@/hooks/useAgentActions";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { supabase } from "@/integrations/supabase/client";
 
 interface SurveyTemplate {
