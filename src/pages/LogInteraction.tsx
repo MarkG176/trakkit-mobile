@@ -6,45 +6,39 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { RecordingIndicator } from "@/components/RecordingIndicator";
-import { ArrowLeft, Mic, MicOff, Star } from "lucide-react";
+import { ArrowLeft, Mic, MicOff, Star, Play, Square, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useInteractionForm } from "@/hooks/useInteractionForm";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 
 export const LogInteraction = () => {
   const navigate = useNavigate();
   const { submitInteraction, loading } = useInteractionForm();
   const { currentWorkspaceId } = useWorkspace();
+  const {
+    isRecording,
+    duration,
+    audioUrl,
+    startRecording,
+    stopRecording,
+    resetRecording,
+    uploading,
+  } = useAudioRecorder();
+
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [notes, setNotes] = useState("");
   const [sentiment, setSentiment] = useState(0);
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingDuration, setRecordingDuration] = useState(0);
-
-  const startRecording = () => {
-    setIsRecording(true);
-    const interval = setInterval(() => {
-      setRecordingDuration((prev) => prev + 1);
-    }, 1000);
-    (window as any).recordingInterval = interval;
-  };
-
-  const stopRecording = () => {
-    setIsRecording(false);
-    if ((window as any).recordingInterval) {
-      clearInterval((window as any).recordingInterval);
-    }
-    setRecordingDuration(0);
-  };
 
   const handleSaveInteraction = async () => {
-    if (!customerName) {
-      return;
-    }
+    if (!customerName) return;
 
+    let recordingUrl = audioUrl;
+
+    // If still recording, stop and upload first
     if (isRecording) {
-      stopRecording();
+      recordingUrl = await stopRecording();
     }
 
     const success = await submitInteraction({
@@ -53,6 +47,7 @@ export const LogInteraction = () => {
       customerPhone,
       notes,
       sentiment,
+      recordingUrl: recordingUrl || undefined,
     });
 
     if (success) {
@@ -74,8 +69,8 @@ export const LogInteraction = () => {
           </Button>
           <h1 className="text-h1">Log Interaction</h1>
         </div>
-        
-        <RecordingIndicator isRecording={isRecording} duration={recordingDuration} />
+
+        <RecordingIndicator isRecording={isRecording} duration={duration} />
       </div>
 
       <div className="p-4 space-y-6">
@@ -83,7 +78,7 @@ export const LogInteraction = () => {
         <Card>
           <CardContent className="p-4">
             <h2 className="text-h3 mb-4 text-black">Interaction Details</h2>
-            
+
             <div>
               <Label htmlFor="notes">Interaction Notes</Label>
               <Textarea
@@ -101,7 +96,7 @@ export const LogInteraction = () => {
         <Card>
           <CardContent className="p-4">
             <h2 className="text-h3 mb-4 text-black">Customer Information</h2>
-            
+
             <div className="space-y-4">
               <div>
                 <Label htmlFor="customer-name">Customer Name *</Label>
@@ -130,7 +125,7 @@ export const LogInteraction = () => {
         <Card>
           <CardContent className="p-4">
             <h2 className="text-h3 mb-4 text-black">Customer Sentiment</h2>
-            
+
             <div className="flex gap-1">
               {[1, 2, 3, 4, 5].map((rating) => (
                 <button
@@ -156,17 +151,45 @@ export const LogInteraction = () => {
         <Card>
           <CardContent className="p-4">
             <h2 className="text-h3 mb-4 text-black">Recording</h2>
-            
-            <Button
-              variant={isRecording ? "destructive" : "outline"}
-              onClick={isRecording ? stopRecording : startRecording}
-              className="w-full"
-            >
-              {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
-              <span className="ml-2">
-                {isRecording ? "Stop Recording" : "Start Recording Audio"}
-              </span>
-            </Button>
+
+            <div className="space-y-3">
+              <Button
+                variant={isRecording ? "destructive" : "outline"}
+                onClick={isRecording ? stopRecording : startRecording}
+                className="w-full"
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <Loader2 size={20} className="animate-spin" />
+                ) : isRecording ? (
+                  <Square size={20} />
+                ) : (
+                  <Mic size={20} />
+                )}
+                <span className="ml-2">
+                  {uploading
+                    ? "Uploading..."
+                    : isRecording
+                      ? "Stop Recording"
+                      : "Start Recording Audio"}
+                </span>
+              </Button>
+
+              {audioUrl && (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Recording saved ✓</p>
+                  <audio controls src={audioUrl} className="w-full" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={resetRecording}
+                    className="text-destructive"
+                  >
+                    Remove recording
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -174,7 +197,7 @@ export const LogInteraction = () => {
         <Button
           onClick={handleSaveInteraction}
           className="w-full h-12 text-lg"
-          disabled={!customerName || loading}
+          disabled={!customerName || loading || uploading}
         >
           {loading ? "Saving..." : "Save Interaction"}
         </Button>
