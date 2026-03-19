@@ -35,7 +35,7 @@ export const BottomNavigation = ({ currentPage, currentTeamType }: BottomNavigat
       if (teamType === 'sampling' && (item.id === 'reports' || item.id === 'surveys' || item.id === 'inventory')) {
         return false;
       }
-      if (teamType === 'instore' && (item.id === 'reports' || item.id === 'surveys' || item.id === 'inventory')) {
+      if (teamType === 'instore' && (item.id === 'surveys' || item.id === 'inventory')) {
         return false;
       }
       return true;

@@ -57,10 +57,11 @@ export const Routes = () => {
   const { recordLocationSet } = useAgentActions();
   const { currentWorkspaceId, currentTeamType } = useWorkspace();
 
-  // Check if current team type is wholesale - hide Add Location for wholesale
+  // Check if current team type is wholesale/instore - hide Add Location for these types
   const isWholesale = currentTeamType?.toLowerCase() === "wholesale";
   const isSeeding = currentTeamType?.toLowerCase() === "seeding";
   const isSampling = currentTeamType?.toLowerCase() === "sampling";
+  const isInstore = currentTeamType?.toLowerCase() === "instore";
 
   useEffect(() => {
     fetchStores();
@@ -502,8 +503,8 @@ export const Routes = () => {
       )}
 
       <div className="px-4 pb-20">
-        {/* Add Location Form - Hidden for wholesale */}
-        {!isWholesale && !isSampling && (
+        {/* Add Location Form - Hidden for wholesale, instore, sampling */}
+        {!isWholesale && !isSampling && !isInstore && (
           <Card className="p-4 mt-4">
             <div className="flex items-center gap-2 mb-4">
               <Plus size={20} className="text-primary" />
