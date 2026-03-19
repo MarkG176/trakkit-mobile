@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { RecordingIndicator } from "@/components/RecordingIndicator";
 import { EngagementModal } from "@/components/EngagementModal";
-import { ArrowLeft, ArrowRight, Mic, MicOff } from "lucide-react";
+import { ArrowLeft, ArrowRight, Mic, MicOff, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useUserProfile } from "@/hooks/useUserProfile";
@@ -496,36 +496,23 @@ export const Surveys = () => {
                     </div>
                   
                   <div className="space-y-3">
-                    {question.type === 'rating' && question.options && question.options.length > 0 && (
-                      question.options.map((option: string, optionIndex: number) => (
-                        <label key={optionIndex} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-accent cursor-pointer">
-                          <input 
-                            type="radio" 
-                            name={question.id} 
-                            value={option}
-                            checked={surveyResponses[question.id] === option}
-                            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                            className="text-primary" 
-                          />
-                          <span>{option}</span>
-                        </label>
-                      ))
-                    )}
-
-                    {question.type === 'rating' && (!question.options || question.options.length === 0) && (
-                      <div className="flex items-center justify-center gap-2">
-                        {[1, 2, 3, 4, 5].map((value) => (
+                    {question.type === 'rating' && (
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map((rating) => (
                           <button
-                            key={value}
+                            key={rating}
                             type="button"
-                            onClick={() => handleAnswerChange(question.id, value)}
-                            className={`w-12 h-12 rounded-full border-2 text-lg font-semibold transition-colors ${
-                              surveyResponses[question.id] === value
-                                ? 'bg-primary text-primary-foreground border-primary'
-                                : 'border-border text-muted-foreground hover:border-primary hover:text-primary'
-                            }`}
+                            onClick={() => handleAnswerChange(question.id, rating)}
+                            className="p-1"
                           >
-                            {value}
+                            <Star
+                              size={32}
+                              className={`${
+                                rating <= (surveyResponses[question.id] || 0)
+                                  ? "fill-yellow-400 text-yellow-400"
+                                  : "text-muted-foreground"
+                              }`}
+                            />
                           </button>
                         ))}
                       </div>

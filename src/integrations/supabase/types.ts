@@ -4194,6 +4194,7 @@ export type Database = {
           selfie_url: string
         }[]
       }
+      get_project_types: { Args: never; Returns: string[] }
       get_projects_with_stats: {
         Args: { p_workspace_id: string }
         Returns: Json
