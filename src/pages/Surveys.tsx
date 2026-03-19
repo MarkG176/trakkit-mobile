@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { TopBar } from "@/components/dashboard/TopBar";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,6 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { useAgentActions } from "@/hooks/useAgentActions";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { supabase } from "@/integrations/supabase/client";
 
 interface SurveyTemplate {
