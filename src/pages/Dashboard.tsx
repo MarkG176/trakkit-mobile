@@ -21,7 +21,7 @@ export const Dashboard = () => {
   const isSeeding = currentTeamType?.toLowerCase() === 'seeding';
   const isSampling = currentTeamType?.toLowerCase() === 'sampling';
   const isInstore = currentTeamType?.toLowerCase() === 'instore';
-  const isSurvey = currentTeamType?.toLowerCase() === 'survey_campaign';
+  const isSurvey = ['survey', 'survey_campaign'].includes(currentTeamType?.toLowerCase() ?? '');
   const [stats, setStats] = useState<DashboardStats>({
     tasksToday: 0,
     surveysCompleted: 0,
