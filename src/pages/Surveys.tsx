@@ -71,7 +71,7 @@ export const Surveys = () => {
   const { toast } = useToast();
   const { displayName: agentName } = useUserProfile();
   const { user } = useAuth();
-  const { currentWorkspaceId } = useWorkspace();
+  const { currentWorkspaceId, currentProjectId } = useWorkspace();
   const { recordSurvey } = useAgentActions();
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [loading, setLoading] = useState(true);
