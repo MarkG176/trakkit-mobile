@@ -253,11 +253,13 @@ export const Surveys = () => {
 
   const handleSubmitSurvey = async () => {
     if (isSubmitting) return;
+    
+    let finalRecordingUrl = recordingUrl;
     if (isRecording) {
-      stopRecording();
+      finalRecordingUrl = await stopRecording();
     }
-    // Submit directly without engagement modal
-    await submitSurveyResponse({});
+    
+    await submitSurveyResponse({}, finalRecordingUrl);
   };
 
   const submitSurveyResponse = async (engagementData: any) => {
