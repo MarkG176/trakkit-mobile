@@ -21,8 +21,10 @@ export const ProfileHeader = ({ displayName, teamType }: ProfileHeaderProps) => 
     ? teamType.charAt(0).toUpperCase() + teamType.slice(1).toLowerCase()
     : null;
 
+  const appVersion = (typeof __APP_VERSION__ !== 'undefined') ? __APP_VERSION__ : 'dev';
+
   return (
-    <div className="bg-primary text-primary-foreground px-6 py-4 flex items-start justify-between">
+    <div className="bg-primary text-primary-foreground px-6 py-4 flex items-start justify-between relative">
       <div>
         <h1 className="text-xl font-bold">{displayName}</h1>
         <p className="text-sm text-primary-foreground/80 mt-0.5">{formattedDate}</p>
@@ -33,6 +35,9 @@ export const ProfileHeader = ({ displayName, teamType }: ProfileHeaderProps) => 
         )}
       </div>
       <HelpFAQDialog teamType={teamType} variant="icon" />
+      <span className="absolute bottom-1 right-2 text-[10px] text-primary-foreground/40">
+        v{appVersion}
+      </span>
     </div>
   );
 };
