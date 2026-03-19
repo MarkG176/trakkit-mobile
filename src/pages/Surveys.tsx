@@ -71,7 +71,7 @@ export const Surveys = () => {
   const { toast } = useToast();
   const { displayName: agentName } = useUserProfile();
   const { user } = useAuth();
-  const { currentWorkspaceId } = useWorkspace();
+  const { currentWorkspaceId, currentProjectId } = useWorkspace();
   const { recordSurvey } = useAgentActions();
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [loading, setLoading] = useState(true);
@@ -245,7 +245,10 @@ export const Surveys = () => {
         setRecordedAudio(url);
 
         setRecordingUploading(true);
-        const fileName = `recordings/survey-recording-${Date.now()}.webm`;
+        // Build folder path: recordings/projectId/userId
+        const projectFolder = currentProjectId || 'no-project';
+        const userFolder = user?.id || 'unknown';
+        const fileName = `recordings/${projectFolder}/${userFolder}/survey-recording-${Date.now()}.webm`;
         const { error: uploadError } = await supabase.storage
           .from("sale-recordings")
           .upload(fileName, blob, { contentType: "audio/webm" });
