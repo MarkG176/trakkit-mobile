@@ -142,7 +142,8 @@ export const Profile = () => {
               </Card>
             )}
 
-            {/* Sales & Revenue */}
+            {/* Sales & Revenue - hide for survey */}
+            {!isSurvey && (
             <Card>
               <CardContent className="p-4">
                 <SectionTitle>Sales & Revenue</SectionTitle>
