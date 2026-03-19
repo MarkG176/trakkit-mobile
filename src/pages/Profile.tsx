@@ -167,19 +167,20 @@ export const Profile = () => {
                 )}
               </CardContent>
             </Card>
+            )}
 
             {/* Engagement - hide for instore */}
             {!isInstore && (
             <Card>
               <CardContent className="p-4">
                 <SectionTitle>Engagement</SectionTitle>
-                {(!isWholesale || isSeeding) && <MetricRow label="Interactions" value={stats.todayInteractionsCount} icon={MessageSquare} />}
-                {(!isWholesale || stats.hasSurveyAssigned || isSeeding) && (
+                {(!isWholesale || isSeeding) && !isSurvey && <MetricRow label="Interactions" value={stats.todayInteractionsCount} icon={MessageSquare} />}
+                {(!isWholesale || stats.hasSurveyAssigned || isSeeding || isSurvey) && (
                   <MetricRow label="Surveys Done" value={stats.todaySurveys} icon={FileText} />
                 )}
-                {!isSeeding && <MetricRow label="Giveaways" value={stats.todayGiveaways} icon={Star} />}
-                {!isWholesale && !isSeeding && <MetricRow label="Items Given" value={stats.todayGiveawayItems} icon={Star} />}
-                {!isSeeding && <MetricRow label="Notes" value={stats.todayNotesCount} icon={FileText} />}
+                {!isSeeding && !isSurvey && <MetricRow label="Giveaways" value={stats.todayGiveaways} icon={Star} />}
+                {!isWholesale && !isSeeding && !isSurvey && <MetricRow label="Items Given" value={stats.todayGiveawayItems} icon={Star} />}
+                {!isSeeding && !isSurvey && <MetricRow label="Notes" value={stats.todayNotesCount} icon={FileText} />}
               </CardContent>
             </Card>
             )}
