@@ -451,7 +451,7 @@ export const Surveys = () => {
               variant="ghost"
               size="icon"
               onClick={() => {
-                if (isRecording) stopRecording();
+                if (isRecording) resetRecording();
                 setActiveSurvey(null);
               }}
               className="text-primary-foreground hover:bg-primary-foreground/20"
