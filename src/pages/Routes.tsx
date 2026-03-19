@@ -415,7 +415,7 @@ export const Routes = () => {
       {/* Location Selection Form */}
       {/* Set Assigned Location - Hidden for seeding */}
       {!isSeeding && (
-        <div className="px-4 pb-20">
+        <div className="px-4 pt-4 pb-20">
           <Card className="p-4">
             <h2 className="text-h2 mb-4">Set Your Assigned Location</h2>
 
