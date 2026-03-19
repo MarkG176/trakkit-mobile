@@ -150,7 +150,7 @@ export const Dashboard = () => {
       {/* Performance Cards - hidden for seeding, sampling, and instore */}
       {!isSeeding && !isSampling && !isInstore && !isSurvey && <PerformanceCards data={stats} />}
 
-      {!isSeeding && !isInstore && !isSurvey && <QuickActions />}
+      {!isSeeding && !isInstore && <QuickActions />}
       
       {/* Work Hours Card */}
       <div className="px-4 pb-4">
