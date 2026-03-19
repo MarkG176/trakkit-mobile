@@ -558,9 +558,9 @@ export const Surveys = () => {
             <Button 
               className="flex-1"
               onClick={handleSubmitSurvey}
-              disabled={isSubmitting}
+              disabled={isSubmitting || recordingUploading}
             >
-              {isSubmitting ? "Submitting..." : "Submit Survey"}
+              {recordingUploading ? "Uploading recording..." : isSubmitting ? "Submitting..." : "Submit Survey"}
               {!isSubmitting && <ArrowRight size={16} className="ml-2" />}
             </Button>
           </div>
