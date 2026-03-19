@@ -189,8 +189,8 @@ export const Profile = () => {
             <Card>
               <CardContent className="p-4">
                 <SectionTitle>Activity & Attendance</SectionTitle>
-                {!isWholesale && !isSeeding && <MetricRow label="Check-ins" value={stats.allTimeCheckIns} icon={CheckCircle} />}
-                {!isWholesale && !isSeeding && <MetricRow label="Store Visits" value={stats.allTimeStoreVisits} icon={Store} />}
+                {!isWholesale && !isSeeding && !isInstore && <MetricRow label="Check-ins" value={stats.allTimeCheckIns} icon={CheckCircle} />}
+                {!isWholesale && !isSeeding && !isInstore && <MetricRow label="Store Visits" value={stats.allTimeStoreVisits} icon={Store} />}
                 {isSeeding && <MetricRow label="Stores Added" value={stats.allTimeStoresAdded} icon={MapPin} />}
               </CardContent>
             </Card>
