@@ -320,7 +320,8 @@ export const Surveys = () => {
           quantity_sold: 0,
           metadata: {
             survey_template_id: activeSurvey.id,
-            recording_duration: recordingDuration
+            recording_duration: recordingDuration,
+            recordingUrl: audioUrl || undefined,
           },
           workspace_id: currentWorkspaceId
         })
