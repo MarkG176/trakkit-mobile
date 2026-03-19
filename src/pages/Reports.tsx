@@ -322,6 +322,7 @@ export const Reports = () => {
           </CardContent>
         </Card>
 
+        {!isSurvey && (
         <Card>
           <CardContent className="p-6">
             <h3 className="text-h3 mb-6 text-black">Export Report</h3>
@@ -336,6 +337,7 @@ export const Reports = () => {
             </Button>
           </CardContent>
         </Card>
+        )}
 
         {loading && (
           <div className="text-center text-muted-foreground">
