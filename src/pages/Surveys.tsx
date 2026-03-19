@@ -495,7 +495,7 @@ export const Surveys = () => {
                     </div>
                   
                   <div className="space-y-3">
-                    {question.type === 'rating' && question.options && (
+                    {question.type === 'rating' && question.options && question.options.length > 0 && (
                       question.options.map((option: string, optionIndex: number) => (
                         <label key={optionIndex} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-accent cursor-pointer">
                           <input 
@@ -509,6 +509,25 @@ export const Surveys = () => {
                           <span>{option}</span>
                         </label>
                       ))
+                    )}
+
+                    {question.type === 'rating' && (!question.options || question.options.length === 0) && (
+                      <div className="flex items-center justify-center gap-2">
+                        {[1, 2, 3, 4, 5].map((value) => (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() => handleAnswerChange(question.id, value)}
+                            className={`w-12 h-12 rounded-full border-2 text-lg font-semibold transition-colors ${
+                              surveyResponses[question.id] === value
+                                ? 'bg-primary text-primary-foreground border-primary'
+                                : 'border-border text-muted-foreground hover:border-primary hover:text-primary'
+                            }`}
+                          >
+                            {value}
+                          </button>
+                        ))}
+                      </div>
                     )}
                     
                     {question.type === 'multiple_choice' && question.options && (
