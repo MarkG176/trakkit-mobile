@@ -260,6 +260,7 @@ export const Surveys = () => {
   };
 
   const handleSubmitSurvey = async () => {
+    if (isSubmitting) return;
     if (isRecording) {
       stopRecording();
     }
@@ -575,9 +576,10 @@ export const Surveys = () => {
             <Button 
               className="flex-1"
               onClick={handleSubmitSurvey}
+              disabled={isSubmitting}
             >
-              Submit Survey
-              <ArrowRight size={16} className="ml-2" />
+              {isSubmitting ? "Submitting..." : "Submit Survey"}
+              {!isSubmitting && <ArrowRight size={16} className="ml-2" />}
             </Button>
           </div>
         </div>
