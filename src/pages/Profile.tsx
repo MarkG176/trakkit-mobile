@@ -123,15 +123,15 @@ export const Profile = () => {
             <Card>
               <CardContent className="p-4">
                 <SectionTitle>Activity & Attendance</SectionTitle>
-                {!isWholesale && !isSeeding && !isInstore && <MetricRow label="Check-ins" value={stats.todayCheckIns} icon={CheckCircle} />}
-                {!isWholesale && !isSeeding && !isInstore && <MetricRow label="Store Visits" value={stats.todayStoreVisits} icon={Store} />}
+                {!isWholesale && !isSeeding && !isInstore && !isSurvey && <MetricRow label="Store Visits" value={stats.todayStoreVisits} icon={Store} />}
+                <MetricRow label="Check-ins" value={stats.todayCheckIns} icon={CheckCircle} />
                 <MetricRow label="Work Time" value={formatWorkTime(stats.todayWorkMinutes)} icon={Clock} />
                 {isSeeding && <MetricRow label="Stores Added" value={stats.todayStoresAdded} icon={MapPin} />}
               </CardContent>
             </Card>
 
-            {/* Tasks - hide for wholesale, seeding, and instore */}
-            {!isWholesale && !isSeeding && !isInstore && (
+            {/* Tasks - hide for wholesale, seeding, instore, and survey */}
+            {!isWholesale && !isSeeding && !isInstore && !isSurvey && (
               <Card>
                 <CardContent className="p-4">
                   <SectionTitle>Tasks</SectionTitle>
