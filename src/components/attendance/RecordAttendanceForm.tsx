@@ -12,6 +12,7 @@ import { StockReportDialog } from "@/components/attendance/StockReportDialog";
 import { EveningReportDialog } from "@/components/attendance/EveningReportDialog";
 import { SeedingEveningReportDialog } from "@/components/attendance/SeedingEveningReportDialog";
 import { InstoreClosingReportDialog } from "@/components/attendance/InstoreClosingReportDialog";
+import { SurveyClosingReportDialog } from "@/components/attendance/SurveyClosingReportDialog";
 import { supabase } from "@/integrations/supabase/client";
 
 export const RecordAttendanceForm = () => {
@@ -28,6 +29,7 @@ export const RecordAttendanceForm = () => {
   const [showEveningReport, setShowEveningReport] = useState(false);
   const [showSeedingEveningReport, setShowSeedingEveningReport] = useState(false);
   const [showInstoreClosingReport, setShowInstoreClosingReport] = useState(false);
+  const [showSurveyClosingReport, setShowSurveyClosingReport] = useState(false);
   const cameraRef = useRef<HTMLInputElement>(null);
   // Ref-based guard to prevent duplicate calls (survives re-renders and is synchronous)
   const isProcessingRef = useRef(false);
@@ -111,6 +113,9 @@ export const RecordAttendanceForm = () => {
         } else if (currentTeamType?.toLowerCase() === 'instore' && statusToSet === 'checked_out') {
           // Instore check-out - show closing stock report
           setShowInstoreClosingReport(true);
+        } else if (['survey', 'survey_campaign'].includes(currentTeamType?.toLowerCase() ?? '') && statusToSet === 'checked_out') {
+          // Survey check-out - show survey closing report
+          setShowSurveyClosingReport(true);
         }
       } else {
         toast({
@@ -328,6 +333,14 @@ export const RecordAttendanceForm = () => {
         onOpenChange={setShowInstoreClosingReport}
         onComplete={() => {
           console.log('Instore closing report completed');
+        }}
+      />
+      {/* Survey Closing Report Dialog */}
+      <SurveyClosingReportDialog
+        open={showSurveyClosingReport}
+        onOpenChange={setShowSurveyClosingReport}
+        onComplete={() => {
+          console.log('Survey closing report completed');
         }}
       />
     </Card>
