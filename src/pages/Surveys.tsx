@@ -260,6 +260,7 @@ export const Surveys = () => {
   };
 
   const handleSubmitSurvey = async () => {
+    if (isSubmitting) return;
     if (isRecording) {
       stopRecording();
     }
