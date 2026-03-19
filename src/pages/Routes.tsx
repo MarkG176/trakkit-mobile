@@ -503,8 +503,8 @@ export const Routes = () => {
       )}
 
       <div className="px-4 pb-20">
-        {/* Add Location Form - Hidden for wholesale */}
-        {!isWholesale && !isSampling && (
+        {/* Add Location Form - Hidden for wholesale, instore, sampling */}
+        {!isWholesale && !isSampling && !isInstore && (
           <Card className="p-4 mt-4">
             <div className="flex items-center gap-2 mb-4">
               <Plus size={20} className="text-primary" />
