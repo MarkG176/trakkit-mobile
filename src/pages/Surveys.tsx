@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { TopBar } from "@/components/dashboard/TopBar";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,6 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { useAgentActions } from "@/hooks/useAgentActions";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { supabase } from "@/integrations/supabase/client";
 
 interface SurveyTemplate {
@@ -218,15 +217,131 @@ export const Surveys = () => {
       description: "Survey photo captured successfully!",
     });
   };
-  const {
-    isRecording,
-    duration: recordingDuration,
-    audioUrl: recordingUrl,
-    startRecording,
-    stopRecording,
-    resetRecording,
-    uploading: recordingUploading,
-  } = useAudioRecorder();
+  // Inline audio recording state (replaces useAudioRecorder)
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [recordedAudio, setRecordedAudio] = useState<string | null>(null);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [recordingUploading, setRecordingUploading] = useState(false);
+  const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
+  const durationTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recordingUrlRef = useRef<string | null>(null);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
+
+      recorder.onstop = async () => {
+        const blob = new Blob(chunks, { type: "audio/webm" });
+        const url = URL.createObjectURL(blob);
+        setRecordedAudio(url);
+
+        setRecordingUploading(true);
+        const fileName = `recordings/survey-recording-${Date.now()}.webm`;
+        const { error: uploadError } = await supabase.storage
+          .from("sale-recordings")
+          .upload(fileName, blob, { contentType: "audio/webm" });
+
+        if (uploadError) {
+          toast({
+            title: "Upload failed",
+            description: uploadError.message,
+            variant: "destructive",
+          });
+          console.error("Upload error:", uploadError);
+          setRecordingUploading(false);
+          recordingUrlRef.current = null;
+        } else {
+          const { data: urlData } = supabase.storage
+            .from("sale-recordings")
+            .getPublicUrl(fileName);
+          const publicUrl = urlData.publicUrl;
+          setRecordingUrl(publicUrl);
+          recordingUrlRef.current = publicUrl;
+          toast({ title: "Recording saved & uploaded!" });
+          setRecordingUploading(false);
+        }
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+      setRecordingDuration(0);
+      setRecordingUrl(null);
+      recordingUrlRef.current = null;
+
+      durationTimerRef.current = setInterval(() => {
+        setRecordingDuration((prev) => prev + 1);
+      }, 1000);
+
+      toast({ title: "Recording started" });
+    } catch (err) {
+      console.error("Failed to start recording:", err);
+      toast({
+        title: "Microphone Access Denied",
+        description: "Please allow microphone access to record audio.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const stopRecordingAndGetUrl = (): Promise<string | null> => {
+    return new Promise((resolve) => {
+      if (!mediaRecorder || !isRecording) {
+        resolve(recordingUrl);
+        return;
+      }
+
+      if (durationTimerRef.current) {
+        clearInterval(durationTimerRef.current);
+        durationTimerRef.current = null;
+      }
+
+      const originalOnstop = mediaRecorder.onstop;
+      mediaRecorder.onstop = async (ev) => {
+        if (originalOnstop && typeof originalOnstop === 'function') {
+          await (originalOnstop as any).call(mediaRecorder, ev);
+        }
+        // Wait for upload to complete, then resolve with ref value
+        const waitForUrl = () => {
+          const checkInterval = setInterval(() => {
+            if (!recordingUploading) {
+              clearInterval(checkInterval);
+              resolve(recordingUrlRef.current);
+            }
+          }, 200);
+          // Timeout after 30s
+          setTimeout(() => { clearInterval(checkInterval); resolve(recordingUrlRef.current); }, 30000);
+        };
+        waitForUrl();
+      };
+
+      mediaRecorder.stop();
+      mediaRecorder.stream.getTracks().forEach(track => track.stop());
+      setIsRecording(false);
+    });
+  };
+
+  const resetRecording = () => {
+    if (durationTimerRef.current) clearInterval(durationTimerRef.current);
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+      mediaRecorder.stream.getTracks().forEach(track => track.stop());
+    }
+    setIsRecording(false);
+    setRecordingDuration(0);
+    setRecordedAudio(null);
+    setRecordingUrl(null);
+    recordingUrlRef.current = null;
+  };
   const [showEngagementModal, setShowEngagementModal] = useState(false);
   const [showPreSurvey, setShowPreSurvey] = useState(false);
 
@@ -256,7 +371,7 @@ export const Surveys = () => {
     
     let finalRecordingUrl = recordingUrl;
     if (isRecording) {
-      finalRecordingUrl = await stopRecording();
+      finalRecordingUrl = await stopRecordingAndGetUrl();
     }
     
     await submitSurveyResponse({}, finalRecordingUrl);
