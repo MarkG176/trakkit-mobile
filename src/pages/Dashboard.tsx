@@ -148,9 +148,9 @@ export const Dashboard = () => {
       </div>
 
       {/* Performance Cards - hidden for seeding, sampling, and instore */}
-      {!isSeeding && !isSampling && !isInstore && <PerformanceCards data={stats} />}
+      {!isSeeding && !isSampling && !isInstore && !isSurvey && <PerformanceCards data={stats} />}
 
-      {!isSeeding && !isInstore && <QuickActions />}
+      {!isSeeding && !isInstore && !isSurvey && <QuickActions />}
       
       {/* Work Hours Card */}
       <div className="px-4 pb-4">

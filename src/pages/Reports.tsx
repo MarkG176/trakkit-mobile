@@ -24,7 +24,8 @@ interface InventoryItem {
 export const Reports = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { currentWorkspaceId } = useWorkspace();
+  const { currentWorkspaceId, currentTeamType } = useWorkspace();
+  const isSurvey = currentTeamType?.toLowerCase() === 'survey_campaign';
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);

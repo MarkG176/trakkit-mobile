@@ -35,6 +35,9 @@ export const BottomNavigation = ({ currentPage, currentTeamType }: BottomNavigat
       if (teamType === 'sampling' && (item.id === 'reports' || item.id === 'surveys' || item.id === 'inventory')) {
         return false;
       }
+      if (teamType === 'survey_campaign' && (item.id === 'inventory')) {
+        return false;
+      }
       if (teamType === 'instore' && (item.id === 'surveys' || item.id === 'inventory')) {
         return false;
       }
