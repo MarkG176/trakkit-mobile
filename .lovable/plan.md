@@ -1,41 +1,24 @@
 
 
-## Fix: Invited Users Should Default to Their Invited Workspace
+## Plan: Replace `useAudioRecorder` hook with inline recording logic in Surveys page
 
 ### Problem
-When a new user is invited via the Supervisor Users page, a database trigger (`on_auth_user_created_add_to_workspace`) automatically adds them to a "Default Workspace" first. Then the `create-user` edge function adds them to the correct invited workspace. On first login, `workspaceService` sorts by `created_at ASC` and picks the first entry -- which is always the Default Workspace because it was created milliseconds earlier by the trigger.
+The `useAudioRecorder` hook has a complex Promise-based `stopRecording` that silently swallows upload errors and returns `null`. The user has confirmed that a simpler inline approach (provided in their message) successfully uploads to the `sale-recordings` bucket.
 
 ### Changes
 
-**1. `supabase/functions/create-user/index.ts`**
-- After creating the `user_workspaces` entry for the invited workspace, delete any "Default Workspace" entry for that user (so there's no competing record)
-- Look up the default workspace by name ("Default Workspace") and remove the user from it, but only if the invited workspace is different from the default
+**File: `src/pages/Surveys.tsx`**
 
-**2. `src/services/workspaceService.ts`**
-- Change the sort order from `created_at ASC` to `created_at DESC` on line 127
-- This ensures that if multiple workspace entries exist, the most recently assigned one (the invited workspace) is selected as the default on first login
+1. Remove the `useAudioRecorder` import and its destructured usage (lines 16, 221-229)
+2. Add inline state variables: `isRecording`, `mediaRecorder`, `recordedAudio`, `recordingDuration`, and a duration timer ref
+3. Implement `startRecording` using the user's proven pattern — `navigator.mediaDevices.getUserMedia`, `MediaRecorder`, and direct `supabase.storage.upload` inside `recorder.onstop`
+4. Implement `stopRecording` to stop the recorder and tracks
+5. Update `handleSubmitSurvey` (line 254-263): since the upload now happens inside `recorder.onstop` asynchronously, we need to await the upload completing before submitting. We'll wrap the stop+upload in a Promise that resolves with the uploaded URL, similar to the user's pattern but returning the public URL for metadata storage
+6. Update `submitSurveyResponse` to use the resolved recording URL in the interaction metadata
+7. Update the recording indicator to use the new `recordingDuration` state
+8. Update the discard/back button to stop recording and clean up tracks
+9. Keep the `RecordingIndicator` component usage with the new duration state
 
-### Technical Details
-
-In `create-user/index.ts`, after the existing `user_workspaces` upsert (around line 85), add:
-
-```text
-// Remove user from Default Workspace if they were invited to a different one
-const { data: defaultWs } = await supabaseAdmin
-  .from('workspaces')
-  .select('id')
-  .eq('name', 'Default Workspace')
-  .single();
-
-if (defaultWs && defaultWs.id !== workspaceId) {
-  await supabaseAdmin
-    .from('user_workspaces')
-    .delete()
-    .eq('user_id', userId)
-    .eq('workspace_id', defaultWs.id);
-}
-```
-
-In `workspaceService.ts`, line 127:
-- Change `.order('created_at', { ascending: true })` to `.order('created_at', { ascending: false })`
+### Key difference from current implementation
+The current hook uses `getPublicUrl()` which may return a URL even if the upload failed. The new approach uses direct error checking in `recorder.onstop` and provides explicit success/failure toast feedback, matching the user's working code.
 
