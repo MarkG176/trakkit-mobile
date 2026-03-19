@@ -262,7 +262,7 @@ export const Surveys = () => {
     await submitSurveyResponse({}, finalRecordingUrl);
   };
 
-  const submitSurveyResponse = async (engagementData: any) => {
+  const submitSurveyResponse = async (engagementData: any, audioUrl?: string | null) => {
     if (!user || !activeSurvey) {
       toast({
         title: "Error",
