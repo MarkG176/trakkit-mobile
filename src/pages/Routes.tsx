@@ -415,7 +415,7 @@ export const Routes = () => {
       {/* Location Selection Form */}
       {/* Set Assigned Location - Hidden for seeding */}
       {!isSeeding && (
-        <div className="px-4 pb-20">
+        <div className="px-4 pt-4 pb-20">
           <Card className="p-4">
             <h2 className="text-h2 mb-4">Set Your Assigned Location</h2>
 
@@ -505,7 +505,7 @@ export const Routes = () => {
       <div className="px-4 pb-20">
         {/* Add Location Form - Hidden for wholesale, instore, sampling */}
         {!isWholesale && !isSampling && !isInstore && (
-          <Card className="p-4 mt-4">
+          <Card className="p-4 mt-2">
             <div className="flex items-center gap-2 mb-4">
               <Plus size={20} className="text-primary" />
               <h2 className="text-h2">Add Store</h2>
