@@ -335,6 +335,14 @@ export const RecordAttendanceForm = () => {
           console.log('Instore closing report completed');
         }}
       />
+      {/* Survey Closing Report Dialog */}
+      <SurveyClosingReportDialog
+        open={showSurveyClosingReport}
+        onOpenChange={setShowSurveyClosingReport}
+        onComplete={() => {
+          console.log('Survey closing report completed');
+        }}
+      />
     </Card>
   );
 };
