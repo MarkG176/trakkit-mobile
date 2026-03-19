@@ -21,6 +21,7 @@ export const ProfileHeader = ({ displayName, teamType }: ProfileHeaderProps) => 
     ? teamType.charAt(0).toUpperCase() + teamType.slice(1).toLowerCase()
     : null;
 
+  // @ts-ignore - __APP_VERSION__ is defined by Vite at build time
   const appVersion = (typeof __APP_VERSION__ !== 'undefined') ? __APP_VERSION__ : 'dev';
 
   return (
