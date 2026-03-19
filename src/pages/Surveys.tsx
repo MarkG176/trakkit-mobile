@@ -218,26 +218,17 @@ export const Surveys = () => {
       description: "Survey photo captured successfully!",
     });
   };
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingDuration, setRecordingDuration] = useState(0);
+  const {
+    isRecording,
+    duration: recordingDuration,
+    audioUrl: recordingUrl,
+    startRecording,
+    stopRecording,
+    resetRecording,
+    uploading: recordingUploading,
+  } = useAudioRecorder();
   const [showEngagementModal, setShowEngagementModal] = useState(false);
   const [showPreSurvey, setShowPreSurvey] = useState(false);
-
-  const startRecording = () => {
-    setIsRecording(true);
-    const interval = setInterval(() => {
-      setRecordingDuration((prev) => prev + 1);
-    }, 1000);
-    (window as any).recordingInterval = interval;
-  };
-
-  const stopRecording = () => {
-    setIsRecording(false);
-    if ((window as any).recordingInterval) {
-      clearInterval((window as any).recordingInterval);
-    }
-    setRecordingDuration(0);
-  };
 
   const handleStartSurvey = (survey: Survey) => {
     setActiveSurvey(survey);
