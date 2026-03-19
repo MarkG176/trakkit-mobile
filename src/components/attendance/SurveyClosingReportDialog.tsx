@@ -56,7 +56,7 @@ export const SurveyClosingReportDialog = ({
       // Fetch surveys completed today
       const { count: surveyCount, error: surveyError } = await supabase
         .from("survey_responses")
-        .select("id", { count: "exact", head: true })
+        .select("id", { count: "exact", head: true } as any)
         .eq("respondent_id", user.id)
         .eq("workspace_id", currentWorkspaceId)
         .eq("is_completed", true)
