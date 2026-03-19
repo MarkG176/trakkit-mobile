@@ -57,10 +57,11 @@ export const Routes = () => {
   const { recordLocationSet } = useAgentActions();
   const { currentWorkspaceId, currentTeamType } = useWorkspace();
 
-  // Check if current team type is wholesale - hide Add Location for wholesale
+  // Check if current team type is wholesale/instore - hide Add Location for these types
   const isWholesale = currentTeamType?.toLowerCase() === "wholesale";
   const isSeeding = currentTeamType?.toLowerCase() === "seeding";
   const isSampling = currentTeamType?.toLowerCase() === "sampling";
+  const isInstore = currentTeamType?.toLowerCase() === "instore";
 
   useEffect(() => {
     fetchStores();
