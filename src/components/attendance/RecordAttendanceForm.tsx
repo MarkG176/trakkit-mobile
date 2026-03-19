@@ -113,6 +113,9 @@ export const RecordAttendanceForm = () => {
         } else if (currentTeamType?.toLowerCase() === 'instore' && statusToSet === 'checked_out') {
           // Instore check-out - show closing stock report
           setShowInstoreClosingReport(true);
+        } else if (['survey', 'survey_campaign'].includes(currentTeamType?.toLowerCase() ?? '') && statusToSet === 'checked_out') {
+          // Survey check-out - show survey closing report
+          setShowSurveyClosingReport(true);
         }
       } else {
         toast({
