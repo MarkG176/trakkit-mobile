@@ -54,14 +54,16 @@ export const SurveyClosingReportDialog = ({
       const today = new Date().toISOString().split("T")[0];
 
       // Fetch surveys completed today
-      const { count: surveyCount, error: surveyError } = await supabase
-        .from("survey_responses")
-        .select("id", { count: "exact", head: true } as any)
+      const surveyQuery = supabase
+        .from("survey_responses" as any)
+        .select("id", { count: "exact", head: true })
         .eq("respondent_id", user.id)
         .eq("workspace_id", currentWorkspaceId)
         .eq("is_completed", true)
         .gte("created_at", today + "T00:00:00")
         .lte("created_at", today + "T23:59:59");
+      
+      const { count: surveyCount, error: surveyError } = await surveyQuery;
 
       if (surveyError) {
         console.error("Error fetching survey count:", surveyError);
