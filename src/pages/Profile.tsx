@@ -46,6 +46,7 @@ export const Profile = () => {
   const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
   const isSeeding = currentTeamType?.toLowerCase() === 'seeding';
   const isInstore = currentTeamType?.toLowerCase() === 'instore';
+  const isSurvey = currentTeamType?.toLowerCase() === 'survey_campaign';
 
   if (!isInitialized || isWorkspaceLoading) {
     return (
