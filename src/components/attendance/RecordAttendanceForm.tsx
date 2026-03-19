@@ -29,6 +29,7 @@ export const RecordAttendanceForm = () => {
   const [showEveningReport, setShowEveningReport] = useState(false);
   const [showSeedingEveningReport, setShowSeedingEveningReport] = useState(false);
   const [showInstoreClosingReport, setShowInstoreClosingReport] = useState(false);
+  const [showSurveyClosingReport, setShowSurveyClosingReport] = useState(false);
   const cameraRef = useRef<HTMLInputElement>(null);
   // Ref-based guard to prevent duplicate calls (survives re-renders and is synchronous)
   const isProcessingRef = useRef(false);
