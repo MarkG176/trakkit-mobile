@@ -148,23 +148,23 @@ export const Profile = () => {
             {!isSurvey && (
             <Card>
               <CardContent className="p-4">
-                <SectionTitle>Sales & Revenue</SectionTitle>
+                <SectionTitle>{t("sales_revenue")}</SectionTitle>
                 {isWholesale ? (
                   <>
-                    <MetricRow label="Products Sold" value={stats.todayWholesaleSales} icon={ShoppingCart} />
-                    <MetricRow label="Revenue" value={formatCurrency(stats.todayWholesaleRevenue)} icon={ShoppingCart} />
+                    <MetricRow label={t("products_sold")} value={stats.todayWholesaleSales} icon={ShoppingCart} />
+                    <MetricRow label={t("revenue")} value={formatCurrency(stats.todayWholesaleRevenue)} icon={ShoppingCart} />
                   </>
                 ) : isSeeding ? (
                   <>
-                    <MetricRow label="Sales Made" value={stats.todaySales} icon={ShoppingCart} />
-                    <MetricRow label="Revenue" value={formatCurrency(stats.todayRevenue)} icon={ShoppingCart} />
-                    <MetricRow label="Giveaways" value={stats.todayGiveaways} icon={Star} />
+                    <MetricRow label={t("sales_made")} value={stats.todaySales} icon={ShoppingCart} />
+                    <MetricRow label={t("revenue")} value={formatCurrency(stats.todayRevenue)} icon={ShoppingCart} />
+                    <MetricRow label={t("giveaways")} value={stats.todayGiveaways} icon={Star} />
                   </>
                 ) : (
                   <>
-                    <MetricRow label="Sales Made" value={stats.todaySales} icon={ShoppingCart} />
-                    <MetricRow label="Revenue" value={formatCurrency(stats.todayRevenue)} icon={ShoppingCart} />
-                    <MetricRow label="Stores Added" value={stats.todayStoresAdded} icon={MapPin} />
+                    <MetricRow label={t("sales_made")} value={stats.todaySales} icon={ShoppingCart} />
+                    <MetricRow label={t("revenue")} value={formatCurrency(stats.todayRevenue)} icon={ShoppingCart} />
+                    <MetricRow label={t("stores_added")} value={stats.todayStoresAdded} icon={MapPin} />
                   </>
                 )}
               </CardContent>
