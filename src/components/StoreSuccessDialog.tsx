@@ -364,52 +364,54 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
     }
   };
 
-  const handleSubmitInteraction = async () => {
-    setLoading(true);
+  const handlePhotosSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    setSelectedPhotos(prev => [...prev, ...files]);
+    const newUrls = files.map(file => URL.createObjectURL(file));
+    setPhotoPreviewUrls(prev => [...prev, ...newUrls]);
+    if (photoInputRef.current) photoInputRef.current.value = "";
+  };
+
+  const removePhoto = (index: number) => {
+    URL.revokeObjectURL(photoPreviewUrls[index]);
+    setSelectedPhotos(prev => prev.filter((_, i) => i !== index));
+    setPhotoPreviewUrls(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUploadPhotos = async () => {
+    if (selectedPhotos.length === 0) return;
+    setUploadingPhotos(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const location = await getCurrentLocation();
-
-      const { error } = await supabase.from('interactions').insert({
-        task_id: null,
-        agent_id: user.id,
-        interaction_type: 'other',
-        store_id: storeId,
-        customer_name: storeName,
-        outcome: 'completed',
-        quantity_sold: 0,
-        metadata: { 
-          notes: interactionNotes || `Automatic engagement log for ${storeName}`, 
-          sentiment: sentiment || 5,
-          store_county: storeCounty
-        },
-        latitude: location.latitude,
-        longitude: location.longitude,
-        timestamp: new Date().toISOString(),
-        workspace_id: currentWorkspaceId
-      } as any);
-
-      if (error) throw error;
+      for (const file of selectedPhotos) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${storeId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('sale-photos')
+          .upload(fileName, file, { contentType: file.type });
+        if (uploadError) throw uploadError;
+      }
 
       toast({
-        title: "Engagement Logged",
-        description: "Engagement interaction has been recorded successfully.",
+        title: "Photos Uploaded",
+        description: `${selectedPhotos.length} photo(s) uploaded for ${storeName}.`,
       });
-      
-      // Reset and return to actions
+
+      photoPreviewUrls.forEach(url => URL.revokeObjectURL(url));
+      setSelectedPhotos([]);
+      setPhotoPreviewUrls([]);
       setActiveAction(null);
-      setInteractionNotes("");
-      setSentiment(0);
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Upload Error",
+        description: error.message || "Failed to upload photos.",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setUploadingPhotos(false);
     }
   };
 
