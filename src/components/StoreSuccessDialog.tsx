@@ -19,7 +19,7 @@ interface StoreSuccessDialogProps {
   storeCounty: string;
 }
 
-type ActionType = null | "survey" | "sale" | "giveaway" | "interaction";
+type ActionType = null | "survey" | "sale" | "giveaway" | "photos";
 
 interface SaleCartItem {
   id: string;
