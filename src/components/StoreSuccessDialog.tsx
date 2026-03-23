@@ -958,22 +958,26 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                   <ClipboardList size={24} />
                   <span className="text-xs">Start Survey</span>
                 </Button>
-                <Button
-                  variant="outline"
-                  className="h-24 flex flex-col gap-2"
-                  onClick={() => handleActionClick("sale")}
-                >
-                  <ShoppingCart size={24} />
-                  <span className="text-xs">Record Sale</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-24 flex flex-col gap-2"
-                  onClick={() => handleActionClick("giveaway")}
-                >
-                  <Gift size={24} />
-                  <span className="text-xs">Give Products</span>
-                </Button>
+                {!isMarketResearch && (
+                  <>
+                    <Button
+                      variant="outline"
+                      className="h-24 flex flex-col gap-2"
+                      onClick={() => handleActionClick("sale")}
+                    >
+                      <ShoppingCart size={24} />
+                      <span className="text-xs">Record Sale</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-24 flex flex-col gap-2"
+                      onClick={() => handleActionClick("giveaway")}
+                    >
+                      <Gift size={24} />
+                      <span className="text-xs">Give Products</span>
+                    </Button>
+                  </>
+                )}
                 <Button
                   variant="outline"
                   className="h-24 flex flex-col gap-2"
@@ -983,14 +987,25 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                   <span className="text-xs">Collect Feedback</span>
                 </Button>
                 {isMarketResearch && (
-                  <Button
-                    variant="outline"
-                    className="h-24 flex flex-col gap-2"
-                    onClick={() => setShowStockReport(true)}
-                  >
-                    <Package size={24} />
-                    <span className="text-xs">Stock Report</span>
-                  </Button>
+                  <>
+                    <Button
+                      variant="outline"
+                      className="h-24 flex flex-col gap-2"
+                      onClick={() => setShowStockReport(true)}
+                    >
+                      <Package size={24} />
+                      <span className="text-xs">Stock Report</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-24 flex flex-col gap-2"
+                      onClick={() => setShowPriceReport(true)}
+                      disabled={Object.keys(stockReportLevels).length === 0}
+                    >
+                      <ShoppingCart size={24} />
+                      <span className="text-xs">Price Report</span>
+                    </Button>
+                  </>
                 )}
               </div>
               <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full">
