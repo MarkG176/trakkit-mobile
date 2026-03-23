@@ -798,47 +798,52 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
           </div>
         );
 
-      case "interaction":
+      case "photos":
         return (
           <div className="space-y-4 mt-4">
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800 font-medium">Automatic Engagement Log</p>
-              <p className="text-xs text-blue-600 mt-1">
-                This will automatically log an "Engaged" interaction for {storeName}
-              </p>
-            </div>
-            <div>
-              <Label>Additional Notes (Optional)</Label>
-              <Textarea
-                value={interactionNotes}
-                onChange={(e) => setInteractionNotes(e.target.value)}
-                placeholder="Add any additional details about the engagement..."
-                rows={3}
-              />
-            </div>
-            <div>
-              <Label>Customer Sentiment (Optional)</Label>
-              <div className="flex gap-1 mt-2">
-                {[1, 2, 3, 4, 5].map((rating) => (
-                  <button
-                    key={rating}
-                    onClick={() => setSentiment(rating)}
-                    className="p-1"
-                  >
-                    <Star
-                      size={32}
-                      className={`${
-                        rating <= sentiment
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300"
-                      }`}
-                    />
-                  </button>
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              capture="environment"
+              className="hidden"
+              onChange={handlePhotosSelected}
+            />
+
+            {photoPreviewUrls.length > 0 && (
+              <div className="grid grid-cols-3 gap-2">
+                {photoPreviewUrls.map((url, index) => (
+                  <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
+                    <img src={url} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => removePhoto(index)}
+                      className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
                 ))}
               </div>
-            </div>
-            <Button onClick={handleSubmitInteraction} disabled={loading} className="w-full">
-              {loading ? "Logging Engagement..." : "Log Engagement"}
+            )}
+
+            <Button
+              variant="outline"
+              onClick={() => photoInputRef.current?.click()}
+              className="w-full h-20 border-dashed flex flex-col gap-1"
+            >
+              <Camera size={24} className="text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                {photoPreviewUrls.length > 0 ? "Add More Photos" : "Take or Select Photos"}
+              </span>
+            </Button>
+
+            <Button
+              onClick={handleUploadPhotos}
+              disabled={selectedPhotos.length === 0 || uploadingPhotos}
+              className="w-full"
+            >
+              {uploadingPhotos ? "Uploading..." : `Upload ${selectedPhotos.length} Photo(s)`}
             </Button>
           </div>
         );
