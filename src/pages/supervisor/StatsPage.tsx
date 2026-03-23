@@ -55,7 +55,7 @@ export const StatsPage = () => {
 
   const stats = useAgentProfileStats(selectedUserId || undefined);
   const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
-  const isSeeding = currentTeamType?.toLowerCase() === 'seeding';
+  const isSeeding = ['seeding', 'market_research'].includes(currentTeamType?.toLowerCase() ?? '');
 
   useEffect(() => {
     if (!currentWorkspaceId) return;

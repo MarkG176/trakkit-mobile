@@ -46,7 +46,7 @@ export const Profile = () => {
   const { t } = useLanguage();
   const stats = useAgentProfileStats();
   const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
-  const isSeeding = currentTeamType?.toLowerCase() === 'seeding';
+  const isSeeding = ['seeding', 'market_research'].includes(currentTeamType?.toLowerCase() ?? '');
   const isInstore = currentTeamType?.toLowerCase() === 'instore';
   const isSurvey = ['survey', 'survey_campaign'].includes(currentTeamType?.toLowerCase() ?? '');
 
