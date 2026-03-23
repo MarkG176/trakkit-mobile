@@ -193,10 +193,10 @@ export const Profile = () => {
             {/* Activity & Attendance */}
             <Card>
               <CardContent className="p-4">
-                <SectionTitle>Activity & Attendance</SectionTitle>
-                {!isWholesale && !isSeeding && !isInstore && !isSurvey && <MetricRow label="Store Visits" value={stats.allTimeStoreVisits} icon={Store} />}
-                <MetricRow label="Check-ins" value={stats.allTimeCheckIns} icon={CheckCircle} />
-                {isSeeding && <MetricRow label="Stores Added" value={stats.allTimeStoresAdded} icon={MapPin} />}
+                <SectionTitle>{t("activity_attendance")}</SectionTitle>
+                {!isWholesale && !isSeeding && !isInstore && !isSurvey && <MetricRow label={t("store_visits")} value={stats.allTimeStoreVisits} icon={Store} />}
+                <MetricRow label={t("check_ins")} value={stats.allTimeCheckIns} icon={CheckCircle} />
+                {isSeeding && <MetricRow label={t("stores_added")} value={stats.allTimeStoresAdded} icon={MapPin} />}
               </CardContent>
             </Card>
 
