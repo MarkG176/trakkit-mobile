@@ -354,6 +354,7 @@ export const RecordAttendanceForm = () => {
       <InstoreClosingReportDialog
         open={showInstoreClosingReport}
         onOpenChange={setShowInstoreClosingReport}
+        storeId={currentStoreId}
         onComplete={() => {
           console.log('Instore closing report completed');
         }}
