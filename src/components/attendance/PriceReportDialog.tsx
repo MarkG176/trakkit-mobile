@@ -124,6 +124,8 @@ export const PriceReportDialog = ({
         store_id: storeId || null,
         product_variant_id: item.product_variant_id,
         price: parseFloat(prices[item.product_variant_id]) || 0,
+        sku: skus[item.product_variant_id] || null,
+        measurement: measurements[item.product_variant_id] || null,
         stock_level: stockLevels[item.product_variant_id] || null,
         work_date: today,
         workspace_id: currentWorkspaceId,
