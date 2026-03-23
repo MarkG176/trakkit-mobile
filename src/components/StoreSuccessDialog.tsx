@@ -6,10 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShoppingCart, Gift, ClipboardList, Star, Plus, Minus, CheckCircle2, Trash2, Edit2, Search, Camera, X, ImageIcon, MessageSquare } from "lucide-react";
+import { ShoppingCart, Gift, ClipboardList, Star, Plus, Minus, CheckCircle2, Trash2, Edit2, Search, Camera, X, ImageIcon, MessageSquare, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { StockReportDialog } from "@/components/attendance/StockReportDialog";
 
 interface StoreSuccessDialogProps {
   open: boolean;
@@ -49,6 +50,8 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
   const { currentWorkspaceId, currentProjectId } = useWorkspace();
   const [activeAction, setActiveAction] = useState<ActionType>(null);
   const [loading, setLoading] = useState(false);
+  const [showStockReport, setShowStockReport] = useState(false);
+  const [isPepsiResearch, setIsPepsiResearch] = useState(false);
 
   // Survey state
   const [selectedSurvey, setSelectedSurvey] = useState("");
@@ -74,6 +77,24 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
+
+  // Check if current project is "Pepsi Research"
+  useEffect(() => {
+    const checkProjectName = async () => {
+      if (!currentProjectId || !open) return;
+      try {
+        const { data } = await supabase
+          .from('project_plans')
+          .select('project_name')
+          .eq('id', currentProjectId)
+          .single();
+        setIsPepsiResearch(data?.project_name?.toLowerCase() === 'pepsi research');
+      } catch {
+        setIsPepsiResearch(false);
+      }
+    };
+    checkProjectName();
+  }, [currentProjectId, open]);
 
   const handleActionClick = async (action: ActionType) => {
     setActiveAction(action);
@@ -947,6 +968,16 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                   <MessageSquare size={24} />
                   <span className="text-xs">Collect Feedback</span>
                 </Button>
+                {isPepsiResearch && (
+                  <Button
+                    variant="outline"
+                    className="h-24 flex flex-col gap-2"
+                    onClick={() => setShowStockReport(true)}
+                  >
+                    <Package size={24} />
+                    <span className="text-xs">Stock Report</span>
+                  </Button>
+                )}
               </div>
               <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full">
                 Close
@@ -966,6 +997,17 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
           )}
         </div>
       </DialogContent>
+
+      {/* Stock Report Dialog for Pepsi Research */}
+      <StockReportDialog
+        open={showStockReport}
+        onOpenChange={setShowStockReport}
+        reportType="morning"
+        storeId={storeId}
+        onComplete={() => {
+          setShowStockReport(false);
+        }}
+      />
     </Dialog>
   );
 };
