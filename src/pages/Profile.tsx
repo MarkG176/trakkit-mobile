@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAgentProfileStats } from "@/hooks/useAgentProfileStats";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
+import { useLanguage } from "@/hooks/useLanguage";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

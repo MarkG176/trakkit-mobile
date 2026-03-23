@@ -1,5 +1,8 @@
 import { HelpFAQDialog } from "@/components/profile/HelpFAQDialog";
 import { Badge } from "@/components/ui/badge";
+import { useLanguage } from "@/hooks/useLanguage";
+import { Globe } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ProfileHeaderProps {
   displayName: string;
@@ -9,8 +12,9 @@ interface ProfileHeaderProps {
 }
 
 export const ProfileHeader = ({ displayName, teamType }: ProfileHeaderProps) => {
+  const { language, setLanguage } = useLanguage();
   const today = new Date();
-  const formattedDate = today.toLocaleDateString('en-US', {
+  const formattedDate = today.toLocaleDateString(language === 'sw' ? 'sw-KE' : 'en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -35,9 +39,20 @@ export const ProfileHeader = ({ displayName, teamType }: ProfileHeaderProps) => 
           </Badge>
         )}
       </div>
-      <HelpFAQDialog teamType={teamType} variant="icon" />
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-primary-foreground hover:bg-primary-foreground/10"
+          onClick={() => setLanguage(language === 'en' ? 'sw' : 'en')}
+          title={language === 'en' ? 'Badilisha kwa Kiswahili' : 'Switch to English'}
+        >
+          <Globe className="w-5 h-5" />
+        </Button>
+        <HelpFAQDialog teamType={teamType} variant="icon" />
+      </div>
       <span className="absolute bottom-1 right-2 text-[10px] text-primary-foreground/40">
-        v{appVersion}
+        v{appVersion} · {language === 'en' ? 'EN' : 'SW'}
       </span>
     </div>
   );
