@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useInventory } from "@/hooks/useInventory";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -36,6 +37,8 @@ export const PriceReportDialog = ({
   const { inventory, loading: inventoryLoading } = useInventory();
   const { toast } = useToast();
   const [prices, setPrices] = useState<Record<string, string>>({});
+  const [skus, setSkus] = useState<Record<string, string>>({});
+  const [measurements, setMeasurements] = useState<Record<string, string>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
@@ -48,10 +51,15 @@ export const PriceReportDialog = ({
   const totalProducts = eligibleProducts.length;
 
   const handlePriceChange = (productVariantId: string, value: string) => {
-    setPrices((prev) => ({
-      ...prev,
-      [productVariantId]: value,
-    }));
+    setPrices((prev) => ({ ...prev, [productVariantId]: value }));
+  };
+
+  const handleSkuChange = (productVariantId: string, value: string) => {
+    setSkus((prev) => ({ ...prev, [productVariantId]: value }));
+  };
+
+  const handleMeasurementChange = (productVariantId: string, value: string) => {
+    setMeasurements((prev) => ({ ...prev, [productVariantId]: value }));
   };
 
   const goNext = () => {
@@ -116,6 +124,8 @@ export const PriceReportDialog = ({
         store_id: storeId || null,
         product_variant_id: item.product_variant_id,
         price: parseFloat(prices[item.product_variant_id]) || 0,
+        sku: skus[item.product_variant_id] || null,
+        measurement: measurements[item.product_variant_id] || null,
         stock_level: stockLevels[item.product_variant_id] || null,
         work_date: today,
         workspace_id: currentWorkspaceId,
@@ -126,7 +136,8 @@ export const PriceReportDialog = ({
 
       toast({ title: "Price Report Submitted", description: "Store price report saved successfully" });
       setPrices({});
-      setCurrentIndex(0);
+      setSkus({});
+      setMeasurements({});
       onComplete();
       onOpenChange(false);
     } catch (error) {
@@ -177,18 +188,55 @@ export const PriceReportDialog = ({
                 {getStockBadge(stockLevels[currentProduct.product_variant_id])}
               </div>
 
-              <div className="space-y-2 pt-2">
-                <Label className="text-sm text-muted-foreground">Selling Price (KES)</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="Enter price..."
-                  value={prices[currentProduct.product_variant_id] || ""}
-                  onChange={(e) => handlePriceChange(currentProduct.product_variant_id, e.target.value)}
-                  className="text-center text-lg h-12"
-                  autoFocus
-                />
+              <div className="space-y-3 pt-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">SKU (Number)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="SKU..."
+                      value={skus[currentProduct.product_variant_id] || ""}
+                      onChange={(e) => handleSkuChange(currentProduct.product_variant_id, e.target.value)}
+                      className="text-center h-10"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Measurement</Label>
+                    <Select
+                      value={measurements[currentProduct.product_variant_id] || ""}
+                      onValueChange={(val) => handleMeasurementChange(currentProduct.product_variant_id, val)}
+                    >
+                      <SelectTrigger className="h-10">
+                        <SelectValue placeholder="Unit..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ml">ml</SelectItem>
+                        <SelectItem value="l">L</SelectItem>
+                        <SelectItem value="g">g</SelectItem>
+                        <SelectItem value="kg">kg</SelectItem>
+                        <SelectItem value="pcs">pcs</SelectItem>
+                        <SelectItem value="pack">pack</SelectItem>
+                        <SelectItem value="box">box</SelectItem>
+                        <SelectItem value="bottle">bottle</SelectItem>
+                        <SelectItem value="sachet">sachet</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Selling Price (KES)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Enter price..."
+                    value={prices[currentProduct.product_variant_id] || ""}
+                    onChange={(e) => handlePriceChange(currentProduct.product_variant_id, e.target.value)}
+                    className="text-center text-lg h-12"
+                    autoFocus
+                  />
+                </div>
               </div>
             </div>
 
