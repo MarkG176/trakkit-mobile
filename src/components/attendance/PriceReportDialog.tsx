@@ -51,10 +51,15 @@ export const PriceReportDialog = ({
   const totalProducts = eligibleProducts.length;
 
   const handlePriceChange = (productVariantId: string, value: string) => {
-    setPrices((prev) => ({
-      ...prev,
-      [productVariantId]: value,
-    }));
+    setPrices((prev) => ({ ...prev, [productVariantId]: value }));
+  };
+
+  const handleSkuChange = (productVariantId: string, value: string) => {
+    setSkus((prev) => ({ ...prev, [productVariantId]: value }));
+  };
+
+  const handleMeasurementChange = (productVariantId: string, value: string) => {
+    setMeasurements((prev) => ({ ...prev, [productVariantId]: value }));
   };
 
   const goNext = () => {
