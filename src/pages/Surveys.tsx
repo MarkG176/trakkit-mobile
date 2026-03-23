@@ -97,12 +97,18 @@ export const Surveys = () => {
     try {
       setLoading(true);
       
-      const { data: surveyTemplates, error } = await supabase
+      let query = supabase
         .from('survey_templates')
         .select('*')
         .eq('workspace_id', currentWorkspaceId)
         .eq('is_published', true)
-        .eq('status', 'active')
+        .eq('status', 'active');
+
+      if (currentProjectId) {
+        query = query.eq('project_id', currentProjectId);
+      }
+
+      const { data: surveyTemplates, error } = await query
         .order('created_at', { ascending: false });
 
       if (error) {
