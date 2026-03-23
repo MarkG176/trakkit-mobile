@@ -32,6 +32,14 @@ export const Routes = () => {
   const [showStoreList, setShowStoreList] = useState<boolean>(false);
   const [counties, setCounties] = useState<string[]>([]);
   const [countries, setCountries] = useState<string[]>([]);
+
+  const TANZANIA_REGIONS = [
+    "Arusha", "Dar es Salaam", "Dodoma", "Geita", "Iringa", "Kagera", "Katavi",
+    "Kigoma", "Kilimanjaro", "Lindi", "Manyara", "Mara", "Mbeya", "Morogoro",
+    "Mtwara", "Mwanza", "Njombe", "Pwani", "Rukwa", "Ruvuma", "Shinyanga",
+    "Simiyu", "Singida", "Tabora", "Tanga",
+    "Pemba North", "Pemba South", "Zanzibar Central/South", "Zanzibar North", "Zanzibar Urban/West",
+  ];
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
@@ -537,10 +545,10 @@ export const Routes = () => {
                   </Label>
                   <Select value={newStoreCounty} onValueChange={setNewStoreCounty}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select county" />
+                      <SelectValue placeholder="Select county/region" />
                     </SelectTrigger>
                     <SelectContent>
-                      {counties.map((county) => (
+                      {Array.from(new Set([...counties, ...TANZANIA_REGIONS])).sort().map((county) => (
                         <SelectItem key={county} value={county}>
                           {county}
                         </SelectItem>
