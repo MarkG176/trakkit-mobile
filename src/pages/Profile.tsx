@@ -136,10 +136,10 @@ export const Profile = () => {
             {!isWholesale && !isSeeding && !isInstore && !isSurvey && (
               <Card>
                 <CardContent className="p-4">
-                  <SectionTitle>Tasks</SectionTitle>
-                  <MetricRow label="Total Tasks" value={stats.todayTotalTasks} icon={ListTodo} />
-                  <MetricRow label="Completed" value={stats.todayCompletedTasks} icon={CheckCircle} />
-                  <MetricRow label="Pending" value={stats.todayPendingTasks} icon={Clock} />
+                  <SectionTitle>{t("tasks")}</SectionTitle>
+                  <MetricRow label={t("total_tasks")} value={stats.todayTotalTasks} icon={ListTodo} />
+                  <MetricRow label={t("completed")} value={stats.todayCompletedTasks} icon={CheckCircle} />
+                  <MetricRow label={t("pending")} value={stats.todayPendingTasks} icon={Clock} />
                 </CardContent>
               </Card>
             )}
