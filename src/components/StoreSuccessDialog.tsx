@@ -533,25 +533,52 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
               <div className="space-y-4">
                 {surveyQuestions.map((question: any, index: number) => (
                   <Card key={question.id || index}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-2 mb-3">
-                        <span className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-sm font-medium">
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-2 mb-4">
+                        <span className="w-6 h-6 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center text-sm font-medium">
                           {index + 1}
                         </span>
                         <div className="flex-1">
-                          <h3 className="font-medium mb-1 text-foreground">{question.question || question.text || 'Question'}</h3>
+                          <h2 className="text-h3 text-black mb-1">
+                            {question.text || question.question || question.title || question.label || `Question ${index + 1}`}
+                          </h2>
+                          {question.description && (
+                            <p className="text-xs text-muted-foreground mb-1">{question.description}</p>
+                          )}
                           {question.required && (
-                            <span className="inline-block bg-destructive/10 text-destructive px-2 py-0.5 rounded text-xs font-medium">
+                            <span className="inline-block bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">
                               Required
                             </span>
                           )}
                         </div>
                       </div>
                       
-                      <div className="space-y-2 ml-8">
-                        {(question.type === 'rating' || question.type === 'multiple_choice') && question.options && (
+                      <div className="space-y-3">
+                        {question.type === 'rating' && (
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map((rating) => (
+                              <button
+                                key={rating}
+                                type="button"
+                                onClick={() => handleAnswerChange(question.id, rating)}
+                                className="p-1"
+                              >
+                                <Star
+                                  size={32}
+                                  className={`${
+                                    rating <= (surveyResponses[question.id] || 0)
+                                      ? "fill-yellow-400 text-yellow-400"
+                                      : "text-muted-foreground"
+                                  }`}
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {question.type === 'multiple_choice' && question.options && (
                           question.options.map((option: string, optionIndex: number) => (
-                            <label key={optionIndex} className="flex items-center space-x-2 p-2 border rounded hover:bg-accent cursor-pointer">
+                            <label key={optionIndex} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-accent cursor-pointer">
                               <input 
                                 type="radio" 
                                 name={question.id} 
@@ -560,17 +587,19 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                                 onChange={(e) => handleAnswerChange(question.id, e.target.value)}
                                 className="text-primary" 
                               />
-                              <span className="text-sm">{option}</span>
+                              <span>{option}</span>
                             </label>
                           ))
                         )}
                         
                         {question.type === 'text' && (
-                          <Textarea
+                          <textarea
+                            name={question.id}
                             value={surveyResponses[question.id] || ''}
                             onChange={(e) => handleAnswerChange(question.id, e.target.value)}
                             placeholder="Enter your response..."
-                            rows={3}
+                            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            rows={4}
                           />
                         )}
                       </div>
