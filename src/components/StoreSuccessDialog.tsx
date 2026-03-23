@@ -968,6 +968,16 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                   <MessageSquare size={24} />
                   <span className="text-xs">Collect Feedback</span>
                 </Button>
+                {isPepsiResearch && (
+                  <Button
+                    variant="outline"
+                    className="h-24 flex flex-col gap-2"
+                    onClick={() => setShowStockReport(true)}
+                  >
+                    <Package size={24} />
+                    <span className="text-xs">Stock Report</span>
+                  </Button>
+                )}
               </div>
               <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full">
                 Close
@@ -987,6 +997,17 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
           )}
         </div>
       </DialogContent>
+
+      {/* Stock Report Dialog for Pepsi Research */}
+      <StockReportDialog
+        open={showStockReport}
+        onOpenChange={setShowStockReport}
+        reportType="morning"
+        storeId={storeId}
+        onComplete={() => {
+          setShowStockReport(false);
+        }}
+      />
     </Dialog>
   );
 };
