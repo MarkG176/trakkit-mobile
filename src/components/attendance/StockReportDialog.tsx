@@ -170,6 +170,7 @@ export const StockReportDialog = ({
           report_type: reportType,
           work_date: today,
           workspace_id: currentWorkspaceId,
+          store_id: storeId || null,
         }));
 
         const { error } = await supabase

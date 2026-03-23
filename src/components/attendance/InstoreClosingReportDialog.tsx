@@ -140,6 +140,7 @@ export const InstoreClosingReportDialog = ({
           report_type: "closing",
           work_date: today,
           workspace_id: currentWorkspaceId,
+          store_id: storeId || null,
         }));
 
       const { error } = await supabase
