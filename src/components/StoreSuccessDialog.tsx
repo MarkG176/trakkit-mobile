@@ -900,10 +900,10 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                 <Button
                   variant="outline"
                   className="h-24 flex flex-col gap-2"
-                  onClick={() => handleActionClick("interaction")}
+                  onClick={() => handleActionClick("photos")}
                 >
-                  <MessageSquare size={24} />
-                  <span className="text-xs">Collect Feedback</span>
+                  <Camera size={24} />
+                  <span className="text-xs">Add Photos</span>
                 </Button>
               </div>
               <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full">
