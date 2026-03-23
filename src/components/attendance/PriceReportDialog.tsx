@@ -37,6 +37,8 @@ export const PriceReportDialog = ({
   const { inventory, loading: inventoryLoading } = useInventory();
   const { toast } = useToast();
   const [prices, setPrices] = useState<Record<string, string>>({});
+  const [skus, setSkus] = useState<Record<string, string>>({});
+  const [measurements, setMeasurements] = useState<Record<string, string>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
