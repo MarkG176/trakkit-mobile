@@ -1584,6 +1584,7 @@ export type Database = {
       location_area_mappings: {
         Row: {
           area_id: string
+          country: string
           county_name: string
           created_at: string
           id: string
@@ -1594,6 +1595,7 @@ export type Database = {
         }
         Insert: {
           area_id: string
+          country?: string
           county_name: string
           created_at?: string
           id?: string
@@ -1604,6 +1606,7 @@ export type Database = {
         }
         Update: {
           area_id?: string
+          country?: string
           county_name?: string
           created_at?: string
           id?: string
