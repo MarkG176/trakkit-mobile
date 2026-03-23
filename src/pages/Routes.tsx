@@ -585,7 +585,7 @@ export const Routes = () => {
                       <SelectValue placeholder="Select county/region" />
                     </SelectTrigger>
                     <SelectContent>
-                      {Array.from(new Set([...counties, ...TANZANIA_REGIONS])).sort().map((county) => (
+                      {Array.from(new Set([...counties, ...getCountryRegions()])).sort().map((county) => (
                         <SelectItem key={county} value={county}>
                           {county}
                         </SelectItem>
