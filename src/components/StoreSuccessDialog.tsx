@@ -51,7 +51,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
   const [activeAction, setActiveAction] = useState<ActionType>(null);
   const [loading, setLoading] = useState(false);
   const [showStockReport, setShowStockReport] = useState(false);
-  const [isPepsiResearch, setIsPepsiResearch] = useState(false);
+  const [isMarketResearch, setIsMarketResearch] = useState(false);
 
   // Survey state
   const [selectedSurvey, setSelectedSurvey] = useState("");
