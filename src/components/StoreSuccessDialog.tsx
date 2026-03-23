@@ -823,52 +823,69 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
           </div>
         );
 
-      case "photos":
+      case "feedback":
         return (
           <div className="space-y-4 mt-4">
-            <input
-              ref={photoInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              capture="environment"
-              className="hidden"
-              onChange={handlePhotosSelected}
-            />
+            <div>
+              <Label>Feedback Notes</Label>
+              <Textarea
+                value={feedbackNotes}
+                onChange={(e) => setFeedbackNotes(e.target.value)}
+                placeholder="Enter feedback about this store..."
+                rows={3}
+              />
+            </div>
 
-            {photoPreviewUrls.length > 0 && (
-              <div className="grid grid-cols-3 gap-2">
-                {photoPreviewUrls.map((url, index) => (
-                  <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
-                    <img src={url} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
-                    <button
-                      onClick={() => removePhoto(index)}
-                      className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1"
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* Add Photos Section */}
+            <div>
+              <Label className="flex items-center gap-2 mb-2">
+                <Camera size={16} />
+                Add Photos
+              </Label>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                capture="environment"
+                className="hidden"
+                onChange={handlePhotosSelected}
+              />
+
+              {photoPreviewUrls.length > 0 && (
+                <div className="grid grid-cols-3 gap-2 mb-2">
+                  {photoPreviewUrls.map((url, index) => (
+                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
+                      <img src={url} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        onClick={() => removePhoto(index)}
+                        className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <Button
+                variant="outline"
+                onClick={() => photoInputRef.current?.click()}
+                className="w-full h-16 border-dashed flex flex-col gap-1"
+              >
+                <Camera size={20} className="text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">
+                  {photoPreviewUrls.length > 0 ? "Add More Photos" : "Take or Select Photos"}
+                </span>
+              </Button>
+            </div>
 
             <Button
-              variant="outline"
-              onClick={() => photoInputRef.current?.click()}
-              className="w-full h-20 border-dashed flex flex-col gap-1"
-            >
-              <Camera size={24} className="text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                {photoPreviewUrls.length > 0 ? "Add More Photos" : "Take or Select Photos"}
-              </span>
-            </Button>
-
-            <Button
-              onClick={handleUploadPhotos}
-              disabled={selectedPhotos.length === 0 || uploadingPhotos}
+              onClick={handleUploadFeedback}
+              disabled={(!feedbackNotes.trim() && selectedPhotos.length === 0) || uploadingPhotos}
               className="w-full"
             >
-              {uploadingPhotos ? "Uploading..." : `Upload ${selectedPhotos.length} Photo(s)`}
+              {uploadingPhotos ? "Submitting..." : "Submit Feedback"}
             </Button>
           </div>
         );
