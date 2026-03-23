@@ -32,6 +32,7 @@ export const Routes = () => {
   const [showStoreList, setShowStoreList] = useState<boolean>(false);
   const [counties, setCounties] = useState<string[]>([]);
   const [countries, setCountries] = useState<string[]>([]);
+  const [projectCountry, setProjectCountry] = useState<string | null>(null);
 
   const TANZANIA_REGIONS = [
     "Arusha", "Dar es Salaam", "Dodoma", "Geita", "Iringa", "Kagera", "Katavi",
@@ -40,6 +41,17 @@ export const Routes = () => {
     "Simiyu", "Singida", "Tabora", "Tanga",
     "Pemba North", "Pemba South", "Zanzibar Central/South", "Zanzibar North", "Zanzibar Urban/West",
   ];
+
+  const KENYA_COUNTIES = [
+    "Baringo", "Bomet", "Bungoma", "Busia", "Elgeyo-Marakwet", "Embu", "Garissa",
+    "Homa Bay", "Isiolo", "Kajiado", "Kakamega", "Kericho", "Kiambu", "Kilifi",
+    "Kirinyaga", "Kisii", "Kisumu", "Kitui", "Kwale", "Laikipia", "Lamu",
+    "Machakos", "Makueni", "Mandera", "Marsabit", "Meru", "Migori", "Mombasa",
+    "Murang'a", "Nairobi", "Nakuru", "Nandi", "Narok", "Nyamira", "Nyandarua",
+    "Nyeri", "Samburu", "Siaya", "Taita-Taveta", "Tana River", "Tharaka-Nithi",
+    "Trans-Nzoia", "Turkana", "Uasin Gishu", "Vihiga", "Wajir", "West Pokot",
+  ];
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
@@ -63,13 +75,38 @@ export const Routes = () => {
   const [addedStore, setAddedStore] = useState<{ id: string; name: string; county: string } | null>(null);
   const { toast } = useToast();
   const { recordLocationSet } = useAgentActions();
-  const { currentWorkspaceId, currentTeamType } = useWorkspace();
+  const { currentWorkspaceId, currentProjectId, currentTeamType } = useWorkspace();
 
   // Check if current team type is wholesale/instore - hide Add Location for these types
   const isWholesale = currentTeamType?.toLowerCase() === "wholesale";
   const isSeeding = currentTeamType?.toLowerCase() === "seeding";
   const isSampling = currentTeamType?.toLowerCase() === "sampling";
   const isInstore = currentTeamType?.toLowerCase() === "instore";
+
+  // Fetch the project's country
+  useEffect(() => {
+    const fetchProjectCountry = async () => {
+      if (!currentProjectId) return;
+      const { data } = await supabase
+        .from("project_plans")
+        .select("country")
+        .eq("id", currentProjectId)
+        .single();
+      if (data?.country) {
+        setProjectCountry(data.country);
+      }
+    };
+    fetchProjectCountry();
+  }, [currentProjectId]);
+
+  // Get country-specific regions for the Add Store county dropdown
+  const getCountryRegions = (): string[] => {
+    const country = projectCountry?.toLowerCase();
+    if (country === "tanzania") return TANZANIA_REGIONS;
+    if (country === "kenya") return KENYA_COUNTIES;
+    // If no project country, show all
+    return [...TANZANIA_REGIONS, ...KENYA_COUNTIES];
+  };
 
   useEffect(() => {
     fetchStores();
@@ -548,7 +585,7 @@ export const Routes = () => {
                       <SelectValue placeholder="Select county/region" />
                     </SelectTrigger>
                     <SelectContent>
-                      {Array.from(new Set([...counties, ...TANZANIA_REGIONS])).sort().map((county) => (
+                      {Array.from(new Set([...counties, ...getCountryRegions()])).sort().map((county) => (
                         <SelectItem key={county} value={county}>
                           {county}
                         </SelectItem>

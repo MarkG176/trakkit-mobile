@@ -2118,6 +2118,7 @@ export type Database = {
           cached_total_sales: number | null
           cached_units_sold: number | null
           client_name: string
+          country: string | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -2152,6 +2153,7 @@ export type Database = {
           cached_total_sales?: number | null
           cached_units_sold?: number | null
           client_name: string
+          country?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -2186,6 +2188,7 @@ export type Database = {
           cached_total_sales?: number | null
           cached_units_sold?: number | null
           client_name?: string
+          country?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
