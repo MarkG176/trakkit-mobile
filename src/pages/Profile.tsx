@@ -247,9 +247,9 @@ export const Profile = () => {
             {!isWholesale && !isSeeding && !isInstore && !isSurvey && (
               <Card>
                 <CardContent className="p-4">
-                  <SectionTitle>Points & Rank</SectionTitle>
-                  <MetricRow label="Rank" value={stats.currentRank} icon={Trophy} />
-                  <MetricRow label="Total Points" value={stats.totalPoints} icon={Star} />
+                  <SectionTitle>{t("points_rank")}</SectionTitle>
+                  <MetricRow label={t("rank")} value={stats.currentRank} icon={Trophy} />
+                  <MetricRow label={t("total_points")} value={stats.totalPoints} icon={Star} />
                 </CardContent>
               </Card>
             )}
