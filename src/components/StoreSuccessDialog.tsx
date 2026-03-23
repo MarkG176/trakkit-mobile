@@ -85,16 +85,6 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
       
       const publishedSurveys = data || [];
       setSurveys(publishedSurveys);
-      
-      // Auto-open if only one survey
-      if (publishedSurveys.length === 1) {
-        console.log('Auto-opening survey:', publishedSurveys[0]);
-        console.log('Survey questions:', publishedSurveys[0].questions);
-        setSelectedSurvey(publishedSurveys[0].id);
-        const questions = Array.isArray(publishedSurveys[0].questions) ? publishedSurveys[0].questions : [];
-        console.log('Setting questions:', questions);
-        setSurveyQuestions(questions);
-      }
     } else if (action === "sale" || action === "giveaway") {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
