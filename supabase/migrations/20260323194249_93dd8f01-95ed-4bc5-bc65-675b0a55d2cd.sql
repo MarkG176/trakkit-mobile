@@ -1,0 +1,2 @@
+ALTER TABLE public.daily_stock_reports DROP CONSTRAINT daily_stock_reports_stock_level_check;
+ALTER TABLE public.daily_stock_reports ADD CONSTRAINT daily_stock_reports_stock_level_check CHECK (stock_level IS NULL OR stock_level = ANY (ARRAY['available'::text, 'low_stock'::text, 'unavailable'::text, 'not_sold'::text]));
