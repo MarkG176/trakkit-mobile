@@ -113,8 +113,8 @@ export const Profile = () => {
       <div className="p-4 space-y-4 -mt-4">
         <Tabs defaultValue="today" className="w-full">
           <TabsList className="w-full">
-            <TabsTrigger value="today" className="flex-1">Today</TabsTrigger>
-            <TabsTrigger value="alltime" className="flex-1">All Time</TabsTrigger>
+            <TabsTrigger value="today" className="flex-1">{t("today")}</TabsTrigger>
+            <TabsTrigger value="alltime" className="flex-1">{t("all_time")}</TabsTrigger>
           </TabsList>
 
           {/* TODAY TAB */}
