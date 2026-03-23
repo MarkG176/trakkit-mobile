@@ -78,22 +78,22 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
-  // Check if current project is "Pepsi Research"
+  // Check if current project is "Market Research" type
   useEffect(() => {
-    const checkProjectName = async () => {
+    const checkProjectType = async () => {
       if (!currentProjectId || !open) return;
       try {
         const { data } = await supabase
           .from('project_plans')
-          .select('project_name')
+          .select('project_type')
           .eq('id', currentProjectId)
           .single();
-        setIsPepsiResearch(data?.project_name?.toLowerCase() === 'pepsi research');
+        setIsMarketResearch(data?.project_type?.toLowerCase() === 'market_research');
       } catch {
-        setIsPepsiResearch(false);
+        setIsMarketResearch(false);
       }
     };
-    checkProjectName();
+    checkProjectType();
   }, [currentProjectId, open]);
 
   const handleActionClick = async (action: ActionType) => {
