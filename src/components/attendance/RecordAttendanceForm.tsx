@@ -94,6 +94,27 @@ export const RecordAttendanceForm = () => {
           description: successMessage,
         });
 
+        // Resolve the agent's current store from store_visits
+        const today = new Date().toISOString().split("T")[0];
+        try {
+          const { data: visitData } = await supabase
+            .from('store_visits')
+            .select('store_id')
+            .eq('agent_id', user.id)
+            .eq('planned_date', today)
+            .not('check_in_time', 'is', null)
+            .is('check_out_time', null)
+            .order('check_in_time', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (visitData?.store_id) {
+            setCurrentStoreId(visitData.store_id);
+          }
+        } catch (err) {
+          console.error('Error resolving current store:', err);
+        }
+
         // Check if we need to show stock report dialog for wholesale team_type
         const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
         const isSeeding = currentTeamType?.toLowerCase() === 'seeding';
