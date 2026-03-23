@@ -42,6 +42,7 @@ export const StockReportDialog = ({
   reportType,
   onComplete,
   storeId,
+  onStockLevelsChange,
 }: StockReportDialogProps) => {
   const { user } = useAuth();
   const { currentWorkspaceId } = useWorkspace();
