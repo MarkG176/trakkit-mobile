@@ -1033,8 +1033,20 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
         onOpenChange={setShowStockReport}
         reportType="morning"
         storeId={storeId}
+        onStockLevelsChange={(levels) => setStockReportLevels(levels)}
         onComplete={() => {
           setShowStockReport(false);
+        }}
+      />
+
+      {/* Price Report Dialog for Market Research projects */}
+      <PriceReportDialog
+        open={showPriceReport}
+        onOpenChange={setShowPriceReport}
+        storeId={storeId}
+        stockLevels={stockReportLevels}
+        onComplete={() => {
+          setShowPriceReport(false);
         }}
       />
     </Dialog>

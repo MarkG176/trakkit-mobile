@@ -94,10 +94,12 @@ export const StockReportDialog = ({
   }, [open, reportType, user]);
 
   const handleStockLevelChange = (productVariantId: string, level: StockLevel) => {
-    setStockLevels((prev) => ({
-      ...prev,
+    const newLevels = {
+      ...stockLevels,
       [productVariantId]: level,
-    }));
+    };
+    setStockLevels(newLevels);
+    onStockLevelsChange?.(newLevels as Record<string, string>);
   };
 
   const getStockIcon = (level: StockLevel | undefined) => {
