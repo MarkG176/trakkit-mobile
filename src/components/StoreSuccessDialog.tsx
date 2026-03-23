@@ -68,7 +68,8 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [giveawayNotes, setGiveawayNotes] = useState("");
 
-  // Photo upload state
+  // Feedback state
+  const [feedbackNotes, setFeedbackNotes] = useState("");
   const [selectedPhotos, setSelectedPhotos] = useState<File[]>([]);
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
