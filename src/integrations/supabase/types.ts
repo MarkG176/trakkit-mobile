@@ -2920,8 +2920,10 @@ export type Database = {
           agent_id: string
           created_at: string
           id: string
+          measurement: string | null
           price: number
           product_variant_id: string
+          sku: string | null
           stock_level: string | null
           store_id: string | null
           work_date: string
@@ -2931,8 +2933,10 @@ export type Database = {
           agent_id: string
           created_at?: string
           id?: string
+          measurement?: string | null
           price?: number
           product_variant_id: string
+          sku?: string | null
           stock_level?: string | null
           store_id?: string | null
           work_date?: string
@@ -2942,8 +2946,10 @@ export type Database = {
           agent_id?: string
           created_at?: string
           id?: string
+          measurement?: string | null
           price?: number
           product_variant_id?: string
+          sku?: string | null
           stock_level?: string | null
           store_id?: string | null
           work_date?: string
