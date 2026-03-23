@@ -33,6 +33,7 @@ interface StockReportDialogProps {
   reportType: "morning" | "evening";
   onComplete: () => void;
   storeId?: string | null;
+  onStockLevelsChange?: (levels: Record<string, string>) => void;
 }
 
 export const StockReportDialog = ({
