@@ -231,14 +231,14 @@ export const Profile = () => {
             {!isInstore && (
             <Card>
               <CardContent className="p-4">
-                <SectionTitle>Engagement</SectionTitle>
-                {(!isWholesale || isSeeding) && !isSurvey && <MetricRow label="Interactions" value={stats.allTimeInteractionsCount} icon={MessageSquare} />}
+                <SectionTitle>{t("engagement")}</SectionTitle>
+                {(!isWholesale || isSeeding) && !isSurvey && <MetricRow label={t("interactions")} value={stats.allTimeInteractionsCount} icon={MessageSquare} />}
                 {(!isWholesale || stats.hasSurveyAssigned || isSeeding || isSurvey) && (
-                  <MetricRow label="Surveys Done" value={stats.allTimeSurveys} icon={FileText} />
+                  <MetricRow label={t("surveys_done")} value={stats.allTimeSurveys} icon={FileText} />
                 )}
-                {!isSeeding && !isSurvey && <MetricRow label="Giveaways" value={stats.allTimeGiveaways} icon={Star} />}
-                {!isWholesale && !isSeeding && !isSurvey && <MetricRow label="Items Given" value={stats.allTimeGiveawayItems} icon={Star} />}
-                {!isSeeding && !isSurvey && <MetricRow label="Notes" value={stats.allTimeNotesCount} icon={FileText} />}
+                {!isSeeding && !isSurvey && <MetricRow label={t("giveaways")} value={stats.allTimeGiveaways} icon={Star} />}
+                {!isWholesale && !isSeeding && !isSurvey && <MetricRow label={t("items_given")} value={stats.allTimeGiveawayItems} icon={Star} />}
+                {!isSeeding && !isSurvey && <MetricRow label={t("notes")} value={stats.allTimeNotesCount} icon={FileText} />}
               </CardContent>
             </Card>
             )}
