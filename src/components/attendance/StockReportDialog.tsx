@@ -106,6 +106,8 @@ export const StockReportDialog = ({
         return <AlertTriangle className="h-4 w-4 text-yellow-600 shrink-0" />;
       case "unavailable":
         return <XCircle className="h-4 w-4 text-red-600 shrink-0" />;
+      case "not_sold":
+        return <Package className="h-4 w-4 text-muted-foreground shrink-0" />;
       default:
         return null;
     }
