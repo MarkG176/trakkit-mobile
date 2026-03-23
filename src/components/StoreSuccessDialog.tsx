@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { StockReportDialog } from "@/components/attendance/StockReportDialog";
+import { PriceReportDialog } from "@/components/attendance/PriceReportDialog";
 
 interface StoreSuccessDialogProps {
   open: boolean;
