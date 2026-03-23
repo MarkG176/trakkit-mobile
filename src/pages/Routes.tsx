@@ -601,7 +601,7 @@ export const Routes = () => {
                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start" side="bottom" sideOffset={4}>
                       <Command>
                         <CommandInput placeholder="Search county/region..." />
-                        <CommandList>
+                        <CommandList className="max-h-[200px]">
                           <CommandEmpty>No county found.</CommandEmpty>
                           <CommandGroup>
                             {Array.from(new Set([...counties, ...getCountryRegions()])).sort().map((county) => (
