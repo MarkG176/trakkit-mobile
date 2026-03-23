@@ -103,12 +103,21 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
     
     // Load data based on action
     if (action === "survey") {
-      const { data } = await supabase
+      let query = supabase
         .from('survey_templates')
         .select('*')
         .eq('is_published', true)
-        .eq('status', 'active');
+        .eq('status', 'active')
+        .neq('is_deleted', true);
       
+      if (currentWorkspaceId) {
+        query = query.eq('workspace_id', currentWorkspaceId);
+      }
+      if (currentProjectId) {
+        query = query.eq('project_id', currentProjectId);
+      }
+      
+      const { data } = await query;
       const publishedSurveys = data || [];
       setSurveys(publishedSurveys);
     } else if (action === "sale" || action === "giveaway") {
