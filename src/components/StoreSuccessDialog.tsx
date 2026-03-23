@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShoppingCart, Gift, ClipboardList, Star, Plus, Minus, CheckCircle2, Trash2, Edit2, Search, Camera, X, ImageIcon } from "lucide-react";
+import { ShoppingCart, Gift, ClipboardList, Star, Plus, Minus, CheckCircle2, Trash2, Edit2, Search, Camera, X, ImageIcon, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -19,7 +19,7 @@ interface StoreSuccessDialogProps {
   storeCounty: string;
 }
 
-type ActionType = null | "survey" | "sale" | "giveaway" | "photos";
+type ActionType = null | "survey" | "sale" | "giveaway" | "feedback";
 
 interface SaleCartItem {
   id: string;
@@ -68,7 +68,8 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [giveawayNotes, setGiveawayNotes] = useState("");
 
-  // Photo upload state
+  // Feedback state
+  const [feedbackNotes, setFeedbackNotes] = useState("");
   const [selectedPhotos, setSelectedPhotos] = useState<File[]>([]);
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
@@ -379,35 +380,59 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
     setPhotoPreviewUrls(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleUploadPhotos = async () => {
-    if (selectedPhotos.length === 0) return;
+  const handleUploadFeedback = async () => {
+    if (!feedbackNotes.trim() && selectedPhotos.length === 0) return;
     setUploadingPhotos(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      for (const file of selectedPhotos) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${storeId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage
-          .from('sale-photos')
-          .upload(fileName, file, { contentType: file.type });
-        if (uploadError) throw uploadError;
+      const location = await getCurrentLocation();
+
+      // Upload photos if any
+      if (selectedPhotos.length > 0) {
+        for (const file of selectedPhotos) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${storeId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          const { error: uploadError } = await supabase.storage
+            .from('sale-photos')
+            .upload(fileName, file, { contentType: file.type });
+          if (uploadError) throw uploadError;
+        }
+      }
+
+      // Record feedback as interaction
+      if (feedbackNotes.trim()) {
+        await supabase.from('interactions').insert({
+          task_id: null,
+          agent_id: user.id,
+          interaction_type: 'engagement',
+          store_id: storeId,
+          customer_name: storeName,
+          outcome: 'completed',
+          quantity_sold: 0,
+          latitude: location.latitude,
+          longitude: location.longitude,
+          timestamp: new Date().toISOString(),
+          workspace_id: currentWorkspaceId,
+          metadata: { feedback_notes: feedbackNotes }
+        } as any);
       }
 
       toast({
-        title: "Photos Uploaded",
-        description: `${selectedPhotos.length} photo(s) uploaded for ${storeName}.`,
+        title: "Feedback Submitted",
+        description: `Feedback${selectedPhotos.length > 0 ? ` and ${selectedPhotos.length} photo(s)` : ''} recorded for ${storeName}.`,
       });
 
       photoPreviewUrls.forEach(url => URL.revokeObjectURL(url));
       setSelectedPhotos([]);
       setPhotoPreviewUrls([]);
+      setFeedbackNotes("");
       setActiveAction(null);
     } catch (error: any) {
       toast({
-        title: "Upload Error",
-        description: error.message || "Failed to upload photos.",
+        title: "Error",
+        description: error.message || "Failed to submit feedback.",
         variant: "destructive",
       });
     } finally {
@@ -798,52 +823,69 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
           </div>
         );
 
-      case "photos":
+      case "feedback":
         return (
           <div className="space-y-4 mt-4">
-            <input
-              ref={photoInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              capture="environment"
-              className="hidden"
-              onChange={handlePhotosSelected}
-            />
+            <div>
+              <Label>Feedback Notes</Label>
+              <Textarea
+                value={feedbackNotes}
+                onChange={(e) => setFeedbackNotes(e.target.value)}
+                placeholder="Enter feedback about this store..."
+                rows={3}
+              />
+            </div>
 
-            {photoPreviewUrls.length > 0 && (
-              <div className="grid grid-cols-3 gap-2">
-                {photoPreviewUrls.map((url, index) => (
-                  <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
-                    <img src={url} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
-                    <button
-                      onClick={() => removePhoto(index)}
-                      className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1"
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* Add Photos Section */}
+            <div>
+              <Label className="flex items-center gap-2 mb-2">
+                <Camera size={16} />
+                Add Photos
+              </Label>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                capture="environment"
+                className="hidden"
+                onChange={handlePhotosSelected}
+              />
+
+              {photoPreviewUrls.length > 0 && (
+                <div className="grid grid-cols-3 gap-2 mb-2">
+                  {photoPreviewUrls.map((url, index) => (
+                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
+                      <img src={url} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        onClick={() => removePhoto(index)}
+                        className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <Button
+                variant="outline"
+                onClick={() => photoInputRef.current?.click()}
+                className="w-full h-16 border-dashed flex flex-col gap-1"
+              >
+                <Camera size={20} className="text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">
+                  {photoPreviewUrls.length > 0 ? "Add More Photos" : "Take or Select Photos"}
+                </span>
+              </Button>
+            </div>
 
             <Button
-              variant="outline"
-              onClick={() => photoInputRef.current?.click()}
-              className="w-full h-20 border-dashed flex flex-col gap-1"
-            >
-              <Camera size={24} className="text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                {photoPreviewUrls.length > 0 ? "Add More Photos" : "Take or Select Photos"}
-              </span>
-            </Button>
-
-            <Button
-              onClick={handleUploadPhotos}
-              disabled={selectedPhotos.length === 0 || uploadingPhotos}
+              onClick={handleUploadFeedback}
+              disabled={(!feedbackNotes.trim() && selectedPhotos.length === 0) || uploadingPhotos}
               className="w-full"
             >
-              {uploadingPhotos ? "Uploading..." : `Upload ${selectedPhotos.length} Photo(s)`}
+              {uploadingPhotos ? "Submitting..." : "Submit Feedback"}
             </Button>
           </div>
         );
@@ -900,10 +942,10 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                 <Button
                   variant="outline"
                   className="h-24 flex flex-col gap-2"
-                  onClick={() => handleActionClick("photos")}
+                  onClick={() => handleActionClick("feedback")}
                 >
-                  <Camera size={24} />
-                  <span className="text-xs">Add Photos</span>
+                  <MessageSquare size={24} />
+                  <span className="text-xs">Collect Feedback</span>
                 </Button>
               </div>
               <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full">
