@@ -280,7 +280,7 @@ export const StockReportDialog = ({
                           <SelectItem value="unavailable">
                             <span className="flex items-center gap-2">
                               <XCircle className="h-4 w-4 text-red-600" />
-                              Unavailable
+                              Out of Stock
                             </span>
                           </SelectItem>
                           <SelectItem value="not_sold">
