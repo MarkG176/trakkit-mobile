@@ -117,7 +117,7 @@ export const RecordAttendanceForm = () => {
 
         // Check if we need to show stock report dialog for wholesale team_type
         const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
-        const isSeeding = currentTeamType?.toLowerCase() === 'seeding';
+        const isSeeding = ['seeding', 'market_research'].includes(currentTeamType?.toLowerCase() ?? '');
         
         if (isWholesale) {
           // Show stock report after check-in (morning) or evening report after check-out

@@ -18,7 +18,7 @@ interface DashboardStats {
 export const Dashboard = () => {
   const { user } = useAuth();
   const { currentWorkspaceId, currentTeamType } = useWorkspace();
-  const isSeeding = currentTeamType?.toLowerCase() === 'seeding';
+  const isSeeding = ['seeding', 'market_research'].includes(currentTeamType?.toLowerCase() ?? '');
   const isSampling = currentTeamType?.toLowerCase() === 'sampling';
   const isInstore = currentTeamType?.toLowerCase() === 'instore';
   const isSurvey = ['survey', 'survey_campaign'].includes(currentTeamType?.toLowerCase() ?? '');
