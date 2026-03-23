@@ -177,18 +177,55 @@ export const PriceReportDialog = ({
                 {getStockBadge(stockLevels[currentProduct.product_variant_id])}
               </div>
 
-              <div className="space-y-2 pt-2">
-                <Label className="text-sm text-muted-foreground">Selling Price (KES)</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="Enter price..."
-                  value={prices[currentProduct.product_variant_id] || ""}
-                  onChange={(e) => handlePriceChange(currentProduct.product_variant_id, e.target.value)}
-                  className="text-center text-lg h-12"
-                  autoFocus
-                />
+              <div className="space-y-3 pt-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">SKU (Number)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="SKU..."
+                      value={skus[currentProduct.product_variant_id] || ""}
+                      onChange={(e) => handleSkuChange(currentProduct.product_variant_id, e.target.value)}
+                      className="text-center h-10"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Measurement</Label>
+                    <Select
+                      value={measurements[currentProduct.product_variant_id] || ""}
+                      onValueChange={(val) => handleMeasurementChange(currentProduct.product_variant_id, val)}
+                    >
+                      <SelectTrigger className="h-10">
+                        <SelectValue placeholder="Unit..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ml">ml</SelectItem>
+                        <SelectItem value="l">L</SelectItem>
+                        <SelectItem value="g">g</SelectItem>
+                        <SelectItem value="kg">kg</SelectItem>
+                        <SelectItem value="pcs">pcs</SelectItem>
+                        <SelectItem value="pack">pack</SelectItem>
+                        <SelectItem value="box">box</SelectItem>
+                        <SelectItem value="bottle">bottle</SelectItem>
+                        <SelectItem value="sachet">sachet</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Selling Price (KES)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Enter price..."
+                    value={prices[currentProduct.product_variant_id] || ""}
+                    onChange={(e) => handlePriceChange(currentProduct.product_variant_id, e.target.value)}
+                    className="text-center text-lg h-12"
+                    autoFocus
+                  />
+                </div>
               </div>
             </div>
 
