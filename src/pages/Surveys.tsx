@@ -446,6 +446,7 @@ export const Surveys = () => {
             survey_template_id: activeSurvey.id,
             recording_duration: recordingDuration,
             recordingUrl: audioUrl || undefined,
+            project_id: currentProjectId || undefined,
           },
           workspace_id: currentWorkspaceId
         })
