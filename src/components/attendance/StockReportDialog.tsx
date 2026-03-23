@@ -32,6 +32,7 @@ interface StockReportDialogProps {
   onOpenChange: (open: boolean) => void;
   reportType: "morning" | "evening";
   onComplete: () => void;
+  storeId?: string | null;
 }
 
 export const StockReportDialog = ({
@@ -39,6 +40,7 @@ export const StockReportDialog = ({
   onOpenChange,
   reportType,
   onComplete,
+  storeId,
 }: StockReportDialogProps) => {
   const { user } = useAuth();
   const { currentWorkspaceId } = useWorkspace();

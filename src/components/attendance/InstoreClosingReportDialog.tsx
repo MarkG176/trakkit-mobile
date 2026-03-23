@@ -34,12 +34,14 @@ interface InstoreClosingReportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onComplete?: () => void;
+  storeId?: string | null;
 }
 
 export const InstoreClosingReportDialog = ({
   open,
   onOpenChange,
   onComplete,
+  storeId,
 }: InstoreClosingReportDialogProps) => {
   const { user } = useAuth();
   const { currentWorkspaceId } = useWorkspace();
