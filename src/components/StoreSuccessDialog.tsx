@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShoppingCart, Gift, MessageSquare, ClipboardList, Star, Plus, Minus, CheckCircle2, Trash2, Edit2, Search } from "lucide-react";
+import { ShoppingCart, Gift, ClipboardList, Star, Plus, Minus, CheckCircle2, Trash2, Edit2, Search, Camera, X, ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -19,7 +19,7 @@ interface StoreSuccessDialogProps {
   storeCounty: string;
 }
 
-type ActionType = null | "survey" | "sale" | "giveaway" | "interaction";
+type ActionType = null | "survey" | "sale" | "giveaway" | "photos";
 
 interface SaleCartItem {
   id: string;
@@ -68,9 +68,11 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [giveawayNotes, setGiveawayNotes] = useState("");
 
-  // Interaction state
-  const [interactionNotes, setInteractionNotes] = useState("");
-  const [sentiment, setSentiment] = useState(0);
+  // Photo upload state
+  const [selectedPhotos, setSelectedPhotos] = useState<File[]>([]);
+  const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const handleActionClick = async (action: ActionType) => {
     setActiveAction(action);
@@ -362,52 +364,54 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
     }
   };
 
-  const handleSubmitInteraction = async () => {
-    setLoading(true);
+  const handlePhotosSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    setSelectedPhotos(prev => [...prev, ...files]);
+    const newUrls = files.map(file => URL.createObjectURL(file));
+    setPhotoPreviewUrls(prev => [...prev, ...newUrls]);
+    if (photoInputRef.current) photoInputRef.current.value = "";
+  };
+
+  const removePhoto = (index: number) => {
+    URL.revokeObjectURL(photoPreviewUrls[index]);
+    setSelectedPhotos(prev => prev.filter((_, i) => i !== index));
+    setPhotoPreviewUrls(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUploadPhotos = async () => {
+    if (selectedPhotos.length === 0) return;
+    setUploadingPhotos(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const location = await getCurrentLocation();
-
-      const { error } = await supabase.from('interactions').insert({
-        task_id: null,
-        agent_id: user.id,
-        interaction_type: 'other',
-        store_id: storeId,
-        customer_name: storeName,
-        outcome: 'completed',
-        quantity_sold: 0,
-        metadata: { 
-          notes: interactionNotes || `Automatic engagement log for ${storeName}`, 
-          sentiment: sentiment || 5,
-          store_county: storeCounty
-        },
-        latitude: location.latitude,
-        longitude: location.longitude,
-        timestamp: new Date().toISOString(),
-        workspace_id: currentWorkspaceId
-      } as any);
-
-      if (error) throw error;
+      for (const file of selectedPhotos) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${storeId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('sale-photos')
+          .upload(fileName, file, { contentType: file.type });
+        if (uploadError) throw uploadError;
+      }
 
       toast({
-        title: "Engagement Logged",
-        description: "Engagement interaction has been recorded successfully.",
+        title: "Photos Uploaded",
+        description: `${selectedPhotos.length} photo(s) uploaded for ${storeName}.`,
       });
-      
-      // Reset and return to actions
+
+      photoPreviewUrls.forEach(url => URL.revokeObjectURL(url));
+      setSelectedPhotos([]);
+      setPhotoPreviewUrls([]);
       setActiveAction(null);
-      setInteractionNotes("");
-      setSentiment(0);
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Upload Error",
+        description: error.message || "Failed to upload photos.",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setUploadingPhotos(false);
     }
   };
 
@@ -794,47 +798,52 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
           </div>
         );
 
-      case "interaction":
+      case "photos":
         return (
           <div className="space-y-4 mt-4">
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800 font-medium">Automatic Engagement Log</p>
-              <p className="text-xs text-blue-600 mt-1">
-                This will automatically log an "Engaged" interaction for {storeName}
-              </p>
-            </div>
-            <div>
-              <Label>Additional Notes (Optional)</Label>
-              <Textarea
-                value={interactionNotes}
-                onChange={(e) => setInteractionNotes(e.target.value)}
-                placeholder="Add any additional details about the engagement..."
-                rows={3}
-              />
-            </div>
-            <div>
-              <Label>Customer Sentiment (Optional)</Label>
-              <div className="flex gap-1 mt-2">
-                {[1, 2, 3, 4, 5].map((rating) => (
-                  <button
-                    key={rating}
-                    onClick={() => setSentiment(rating)}
-                    className="p-1"
-                  >
-                    <Star
-                      size={32}
-                      className={`${
-                        rating <= sentiment
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300"
-                      }`}
-                    />
-                  </button>
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              capture="environment"
+              className="hidden"
+              onChange={handlePhotosSelected}
+            />
+
+            {photoPreviewUrls.length > 0 && (
+              <div className="grid grid-cols-3 gap-2">
+                {photoPreviewUrls.map((url, index) => (
+                  <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
+                    <img src={url} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => removePhoto(index)}
+                      className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
                 ))}
               </div>
-            </div>
-            <Button onClick={handleSubmitInteraction} disabled={loading} className="w-full">
-              {loading ? "Logging Engagement..." : "Log Engagement"}
+            )}
+
+            <Button
+              variant="outline"
+              onClick={() => photoInputRef.current?.click()}
+              className="w-full h-20 border-dashed flex flex-col gap-1"
+            >
+              <Camera size={24} className="text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                {photoPreviewUrls.length > 0 ? "Add More Photos" : "Take or Select Photos"}
+              </span>
+            </Button>
+
+            <Button
+              onClick={handleUploadPhotos}
+              disabled={selectedPhotos.length === 0 || uploadingPhotos}
+              className="w-full"
+            >
+              {uploadingPhotos ? "Uploading..." : `Upload ${selectedPhotos.length} Photo(s)`}
             </Button>
           </div>
         );
@@ -891,10 +900,10 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                 <Button
                   variant="outline"
                   className="h-24 flex flex-col gap-2"
-                  onClick={() => handleActionClick("interaction")}
+                  onClick={() => handleActionClick("photos")}
                 >
-                  <MessageSquare size={24} />
-                  <span className="text-xs">Collect Feedback</span>
+                  <Camera size={24} />
+                  <span className="text-xs">Add Photos</span>
                 </Button>
               </div>
               <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full">
