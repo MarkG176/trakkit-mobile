@@ -584,18 +584,41 @@ export const Routes = () => {
                   <Label htmlFor="store-county" className="text-sm font-medium text-foreground mb-2 block">
                     County
                   </Label>
-                  <Select value={newStoreCounty} onValueChange={setNewStoreCounty}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select county/region" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from(new Set([...counties, ...getCountryRegions()])).sort().map((county) => (
-                        <SelectItem key={county} value={county}>
-                          {county}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className={cn(
+                          "w-full justify-between font-normal",
+                          !newStoreCounty && "text-muted-foreground"
+                        )}
+                      >
+                        {newStoreCounty || "Select county/region"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search county/region..." />
+                        <CommandList>
+                          <CommandEmpty>No county found.</CommandEmpty>
+                          <CommandGroup>
+                            {Array.from(new Set([...counties, ...getCountryRegions()])).sort().map((county) => (
+                              <CommandItem
+                                key={county}
+                                value={county}
+                                onSelect={() => setNewStoreCounty(county)}
+                              >
+                                <Check className={cn("mr-2 h-4 w-4", newStoreCounty === county ? "opacity-100" : "opacity-0")} />
+                                {county}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <div>
