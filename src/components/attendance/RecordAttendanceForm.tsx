@@ -327,6 +327,7 @@ export const RecordAttendanceForm = () => {
         open={showStockReport}
         onOpenChange={setShowStockReport}
         reportType={stockReportType}
+        storeId={currentStoreId}
         onComplete={() => {
           console.log('Stock report completed');
         }}
