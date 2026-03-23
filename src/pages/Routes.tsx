@@ -545,10 +545,10 @@ export const Routes = () => {
                   </Label>
                   <Select value={newStoreCounty} onValueChange={setNewStoreCounty}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select county" />
+                      <SelectValue placeholder="Select county/region" />
                     </SelectTrigger>
                     <SelectContent>
-                      {counties.map((county) => (
+                      {Array.from(new Set([...counties, ...TANZANIA_REGIONS])).sort().map((county) => (
                         <SelectItem key={county} value={county}>
                           {county}
                         </SelectItem>
