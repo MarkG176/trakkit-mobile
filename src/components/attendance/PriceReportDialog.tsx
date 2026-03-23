@@ -136,7 +136,8 @@ export const PriceReportDialog = ({
 
       toast({ title: "Price Report Submitted", description: "Store price report saved successfully" });
       setPrices({});
-      setCurrentIndex(0);
+      setSkus({});
+      setMeasurements({});
       onComplete();
       onOpenChange(false);
     } catch (error) {
