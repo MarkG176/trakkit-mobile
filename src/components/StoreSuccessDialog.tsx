@@ -50,6 +50,8 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
   const { currentWorkspaceId, currentProjectId } = useWorkspace();
   const [activeAction, setActiveAction] = useState<ActionType>(null);
   const [loading, setLoading] = useState(false);
+  const [showStockReport, setShowStockReport] = useState(false);
+  const [isPepsiResearch, setIsPepsiResearch] = useState(false);
 
   // Survey state
   const [selectedSurvey, setSelectedSurvey] = useState("");
@@ -75,6 +77,24 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
+
+  // Check if current project is "Pepsi Research"
+  useEffect(() => {
+    const checkProjectName = async () => {
+      if (!currentProjectId || !open) return;
+      try {
+        const { data } = await supabase
+          .from('project_plans')
+          .select('project_name')
+          .eq('id', currentProjectId)
+          .single();
+        setIsPepsiResearch(data?.project_name?.toLowerCase() === 'pepsi research');
+      } catch {
+        setIsPepsiResearch(false);
+      }
+    };
+    checkProjectName();
+  }, [currentProjectId, open]);
 
   const handleActionClick = async (action: ActionType) => {
     setActiveAction(action);
