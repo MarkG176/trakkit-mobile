@@ -968,7 +968,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                   <MessageSquare size={24} />
                   <span className="text-xs">Collect Feedback</span>
                 </Button>
-                {isPepsiResearch && (
+                {isMarketResearch && (
                   <Button
                     variant="outline"
                     className="h-24 flex flex-col gap-2"
