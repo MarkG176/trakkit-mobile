@@ -279,6 +279,12 @@ export const StockReportDialog = ({
                               Unavailable
                             </span>
                           </SelectItem>
+                          <SelectItem value="not_sold">
+                            <span className="flex items-center gap-2 text-muted-foreground">
+                              <Package className="h-4 w-4 text-muted-foreground" />
+                              Not Sold
+                            </span>
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
