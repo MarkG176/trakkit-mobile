@@ -68,9 +68,11 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [giveawayNotes, setGiveawayNotes] = useState("");
 
-  // Interaction state
-  const [interactionNotes, setInteractionNotes] = useState("");
-  const [sentiment, setSentiment] = useState(0);
+  // Photo upload state
+  const [selectedPhotos, setSelectedPhotos] = useState<File[]>([]);
+  const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const handleActionClick = async (action: ActionType) => {
     setActiveAction(action);
