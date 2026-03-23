@@ -84,7 +84,7 @@ export const Surveys = () => {
     if (currentWorkspaceId) {
       fetchSurveyTemplates();
     }
-  }, [currentWorkspaceId]);
+  }, [currentWorkspaceId, currentProjectId]);
 
   // Auto-open survey if only one exists
   useEffect(() => {
