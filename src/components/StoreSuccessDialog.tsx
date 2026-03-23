@@ -380,35 +380,59 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
     setPhotoPreviewUrls(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleUploadPhotos = async () => {
-    if (selectedPhotos.length === 0) return;
+  const handleUploadFeedback = async () => {
+    if (!feedbackNotes.trim() && selectedPhotos.length === 0) return;
     setUploadingPhotos(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      for (const file of selectedPhotos) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${storeId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage
-          .from('sale-photos')
-          .upload(fileName, file, { contentType: file.type });
-        if (uploadError) throw uploadError;
+      const location = await getCurrentLocation();
+
+      // Upload photos if any
+      if (selectedPhotos.length > 0) {
+        for (const file of selectedPhotos) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${storeId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          const { error: uploadError } = await supabase.storage
+            .from('sale-photos')
+            .upload(fileName, file, { contentType: file.type });
+          if (uploadError) throw uploadError;
+        }
+      }
+
+      // Record feedback as interaction
+      if (feedbackNotes.trim()) {
+        await supabase.from('interactions').insert({
+          task_id: null,
+          agent_id: user.id,
+          interaction_type: 'engagement',
+          store_id: storeId,
+          customer_name: storeName,
+          outcome: 'completed',
+          quantity_sold: 0,
+          latitude: location.latitude,
+          longitude: location.longitude,
+          timestamp: new Date().toISOString(),
+          workspace_id: currentWorkspaceId,
+          metadata: { feedback_notes: feedbackNotes }
+        } as any);
       }
 
       toast({
-        title: "Photos Uploaded",
-        description: `${selectedPhotos.length} photo(s) uploaded for ${storeName}.`,
+        title: "Feedback Submitted",
+        description: `Feedback${selectedPhotos.length > 0 ? ` and ${selectedPhotos.length} photo(s)` : ''} recorded for ${storeName}.`,
       });
 
       photoPreviewUrls.forEach(url => URL.revokeObjectURL(url));
       setSelectedPhotos([]);
       setPhotoPreviewUrls([]);
+      setFeedbackNotes("");
       setActiveAction(null);
     } catch (error: any) {
       toast({
-        title: "Upload Error",
-        description: error.message || "Failed to upload photos.",
+        title: "Error",
+        description: error.message || "Failed to submit feedback.",
         variant: "destructive",
       });
     } finally {
