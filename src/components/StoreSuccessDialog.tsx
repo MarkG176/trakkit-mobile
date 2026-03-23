@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { StockReportDialog } from "@/components/attendance/StockReportDialog";
+import { PriceReportDialog } from "@/components/attendance/PriceReportDialog";
 
 interface StoreSuccessDialogProps {
   open: boolean;
@@ -51,6 +52,8 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
   const [activeAction, setActiveAction] = useState<ActionType>(null);
   const [loading, setLoading] = useState(false);
   const [showStockReport, setShowStockReport] = useState(false);
+  const [showPriceReport, setShowPriceReport] = useState(false);
+  const [stockReportLevels, setStockReportLevels] = useState<Record<string, string>>({});
   const [isMarketResearch, setIsMarketResearch] = useState(false);
 
   // Survey state
@@ -955,22 +958,26 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                   <ClipboardList size={24} />
                   <span className="text-xs">Start Survey</span>
                 </Button>
-                <Button
-                  variant="outline"
-                  className="h-24 flex flex-col gap-2"
-                  onClick={() => handleActionClick("sale")}
-                >
-                  <ShoppingCart size={24} />
-                  <span className="text-xs">Record Sale</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-24 flex flex-col gap-2"
-                  onClick={() => handleActionClick("giveaway")}
-                >
-                  <Gift size={24} />
-                  <span className="text-xs">Give Products</span>
-                </Button>
+                {!isMarketResearch && (
+                  <>
+                    <Button
+                      variant="outline"
+                      className="h-24 flex flex-col gap-2"
+                      onClick={() => handleActionClick("sale")}
+                    >
+                      <ShoppingCart size={24} />
+                      <span className="text-xs">Record Sale</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-24 flex flex-col gap-2"
+                      onClick={() => handleActionClick("giveaway")}
+                    >
+                      <Gift size={24} />
+                      <span className="text-xs">Give Products</span>
+                    </Button>
+                  </>
+                )}
                 <Button
                   variant="outline"
                   className="h-24 flex flex-col gap-2"
@@ -980,14 +987,25 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                   <span className="text-xs">Collect Feedback</span>
                 </Button>
                 {isMarketResearch && (
-                  <Button
-                    variant="outline"
-                    className="h-24 flex flex-col gap-2"
-                    onClick={() => setShowStockReport(true)}
-                  >
-                    <Package size={24} />
-                    <span className="text-xs">Stock Report</span>
-                  </Button>
+                  <>
+                    <Button
+                      variant="outline"
+                      className="h-24 flex flex-col gap-2"
+                      onClick={() => setShowStockReport(true)}
+                    >
+                      <Package size={24} />
+                      <span className="text-xs">Stock Report</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-24 flex flex-col gap-2"
+                      onClick={() => setShowPriceReport(true)}
+                      disabled={Object.keys(stockReportLevels).length === 0}
+                    >
+                      <ShoppingCart size={24} />
+                      <span className="text-xs">Price Report</span>
+                    </Button>
+                  </>
                 )}
               </div>
               <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full">
@@ -1015,8 +1033,20 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
         onOpenChange={setShowStockReport}
         reportType="morning"
         storeId={storeId}
+        onStockLevelsChange={(levels) => setStockReportLevels(levels)}
         onComplete={() => {
           setShowStockReport(false);
+        }}
+      />
+
+      {/* Price Report Dialog for Market Research projects */}
+      <PriceReportDialog
+        open={showPriceReport}
+        onOpenChange={setShowPriceReport}
+        storeId={storeId}
+        stockLevels={stockReportLevels}
+        onComplete={() => {
+          setShowPriceReport(false);
         }}
       />
     </Dialog>

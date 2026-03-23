@@ -2915,6 +2915,64 @@ export type Database = {
           },
         ]
       }
+      store_price_reports: {
+        Row: {
+          agent_id: string
+          created_at: string
+          id: string
+          price: number
+          product_variant_id: string
+          stock_level: string | null
+          store_id: string | null
+          work_date: string
+          workspace_id: string | null
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          id?: string
+          price?: number
+          product_variant_id: string
+          stock_level?: string | null
+          store_id?: string | null
+          work_date?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          id?: string
+          price?: number
+          product_variant_id?: string
+          stock_level?: string | null
+          store_id?: string | null
+          work_date?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_price_reports_product_variant_id_fkey"
+            columns: ["product_variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_price_reports_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_price_reports_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_visits: {
         Row: {
           agent_id: string

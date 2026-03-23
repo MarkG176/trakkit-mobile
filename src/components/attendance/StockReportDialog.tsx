@@ -25,7 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Package, CheckCircle2, AlertTriangle, XCircle, Loader2 } from "lucide-react";
 
-type StockLevel = "available" | "low_stock" | "unavailable";
+type StockLevel = "available" | "low_stock" | "unavailable" | "not_sold";
 
 interface StockReportDialogProps {
   open: boolean;
@@ -33,6 +33,7 @@ interface StockReportDialogProps {
   reportType: "morning" | "evening";
   onComplete: () => void;
   storeId?: string | null;
+  onStockLevelsChange?: (levels: Record<string, string>) => void;
 }
 
 export const StockReportDialog = ({
@@ -41,6 +42,7 @@ export const StockReportDialog = ({
   reportType,
   onComplete,
   storeId,
+  onStockLevelsChange,
 }: StockReportDialogProps) => {
   const { user } = useAuth();
   const { currentWorkspaceId } = useWorkspace();
@@ -92,10 +94,12 @@ export const StockReportDialog = ({
   }, [open, reportType, user]);
 
   const handleStockLevelChange = (productVariantId: string, level: StockLevel) => {
-    setStockLevels((prev) => ({
-      ...prev,
+    const newLevels = {
+      ...stockLevels,
       [productVariantId]: level,
-    }));
+    };
+    setStockLevels(newLevels);
+    onStockLevelsChange?.(newLevels as Record<string, string>);
   };
 
   const getStockIcon = (level: StockLevel | undefined) => {
@@ -106,6 +110,8 @@ export const StockReportDialog = ({
         return <AlertTriangle className="h-4 w-4 text-yellow-600 shrink-0" />;
       case "unavailable":
         return <XCircle className="h-4 w-4 text-red-600 shrink-0" />;
+      case "not_sold":
+        return <Package className="h-4 w-4 text-muted-foreground shrink-0" />;
       default:
         return null;
     }
@@ -275,6 +281,12 @@ export const StockReportDialog = ({
                             <span className="flex items-center gap-2">
                               <XCircle className="h-4 w-4 text-red-600" />
                               Unavailable
+                            </span>
+                          </SelectItem>
+                          <SelectItem value="not_sold">
+                            <span className="flex items-center gap-2 text-muted-foreground">
+                              <Package className="h-4 w-4 text-muted-foreground" />
+                              Not Sold
                             </span>
                           </SelectItem>
                         </SelectContent>
