@@ -43,6 +43,7 @@ export const Profile = () => {
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const { currentTeamType, isInitialized, isLoading: isWorkspaceLoading } = useWorkspace();
+  const { t } = useLanguage();
   const stats = useAgentProfileStats();
   const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
   const isSeeding = currentTeamType?.toLowerCase() === 'seeding';
