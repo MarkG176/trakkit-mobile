@@ -32,6 +32,7 @@ interface StockReportDialogProps {
   onOpenChange: (open: boolean) => void;
   reportType: "morning" | "evening";
   onComplete: () => void;
+  storeId?: string | null;
 }
 
 export const StockReportDialog = ({
@@ -39,6 +40,7 @@ export const StockReportDialog = ({
   onOpenChange,
   reportType,
   onComplete,
+  storeId,
 }: StockReportDialogProps) => {
   const { user } = useAuth();
   const { currentWorkspaceId } = useWorkspace();
@@ -150,6 +152,7 @@ export const StockReportDialog = ({
           report_type: reportType,
           work_date: today,
           workspace_id: currentWorkspaceId,
+          store_id: storeId || null,
         }));
 
         const { error } = await supabase
@@ -167,6 +170,7 @@ export const StockReportDialog = ({
           report_type: reportType,
           work_date: today,
           workspace_id: currentWorkspaceId,
+          store_id: storeId || null,
         }));
 
         const { error } = await supabase

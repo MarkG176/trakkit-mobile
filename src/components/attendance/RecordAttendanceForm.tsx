@@ -30,6 +30,7 @@ export const RecordAttendanceForm = () => {
   const [showSeedingEveningReport, setShowSeedingEveningReport] = useState(false);
   const [showInstoreClosingReport, setShowInstoreClosingReport] = useState(false);
   const [showSurveyClosingReport, setShowSurveyClosingReport] = useState(false);
+  const [currentStoreId, setCurrentStoreId] = useState<string | null>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   // Ref-based guard to prevent duplicate calls (survives re-renders and is synchronous)
   const isProcessingRef = useRef(false);
@@ -92,6 +93,27 @@ export const RecordAttendanceForm = () => {
           title: 'Success',
           description: successMessage,
         });
+
+        // Resolve the agent's current store from store_visits
+        const today = new Date().toISOString().split("T")[0];
+        try {
+          const { data: visitData } = await supabase
+            .from('store_visits')
+            .select('store_id')
+            .eq('agent_id', user.id)
+            .eq('planned_date', today)
+            .not('check_in_time', 'is', null)
+            .is('check_out_time', null)
+            .order('check_in_time', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (visitData?.store_id) {
+            setCurrentStoreId(visitData.store_id);
+          }
+        } catch (err) {
+          console.error('Error resolving current store:', err);
+        }
 
         // Check if we need to show stock report dialog for wholesale team_type
         const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
@@ -305,6 +327,7 @@ export const RecordAttendanceForm = () => {
         open={showStockReport}
         onOpenChange={setShowStockReport}
         reportType={stockReportType}
+        storeId={currentStoreId}
         onComplete={() => {
           console.log('Stock report completed');
         }}
@@ -331,6 +354,7 @@ export const RecordAttendanceForm = () => {
       <InstoreClosingReportDialog
         open={showInstoreClosingReport}
         onOpenChange={setShowInstoreClosingReport}
+        storeId={currentStoreId}
         onComplete={() => {
           console.log('Instore closing report completed');
         }}
