@@ -998,7 +998,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
         </div>
       </DialogContent>
 
-      {/* Stock Report Dialog for Pepsi Research */}
+      {/* Stock Report Dialog for Market Research projects */}
       <StockReportDialog
         open={showStockReport}
         onOpenChange={setShowStockReport}
