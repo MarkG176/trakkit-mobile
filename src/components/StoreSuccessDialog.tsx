@@ -907,7 +907,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                 type="file"
                 accept="image/*"
                 multiple
-                capture="environment"
+                
                 className="hidden"
                 onChange={handlePhotosSelected}
               />
