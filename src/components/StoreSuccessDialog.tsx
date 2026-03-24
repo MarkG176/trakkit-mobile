@@ -120,9 +120,20 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
         query = query.eq('project_id', currentProjectId);
       }
       
-      const { data } = await query;
+      const { data, error } = await query;
+      if (error) {
+        console.error('Error loading surveys:', error);
+      }
       const publishedSurveys = data || [];
       setSurveys(publishedSurveys);
+      
+      // Auto-select if there's exactly one survey
+      if (publishedSurveys.length === 1) {
+        const survey = publishedSurveys[0];
+        setSelectedSurvey(survey.id);
+        const questions = Array.isArray(survey.questions) ? survey.questions : [];
+        setSurveyQuestions(questions);
+      }
     } else if (action === "sale" || action === "giveaway") {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
