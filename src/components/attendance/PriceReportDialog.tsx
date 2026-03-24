@@ -96,7 +96,7 @@ export const PriceReportDialog = ({
   };
 
   const filledCount = eligibleProducts.filter(
-    (item) => prices[item.product_variant_id] && parseFloat(prices[item.product_variant_id]) > 0
+    (item) => prices[item.product_variant_id] && prices[item.product_variant_id].trim().length > 0
   ).length;
 
   const allPricesEntered = totalProducts > 0 && filledCount === totalProducts;
