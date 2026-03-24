@@ -429,22 +429,35 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
   const handleUploadFeedback = async () => {
     if (!feedbackNotes.trim() && selectedPhotos.length === 0) return;
     setUploadingPhotos(true);
+    const photoCount = selectedPhotos.length;
+    console.log('📸 Feedback submit started. Photos:', photoCount, 'Notes:', feedbackNotes.length > 0);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const location = await getCurrentLocation();
-
-      // Upload photos if any
-      if (selectedPhotos.length > 0) {
+      // Upload photos FIRST (before geolocation which can block/timeout)
+      if (photoCount > 0) {
         for (const file of selectedPhotos) {
           const fileExt = file.name.split('.').pop();
           const fileName = `${storeId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          console.log('📤 Uploading to store_images:', fileName);
           const { error: uploadError } = await supabase.storage
             .from('store_images')
             .upload(fileName, file, { contentType: file.type });
-          if (uploadError) throw uploadError;
+          if (uploadError) {
+            console.error('❌ Upload error:', uploadError);
+            throw uploadError;
+          }
+          console.log('✅ Upload success:', fileName);
         }
+      }
+
+      // Get location with fallback (don't let it block the submission)
+      let location = { latitude: 0, longitude: 0 };
+      try {
+        location = await getCurrentLocation();
+      } catch (locErr) {
+        console.warn('⚠️ Geolocation failed, using fallback (0,0):', locErr);
       }
 
       // Record feedback as interaction
@@ -467,7 +480,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
 
       toast({
         title: "Feedback Submitted",
-        description: `Feedback${selectedPhotos.length > 0 ? ` and ${selectedPhotos.length} photo(s)` : ''} recorded for ${storeName}.`,
+        description: `Feedback${photoCount > 0 ? ` and ${photoCount} photo(s)` : ''} recorded for ${storeName}.`,
       });
 
       photoPreviewUrls.forEach(url => URL.revokeObjectURL(url));
@@ -476,6 +489,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
       setFeedbackNotes("");
       setActiveAction(null);
     } catch (error: any) {
+      console.error('❌ Feedback submission error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to submit feedback.",
