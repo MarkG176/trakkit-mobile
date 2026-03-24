@@ -228,7 +228,7 @@ export const PriceReportDialog = ({
             {/* Dot indicators */}
             <div className="flex justify-center gap-1.5 flex-wrap">
               {eligibleProducts.map((item, idx) => {
-                const hasPriceValue = prices[item.product_variant_id] && parseFloat(prices[item.product_variant_id]) > 0;
+                const hasPriceValue = prices[item.product_variant_id] && prices[item.product_variant_id].trim().length > 0;
                 return (
                   <button
                     key={item.id}
