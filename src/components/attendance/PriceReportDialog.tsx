@@ -96,7 +96,7 @@ export const PriceReportDialog = ({
   };
 
   const filledCount = eligibleProducts.filter(
-    (item) => prices[item.product_variant_id] && parseFloat(prices[item.product_variant_id]) > 0
+    (item) => prices[item.product_variant_id] && prices[item.product_variant_id].trim().length > 0
   ).length;
 
   const allPricesEntered = totalProducts > 0 && filledCount === totalProducts;
@@ -119,15 +119,20 @@ export const PriceReportDialog = ({
     setSubmitting(true);
     try {
       const today = new Date().toISOString().split("T")[0];
-      const reports = eligibleProducts.map((item) => ({
-        agent_id: user.id,
-        store_id: storeId || null,
-        product_variant_id: item.product_variant_id,
-        price: parseFloat(prices[item.product_variant_id]) || 0,
-        stock_level: stockLevels[item.product_variant_id] || null,
-        work_date: today,
-        workspace_id: currentWorkspaceId,
-      }));
+      const reports = eligibleProducts.map((item) => {
+        const rawPrice = prices[item.product_variant_id] || "";
+        const numericPrice = parseFloat(rawPrice.replace(/[^0-9.]/g, '')) || 0;
+        return {
+          agent_id: user.id,
+          store_id: storeId || null,
+          product_variant_id: item.product_variant_id,
+          price: numericPrice,
+          measurement: rawPrice.trim() || null,
+          stock_level: stockLevels[item.product_variant_id] || null,
+          work_date: today,
+          workspace_id: currentWorkspaceId,
+        };
+      });
 
       const { error } = await supabase.from("store_price_reports" as any).insert(reports);
       if (error) throw error;
@@ -223,7 +228,7 @@ export const PriceReportDialog = ({
             {/* Dot indicators */}
             <div className="flex justify-center gap-1.5 flex-wrap">
               {eligibleProducts.map((item, idx) => {
-                const hasPriceValue = prices[item.product_variant_id] && parseFloat(prices[item.product_variant_id]) > 0;
+                const hasPriceValue = prices[item.product_variant_id] && prices[item.product_variant_id].trim().length > 0;
                 return (
                   <button
                     key={item.id}
