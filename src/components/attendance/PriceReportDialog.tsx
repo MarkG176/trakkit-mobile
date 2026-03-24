@@ -180,9 +180,7 @@ export const PriceReportDialog = ({
               <div className="space-y-2 pt-2">
                 <Label className="text-sm text-muted-foreground">Selling Price (KES)</Label>
                 <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
+                  type="text"
                   placeholder="Enter price..."
                   value={prices[currentProduct.product_variant_id] || ""}
                   onChange={(e) => handlePriceChange(currentProduct.product_variant_id, e.target.value)}
