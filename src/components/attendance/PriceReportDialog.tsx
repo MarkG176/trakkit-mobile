@@ -47,8 +47,6 @@ export const PriceReportDialog = ({
       setCurrentIndex(0);
     }
   }, [open]);
-  const [submitting, setSubmitting] = useState(false);
-
   const eligibleProducts = inventory.filter((item) => {
     const level = stockLevels[item.product_variant_id];
     return level === "available" || level === "low_stock" || level === "unavailable";
