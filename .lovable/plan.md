@@ -1,41 +1,38 @@
 
 
-## Fix: Invited Users Should Default to Their Invited Workspace
+## Analysis: Why Store Images Upload Fails
 
-### Problem
-When a new user is invited via the Supervisor Users page, a database trigger (`on_auth_user_created_add_to_workspace`) automatically adds them to a "Default Workspace" first. Then the `create-user` edge function adds them to the correct invited workspace. On first login, `workspaceService` sorts by `created_at ASC` and picks the first entry -- which is always the Default Workspace because it was created milliseconds earlier by the trigger.
+### Most Likely Root Cause
 
-### Changes
+The upload code is structurally correct, but there are several failure paths that would silently prevent the image from reaching the bucket:
 
-**1. `supabase/functions/create-user/index.ts`**
-- After creating the `user_workspaces` entry for the invited workspace, delete any "Default Workspace" entry for that user (so there's no competing record)
-- Look up the default workspace by name ("Default Workspace") and remove the user from it, but only if the invited workspace is different from the default
+1. **Geolocation blocks the upload**: `getCurrentLocation()` runs BEFORE the storage upload. If location is denied or times out (10s timeout, `maximumAge: 0` forces fresh lookup), the entire function throws and the upload never executes. The error message shown would be a geolocation error, not a storage one.
 
-**2. `src/services/workspaceService.ts`**
-- Change the sort order from `created_at ASC` to `created_at DESC` on line 127
-- This ensures that if multiple workspace entries exist, the most recently assigned one (the invited workspace) is selected as the default on first login
+2. **`capture` + `multiple` conflict on mobile**: The file input has both `capture="environment"` and `multiple`. On many mobile browsers, when `capture` is present, `multiple` is ignored and in some edge cases the file may not be properly captured into the `File` object array.
+
+3. **Feedback-only submission**: If `feedbackNotes` has text but `selectedPhotos` is empty (e.g., the photo didn't register in state), the submit button is enabled and the function runs, shows "Feedback Submitted" toast, but skips the upload block entirely.
+
+### Plan
+
+**File: `src/components/StoreSuccessDialog.tsx`**
+
+1. **Move photo upload BEFORE geolocation** -- Upload images first so they aren't blocked by location failures. Get location only for the interaction record (which can use a fallback).
+
+2. **Remove `capture` attribute from the multi-photo input** -- Keep `accept="image/*"` which still prompts camera on mobile but doesn't conflict with `multiple`. This ensures all selected files register properly.
+
+3. **Add geolocation fallback** -- If location fails, still proceed with the upload and interaction record using `latitude: 0, longitude: 0` instead of throwing.
+
+4. **Add console logging** -- Log upload results for debugging, and log when `selectedPhotos` is empty at submit time.
 
 ### Technical Details
 
-In `create-user/index.ts`, after the existing `user_workspaces` upsert (around line 85), add:
-
 ```text
-// Remove user from Default Workspace if they were invited to a different one
-const { data: defaultWs } = await supabaseAdmin
-  .from('workspaces')
-  .select('id')
-  .eq('name', 'Default Workspace')
-  .single();
+Current flow:
+  authenticate → get location → upload photos → insert interaction
 
-if (defaultWs && defaultWs.id !== workspaceId) {
-  await supabaseAdmin
-    .from('user_workspaces')
-    .delete()
-    .eq('user_id', userId)
-    .eq('workspace_id', defaultWs.id);
-}
+Proposed flow:
+  authenticate → upload photos → get location (with fallback) → insert interaction
 ```
 
-In `workspaceService.ts`, line 127:
-- Change `.order('created_at', { ascending: true })` to `.order('created_at', { ascending: false })`
+The key change is decoupling the photo upload from the location requirement, and fixing the `capture`+`multiple` input conflict.
 
