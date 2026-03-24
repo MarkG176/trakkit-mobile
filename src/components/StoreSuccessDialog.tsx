@@ -441,7 +441,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
           const fileExt = file.name.split('.').pop();
           const fileName = `${storeId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
           const { error: uploadError } = await supabase.storage
-            .from('sale-photos')
+            .from('store_images')
             .upload(fileName, file, { contentType: file.type });
           if (uploadError) throw uploadError;
         }
