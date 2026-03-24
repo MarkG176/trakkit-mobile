@@ -33,10 +33,20 @@ export const PriceReportDialog = ({
 }: PriceReportDialogProps) => {
   const { user } = useAuth();
   const { currentWorkspaceId } = useWorkspace();
-  const { inventory, loading: inventoryLoading } = useInventory();
+  const { inventory, loading: inventoryLoading, refetch: refetchInventory } = useInventory();
   const { toast } = useToast();
   const [prices, setPrices] = useState<Record<string, string>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Re-fetch inventory when dialog opens to ensure fresh data
+  React.useEffect(() => {
+    if (open) {
+      refetchInventory();
+      setPrices({});
+      setCurrentIndex(0);
+    }
+  }, [open]);
   const [submitting, setSubmitting] = useState(false);
 
   const eligibleProducts = inventory.filter((item) => {
