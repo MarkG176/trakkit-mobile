@@ -253,7 +253,7 @@ export const StockReportDialog = ({
                     <div className="space-y-2">
                       <div className="flex items-start gap-2">
                         {getStockIcon(stockLevels[item.product_variant_id])}
-                        <Label className="font-medium leading-tight">{item.name}</Label>
+                        <Label className="font-medium leading-tight">{item.sku ? `${item.sku} - ${item.name}` : item.name}</Label>
                       </div>
                       <Select
                         value={stockLevels[item.product_variant_id] || ""}
