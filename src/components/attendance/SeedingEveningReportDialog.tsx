@@ -79,7 +79,7 @@ export const SeedingEveningReportDialog = ({ open, onOpenChange, onComplete }: S
       // Fetch from customer_purchases with product variant details
       const { data: purchasesData, error: purchasesError } = await supabase
         .from("customer_purchases")
-        .select("quantity, total_value, product_variant_id, product_variants(name)")
+        .select("quantity, total_value, product_variant_id, product_variants(name, sku)")
         .eq("agent_id", user.id)
         .eq("workspace_id", currentWorkspaceId)
         .gte("purchase_date", todayStart.toISOString())
@@ -100,8 +100,9 @@ export const SeedingEveningReportDialog = ({ open, onOpenChange, onComplete }: S
       });
 
       (purchasesData || []).forEach((item) => {
-        const productVariant = item.product_variants as { name: string } | null;
-        const name = productVariant?.name || "Unknown Product";
+        const productVariant = item.product_variants as { name: string; sku?: string | null } | null;
+        const baseName = productVariant?.name || "Unknown Product";
+        const name = productVariant?.sku ? `${productVariant.sku} - ${baseName}` : baseName;
         if (!aggregated[name]) {
           aggregated[name] = { product_name: name, quantity_sold: 0, total_value: 0 };
         }

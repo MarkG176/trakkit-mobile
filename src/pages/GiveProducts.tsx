@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface SelectedProduct {
   id: string;
   name: string;
+  sku: string | null;
   quantity: number;
   maxQuantity: number;
   productVariantId: string;
@@ -70,6 +71,7 @@ export const GiveProducts = () => {
       setSelectedProducts(prev => [...prev, {
         id: item.id,
         name: item.name || 'Unknown Product',
+        sku: item.sku || null,
         quantity: 1,
         maxQuantity: item.amount_issued,
         productVariantId: item.product_variant_id
@@ -266,7 +268,7 @@ export const GiveProducts = () => {
           <div className="flex flex-wrap gap-2">
             {selectedProducts.map((product) => (
               <div key={product.id} className="flex items-center gap-1 bg-primary text-primary-foreground px-2 py-1 rounded-full text-xs">
-                <span>{product.name}</span>
+                <span>{product.sku ? `${product.sku} - ${product.name}` : product.name}</span>
                 <span className="font-medium">×{product.quantity}</span>
               </div>
             ))}
@@ -312,7 +314,7 @@ export const GiveProducts = () => {
                       </div>
                     )}
                   </div>
-                  <h3 className="font-medium text-xs text-center mb-1 line-clamp-2">{item.name || 'Unknown Product'}</h3>
+                  <h3 className="font-medium text-xs text-center mb-1 line-clamp-2">{item.sku ? `${item.sku} - ${item.name || 'Unknown Product'}` : (item.name || 'Unknown Product')}</h3>
                   <p className="text-xs text-muted-foreground mb-2 text-center">
                     Available: {item.amount_issued}
                   </p>

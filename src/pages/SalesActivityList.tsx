@@ -39,7 +39,7 @@ export const SalesActivityList = () => {
 
         const { data: interactions } = await supabase
           .from('interactions')
-          .select('id, timestamp, customer_name, sale_value, product_variant_id, image_url, product_variants(name)')
+          .select('id, timestamp, customer_name, sale_value, product_variant_id, image_url, product_variants(name, sku)')
           .eq('interaction_type', 'sale')
           .in('task_id', taskIds)
           .order('timestamp', { ascending: false });
@@ -55,7 +55,7 @@ export const SalesActivityList = () => {
 
               return {
                 ...interaction,
-                product_name: (interaction as any).product_variants?.name || null,
+                product_name: (() => { const pv = (interaction as any).product_variants; return pv?.sku ? `${pv.sku} - ${pv.name || 'Product'}` : (pv?.name || null); })(),
                 has_notes: (notes?.length || 0) > 0,
                 has_images: !!interaction.image_url
               };

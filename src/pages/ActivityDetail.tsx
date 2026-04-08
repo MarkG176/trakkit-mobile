@@ -47,14 +47,16 @@ export const ActivityDetail = () => {
       try {
         const { data: interaction } = await supabase
           .from('interactions')
-          .select('*, product_variants(name)')
+          .select('*, product_variants(name, sku)')
           .eq('id', activityId)
           .single();
 
         if (interaction) {
+          const pv = (interaction as any).product_variants;
+          const productName = pv?.sku ? `${pv.sku} - ${pv.name || 'Product'}` : (pv?.name || null);
           setActivity({
             ...interaction,
-            product_name: (interaction as any).product_variants?.name || null
+            product_name: productName
           });
           if (interaction.image_url) {
             setImages([interaction.image_url]);

@@ -63,19 +63,22 @@ export const InstoreClosingReportDialog = ({
     try {
       const { data, error } = await supabase
         .from("agent_task_inventory")
-        .select("id, product_variant_id, name")
+        .select("id, product_variant_id, name, product_variants!inner(sku)")
         .eq("agent_id", user.id)
         .eq("is_deleted", false);
 
       if (error) throw error;
 
-      const productReports: ProductReport[] = (data || []).map((item) => ({
+      const productReports: ProductReport[] = (data || []).map((item) => {
+        const sku = (item as any).product_variants?.sku;
+        const baseName = item.name || "Unknown Product";
+        return {
         product_variant_id: item.product_variant_id,
-        name: item.name || "Unknown Product",
+        name: sku ? `${sku} - ${baseName}` : baseName,
         opening_stock: "",
         quantity_sold: "",
         closing_stock: "",
-      }));
+      };});
 
       setProducts(productReports);
     } catch (error) {

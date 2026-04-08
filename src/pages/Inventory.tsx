@@ -168,10 +168,7 @@ export const Inventory = () => {
                   </div>
                   
                   <div className="flex-1">
-                    <h3 className="text-h3 mb-1">{item.name || 'Product'}</h3>
-                    <div className="flex items-center gap-2 mb-2">
-                      <p className="text-secondary text-xs font-medium">{item.sku || 'N/A'}</p>
-                    </div>
+                    <h3 className="text-h3 mb-1">{item.sku ? `${item.sku} - ${item.name || 'Product'}` : (item.name || 'Product')}</h3>
                     
                     <div className="flex items-center justify-between">
                       <span className="text-body font-medium">KES {item.price || 0}</span>

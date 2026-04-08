@@ -91,7 +91,7 @@ export const UserDetailSheet = ({
           quantity_sold,
           sale_value,
           created_at,
-          product_variants (name)
+          product_variants (name, sku)
         `)
         .eq('agent_id', userId)
         .eq('workspace_id', currentWorkspaceId)
@@ -105,7 +105,7 @@ export const UserDetailSheet = ({
         quantity_sold: sale.quantity_sold,
         sale_value: sale.sale_value,
         created_at: sale.created_at || '',
-        product_name: (sale.product_variants as any)?.name || 'Product',
+        product_name: (() => { const pv = (sale.product_variants as any); return pv?.sku ? `${pv.sku} - ${pv.name || 'Product'}` : (pv?.name || 'Product'); })(),
       }));
 
       setRecentSales(formattedSales);
