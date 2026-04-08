@@ -39,6 +39,7 @@ export const ActivityDetail = () => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [noteContent, setNoteContent] = useState("");
   const [loading, setLoading] = useState(true);
+  const [imageCaption, setImageCaption] = useState("");
 
   useEffect(() => {
     const fetchActivityDetails = async () => {
