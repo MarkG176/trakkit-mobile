@@ -6,99 +6,66 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Camera, FileText, Download } from "lucide-react";
+import { ArrowLeft, Camera, FileText, Download, Package, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useInventory } from "@/hooks/useInventory";
 import { workspaceService } from "@/services/workspaceService";
 import { toast } from "sonner";
-
-interface InventoryItem {
-  id: string;
-  product_variant_id: string;
-  name: string | null;
-  amount_issued: number;
-}
 
 export const Reports = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { currentWorkspaceId, currentTeamType } = useWorkspace();
   const isSurvey = ['survey', 'survey_campaign'].includes(currentTeamType?.toLowerCase() ?? '');
-  const [loading, setLoading] = useState(false);
+  const { inventory, loading: inventoryLoading } = useInventory();
   const [submitting, setSubmitting] = useState(false);
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState("");
-  const [amount, setAmount] = useState("");
+  const [salesQuantities, setSalesQuantities] = useState<Record<string, number>>({});
   const [notes, setNotes] = useState("");
   const [images, setImages] = useState<File[]>([]);
+  const [reportType, setReportType] = useState("");
 
-  useEffect(() => {
-    const fetchInventory = async () => {
-      if (!user) return;
-      setLoading(true);
-      
-      try {
-        const { data, error } = await supabase
-          .from('agent_task_inventory')
-          .select('id, product_variant_id, name, amount_issued')
-          .eq('agent_id', user.id)
-          .eq('is_deleted', false)
-          .gt('amount_issued', 0);
+  const handleQuantityChange = (productVariantId: string, value: string) => {
+    const num = parseInt(value) || 0;
+    setSalesQuantities(prev => ({ ...prev, [productVariantId]: num }));
+  };
 
-        if (error) throw error;
-
-        setInventory(data || []);
-      } catch (err) {
-        console.error('Failed to fetch inventory', err);
-        toast.error('Failed to load products');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchInventory();
-  }, [user]);
-
-  const handleSubmitSale = async () => {
-    if (!user || !selectedProduct || !amount) {
-      toast.error("Please fill in all fields");
+  const handleSubmitSales = async () => {
+    if (!user || !currentWorkspaceId) {
+      toast.error("Missing user or workspace context");
       return;
     }
 
-    const amountNum = parseFloat(amount);
-    if (isNaN(amountNum) || amountNum <= 0) {
-      toast.error("Please enter a valid amount");
+    const entries = inventory.filter(item => (salesQuantities[item.product_variant_id] || 0) > 0);
+    if (entries.length === 0) {
+      toast.error("Please enter quantities for at least one product");
       return;
     }
 
     setSubmitting(true);
-
     try {
-      // Submit to daily_sales_tracking
-      const { error } = await supabase
-        .from('daily_sales_tracking')
-        .insert({
-          agent_id: user.id,
-          product_variant_id: selectedProduct,
-          quantity_sold: 1,
-          total_value: amountNum,
-          status_event: 'sale',
-          work_date: new Date().toISOString().split('T')[0],
-          workspace_id: currentWorkspaceId
-        });
+      const today = new Date().toISOString().split('T')[0];
+      const records = entries.map(item => ({
+        agent_id: user.id,
+        product_variant_id: item.product_variant_id,
+        product_name: item.name,
+        quantity_sold: salesQuantities[item.product_variant_id],
+        total_value: 0,
+        status_event: 'sale',
+        work_date: today,
+        workspace_id: currentWorkspaceId,
+      }));
 
+      const { error } = await supabase.from('daily_sales_tracking').insert(records);
       if (error) throw error;
 
-      toast.success("Sale recorded successfully!");
-      
-      // Reset form
-      setSelectedProduct("");
-      setAmount("");
+      toast.success("Sales report submitted!");
+      setSalesQuantities({});
     } catch (error) {
-      console.error("Error recording sale:", error);
-      toast.error("Failed to record sale. Please try again.");
+      console.error("Error submitting sales:", error);
+      toast.error("Failed to submit sales report");
     } finally {
       setSubmitting(false);
     }
@@ -111,35 +78,24 @@ export const Reports = () => {
     }
 
     const workspaceId = currentWorkspaceId || workspaceService.getCurrentWorkspaceId();
-    
     if (!workspaceId) {
-      toast.error("No workspace selected. Please select a workspace first.");
+      toast.error("No workspace selected.");
       return;
     }
 
     setSubmitting(true);
-
     try {
-      const { data, error } = await supabase
-        .from('notes')
-        .insert({
-          agent_id: user.id,
-          workspace_id: workspaceId,
-          content: notes
-        })
-        .select();
-
-      if (error) {
-        console.error("Notes insert error:", error);
-        throw error;
-      }
-
-      console.log("✅ Note inserted successfully:", data);
+      const { error } = await supabase.from('notes').insert({
+        agent_id: user.id,
+        workspace_id: workspaceId,
+        content: notes,
+      });
+      if (error) throw error;
       toast.success("Notes saved!");
       setNotes("");
     } catch (error) {
       console.error("Error saving notes:", error);
-      toast.error("Failed to save notes. Please try again.");
+      toast.error("Failed to save notes");
     } finally {
       setSubmitting(false);
     }
@@ -152,35 +108,68 @@ export const Reports = () => {
     }
 
     setSubmitting(true);
-
     try {
       const uploadPromises = images.map(async (image) => {
         const fileExt = image.name.split('.').pop();
         const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
-        // Fix: Use user ID as first folder to match RLS policy
         const filePath = `${user.id}/Capwell/${fileName}`;
 
         const { error } = await supabase.storage
           .from('agent-selfies')
-          .upload(filePath, image, {
-            cacheControl: '3600',
-            upsert: false
-          });
+          .upload(filePath, image, { cacheControl: '3600', upsert: false });
 
-        if (error) {
-          console.error('Upload error for', filePath, ':', error);
-          throw error;
-        }
+        if (error) throw error;
         return filePath;
       });
 
       await Promise.all(uploadPromises);
-
       toast.success("Images uploaded successfully!");
       setImages([]);
     } catch (error) {
       console.error("Error uploading images:", error);
-      toast.error("Failed to upload images. Please try again.");
+      toast.error("Failed to upload images");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleGenerateReport = async () => {
+    if (!user || !currentWorkspaceId) {
+      toast.error("Missing user or workspace context");
+      return;
+    }
+
+    if (!reportType) {
+      toast.error("Please select a report type");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const today = new Date().toISOString().split('T')[0];
+
+      // Submit all product quantities as a report with the selected type
+      const records = inventory.map(item => ({
+        agent_id: user.id,
+        product_variant_id: item.product_variant_id,
+        product_name: item.name,
+        quantity_sold: salesQuantities[item.product_variant_id] || 0,
+        total_value: 0,
+        status_event: reportType,
+        work_date: today,
+        workspace_id: currentWorkspaceId,
+        agent_name: user.user_metadata?.display_name || user.email || '',
+      }));
+
+      const { error } = await supabase.from('daily_sales_tracking').insert(records);
+      if (error) throw error;
+
+      toast.success(`${reportType.charAt(0).toUpperCase() + reportType.slice(1)} report generated and saved!`);
+      setSalesQuantities({});
+      setReportType("");
+    } catch (error) {
+      console.error("Error generating report:", error);
+      toast.error("Failed to generate report");
     } finally {
       setSubmitting(false);
     }
@@ -200,69 +189,67 @@ export const Reports = () => {
           </Button>
           <h1 className="text-h1">{isSurvey ? 'Notes & Images' : 'Sales Report'}</h1>
         </div>
-        
         <p className="text-sm opacity-90">{isSurvey ? 'Add notes and attach images' : 'Record your sales for the day'}</p>
       </div>
 
       <div className="p-4 space-y-6">
         {!isSurvey && (
-        <Card>
-          <CardContent className="p-6">
-            <h3 className="text-h3 mb-6 text-black">Report Daily Sales</h3>
-            
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="product" className="text-sm mb-2 block">
-                    Product
-                  </Label>
-                  <Select value={selectedProduct} onValueChange={setSelectedProduct}>
-                    <SelectTrigger id="product">
-                      <SelectValue placeholder="Select product" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {inventory.map((item) => (
-                        <SelectItem key={item.id} value={item.product_variant_id}>
-                          {item.name || 'Unknown Product'}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label htmlFor="amount" className="text-sm mb-2 block">
-                    Amount
-                  </Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    placeholder="0.00"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-              </div>
+          <Card>
+            <CardContent className="p-6">
+              <h3 className="text-h3 mb-6 text-black flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Sales Report
+              </h3>
 
-              <Button 
-                type="button"
-                onClick={handleSubmitSale} 
-                disabled={submitting || loading || !selectedProduct || !amount}
-                className="w-full"
-              >
-                {submitting ? "Submitting..." : "Submit Sale"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+              {inventoryLoading ? (
+                <div className="py-8 text-center text-muted-foreground flex items-center justify-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading inventory...
+                </div>
+              ) : inventory.length === 0 ? (
+                <div className="py-8 text-center text-muted-foreground">
+                  No products in your inventory to report.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {inventory.map((item) => (
+                    <div key={item.id} className="p-3 rounded-lg border bg-card">
+                      <div className="space-y-2">
+                        <Label className="font-medium leading-tight block">
+                          {item.name || 'Unknown Product'}
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <Label className="text-sm text-muted-foreground shrink-0">Qty sold:</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                            value={salesQuantities[item.product_variant_id] || ''}
+                            onChange={(e) => handleQuantityChange(item.product_variant_id, e.target.value)}
+                            className="w-24"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  <Button
+                    type="button"
+                    onClick={handleSubmitSales}
+                    disabled={submitting || inventory.length === 0}
+                    className="w-full mt-4"
+                  >
+                    {submitting ? "Submitting..." : "Submit Report"}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         )}
 
         <Card>
           <CardContent className="p-6">
             <h3 className="text-h3 mb-6 text-black">Notes</h3>
-            
             <div className="space-y-4">
               <Textarea
                 placeholder="Add your notes here..."
@@ -270,8 +257,7 @@ export const Reports = () => {
                 onChange={(e) => setNotes(e.target.value)}
                 rows={6}
               />
-              
-              <Button 
+              <Button
                 type="button"
                 className="w-full"
                 variant="outline"
@@ -288,7 +274,6 @@ export const Reports = () => {
         <Card>
           <CardContent className="p-6">
             <h3 className="text-h3 mb-6 text-black">Attach Images</h3>
-            
             <div className="space-y-4">
               <Input
                 type="file"
@@ -301,14 +286,12 @@ export const Reports = () => {
                   }
                 }}
               />
-              
               {images.length > 0 && (
                 <div className="text-sm text-muted-foreground">
                   {images.length} image(s) selected
                 </div>
               )}
-              
-              <Button 
+              <Button
                 type="button"
                 className="w-full"
                 variant="outline"
@@ -323,23 +306,39 @@ export const Reports = () => {
         </Card>
 
         {!isSurvey && (
-        <Card>
-          <CardContent className="p-6">
-            <h3 className="text-h3 mb-6 text-black">Export Report</h3>
-            
-            <Button 
-              type="button"
-              className="w-full"
-              onClick={() => toast.success("Report generated and exported!")}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Generate and Export Report
-            </Button>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardContent className="p-6">
+              <h3 className="text-h3 mb-6 text-black">Export Report</h3>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm mb-2 block">Report Type</Label>
+                  <Select value={reportType} onValueChange={setReportType}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select report type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="morning">Morning</SelectItem>
+                      <SelectItem value="evening">Evening</SelectItem>
+                      <SelectItem value="midday">Midday</SelectItem>
+                      <SelectItem value="routine">Routine</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  type="button"
+                  className="w-full"
+                  onClick={handleGenerateReport}
+                  disabled={submitting || !reportType}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  {submitting ? "Generating..." : "Generate and Export Report"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
-        {loading && (
+        {inventoryLoading && (
           <div className="text-center text-muted-foreground">
             Loading products...
           </div>
