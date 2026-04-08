@@ -71,6 +71,7 @@ export const GiveProducts = () => {
       setSelectedProducts(prev => [...prev, {
         id: item.id,
         name: item.name || 'Unknown Product',
+        sku: item.sku || null,
         quantity: 1,
         maxQuantity: item.amount_issued,
         productVariantId: item.product_variant_id
