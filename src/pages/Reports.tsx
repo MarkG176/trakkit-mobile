@@ -20,6 +20,8 @@ export const Reports = () => {
   const { user } = useAuth();
   const { currentWorkspaceId, currentTeamType } = useWorkspace();
   const isSurvey = ['survey', 'survey_campaign'].includes(currentTeamType?.toLowerCase() ?? '');
+  const isInstore = currentTeamType?.toLowerCase() === 'instore';
+  const hideSalesReport = isSurvey || isInstore;
   const { inventory, loading: inventoryLoading } = useInventory();
   const [submitting, setSubmitting] = useState(false);
   const [salesQuantities, setSalesQuantities] = useState<Record<string, number>>({});
@@ -187,13 +189,13 @@ export const Reports = () => {
           >
             <ArrowLeft size={20} />
           </Button>
-          <h1 className="text-h1">{isSurvey ? 'Notes & Images' : 'Sales Report'}</h1>
+          <h1 className="text-h1">{hideSalesReport ? 'Notes & Images' : 'Sales Report'}</h1>
         </div>
-        <p className="text-sm opacity-90">{isSurvey ? 'Add notes and attach images' : 'Record your sales for the day'}</p>
+        <p className="text-sm opacity-90">{hideSalesReport ? 'Add notes and attach images' : 'Record your sales for the day'}</p>
       </div>
 
       <div className="p-4 space-y-6">
-        {!isSurvey && (
+        {!hideSalesReport && (
           <Card>
             <CardContent className="p-6">
               <h3 className="text-h3 mb-6 text-black flex items-center gap-2">
@@ -305,7 +307,7 @@ export const Reports = () => {
           </CardContent>
         </Card>
 
-        {!isSurvey && (
+        {!hideSalesReport && (
           <Card>
             <CardContent className="p-6">
               <h3 className="text-h3 mb-6 text-black">Export Report</h3>
