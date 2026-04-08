@@ -445,19 +445,23 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
       if (!user) throw new Error("Not authenticated");
 
       // Upload photos FIRST (before geolocation which can block/timeout)
+      const uploadedCaptions: { fileName: string; caption: string }[] = [];
       if (photoCount > 0) {
-        for (const file of selectedPhotos) {
-          const fileExt = file.name.split('.').pop();
+        for (const photo of selectedPhotos) {
+          const fileExt = photo.file.name.split('.').pop();
           const fileName = `${storeId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
           console.log('📤 Uploading to store_images:', fileName);
           const { error: uploadError } = await supabase.storage
             .from('store_images')
-            .upload(fileName, file, { contentType: file.type });
+            .upload(fileName, photo.file, { contentType: photo.file.type });
           if (uploadError) {
             console.error('❌ Upload error:', uploadError);
             throw uploadError;
           }
           console.log('✅ Upload success:', fileName);
+          if (photo.caption) {
+            uploadedCaptions.push({ fileName, caption: photo.caption });
+          }
         }
       }
 
