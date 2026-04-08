@@ -63,7 +63,7 @@ export const InstoreClosingReportDialog = ({
     try {
       const { data, error } = await supabase
         .from("agent_task_inventory")
-        .select("id, product_variant_id, name")
+        .select("id, product_variant_id, name, product_variants!inner(sku)")
         .eq("agent_id", user.id)
         .eq("is_deleted", false);
 
