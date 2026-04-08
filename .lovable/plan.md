@@ -1,38 +1,43 @@
 
 
-## Analysis: Why Store Images Upload Fails
+## Fix: Populate Store Country from Project on Creation
 
-### Most Likely Root Cause
+### Problem
+When a store is created via the "Add New Location" form on the Routes page, the `country` field is not included in the insert payload. The project's country is already fetched and available as `projectCountry`, but it's never passed to the database insert. This causes stores like "Carrefour Valley Arcade" to have `country: null`, which then breaks the country-based filtering in the store selection dropdown.
 
-The upload code is structurally correct, but there are several failure paths that would silently prevent the image from reaching the bucket:
+### Solution
 
-1. **Geolocation blocks the upload**: `getCurrentLocation()` runs BEFORE the storage upload. If location is denied or times out (10s timeout, `maximumAge: 0` forces fresh lookup), the entire function throws and the upload never executes. The error message shown would be a geolocation error, not a storage one.
+**1. Add `country` to the store insert in `src/pages/Routes.tsx` (~line 245-253)**
 
-2. **`capture` + `multiple` conflict on mobile**: The file input has both `capture="environment"` and `multiple`. On many mobile browsers, when `capture` is present, `multiple` is ignored and in some edge cases the file may not be properly captured into the `File` object array.
+Add `country: projectCountry` to the insert object:
 
-3. **Feedback-only submission**: If `feedbackNotes` has text but `selectedPhotos` is empty (e.g., the photo didn't register in state), the submit button is enabled and the function runs, shows "Feedback Submitted" toast, but skips the upload block entirely.
-
-### Plan
-
-**File: `src/components/StoreSuccessDialog.tsx`**
-
-1. **Move photo upload BEFORE geolocation** -- Upload images first so they aren't blocked by location failures. Get location only for the interaction record (which can use a fallback).
-
-2. **Remove `capture` attribute from the multi-photo input** -- Keep `accept="image/*"` which still prompts camera on mobile but doesn't conflict with `multiple`. This ensures all selected files register properly.
-
-3. **Add geolocation fallback** -- If location fails, still proceed with the upload and interaction record using `latitude: 0, longitude: 0` instead of throwing.
-
-4. **Add console logging** -- Log upload results for debugging, and log when `selectedPhotos` is empty at submit time.
-
-### Technical Details
-
-```text
-Current flow:
-  authenticate → get location → upload photos → insert interaction
-
-Proposed flow:
-  authenticate → upload photos → get location (with fallback) → insert interaction
+```tsx
+.insert({
+  store_name: newStoreName.trim(),
+  county: newStoreCounty.trim(),
+  store_lat: currentLocation.latitude,
+  store_long: currentLocation.longitude,
+  contact: newStoreContact.trim() || null,
+  added_by: user?.id || null,
+  workspace_id: currentWorkspaceId,
+  country: projectCountry,   // <-- add this line
+})
 ```
 
-The key change is decoupling the photo upload from the location requirement, and fixing the `capture`+`multiple` input conflict.
+**2. Backfill existing stores with null country**
+
+Run a data update to set the country for all existing stores that have `country IS NULL`, based on the active project's country in their workspace:
+
+```sql
+UPDATE stores s
+SET country = pp.country
+FROM project_plans pp
+WHERE pp.workspace_id = s.workspace_id
+  AND pp.status = 'active'
+  AND pp.is_deleted = false
+  AND s.country IS NULL
+  AND pp.country IS NOT NULL;
+```
+
+This is a one-time data fix (via the insert/update tool) plus a one-line code change. No schema migrations needed.
 
