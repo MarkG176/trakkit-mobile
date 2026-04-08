@@ -312,7 +312,7 @@ export const GiveProducts = () => {
                       </div>
                     )}
                   </div>
-                  <h3 className="font-medium text-xs text-center mb-1 line-clamp-2">{item.name || 'Unknown Product'}</h3>
+                  <h3 className="font-medium text-xs text-center mb-1 line-clamp-2">{item.sku ? `${item.sku} - ${item.name || 'Unknown Product'}` : (item.name || 'Unknown Product')}</h3>
                   <p className="text-xs text-muted-foreground mb-2 text-center">
                     Available: {item.amount_issued}
                   </p>
