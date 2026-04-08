@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart, Gift, ClipboardList, Star, Plus, Minus, CheckCircle2, Trash2, Edit2, Search, Camera, X, ImageIcon, MessageSquare, Package } from "lucide-react";
+import { ImageCaptionInput } from "@/components/ImageCaptionInput";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/useWorkspace";
