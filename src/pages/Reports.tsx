@@ -307,7 +307,7 @@ export const Reports = () => {
           </CardContent>
         </Card>
 
-        {!isSurvey && (
+        {!hideSalesReport && (
           <Card>
             <CardContent className="p-6">
               <h3 className="text-h3 mb-6 text-black">Export Report</h3>
