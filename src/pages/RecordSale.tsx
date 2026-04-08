@@ -206,6 +206,7 @@ export const RecordSale = () => {
   // Remove captured photo
   const removeSalePhoto = () => {
     setSalePhotoUrl(null);
+    setSalePhotoCaption("");
   };
 
   const handleCompleteSale = async () => {
