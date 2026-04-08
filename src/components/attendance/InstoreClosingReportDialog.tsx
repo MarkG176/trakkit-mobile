@@ -69,9 +69,12 @@ export const InstoreClosingReportDialog = ({
 
       if (error) throw error;
 
-      const productReports: ProductReport[] = (data || []).map((item) => ({
+      const productReports: ProductReport[] = (data || []).map((item) => {
+        const sku = (item as any).product_variants?.sku;
+        const baseName = item.name || "Unknown Product";
+        return {
         product_variant_id: item.product_variant_id,
-        name: item.name || "Unknown Product",
+        name: sku ? `${sku} - ${baseName}` : baseName,
         opening_stock: "",
         quantity_sold: "",
         closing_stock: "",
