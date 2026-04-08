@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { addTextOverlayToImage, ImageOverlayData, formatTimestamp } from '@/utils/imageOverlay';
 import { workspaceService } from '@/services/workspaceService';
+import { ImageCaptionInput } from '@/components/ImageCaptionInput';
 
 interface CameraCaptureProps {
   onCapture?: (imageData: string) => void;
@@ -21,6 +22,10 @@ interface CameraCaptureProps {
 export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({ onCapture, mode = 'status', variant = 'floating', onImagesList }, ref) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [captionDialogOpen, setCaptionDialogOpen] = useState(false);
+  const [caption, setCaption] = useState('');
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { currentStatus, updateStatus } = useAgentStatus();
   const { user } = useAuth();
@@ -100,7 +105,7 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
     fileInputRef.current?.click();
   };
 
-  const uploadToStorage = async (file: File, coordinates: { lat: number; lng: number }): Promise<string | null> => {
+  const uploadToStorage = async (file: File, coordinates: { lat: number; lng: number }, imageCaption?: string): Promise<string | null> => {
     if (!user) return null;
 
     try {
@@ -114,7 +119,8 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
         coordinates,
         timestamp: formatTimestamp(new Date()),
         workspaceName: workspaceName || 'Unknown Workspace',
-        projectName: projectName || 'No Project'
+        projectName: projectName || 'No Project',
+        caption: imageCaption || undefined
       };
 
       // Add text overlay to image
@@ -198,36 +204,48 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
     const file = event.target.files?.[0];
     if (!file || !user) return;
 
-    // Prevent duplicate processing - check if already processing
     if (isProcessing) {
       console.log('CameraCapture: Already processing, ignoring duplicate event');
       return;
     }
 
-    setIsProcessing(true);
-
-    // Reset the file input immediately to prevent duplicate events on some devices
-    const currentFile = file;
+    // Reset the file input immediately
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
 
-    try {
-      // Get current location first
-      const location = await getCurrentLocation();
+    // Show caption dialog
+    const previewUrl = URL.createObjectURL(file);
+    setPendingFile(file);
+    setPendingPreviewUrl(previewUrl);
+    setCaption('');
+    setCaptionDialogOpen(true);
+  };
 
-      // Upload to agent-selfies bucket with coordinates
-      const imageUrl = await uploadToStorage(currentFile, location);
+  const handleCaptionConfirm = async () => {
+    if (!pendingFile || !user) return;
+
+    setCaptionDialogOpen(false);
+    setIsProcessing(true);
+
+    const currentFile = pendingFile;
+    const currentCaption = caption;
+
+    // Clean up preview
+    if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
+    setPendingFile(null);
+    setPendingPreviewUrl(null);
+    setCaption('');
+
+    try {
+      const location = await getCurrentLocation();
+      const imageUrl = await uploadToStorage(currentFile, location, currentCaption || undefined);
 
       if (!imageUrl) {
         throw new Error('Failed to upload image');
       }
 
-      // If onCapture callback is provided, let the parent handle status updates
-      // This prevents double status updates when parent components manage their own status logic
       if (mode === 'status' && !onCapture) {
-        // Status mode without callback: Update agent status with the uploaded image
-        // Determine next status based on current status
         let nextStatus = currentStatus;
         if (currentStatus === 'checked_out') {
           nextStatus = 'checked_in';
@@ -237,35 +255,20 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
           nextStatus = 'checked_in';
         }
 
-        // Update status with selfie
         const result = await updateStatus(nextStatus, imageUrl, location.lat, location.lng);
 
         if (result.success) {
-          toast({
-            title: 'Success',
-            description: result.message,
-          });
+          toast({ title: 'Success', description: result.message });
         } else {
-          toast({
-            title: 'Error',
-            description: result.message,
-            variant: 'destructive',
-          });
+          toast({ title: 'Error', description: result.message, variant: 'destructive' });
         }
       } else if (!onCapture) {
-        // General mode without callback: Just upload and notify
-        toast({
-          title: 'Photo captured',
-          description: 'Image uploaded successfully with agent details',
-        });
+        toast({ title: 'Photo captured', description: 'Image uploaded successfully with agent details' });
       }
 
-      // Call the optional onCapture callback with image URL (not base64)
-      // This ensures the parent receives the actual storage URL
       if (onCapture) {
         onCapture(imageUrl);
       }
-
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -274,11 +277,18 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
         variant: 'destructive',
       });
     } finally {
-      // Add delay before allowing next capture to prevent rapid re-triggering on budget devices
       setTimeout(() => {
         setIsProcessing(false);
       }, 500);
     }
+  };
+
+  const handleCaptionCancel = () => {
+    setCaptionDialogOpen(false);
+    if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
+    setPendingFile(null);
+    setPendingPreviewUrl(null);
+    setCaption('');
   };
 
   const buttonClasses = variant === 'floating' 
@@ -312,6 +322,28 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
         className="hidden"
         disabled={isProcessing}
       />
+
+      {/* Caption dialog */}
+      <Dialog open={captionDialogOpen} onOpenChange={(open) => { if (!open) handleCaptionCancel(); }}>
+        <DialogContent className="max-w-sm">
+          <div className="space-y-3">
+            {pendingPreviewUrl && (
+              <img src={pendingPreviewUrl} alt="Preview" className="w-full h-48 object-cover rounded-lg" />
+            )}
+            <ImageCaptionInput
+              value={caption}
+              onChange={setCaption}
+              placeholder="Add a caption..."
+            />
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={handleCaptionCancel}>Skip</Button>
+              <Button className="flex-1" onClick={handleCaptionConfirm}>
+                {isProcessing ? 'Uploading...' : 'Upload'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 });

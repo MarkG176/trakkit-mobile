@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ArrowLeft, Search, ShoppingCart, Plus, Minus, Trash2, Edit2, Camera, X, CheckCircle } from "lucide-react";
+import { ImageCaptionInput } from "@/components/ImageCaptionInput";
 import { useNavigate } from "react-router-dom";
 import { useSalesForm } from "@/hooks/useSalesForm";
 import { supabase } from "@/integrations/supabase/client";
@@ -66,6 +67,7 @@ export const RecordSale = () => {
 
   // Wholesale photo capture state
   const [salePhotoUrl, setSalePhotoUrl] = useState<string | null>(null);
+  const [salePhotoCaption, setSalePhotoCaption] = useState("");
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -204,6 +206,7 @@ export const RecordSale = () => {
   // Remove captured photo
   const removeSalePhoto = () => {
     setSalePhotoUrl(null);
+    setSalePhotoCaption("");
   };
 
   const handleCompleteSale = async () => {
@@ -316,7 +319,10 @@ export const RecordSale = () => {
         engagementType: feedbackData.engagementType,
         notes: feedbackData.notes,
         sentiment: feedbackData.sentiment,
-        imageUrl: salePhotoUrl || undefined // Pass sale photo URL for wholesale
+        imageUrl: salePhotoUrl || undefined,
+        ...(salePhotoCaption ? {
+          imageMetadata: { caption: salePhotoCaption, type: 'sale_photo', team_type: 'wholesale' }
+        } : {})
       });
 
       // Record customer purchases (even if no customer was created)
@@ -660,6 +666,13 @@ export const RecordSale = () => {
                       >
                         <X size={16} />
                       </Button>
+                    </div>
+                    <div className="mt-2">
+                      <ImageCaptionInput
+                        value={salePhotoCaption}
+                        onChange={setSalePhotoCaption}
+                        placeholder="Add a caption for this sale photo..."
+                      />
                     </div>
                   </div>
                 ) : (

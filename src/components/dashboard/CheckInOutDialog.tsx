@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Camera, Upload } from "lucide-react";
+import { ImageCaptionInput } from "@/components/ImageCaptionInput";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgentStatus, AgentStatus } from "@/hooks/useAgentStatus";
 import { toast } from "sonner";
@@ -17,6 +18,7 @@ interface CheckInOutDialogProps {
 export const CheckInOutDialog = ({ isOpen, onClose }: CheckInOutDialogProps) => {
   const [status, setStatus] = useState<AgentStatus | "">("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selfieCaption, setSelfieCaption] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSalesForm, setShowSalesForm] = useState(false);
   const [inventory, setInventory] = useState<any[]>([]);
@@ -171,6 +173,7 @@ export const CheckInOutDialog = ({ isOpen, onClose }: CheckInOutDialogProps) => 
         onClose();
         setStatus("");
         setSelectedFile(null);
+        setSelfieCaption("");
         setShowSalesForm(false);
       } else {
         toast.error(result.message || "Failed to update status");
@@ -278,6 +281,13 @@ export const CheckInOutDialog = ({ isOpen, onClose }: CheckInOutDialogProps) => 
                   </>
                 )}
               </Button>
+              {selectedFile && (
+                <ImageCaptionInput
+                  value={selfieCaption}
+                  onChange={setSelfieCaption}
+                  placeholder="Add a caption to your selfie..."
+                />
+              )}
             </div>
 
             <div className="flex gap-2">

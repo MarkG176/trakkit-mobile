@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Camera, Pencil, Save, X } from "lucide-react";
+import { ImageCaptionInput } from "@/components/ImageCaptionInput";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -38,6 +39,7 @@ export const ActivityDetail = () => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [noteContent, setNoteContent] = useState("");
   const [loading, setLoading] = useState(true);
+  const [imageCaption, setImageCaption] = useState("");
 
   useEffect(() => {
     const fetchActivityDetails = async () => {
@@ -142,11 +144,15 @@ export const ActivityDetail = () => {
         .from('interactions')
         .update({ 
           image_url: publicUrl,
-          image_metadata: { uploaded_at: new Date().toISOString() }
+          image_metadata: { 
+            uploaded_at: new Date().toISOString(),
+            caption: imageCaption || undefined
+          }
         })
         .eq('id', activityId);
 
       setImages([...images, publicUrl]);
+      setImageCaption("");
       toast.success('Picture added successfully');
     } catch (err) {
       console.error('Failed to upload picture', err);
@@ -294,7 +300,12 @@ export const ActivityDetail = () => {
               </Button>
             </label>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
+            <ImageCaptionInput
+              value={imageCaption}
+              onChange={setImageCaption}
+              placeholder="Add a caption before uploading..."
+            />
             {images.length > 0 ? (
               <div className="grid grid-cols-3 gap-2">
                 {images.map((url, index) => (

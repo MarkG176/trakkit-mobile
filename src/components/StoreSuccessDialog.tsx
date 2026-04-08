@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart, Gift, ClipboardList, Star, Plus, Minus, CheckCircle2, Trash2, Edit2, Search, Camera, X, ImageIcon, MessageSquare, Package } from "lucide-react";
+import { ImageCaptionInput } from "@/components/ImageCaptionInput";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -76,8 +77,9 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
 
   // Feedback state
   const [feedbackNotes, setFeedbackNotes] = useState("");
-  const [selectedPhotos, setSelectedPhotos] = useState<File[]>([]);
+  const [selectedPhotos, setSelectedPhotos] = useState<{ file: File; caption: string }[]>([]);
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
+  const [photoCaptions, setPhotoCaptions] = useState<string[]>([]);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -414,9 +416,10 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
   const handlePhotosSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
-    setSelectedPhotos(prev => [...prev, ...files]);
+    setSelectedPhotos(prev => [...prev, ...files.map(f => ({ file: f, caption: '' }))]);
     const newUrls = files.map(file => URL.createObjectURL(file));
     setPhotoPreviewUrls(prev => [...prev, ...newUrls]);
+    setPhotoCaptions(prev => [...prev, ...files.map(() => '')]);
     if (photoInputRef.current) photoInputRef.current.value = "";
   };
 
@@ -424,6 +427,12 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
     URL.revokeObjectURL(photoPreviewUrls[index]);
     setSelectedPhotos(prev => prev.filter((_, i) => i !== index));
     setPhotoPreviewUrls(prev => prev.filter((_, i) => i !== index));
+    setPhotoCaptions(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updatePhotoCaption = (index: number, caption: string) => {
+    setPhotoCaptions(prev => prev.map((c, i) => i === index ? caption : c));
+    setSelectedPhotos(prev => prev.map((p, i) => i === index ? { ...p, caption } : p));
   };
 
   const handleUploadFeedback = async () => {
@@ -436,19 +445,23 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
       if (!user) throw new Error("Not authenticated");
 
       // Upload photos FIRST (before geolocation which can block/timeout)
+      const uploadedCaptions: { fileName: string; caption: string }[] = [];
       if (photoCount > 0) {
-        for (const file of selectedPhotos) {
-          const fileExt = file.name.split('.').pop();
+        for (const photo of selectedPhotos) {
+          const fileExt = photo.file.name.split('.').pop();
           const fileName = `${storeId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
           console.log('📤 Uploading to store_images:', fileName);
           const { error: uploadError } = await supabase.storage
             .from('store_images')
-            .upload(fileName, file, { contentType: file.type });
+            .upload(fileName, photo.file, { contentType: photo.file.type });
           if (uploadError) {
             console.error('❌ Upload error:', uploadError);
             throw uploadError;
           }
           console.log('✅ Upload success:', fileName);
+          if (photo.caption) {
+            uploadedCaptions.push({ fileName, caption: photo.caption });
+          }
         }
       }
 
@@ -474,7 +487,8 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
           longitude: location.longitude,
           timestamp: new Date().toISOString(),
           workspace_id: currentWorkspaceId,
-          metadata: { feedback_notes: feedbackNotes }
+          metadata: { feedback_notes: feedbackNotes },
+          image_metadata: uploadedCaptions.length > 0 ? { captions: uploadedCaptions } : null
         } as any);
       }
 
@@ -486,6 +500,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
       photoPreviewUrls.forEach(url => URL.revokeObjectURL(url));
       setSelectedPhotos([]);
       setPhotoPreviewUrls([]);
+      setPhotoCaptions([]);
       setFeedbackNotes("");
       setActiveAction(null);
     } catch (error: any) {
@@ -913,16 +928,25 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
               />
 
               {photoPreviewUrls.length > 0 && (
-                <div className="grid grid-cols-3 gap-2 mb-2">
+              <div className="grid grid-cols-2 gap-2 mb-2">
                   {photoPreviewUrls.map((url, index) => (
-                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
-                      <img src={url} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+                    <div key={index} className="relative rounded-lg overflow-hidden border">
+                      <div className="aspect-square">
+                        <img src={url} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+                      </div>
                       <button
                         onClick={() => removePhoto(index)}
                         className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1"
                       >
                         <X size={12} />
                       </button>
+                      <div className="p-1">
+                        <ImageCaptionInput
+                          value={photoCaptions[index] || ''}
+                          onChange={(val) => updatePhotoCaption(index, val)}
+                          placeholder="Add a caption..."
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>
