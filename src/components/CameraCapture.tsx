@@ -322,6 +322,28 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
         className="hidden"
         disabled={isProcessing}
       />
+
+      {/* Caption dialog */}
+      <Dialog open={captionDialogOpen} onOpenChange={(open) => { if (!open) handleCaptionCancel(); }}>
+        <DialogContent className="max-w-sm">
+          <div className="space-y-3">
+            {pendingPreviewUrl && (
+              <img src={pendingPreviewUrl} alt="Preview" className="w-full h-48 object-cover rounded-lg" />
+            )}
+            <ImageCaptionInput
+              value={caption}
+              onChange={setCaption}
+              placeholder="Add a caption..."
+            />
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={handleCaptionCancel}>Skip</Button>
+              <Button className="flex-1" onClick={handleCaptionConfirm}>
+                {isProcessing ? 'Uploading...' : 'Upload'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 });

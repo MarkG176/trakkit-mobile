@@ -500,6 +500,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
       photoPreviewUrls.forEach(url => URL.revokeObjectURL(url));
       setSelectedPhotos([]);
       setPhotoPreviewUrls([]);
+      setPhotoCaptions([]);
       setFeedbackNotes("");
       setActiveAction(null);
     } catch (error: any) {
