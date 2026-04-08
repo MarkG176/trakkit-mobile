@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ArrowLeft, Search, ShoppingCart, Plus, Minus, Trash2, Edit2, Camera, X, CheckCircle } from "lucide-react";
+import { ImageCaptionInput } from "@/components/ImageCaptionInput";
 import { useNavigate } from "react-router-dom";
 import { useSalesForm } from "@/hooks/useSalesForm";
 import { supabase } from "@/integrations/supabase/client";
