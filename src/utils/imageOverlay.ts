@@ -8,6 +8,7 @@ export interface ImageOverlayData {
   timestamp: string;
   workspaceName: string;
   projectName: string;
+  caption?: string;
 }
 
 /**
