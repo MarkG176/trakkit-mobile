@@ -416,9 +416,10 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
   const handlePhotosSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
-    setSelectedPhotos(prev => [...prev, ...files]);
+    setSelectedPhotos(prev => [...prev, ...files.map(f => ({ file: f, caption: '' }))]);
     const newUrls = files.map(file => URL.createObjectURL(file));
     setPhotoPreviewUrls(prev => [...prev, ...newUrls]);
+    setPhotoCaptions(prev => [...prev, ...files.map(() => '')]);
     if (photoInputRef.current) photoInputRef.current.value = "";
   };
 
