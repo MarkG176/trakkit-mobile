@@ -58,14 +58,15 @@ export const InstoreClosingReportDialog = ({
   }, [open, user]);
 
   const fetchInventoryProducts = async () => {
-    if (!user) return;
+    if (!user || !currentWorkspaceId) return;
     setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from("agent_task_inventory")
-        .select("id, product_variant_id, name, product_variants!inner(sku)")
+        .select("id, product_variant_id, name, product_variants!inner(sku, workspace_id)")
         .eq("agent_id", user.id)
-        .eq("is_deleted", false);
+        .eq("is_deleted", false)
+        .eq("product_variants.workspace_id", currentWorkspaceId);
 
       if (error) throw error;
 
