@@ -319,7 +319,10 @@ export const RecordSale = () => {
         engagementType: feedbackData.engagementType,
         notes: feedbackData.notes,
         sentiment: feedbackData.sentiment,
-        imageUrl: salePhotoUrl || undefined // Pass sale photo URL for wholesale
+        imageUrl: salePhotoUrl || undefined,
+        ...(salePhotoCaption ? {
+          imageMetadata: { caption: salePhotoCaption, type: 'sale_photo', team_type: 'wholesale' }
+        } : {})
       });
 
       // Record customer purchases (even if no customer was created)
