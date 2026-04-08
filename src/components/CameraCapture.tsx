@@ -105,7 +105,7 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
     fileInputRef.current?.click();
   };
 
-  const uploadToStorage = async (file: File, coordinates: { lat: number; lng: number }): Promise<string | null> => {
+  const uploadToStorage = async (file: File, coordinates: { lat: number; lng: number }, imageCaption?: string): Promise<string | null> => {
     if (!user) return null;
 
     try {
@@ -119,7 +119,8 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
         coordinates,
         timestamp: formatTimestamp(new Date()),
         workspaceName: workspaceName || 'Unknown Workspace',
-        projectName: projectName || 'No Project'
+        projectName: projectName || 'No Project',
+        caption: imageCaption || undefined
       };
 
       // Add text overlay to image
