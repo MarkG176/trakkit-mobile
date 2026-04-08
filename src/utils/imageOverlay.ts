@@ -48,7 +48,8 @@ export const addTextOverlayToImage = async (
         `Agent: ${overlayData.agentName}`,
         `Workspace: ${overlayData.workspaceName}`,
         `Location: ${overlayData.coordinates.lat.toFixed(6)}, ${overlayData.coordinates.lng.toFixed(6)}`,
-        `Time: ${overlayData.timestamp}`
+        `Time: ${overlayData.timestamp}`,
+        ...(overlayData.caption ? [`Caption: ${overlayData.caption}`] : [])
       ];
 
       // Calculate text positioning
