@@ -173,6 +173,7 @@ export const CheckInOutDialog = ({ isOpen, onClose }: CheckInOutDialogProps) => 
         onClose();
         setStatus("");
         setSelectedFile(null);
+        setSelfieCaption("");
         setShowSalesForm(false);
       } else {
         toast.error(result.message || "Failed to update status");
