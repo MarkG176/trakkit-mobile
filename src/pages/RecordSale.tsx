@@ -67,6 +67,7 @@ export const RecordSale = () => {
 
   // Wholesale photo capture state
   const [salePhotoUrl, setSalePhotoUrl] = useState<string | null>(null);
+  const [salePhotoCaption, setSalePhotoCaption] = useState("");
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
