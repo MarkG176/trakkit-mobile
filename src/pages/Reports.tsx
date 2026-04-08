@@ -189,7 +189,7 @@ export const Reports = () => {
           >
             <ArrowLeft size={20} />
           </Button>
-          <h1 className="text-h1">{isSurvey ? 'Notes & Images' : 'Sales Report'}</h1>
+          <h1 className="text-h1">{hideSalesReport ? 'Notes & Images' : 'Sales Report'}</h1>
         </div>
         <p className="text-sm opacity-90">{isSurvey ? 'Add notes and attach images' : 'Record your sales for the day'}</p>
       </div>
