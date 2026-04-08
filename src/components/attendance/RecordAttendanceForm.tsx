@@ -117,6 +117,7 @@ export const RecordAttendanceForm = () => {
 
         // Check if we need to show stock report dialog for wholesale team_type
         const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
+        const isInstore = currentTeamType?.toLowerCase() === 'instore';
         const isSeeding = ['seeding', 'market_research'].includes(currentTeamType?.toLowerCase() ?? '');
         
         if (isWholesale) {
@@ -129,12 +130,17 @@ export const RecordAttendanceForm = () => {
             // Evening check-out - show evening report (sales summary + notes)
             setShowEveningReport(true);
           }
+        } else if (isInstore) {
+          // Instore: morning stock availability report after check-in, closing report before checkout
+          if (statusToSet === 'checked_in' && previousStatus === 'checked_out') {
+            setStockReportType('morning');
+            setShowStockReport(true);
+          } else if (statusToSet === 'checked_out') {
+            setShowInstoreClosingReport(true);
+          }
         } else if (isSeeding && statusToSet === 'checked_out') {
           // Seeding check-out - show seeding evening report (sales + notes + photos)
           setShowSeedingEveningReport(true);
-        } else if (currentTeamType?.toLowerCase() === 'instore' && statusToSet === 'checked_out') {
-          // Instore check-out - show closing stock report
-          setShowInstoreClosingReport(true);
         } else if (['survey', 'survey_campaign'].includes(currentTeamType?.toLowerCase() ?? '') && statusToSet === 'checked_out') {
           // Survey check-out - show survey closing report
           setShowSurveyClosingReport(true);
