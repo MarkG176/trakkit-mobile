@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Camera, Upload } from "lucide-react";
+import { ImageCaptionInput } from "@/components/ImageCaptionInput";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgentStatus, AgentStatus } from "@/hooks/useAgentStatus";
 import { toast } from "sonner";
