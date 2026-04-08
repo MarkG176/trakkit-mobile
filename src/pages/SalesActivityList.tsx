@@ -39,7 +39,7 @@ export const SalesActivityList = () => {
 
         const { data: interactions } = await supabase
           .from('interactions')
-          .select('id, timestamp, customer_name, sale_value, product_variant_id, image_url, product_variants(name)')
+          .select('id, timestamp, customer_name, sale_value, product_variant_id, image_url, product_variants(name, sku)')
           .eq('interaction_type', 'sale')
           .in('task_id', taskIds)
           .order('timestamp', { ascending: false });
