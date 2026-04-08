@@ -266,7 +266,7 @@ export const GiveProducts = () => {
           <div className="flex flex-wrap gap-2">
             {selectedProducts.map((product) => (
               <div key={product.id} className="flex items-center gap-1 bg-primary text-primary-foreground px-2 py-1 rounded-full text-xs">
-                <span>{product.name}</span>
+                <span>{product.sku ? `${product.sku} - ${product.name}` : product.name}</span>
                 <span className="font-medium">×{product.quantity}</span>
               </div>
             ))}

@@ -218,7 +218,7 @@ export const Reports = () => {
                     <div key={item.id} className="p-3 rounded-lg border bg-card">
                       <div className="space-y-2">
                         <Label className="font-medium leading-tight block">
-                          {item.name || 'Unknown Product'}
+                          {item.sku ? `${item.sku} - ${item.name || 'Unknown Product'}` : (item.name || 'Unknown Product')}
                         </Label>
                         <div className="flex items-center gap-2">
                           <Label className="text-sm text-muted-foreground shrink-0">Qty sold:</Label>

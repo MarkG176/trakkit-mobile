@@ -78,7 +78,7 @@ export const InstoreClosingReportDialog = ({
         opening_stock: "",
         quantity_sold: "",
         closing_stock: "",
-      }));
+      };});
 
       setProducts(productReports);
     } catch (error) {

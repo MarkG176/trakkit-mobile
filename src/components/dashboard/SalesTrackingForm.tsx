@@ -59,7 +59,7 @@ export const SalesTrackingForm = ({ inventory, onSubmit, onSkip }: SalesTracking
                 <SelectContent>
                   {inventory.map((item) => (
                     <SelectItem key={item.product_variant_id} value={item.product_variant_id}>
-                      {item.name || "Unknown Product"}
+                      {item.sku ? `${item.sku} - ${item.name || "Unknown Product"}` : (item.name || "Unknown Product")}
                     </SelectItem>
                   ))}
                 </SelectContent>

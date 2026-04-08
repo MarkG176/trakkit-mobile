@@ -105,7 +105,7 @@ export const Activity = () => {
           created_at,
           latitude,
           longitude,
-          product_variants (name)
+          product_variants (name, sku)
         `)
         .eq('workspace_id', currentWorkspaceId)
         .eq('interaction_type', 'sale')
@@ -115,7 +115,8 @@ export const Activity = () => {
       for (const sale of sales || []) {
         if (!sale.agent_id) continue;
         const agent = await fetchAgentName(sale.agent_id);
-        const productName = (sale.product_variants as any)?.name || 'Product';
+        const pv = (sale.product_variants as any);
+        const productName = pv?.sku ? `${pv.sku} - ${pv.name || 'Product'}` : (pv?.name || 'Product');
 
         allActivities.push({
           id: `sale-${sale.id}`,
