@@ -204,36 +204,48 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
     const file = event.target.files?.[0];
     if (!file || !user) return;
 
-    // Prevent duplicate processing - check if already processing
     if (isProcessing) {
       console.log('CameraCapture: Already processing, ignoring duplicate event');
       return;
     }
 
-    setIsProcessing(true);
-
-    // Reset the file input immediately to prevent duplicate events on some devices
-    const currentFile = file;
+    // Reset the file input immediately
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
 
-    try {
-      // Get current location first
-      const location = await getCurrentLocation();
+    // Show caption dialog
+    const previewUrl = URL.createObjectURL(file);
+    setPendingFile(file);
+    setPendingPreviewUrl(previewUrl);
+    setCaption('');
+    setCaptionDialogOpen(true);
+  };
 
-      // Upload to agent-selfies bucket with coordinates
-      const imageUrl = await uploadToStorage(currentFile, location);
+  const handleCaptionConfirm = async () => {
+    if (!pendingFile || !user) return;
+
+    setCaptionDialogOpen(false);
+    setIsProcessing(true);
+
+    const currentFile = pendingFile;
+    const currentCaption = caption;
+
+    // Clean up preview
+    if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
+    setPendingFile(null);
+    setPendingPreviewUrl(null);
+    setCaption('');
+
+    try {
+      const location = await getCurrentLocation();
+      const imageUrl = await uploadToStorage(currentFile, location, currentCaption || undefined);
 
       if (!imageUrl) {
         throw new Error('Failed to upload image');
       }
 
-      // If onCapture callback is provided, let the parent handle status updates
-      // This prevents double status updates when parent components manage their own status logic
       if (mode === 'status' && !onCapture) {
-        // Status mode without callback: Update agent status with the uploaded image
-        // Determine next status based on current status
         let nextStatus = currentStatus;
         if (currentStatus === 'checked_out') {
           nextStatus = 'checked_in';
@@ -243,35 +255,20 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
           nextStatus = 'checked_in';
         }
 
-        // Update status with selfie
         const result = await updateStatus(nextStatus, imageUrl, location.lat, location.lng);
 
         if (result.success) {
-          toast({
-            title: 'Success',
-            description: result.message,
-          });
+          toast({ title: 'Success', description: result.message });
         } else {
-          toast({
-            title: 'Error',
-            description: result.message,
-            variant: 'destructive',
-          });
+          toast({ title: 'Error', description: result.message, variant: 'destructive' });
         }
       } else if (!onCapture) {
-        // General mode without callback: Just upload and notify
-        toast({
-          title: 'Photo captured',
-          description: 'Image uploaded successfully with agent details',
-        });
+        toast({ title: 'Photo captured', description: 'Image uploaded successfully with agent details' });
       }
 
-      // Call the optional onCapture callback with image URL (not base64)
-      // This ensures the parent receives the actual storage URL
       if (onCapture) {
         onCapture(imageUrl);
       }
-
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -280,11 +277,18 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
         variant: 'destructive',
       });
     } finally {
-      // Add delay before allowing next capture to prevent rapid re-triggering on budget devices
       setTimeout(() => {
         setIsProcessing(false);
       }, 500);
     }
+  };
+
+  const handleCaptionCancel = () => {
+    setCaptionDialogOpen(false);
+    if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
+    setPendingFile(null);
+    setPendingPreviewUrl(null);
+    setCaption('');
   };
 
   const buttonClasses = variant === 'floating' 
