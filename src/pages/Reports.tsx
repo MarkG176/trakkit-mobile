@@ -20,6 +20,8 @@ export const Reports = () => {
   const { user } = useAuth();
   const { currentWorkspaceId, currentTeamType } = useWorkspace();
   const isSurvey = ['survey', 'survey_campaign'].includes(currentTeamType?.toLowerCase() ?? '');
+  const isInstore = currentTeamType?.toLowerCase() === 'instore';
+  const hideSalesReport = isSurvey || isInstore;
   const { inventory, loading: inventoryLoading } = useInventory();
   const [submitting, setSubmitting] = useState(false);
   const [salesQuantities, setSalesQuantities] = useState<Record<string, number>>({});
