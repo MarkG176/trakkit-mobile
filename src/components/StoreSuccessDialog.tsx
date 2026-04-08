@@ -77,8 +77,9 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
 
   // Feedback state
   const [feedbackNotes, setFeedbackNotes] = useState("");
-  const [selectedPhotos, setSelectedPhotos] = useState<File[]>([]);
+  const [selectedPhotos, setSelectedPhotos] = useState<{ file: File; caption: string }[]>([]);
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
+  const [photoCaptions, setPhotoCaptions] = useState<string[]>([]);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
