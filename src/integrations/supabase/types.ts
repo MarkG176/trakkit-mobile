@@ -1252,6 +1252,33 @@ export type Database = {
           },
         ]
       }
+      demo_requests: {
+        Row: {
+          contact: string
+          created_at: string | null
+          email: string
+          id: string
+          message: string | null
+          name: string
+        }
+        Insert: {
+          contact: string
+          created_at?: string | null
+          email: string
+          id?: string
+          message?: string | null
+          name: string
+        }
+        Update: {
+          contact?: string
+          created_at?: string | null
+          email?: string
+          id?: string
+          message?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
       giveaways: {
         Row: {
           agent_id: string
