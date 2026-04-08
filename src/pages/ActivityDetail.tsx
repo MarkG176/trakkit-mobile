@@ -144,11 +144,15 @@ export const ActivityDetail = () => {
         .from('interactions')
         .update({ 
           image_url: publicUrl,
-          image_metadata: { uploaded_at: new Date().toISOString() }
+          image_metadata: { 
+            uploaded_at: new Date().toISOString(),
+            caption: imageCaption || undefined
+          }
         })
         .eq('id', activityId);
 
       setImages([...images, publicUrl]);
+      setImageCaption("");
       toast.success('Picture added successfully');
     } catch (err) {
       console.error('Failed to upload picture', err);
