@@ -18,6 +18,7 @@ interface CheckInOutDialogProps {
 export const CheckInOutDialog = ({ isOpen, onClose }: CheckInOutDialogProps) => {
   const [status, setStatus] = useState<AgentStatus | "">("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selfieCaption, setSelfieCaption] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSalesForm, setShowSalesForm] = useState(false);
   const [inventory, setInventory] = useState<any[]>([]);
