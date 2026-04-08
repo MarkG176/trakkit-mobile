@@ -280,6 +280,13 @@ export const CheckInOutDialog = ({ isOpen, onClose }: CheckInOutDialogProps) => 
                   </>
                 )}
               </Button>
+              {selectedFile && (
+                <ImageCaptionInput
+                  value={selfieCaption}
+                  onChange={setSelfieCaption}
+                  placeholder="Add a caption to your selfie..."
+                />
+              )}
             </div>
 
             <div className="flex gap-2">

@@ -667,6 +667,13 @@ export const RecordSale = () => {
                         <X size={16} />
                       </Button>
                     </div>
+                    <div className="mt-2">
+                      <ImageCaptionInput
+                        value={salePhotoCaption}
+                        onChange={setSalePhotoCaption}
+                        placeholder="Add a caption for this sale photo..."
+                      />
+                    </div>
                   </div>
                 ) : (
                   <div 

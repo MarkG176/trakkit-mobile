@@ -928,16 +928,25 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
               />
 
               {photoPreviewUrls.length > 0 && (
-                <div className="grid grid-cols-3 gap-2 mb-2">
+              <div className="grid grid-cols-2 gap-2 mb-2">
                   {photoPreviewUrls.map((url, index) => (
-                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
-                      <img src={url} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+                    <div key={index} className="relative rounded-lg overflow-hidden border">
+                      <div className="aspect-square">
+                        <img src={url} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+                      </div>
                       <button
                         onClick={() => removePhoto(index)}
                         className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1"
                       >
                         <X size={12} />
                       </button>
+                      <div className="p-1">
+                        <ImageCaptionInput
+                          value={photoCaptions[index] || ''}
+                          onChange={(val) => updatePhotoCaption(index, val)}
+                          placeholder="Add a caption..."
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>
