@@ -52,10 +52,10 @@ export const InstoreClosingReportDialog = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (open && user) {
+    if (open && user && currentWorkspaceId) {
       fetchInventoryProducts();
     }
-  }, [open, user]);
+  }, [open, user, currentWorkspaceId]);
 
   const fetchInventoryProducts = async () => {
     if (!user || !currentWorkspaceId) return;
