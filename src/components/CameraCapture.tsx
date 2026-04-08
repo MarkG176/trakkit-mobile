@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { addTextOverlayToImage, ImageOverlayData, formatTimestamp } from '@/utils/imageOverlay';
 import { workspaceService } from '@/services/workspaceService';
+import { ImageCaptionInput } from '@/components/ImageCaptionInput';
 
 interface CameraCaptureProps {
   onCapture?: (imageData: string) => void;
