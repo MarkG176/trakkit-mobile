@@ -250,6 +250,7 @@ export const Routes = () => {
           contact: newStoreContact.trim() || null,
           added_by: user?.id || null,
           workspace_id: currentWorkspaceId,
+          country: projectCountry,
         })
         .select("id")
         .single();
