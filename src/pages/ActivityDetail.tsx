@@ -300,7 +300,12 @@ export const ActivityDetail = () => {
               </Button>
             </label>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
+            <ImageCaptionInput
+              value={imageCaption}
+              onChange={setImageCaption}
+              placeholder="Add a caption before uploading..."
+            />
             {images.length > 0 ? (
               <div className="grid grid-cols-3 gap-2">
                 {images.map((url, index) => (
