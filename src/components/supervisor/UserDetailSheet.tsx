@@ -91,7 +91,7 @@ export const UserDetailSheet = ({
           quantity_sold,
           sale_value,
           created_at,
-          product_variants (name)
+          product_variants (name, sku)
         `)
         .eq('agent_id', userId)
         .eq('workspace_id', currentWorkspaceId)

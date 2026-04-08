@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface SelectedProduct {
   id: string;
   name: string;
+  sku: string | null;
   quantity: number;
   maxQuantity: number;
   productVariantId: string;
