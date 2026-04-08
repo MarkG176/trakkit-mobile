@@ -427,6 +427,12 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
     URL.revokeObjectURL(photoPreviewUrls[index]);
     setSelectedPhotos(prev => prev.filter((_, i) => i !== index));
     setPhotoPreviewUrls(prev => prev.filter((_, i) => i !== index));
+    setPhotoCaptions(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updatePhotoCaption = (index: number, caption: string) => {
+    setPhotoCaptions(prev => prev.map((c, i) => i === index ? caption : c));
+    setSelectedPhotos(prev => prev.map((p, i) => i === index ? { ...p, caption } : p));
   };
 
   const handleUploadFeedback = async () => {
