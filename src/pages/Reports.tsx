@@ -195,7 +195,7 @@ export const Reports = () => {
       </div>
 
       <div className="p-4 space-y-6">
-        {!isSurvey && (
+        {!hideSalesReport && (
           <Card>
             <CardContent className="p-6">
               <h3 className="text-h3 mb-6 text-black flex items-center gap-2">
