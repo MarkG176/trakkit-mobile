@@ -487,7 +487,8 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
           longitude: location.longitude,
           timestamp: new Date().toISOString(),
           workspace_id: currentWorkspaceId,
-          metadata: { feedback_notes: feedbackNotes }
+          metadata: { feedback_notes: feedbackNotes },
+          image_metadata: uploadedCaptions.length > 0 ? { captions: uploadedCaptions } : null
         } as any);
       }
 
