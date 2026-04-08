@@ -22,6 +22,10 @@ interface CameraCaptureProps {
 export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({ onCapture, mode = 'status', variant = 'floating', onImagesList }, ref) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [captionDialogOpen, setCaptionDialogOpen] = useState(false);
+  const [caption, setCaption] = useState('');
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { currentStatus, updateStatus } = useAgentStatus();
   const { user } = useAuth();
