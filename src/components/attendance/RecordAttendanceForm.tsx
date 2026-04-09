@@ -12,6 +12,7 @@ import { StockReportDialog } from "@/components/attendance/StockReportDialog";
 import { EveningReportDialog } from "@/components/attendance/EveningReportDialog";
 import { SeedingEveningReportDialog } from "@/components/attendance/SeedingEveningReportDialog";
 import { InstoreClosingReportDialog } from "@/components/attendance/InstoreClosingReportDialog";
+import { InstoreMorningStockCountDialog } from "@/components/attendance/InstoreMorningStockCountDialog";
 import { SurveyClosingReportDialog } from "@/components/attendance/SurveyClosingReportDialog";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -29,6 +30,7 @@ export const RecordAttendanceForm = () => {
   const [showEveningReport, setShowEveningReport] = useState(false);
   const [showSeedingEveningReport, setShowSeedingEveningReport] = useState(false);
   const [showInstoreClosingReport, setShowInstoreClosingReport] = useState(false);
+  const [showInstoreMorningStockCount, setShowInstoreMorningStockCount] = useState(false);
   const [showSurveyClosingReport, setShowSurveyClosingReport] = useState(false);
   const [currentStoreId, setCurrentStoreId] = useState<string | null>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
@@ -336,6 +338,11 @@ export const RecordAttendanceForm = () => {
         storeId={currentStoreId}
         onComplete={() => {
           console.log('Stock report completed');
+          // For instore, chain to morning stock count dialog after stock availability report
+          const isInstore = currentTeamType?.toLowerCase() === 'instore';
+          if (isInstore && stockReportType === 'morning') {
+            setShowInstoreMorningStockCount(true);
+          }
         }}
       />
 
@@ -363,6 +370,15 @@ export const RecordAttendanceForm = () => {
         storeId={currentStoreId}
         onComplete={() => {
           console.log('Instore closing report completed');
+        }}
+      />
+      {/* Instore Morning Stock Count Dialog */}
+      <InstoreMorningStockCountDialog
+        open={showInstoreMorningStockCount}
+        onOpenChange={setShowInstoreMorningStockCount}
+        storeId={currentStoreId}
+        onComplete={() => {
+          console.log('Instore morning stock count completed');
         }}
       />
       {/* Survey Closing Report Dialog */}
