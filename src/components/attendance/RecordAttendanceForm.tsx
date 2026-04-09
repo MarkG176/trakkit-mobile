@@ -372,6 +372,15 @@ export const RecordAttendanceForm = () => {
           console.log('Instore closing report completed');
         }}
       />
+      {/* Instore Morning Stock Count Dialog */}
+      <InstoreMorningStockCountDialog
+        open={showInstoreMorningStockCount}
+        onOpenChange={setShowInstoreMorningStockCount}
+        storeId={currentStoreId}
+        onComplete={() => {
+          console.log('Instore morning stock count completed');
+        }}
+      />
       {/* Survey Closing Report Dialog */}
       <SurveyClosingReportDialog
         open={showSurveyClosingReport}
