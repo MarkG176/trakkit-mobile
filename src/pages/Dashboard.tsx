@@ -19,7 +19,7 @@ interface DashboardStats {
 export const Dashboard = () => {
   const { user } = useAuth();
   const { currentWorkspaceId, currentTeamType, userWorkspaces } = useWorkspace();
-  const currentWorkspaceName = userWorkspaces.find(w => w.workspace_id === currentWorkspaceId)?.workspace_name;
+  const currentWorkspaceName = userWorkspaces.find(w => w.workspace_id === currentWorkspaceId)?.workspace?.name;
   const isSeeding = ['seeding', 'market_research'].includes(currentTeamType?.toLowerCase() ?? '');
   const isSampling = currentTeamType?.toLowerCase() === 'sampling';
   const isInstore = currentTeamType?.toLowerCase() === 'instore';
