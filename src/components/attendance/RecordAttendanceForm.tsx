@@ -12,6 +12,7 @@ import { StockReportDialog } from "@/components/attendance/StockReportDialog";
 import { EveningReportDialog } from "@/components/attendance/EveningReportDialog";
 import { SeedingEveningReportDialog } from "@/components/attendance/SeedingEveningReportDialog";
 import { InstoreClosingReportDialog } from "@/components/attendance/InstoreClosingReportDialog";
+import { InstoreMorningStockCountDialog } from "@/components/attendance/InstoreMorningStockCountDialog";
 import { SurveyClosingReportDialog } from "@/components/attendance/SurveyClosingReportDialog";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -29,6 +30,7 @@ export const RecordAttendanceForm = () => {
   const [showEveningReport, setShowEveningReport] = useState(false);
   const [showSeedingEveningReport, setShowSeedingEveningReport] = useState(false);
   const [showInstoreClosingReport, setShowInstoreClosingReport] = useState(false);
+  const [showInstoreMorningStockCount, setShowInstoreMorningStockCount] = useState(false);
   const [showSurveyClosingReport, setShowSurveyClosingReport] = useState(false);
   const [currentStoreId, setCurrentStoreId] = useState<string | null>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
