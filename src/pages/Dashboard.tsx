@@ -8,6 +8,7 @@ import { PerformanceCards } from "@/components/dashboard/PerformanceCards";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { supabase } from "@/integrations/supabase/client";
+import { WorkspaceOnboarding } from "@/components/onboarding/WorkspaceOnboarding";
 
 interface DashboardStats {
   tasksToday: number;
@@ -17,7 +18,8 @@ interface DashboardStats {
 
 export const Dashboard = () => {
   const { user } = useAuth();
-  const { currentWorkspaceId, currentTeamType } = useWorkspace();
+  const { currentWorkspaceId, currentTeamType, userWorkspaces } = useWorkspace();
+  const currentWorkspaceName = userWorkspaces.find(w => w.workspace_id === currentWorkspaceId)?.workspace?.name;
   const isSeeding = ['seeding', 'market_research'].includes(currentTeamType?.toLowerCase() ?? '');
   const isSampling = currentTeamType?.toLowerCase() === 'sampling';
   const isInstore = currentTeamType?.toLowerCase() === 'instore';
@@ -140,6 +142,7 @@ export const Dashboard = () => {
 
   return (
     <MobileLayout currentPage="dashboard">
+      <WorkspaceOnboarding workspaceId={currentWorkspaceId} workspaceName={currentWorkspaceName} />
       <TopBar />
       
       {/* Record Attendance Form */}
