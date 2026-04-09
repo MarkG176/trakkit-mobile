@@ -338,6 +338,11 @@ export const RecordAttendanceForm = () => {
         storeId={currentStoreId}
         onComplete={() => {
           console.log('Stock report completed');
+          // For instore, chain to morning stock count dialog after stock availability report
+          const isInstore = currentTeamType?.toLowerCase() === 'instore';
+          if (isInstore && stockReportType === 'morning') {
+            setShowInstoreMorningStockCount(true);
+          }
         }}
       />
 
