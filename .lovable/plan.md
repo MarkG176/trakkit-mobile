@@ -1,50 +1,42 @@
 
 
-## Make PWA Install Banner Permanent with Device-Specific Instructions
+## First-Time Workspace Onboarding Flow
 
-### Problem
-The current install prompt can be dismissed, has a 24-hour cooldown, and shows the same generic UI on all devices. iOS users see an "Install" button that does nothing because Safari doesn't support `beforeinstallprompt`.
+### What It Does
+When a user enters a workspace for the first time, they see a multi-step onboarding dialog:
 
-### What Changes
+1. **Language picker** — Choose English or Kiswahili (sets app language)
+2. **Team name** — "You're part of the **[Workspace Name]** team"
+3. **Experience check** — "Have you used TraKKiT for [team_type] projects before?" Yes/No
+4. **Component guide** — Regardless of answer, show a brief explanation of each visible component for their team type, with a link to "View full docs" → opens `https://trakkit.darajatech.com/docs` in a new tab
 
-**1. Delete `src/components/InstallPrompt.tsx`** and remove its import/usage from `App.tsx`. Consolidate everything into `PWAInstallPrompt.tsx`.
+No tour overlay. No page navigation. Just a clean dialog sequence.
 
-**2. Rewrite `src/components/PWAInstallPrompt.tsx`** with:
+### Instore Component Descriptions
 
-- **Device detection** using `navigator.userAgent`:
-  - **iOS** (iPhone/iPad Safari): Detect via `/iPhone|iPad|iPod/` user agent
-  - **Android Chrome**: Detect via `/Android/` user agent + `beforeinstallprompt` support
-  - **Samsung Internet**: Detect via `/SamsungBrowser/`
-  - **Other browsers**: Generic fallback
+| Component | Description |
+|-----------|-------------|
+| Record Attendance | Check in and out by taking a selfie |
+| Set Location | Select which store you're at today |
+| Routes | View and search your assigned stores |
+| Reports | Log customer feedback and competitor activity |
+| Work Hours | Track your daily work time |
+| Chat | Message your supervisor |
 
-- **Platform-specific instructions**:
-  - **Android/Chrome**: Show "Install" button that triggers `deferredPrompt.prompt()`. If user dismisses native prompt, banner stays.
-  - **iOS Safari**: Show step-by-step: "Tap the Share button (□↑), then tap 'Add to Home Screen'"
-  - **Samsung Internet**: Show: "Tap the menu (⋮), then 'Add page to' → 'Home screen'"
-  - **Other**: Show generic "Use your browser menu to add this app to your home screen"
+### Persistence
+- `localStorage` key: `onboarded_{workspaceId}` — set on completion
+- Switching workspaces triggers a new onboarding if key is missing
 
-- **Permanent until installed**:
-  - Remove "Later" button, X button, `localStorage` cooldown, and 30-second timeout
-  - Show immediately on mount (no delay)
-  - Only hide when `display-mode: standalone` or `navigator.standalone` is true
-  - Listen for `appinstalled` event and `display-mode` media query changes
+### Help/FAQ Link Update
+- `HelpFAQDialog` "Visit Help Center" and the help icon link → `https://trakkit.darajatech.com/docs` (external, new tab)
+- Update `HelpSupport.tsx` "Visit Help Center" button similarly
 
-- **Skip in iframe/preview** contexts (Lovable editor) to avoid interference
+### Files
+- **Create**: `src/components/onboarding/WorkspaceOnboarding.tsx` — multi-step dialog component
+- **Modify**: `src/pages/Dashboard.tsx` — mount `<WorkspaceOnboarding />`
+- **Modify**: `src/components/profile/HelpFAQDialog.tsx` — add docs link
+- **Modify**: `src/pages/HelpSupport.tsx` — update Help Center URL
 
-**3. Update `src/App.tsx`**: Remove `InstallPrompt` import and `<InstallPrompt />` usage. Keep only `<PWAInstallPrompt />`.
-
-### Technical Details
-
-```text
-Device Detection Flow:
-  userAgent contains "iPhone|iPad|iPod"  →  iOS instructions (Share → Add to Home Screen)
-  userAgent contains "SamsungBrowser"    →  Samsung instructions (Menu → Add page to)
-  beforeinstallprompt fires              →  Android/Chrome native install button
-  none of the above                      →  Generic browser menu instructions
-```
-
-- Standalone detection: `matchMedia('(display-mode: standalone)')` + `(navigator as any).standalone`
-- Banner renders as a fixed bottom card, always visible, no close mechanism
-- Files modified: `PWAInstallPrompt.tsx`, `App.tsx`
-- Files deleted: `InstallPrompt.tsx`
+### No Swahili translation of pages
+Language selection only affects the `useLanguage` context for existing translated keys. Page content stays in English.
 
