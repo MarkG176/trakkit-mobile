@@ -61,25 +61,45 @@ export const InstoreClosingReportDialog = ({
     if (!user || !currentWorkspaceId) return;
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("agent_task_inventory")
-        .select("id, product_variant_id, name, product_variants!inner(sku, workspace_id)")
-        .eq("agent_id", user.id)
-        .eq("is_deleted", false)
-        .eq("product_variants.workspace_id", currentWorkspaceId);
+      // Fetch products and morning stock count in parallel
+      const today = new Date().toISOString().split("T")[0];
 
-      if (error) throw error;
+      const [inventoryResult, morningCountResult] = await Promise.all([
+        supabase
+          .from("agent_task_inventory")
+          .select("id, product_variant_id, name, product_variants!inner(sku, workspace_id)")
+          .eq("agent_id", user.id)
+          .eq("is_deleted", false)
+          .eq("product_variants.workspace_id", currentWorkspaceId),
+        supabase
+          .from("daily_stock_reports")
+          .select("product_variant_id, opening_stock")
+          .eq("agent_id", user.id)
+          .eq("work_date", today)
+          .eq("report_type", "stock_count")
+          .eq("workspace_id", currentWorkspaceId),
+      ]);
 
-      const productReports: ProductReport[] = (data || []).map((item) => {
+      if (inventoryResult.error) throw inventoryResult.error;
+
+      // Build a map of morning opening_stock values
+      const morningStockMap: Record<string, number> = {};
+      (morningCountResult.data || []).forEach((row) => {
+        morningStockMap[row.product_variant_id] = row.opening_stock ?? 0;
+      });
+
+      const productReports: ProductReport[] = (inventoryResult.data || []).map((item) => {
         const sku = (item as any).product_variants?.sku;
         const baseName = item.name || "Unknown Product";
+        const morningValue = morningStockMap[item.product_variant_id];
         return {
-        product_variant_id: item.product_variant_id,
-        name: sku ? `${sku} - ${baseName}` : baseName,
-        opening_stock: "",
-        quantity_sold: "",
-        closing_stock: "",
-      };});
+          product_variant_id: item.product_variant_id,
+          name: sku ? `${sku} - ${baseName}` : baseName,
+          opening_stock: morningValue !== undefined ? String(morningValue) : "",
+          quantity_sold: "",
+          closing_stock: "",
+        };
+      });
 
       setProducts(productReports);
     } catch (error) {
