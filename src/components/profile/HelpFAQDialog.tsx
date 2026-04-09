@@ -12,7 +12,9 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, ExternalLink } from "lucide-react";
+
+const DOCS_URL = "https://trakkit.darajatech.com/docs";
 
 const teamTypeDisplayNames: Record<string, string> = {
   sales_activation: "Sales Activation",
@@ -124,6 +126,15 @@ export const HelpFAQDialog = ({ teamType, variant = "button" }: HelpFAQDialogPro
               </AccordionItem>
             ))}
           </Accordion>
+          <a
+            href={DOCS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 text-sm text-primary mt-4 hover:underline"
+          >
+            <ExternalLink className="w-4 h-4" />
+            View full docs
+          </a>
         </DialogContent>
       </Dialog>
     </>

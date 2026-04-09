@@ -145,7 +145,11 @@ export const HelpSupport = () => {
               Access our comprehensive knowledge base and guides
             </p>
             
-            <Button variant="outline" className="w-full">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => window.open("https://trakkit.darajatech.com/docs", "_blank")}
+            >
               Visit Help Center
             </Button>
           </CardContent>
