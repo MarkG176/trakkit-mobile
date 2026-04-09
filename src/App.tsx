@@ -57,7 +57,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-          <InstallPrompt />
+          
           <PWAInstallPrompt />
           <Routes>
             <Route path="/login" element={<Login />} />

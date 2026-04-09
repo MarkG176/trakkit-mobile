@@ -1,133 +1,163 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { X, Download, Smartphone } from 'lucide-react';
+import { Download, Smartphone, Share, MoreVertical } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
+type DeviceType = 'ios' | 'samsung' | 'android' | 'other';
+
+const detectDevice = (): DeviceType => {
+  const ua = navigator.userAgent;
+  if (/iPhone|iPad|iPod/.test(ua)) return 'ios';
+  if (/SamsungBrowser/.test(ua)) return 'samsung';
+  if (/Android/.test(ua)) return 'android';
+  return 'other';
+};
+
+const isStandaloneMode = (): boolean => {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+    (navigator as any).standalone === true;
+};
+
+const isInIframeOrPreview = (): boolean => {
+  try {
+    if (window.self !== window.top) return true;
+  } catch {
+    return true;
+  }
+  return window.location.hostname.includes('id-preview--') ||
+    window.location.hostname.includes('lovableproject.com');
+};
+
 const PWAInstallPrompt: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(isStandaloneMode());
+  const [device] = useState<DeviceType>(detectDevice);
 
   useEffect(() => {
-    // Check if app is already installed
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-    const isInWebAppiOS = (window.navigator as any).standalone === true;
-    setIsInstalled(isStandalone || isInWebAppiOS);
+    if (isInIframeOrPreview()) return;
 
-    // Listen for the beforeinstallprompt event
-    const handleBeforeInstallPrompt = (e: Event) => {
+    const handlePrompt = (e: Event) => {
       e.preventDefault();
-      const beforeInstallEvent = e as BeforeInstallPromptEvent;
-      setDeferredPrompt(beforeInstallEvent);
-      
-      // Show install prompt after 30 seconds if not installed
-      setTimeout(() => {
-        if (!isInstalled) {
-          setShowInstallPrompt(true);
-        }
-      }, 30000);
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
 
-    // Listen for app installed event
-    const handleAppInstalled = () => {
-      console.log('PWA was installed');
+    const handleInstalled = () => {
       setIsInstalled(true);
-      setShowInstallPrompt(false);
       setDeferredPrompt(null);
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
+    const mq = window.matchMedia('(display-mode: standalone)');
+    const handleMqChange = (e: MediaQueryListEvent) => {
+      if (e.matches) setIsInstalled(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handlePrompt);
+    window.addEventListener('appinstalled', handleInstalled);
+    mq.addEventListener('change', handleMqChange);
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
+      window.removeEventListener('beforeinstallprompt', handlePrompt);
+      window.removeEventListener('appinstalled', handleInstalled);
+      mq.removeEventListener('change', handleMqChange);
     };
-  }, [isInstalled]);
+  }, []);
+
+  if (isInstalled || isInIframeOrPreview()) return null;
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
-
     try {
       await deferredPrompt.prompt();
-      const result = await deferredPrompt.userChoice;
-      
-      if (result.outcome === 'accepted') {
-        console.log('User accepted the install prompt');
-      } else {
-        console.log('User dismissed the install prompt');
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+        setIsInstalled(true);
       }
-      
-      setDeferredPrompt(null);
-      setShowInstallPrompt(false);
-    } catch (error) {
-      console.error('Error showing install prompt:', error);
+    } catch (err) {
+      console.error('Install prompt error:', err);
     }
   };
 
-  const handleDismiss = () => {
-    setShowInstallPrompt(false);
-    // Don't show again for 24 hours
-    localStorage.setItem('pwa-install-dismissed', Date.now().toString());
-  };
+  const renderContent = () => {
+    // Android/Chrome with native prompt available
+    if (deferredPrompt) {
+      return (
+        <div className="flex items-start space-x-3">
+          <div className="bg-primary-foreground/20 p-2 rounded-lg flex-shrink-0">
+            <Download className="h-5 w-5" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-sm mb-1">Install TracKKit</h3>
+            <p className="text-xs opacity-90 mb-3">
+              Add to your home screen for quick access
+            </p>
+            <Button size="sm" variant="secondary" onClick={handleInstallClick} className="text-xs">
+              <Download className="h-3 w-3 mr-1" />
+              Install App
+            </Button>
+          </div>
+        </div>
+      );
+    }
 
-  // Don't show if already installed or recently dismissed
-  const dismissedTime = localStorage.getItem('pwa-install-dismissed');
-  if (isInstalled || !showInstallPrompt || !deferredPrompt) return null;
-  
-  if (dismissedTime && Date.now() - parseInt(dismissedTime) < 24 * 60 * 60 * 1000) {
-    return null;
-  }
+    if (device === 'ios') {
+      return (
+        <div className="flex items-start space-x-3">
+          <div className="bg-primary-foreground/20 p-2 rounded-lg flex-shrink-0">
+            <Share className="h-5 w-5" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-sm mb-1">Install TracKKit</h3>
+            <p className="text-xs opacity-90">
+              Tap the <strong>Share</strong> button <span className="inline-block">□↑</span> at the bottom of your browser, then tap <strong>"Add to Home Screen"</strong>
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (device === 'samsung') {
+      return (
+        <div className="flex items-start space-x-3">
+          <div className="bg-primary-foreground/20 p-2 rounded-lg flex-shrink-0">
+            <MoreVertical className="h-5 w-5" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-sm mb-1">Install TracKKit</h3>
+            <p className="text-xs opacity-90">
+              Tap the <strong>menu</strong> (⋮), then <strong>"Add page to"</strong> → <strong>"Home screen"</strong>
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    // Generic fallback
+    return (
+      <div className="flex items-start space-x-3">
+        <div className="bg-primary-foreground/20 p-2 rounded-lg flex-shrink-0">
+          <Smartphone className="h-5 w-5" />
+        </div>
+        <div className="flex-1">
+          <h3 className="font-semibold text-sm mb-1">Install TracKKit</h3>
+          <p className="text-xs opacity-90">
+            Use your browser menu to add this app to your home screen
+          </p>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="fixed bottom-4 left-4 right-4 z-50 max-w-sm mx-auto">
       <Card className="bg-primary text-primary-foreground border-primary shadow-lg">
         <CardContent className="p-4">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start space-x-3">
-              <div className="bg-primary-foreground/20 p-2 rounded-lg">
-                <Smartphone className="h-5 w-5" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-sm mb-1">Install TracKKit</h3>
-                <p className="text-xs opacity-90 mb-3">
-                  Add to your home screen for quick access and offline use
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={handleInstallClick}
-                    className="text-xs"
-                  >
-                    <Download className="h-3 w-3 mr-1" />
-                    Install
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={handleDismiss}
-                    className="text-xs hover:bg-primary-foreground/20"
-                  >
-                    Later
-                  </Button>
-                </div>
-              </div>
-            </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={handleDismiss}
-              className="h-6 w-6 p-0 hover:bg-primary-foreground/20"
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          </div>
+          {renderContent()}
         </CardContent>
       </Card>
     </div>
