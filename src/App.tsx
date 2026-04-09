@@ -7,7 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { WorkspaceProvider } from "@/hooks/useWorkspace";
 import { LanguageProvider } from "@/hooks/useLanguage";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { InstallPrompt } from "@/components/InstallPrompt";
+
 import { Dashboard } from "./pages/Dashboard";
 import { AgentDashboard } from "./pages/AgentDashboard";
 import { SupervisorDashboard } from "./pages/SupervisorDashboard";
@@ -57,7 +57,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-          <InstallPrompt />
+          
           <PWAInstallPrompt />
           <Routes>
             <Route path="/login" element={<Login />} />
