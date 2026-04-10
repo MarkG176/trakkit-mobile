@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action: string
+          category: string
+          created_at: string
+          details: Json | null
+          error_message: string | null
+          id: string
+          ip_address: string | null
+          status: string
+          user_agent: string | null
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          action: string
+          category: string
+          created_at?: string
+          details?: Json | null
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          status?: string
+          user_agent?: string | null
+          user_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          action?: string
+          category?: string
+          created_at?: string
+          details?: Json | null
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          status?: string
+          user_agent?: string | null
+          user_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_actions: {
         Row: {
           action_data: Json | null
