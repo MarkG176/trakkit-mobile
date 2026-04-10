@@ -11,6 +11,7 @@ import trakkitLogo from '@/assets/trakkit-logo.png';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { logActivity, logFailedActivity } from '@/utils/activityLogger';
 
 export const Login = () => {
   const [email, setEmail] = useState('');
@@ -85,6 +86,7 @@ export const Login = () => {
       }
 
       if (!emailExists) {
+        logActivity({ action: 'otp_requested', category: 'auth', status: 'failed', details: { email }, errorMessage: 'Account not found' });
         toast({
           title: "Account not found",
           description: "Please contact your administrator.",
@@ -102,12 +104,14 @@ export const Login = () => {
       });
       
       if (error) {
+        logActivity({ action: 'otp_requested', category: 'auth', status: 'failed', details: { email }, errorMessage: error.message });
         toast({
           title: "Sign in failed",
           description: error.message,
           variant: "destructive",
         });
       } else {
+        logActivity({ action: 'otp_requested', category: 'auth', status: 'success', details: { email } });
         setOtpSent(true);
         toast({
           title: "Code sent!",
@@ -145,14 +149,16 @@ export const Login = () => {
       });
 
       if (error) {
+        logActivity({ action: 'otp_verified', category: 'auth', status: 'failed', details: { email }, errorMessage: error.message });
         toast({
           title: "Verification failed",
           description: error.message || "Invalid or expired code. Please try again.",
           variant: "destructive",
         });
         setOtp('');
+      } else {
+        logActivity({ action: 'otp_verified', category: 'auth', status: 'success', details: { email } });
       }
-      // On success, the auth state listener will redirect
     } catch (error) {
       toast({
         title: "Error",

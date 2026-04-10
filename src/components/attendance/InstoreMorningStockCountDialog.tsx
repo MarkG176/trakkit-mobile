@@ -15,6 +15,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Package, ClipboardList } from "lucide-react";
+import { logActivity, logFailedActivity } from "@/utils/activityLogger";
 
 interface InventoryProduct {
   product_variant_id: string;
@@ -152,6 +153,7 @@ export const InstoreMorningStockCountDialog = ({
 
       if (error) throw error;
 
+      logActivity({ action: 'morning_stock_count', category: 'stock_report', details: { productsCount: reportsToInsert.length, storeId }, workspaceId: currentWorkspaceId });
       toast({
         title: "Success",
         description: "Morning stock count submitted successfully",
@@ -161,6 +163,7 @@ export const InstoreMorningStockCountDialog = ({
       onComplete?.();
     } catch (error) {
       console.error("Error submitting stock count:", error);
+      logFailedActivity('morning_stock_count', 'stock_report', error, { storeId }, currentWorkspaceId);
       toast({
         title: "Error",
         description: "Failed to submit stock count",

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
+import { logActivity, logFailedActivity } from '@/utils/activityLogger';
 import { workspaceService } from '@/services/workspaceService';
 
 interface SaleItem {
@@ -113,6 +114,13 @@ export const useSalesForm = () => {
           }
         }));
 
+      logActivity({
+        action: 'sale_recorded',
+        category: 'sales',
+        details: { totalValue, itemsCount: formData.items.length, customerName: formData.customerName },
+        workspaceId: workspaceService.getCurrentWorkspaceId(),
+      });
+
       toast({
         title: "Sale recorded successfully!",
         description: `+${Math.max(pointsEarned, 25)} points earned. Engagement logged.`,
@@ -121,6 +129,7 @@ export const useSalesForm = () => {
       return true;
     } catch (error) {
       console.error('Error submitting sale:', error);
+      logFailedActivity('sale_recorded', 'sales', error, { itemsCount: formData.items.length }, workspaceService.getCurrentWorkspaceId());
       toast({
         title: "Error",
         description: "Failed to record sale. Please try again.",

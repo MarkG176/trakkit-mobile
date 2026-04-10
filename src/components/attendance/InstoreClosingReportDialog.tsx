@@ -15,6 +15,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Sun, DollarSign, Moon, Package } from "lucide-react";
+import { logActivity, logFailedActivity } from "@/utils/activityLogger";
 
 interface InventoryProduct {
   id: string;
@@ -173,6 +174,7 @@ export const InstoreClosingReportDialog = ({
 
       if (error) throw error;
 
+      logActivity({ action: 'closing_report', category: 'stock_report', details: { productsCount: reportsToInsert.length, storeId }, workspaceId: currentWorkspaceId });
       toast({
         title: "Success",
         description: "Closing report submitted successfully",
@@ -182,6 +184,7 @@ export const InstoreClosingReportDialog = ({
       onComplete?.();
     } catch (error) {
       console.error("Error submitting closing report:", error);
+      logFailedActivity('closing_report', 'stock_report', error, { storeId }, currentWorkspaceId);
       toast({
         title: "Error",
         description: "Failed to submit closing report",
