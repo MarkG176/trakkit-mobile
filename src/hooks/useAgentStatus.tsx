@@ -5,6 +5,7 @@ import { calculateDistance, debugDistanceCalculation } from '@/utils/distanceCal
 import { workspaceService } from '@/services/workspaceService';
 import { useAgentActions } from './useAgentActions';
 import { useWorkspace } from './useWorkspace';
+import { logActivity, logFailedActivity } from '@/utils/activityLogger';
 
 export type AgentStatus = 'checked_out' | 'checked_in' | 'lunch';
 
@@ -177,9 +178,16 @@ export const useAgentStatus = () => {
       );
 
       setCurrentStatus(newStatus);
+      logActivity({
+        action: `status_${newStatus}`,
+        category: 'attendance',
+        details: { distance, inRange, checkInSuccessful, lat: currentLat, lng: currentLng },
+        workspaceId: currentWorkspaceId,
+      });
       return { success: true, message: `Successfully ${newStatus.replace('_', ' ')}` };
     } catch (error) {
       console.error('Error updating status:', error);
+      logFailedActivity(`status_${newStatus}`, 'attendance', error, { lat: currentLat, lng: currentLng }, currentWorkspaceId);
       return { success: false, message: 'Failed to update status' };
     }
   };
