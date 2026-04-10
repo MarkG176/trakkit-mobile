@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useLanguage, Language } from "@/hooks/useLanguage";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { Globe, Users, HelpCircle } from "lucide-react";
+import { Globe, Users, HelpCircle, AlertTriangle } from "lucide-react";
 
 const DOCS_URL = "https://trakkit.darajatech.com/docs";
 
@@ -35,19 +35,21 @@ export const WorkspaceOnboarding = ({ workspaceId, workspaceName }: WorkspaceOnb
   const { currentTeamType } = useWorkspace();
   const { setLanguage } = useLanguage();
 
-  const isInstore = currentTeamType?.toLowerCase() === "instore";
+  const normalizedTeamType = currentTeamType?.toLowerCase() || null;
+  const isInstore = normalizedTeamType === "instore";
+  const hasNoTeam = !normalizedTeamType || normalizedTeamType === "hybrid";
 
   const onboardKey = workspaceId ? `onboarded_${workspaceId}` : null;
   const alreadyOnboarded = onboardKey ? !!localStorage.getItem(onboardKey) : true;
 
-  const [open, setOpen] = useState(!alreadyOnboarded && isInstore);
+  const [open, setOpen] = useState(!alreadyOnboarded && (isInstore || hasNoTeam));
   // Language selection is disabled for now but code is retained
   // Start at step 1 (team name) instead of step 0 (language)
   const [step, setStep] = useState(1);
 
-  if (!workspaceId || alreadyOnboarded || !isInstore) return null;
+  if (!workspaceId || alreadyOnboarded || (!isInstore && !hasNoTeam)) return null;
 
-  const teamDisplayName = teamTypeDisplayNames[currentTeamType?.toLowerCase() ?? "hybrid"] || "Hybrid";
+  const teamDisplayName = teamTypeDisplayNames[normalizedTeamType ?? "hybrid"] || "Hybrid";
 
   // Disabled: Language selection handler (retained for future use)
   const _handleLanguageSelect = (lang: Language) => {
@@ -101,16 +103,35 @@ export const WorkspaceOnboarding = ({ workspaceId, workspaceName }: WorkspaceOnb
           <>
             <DialogHeader>
               <div className="flex justify-center mb-2">
-                <Users className="w-10 h-10 text-primary" />
+                {hasNoTeam ? (
+                  <AlertTriangle className="w-10 h-10 text-destructive" />
+                ) : (
+                  <Users className="w-10 h-10 text-primary" />
+                )}
               </div>
-              <DialogTitle className="text-center">Your Team</DialogTitle>
+              <DialogTitle className="text-center">
+                {hasNoTeam ? "No Team Assigned" : "Your Team"}
+              </DialogTitle>
             </DialogHeader>
-            <p className="text-center text-muted-foreground mt-2">
-              You're part of the <span className="font-semibold text-foreground">{workspaceName || "your"}</span> team
-            </p>
-            <Button onClick={() => setStep(2)} className="w-full mt-6">
-              Continue
-            </Button>
+            {hasNoTeam ? (
+              <>
+                <p className="text-center text-muted-foreground mt-2">
+                  You haven't been assigned to a team yet. Please contact your administrator to get added to a team.
+                </p>
+                <Button onClick={handleSkipTour} className="w-full mt-6">
+                  OK
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="text-center text-muted-foreground mt-2">
+                  You're part of the <span className="font-semibold text-foreground">{workspaceName || "your"}</span> team
+                </p>
+                <Button onClick={() => setStep(2)} className="w-full mt-6">
+                  Continue
+                </Button>
+              </>
+            )}
           </>
         )}
 
