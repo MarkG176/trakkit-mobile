@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
 import { workspaceService } from '@/services/workspaceService';
+import { logActivity, logFailedActivity } from '@/utils/activityLogger';
 
 interface InteractionFormData {
   interactionType: string;
