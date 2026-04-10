@@ -116,7 +116,7 @@ export const WorkspaceOnboarding = ({ workspaceId, workspaceName }: WorkspaceOnb
             {hasNoTeam ? (
               <>
                 <p className="text-center text-muted-foreground mt-2">
-                  You haven't been assigned to a team yet. Please contact your administrator to get added to a team.
+                  You're part of <span className="font-semibold text-foreground">{workspaceName || "your workspace"}</span>, but you haven't been assigned to a team yet. Please contact your administrator to get added to a team.
                 </p>
                 <Button onClick={handleSkipTour} className="w-full mt-6">
                   OK
