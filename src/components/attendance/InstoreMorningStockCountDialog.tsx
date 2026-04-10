@@ -15,6 +15,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Package, ClipboardList } from "lucide-react";
+import { logActivity, logFailedActivity } from "@/utils/activityLogger";
 
 interface InventoryProduct {
   product_variant_id: string;
