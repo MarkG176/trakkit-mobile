@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useLanguage, Language } from "@/hooks/useLanguage";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { Globe, Users, HelpCircle } from "lucide-react";
+import { Globe, Users, HelpCircle, AlertTriangle } from "lucide-react";
 
 const DOCS_URL = "https://trakkit.darajatech.com/docs";
 
