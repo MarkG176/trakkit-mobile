@@ -92,7 +92,7 @@ const PWAInstallPrompt: React.FC = () => {
             <Download className="h-5 w-5" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-sm mb-1">Install TracKKit</h3>
+            <h3 className="font-semibold text-sm mb-1">Install TraKKiT</h3>
             <p className="text-xs opacity-90 mb-3">
               Add to your home screen for quick access
             </p>
@@ -112,7 +112,7 @@ const PWAInstallPrompt: React.FC = () => {
             <Share className="h-5 w-5" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-sm mb-1">Install TracKKit</h3>
+            <h3 className="font-semibold text-sm mb-1">Install TraKKiT</h3>
             <p className="text-xs opacity-90">
               Tap the <strong>Share</strong> button <span className="inline-block">□↑</span> at the bottom of your browser, then tap <strong>"Add to Home Screen"</strong>
             </p>
@@ -128,7 +128,7 @@ const PWAInstallPrompt: React.FC = () => {
             <MoreVertical className="h-5 w-5" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-sm mb-1">Install TracKKit</h3>
+            <h3 className="font-semibold text-sm mb-1">Install TraKKiT</h3>
             <p className="text-xs opacity-90">
               Tap the <strong>menu</strong> (⋮), then <strong>"Add page to"</strong> → <strong>"Home screen"</strong>
             </p>
@@ -144,7 +144,7 @@ const PWAInstallPrompt: React.FC = () => {
           <Smartphone className="h-5 w-5" />
         </div>
         <div className="flex-1">
-          <h3 className="font-semibold text-sm mb-1">Install TracKKit</h3>
+          <h3 className="font-semibold text-sm mb-1">Install TraKKiT</h3>
           <p className="text-xs opacity-90">
             Use your browser menu to add this app to your home screen
           </p>

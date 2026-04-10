@@ -1,6 +1,6 @@
 {
-  "name": "Trakkit Mobile",
-  "short_name": "Trakkit",
+  "name": "TraKKiT Mobile",
+  "short_name": "TraKKiT",
   "description": "Sales agent management and tracking application",
   "start_url": "/",
   "display": "standalone",

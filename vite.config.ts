@@ -20,8 +20,8 @@ export default defineConfig(({ mode }) => ({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'placeholder.svg'],
       manifest: {
-        name: 'Trakkit Mobile',
-        short_name: 'Trakkit',
+        name: 'TraKKiT Mobile',
+        short_name: 'TraKKiT',
         description: 'Sales agent management and tracking application',
         theme_color: '#2563eb',
         background_color: '#ffffff',
