@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { workspaceService } from '@/services/workspaceService';
+import { logActivity } from '@/utils/activityLogger';
 
 interface AuthContextType {
   user: User | null;
@@ -25,6 +26,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        
+        // Log auth state changes
+        if (event === 'SIGNED_IN' && session?.user) {
+          logActivity({ action: 'signed_in', category: 'auth', details: { email: session.user.email, provider: session.user.app_metadata?.provider } });
+        } else if (event === 'SIGNED_OUT') {
+          logActivity({ action: 'signed_out', category: 'auth' });
+        }
         
         // Defer workspace initialization to avoid deadlock
         if (session?.user) {
