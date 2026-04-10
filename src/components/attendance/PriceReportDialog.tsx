@@ -186,7 +186,7 @@ export const PriceReportDialog = ({
             {/* Product card */}
             <div className="p-6 rounded-xl border bg-card text-center space-y-4">
               <div className="space-y-2">
-                <h3 className="text-lg font-semibold">{currentProduct.name}</h3>
+                <h3 className="text-lg font-semibold break-words whitespace-normal leading-snug">{currentProduct.name}</h3>
                 {getStockBadge(stockLevels[currentProduct.product_variant_id])}
               </div>
 

@@ -668,7 +668,7 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
                       <div className="w-10 h-10 mx-auto rounded-full bg-muted flex items-center justify-center">
                         <Package className="h-5 w-5 text-muted-foreground" />
                       </div>
-                      <p className="text-xs font-medium truncate" title={variant.sku ? `${variant.sku} - ${variant.name}` : variant.name}>{variant.sku ? `${variant.sku} - ${variant.name}` : variant.name}</p>
+                      <p className="text-xs font-medium break-words whitespace-normal leading-snug text-center" title={variant.sku ? `${variant.sku} - ${variant.name}` : variant.name}>{variant.sku ? `${variant.sku} - ${variant.name}` : variant.name}</p>
                       <div className="flex items-center justify-center gap-2">
                         <Button
                           variant="outline"
