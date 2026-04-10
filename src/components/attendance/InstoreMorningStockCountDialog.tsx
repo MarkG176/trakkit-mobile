@@ -141,7 +141,7 @@ export const InstoreMorningStockCountDialog = ({
           opening_stock: parseInt(p.opening_stock) || 0,
           quantity_sold: 0,
           closing_stock: 0,
-          report_type: "stock_count",
+          report_type: "morning",
           work_date: today,
           workspace_id: currentWorkspaceId,
           store_id: storeId || null,
