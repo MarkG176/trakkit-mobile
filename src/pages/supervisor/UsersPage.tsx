@@ -227,7 +227,7 @@ export const UsersPage = () => {
       // 1. Creates auth user (or finds existing)
       // 2. Creates user_roles entry
       // 3. Creates user_workspaces entry
-      // 4. Sends magic link
+      // 4. Sets up user for OTP login
       const { data: fnData, error: fnError } = await supabase.functions.invoke('create-user', {
         body: {
           email: inviteEmail.trim(),
@@ -244,7 +244,7 @@ export const UsersPage = () => {
 
       toast({
         title: "Invitation sent!",
-        description: `A magic link has been sent to ${inviteEmail}`,
+        description: `An invitation has been sent to ${inviteEmail}`,
       });
 
       // Store invited email for team assignment
@@ -313,7 +313,7 @@ export const UsersPage = () => {
               Add User
             </DialogTitle>
             <DialogDescription>
-              Send a magic link invitation to add a new team member
+              Send an invitation to add a new team member
             </DialogDescription>
           </DialogHeader>
           
