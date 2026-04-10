@@ -33,6 +33,7 @@ export const RecordAttendanceForm = () => {
   const [showInstoreMorningStockCount, setShowInstoreMorningStockCount] = useState(false);
   const [showSurveyClosingReport, setShowSurveyClosingReport] = useState(false);
   const [currentStoreId, setCurrentStoreId] = useState<string | null>(null);
+  const [instoreStockLevels, setInstoreStockLevels] = useState<Record<string, string>>({});
   const cameraRef = useRef<HTMLInputElement>(null);
   // Ref-based guard to prevent duplicate calls (survives re-renders and is synchronous)
   const isProcessingRef = useRef(false);
@@ -336,6 +337,7 @@ export const RecordAttendanceForm = () => {
         onOpenChange={setShowStockReport}
         reportType={stockReportType}
         storeId={currentStoreId}
+        onStockLevelsChange={(levels) => setInstoreStockLevels(levels)}
         onComplete={() => {
           console.log('Stock report completed');
           // For instore, chain to morning stock count dialog after stock availability report
@@ -377,6 +379,7 @@ export const RecordAttendanceForm = () => {
         open={showInstoreMorningStockCount}
         onOpenChange={setShowInstoreMorningStockCount}
         storeId={currentStoreId}
+        stockLevels={instoreStockLevels}
         onComplete={() => {
           console.log('Instore morning stock count completed');
         }}

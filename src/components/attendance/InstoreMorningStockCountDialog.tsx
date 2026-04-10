@@ -32,6 +32,7 @@ interface InstoreMorningStockCountDialogProps {
   onOpenChange: (open: boolean) => void;
   onComplete?: () => void;
   storeId?: string | null;
+  stockLevels?: Record<string, string>;
 }
 
 export const InstoreMorningStockCountDialog = ({
@@ -39,6 +40,7 @@ export const InstoreMorningStockCountDialog = ({
   onOpenChange,
   onComplete,
   storeId,
+  stockLevels,
 }: InstoreMorningStockCountDialogProps) => {
   const { user } = useAuth();
   const { currentWorkspaceId } = useWorkspace();
@@ -77,7 +79,15 @@ export const InstoreMorningStockCountDialog = ({
         };
       });
 
-      setProducts(productCounts);
+      // Filter out products marked as unavailable or not_sold in stock availability report
+      const filteredProducts = stockLevels
+        ? productCounts.filter((p) => {
+            const level = stockLevels[p.product_variant_id];
+            return level !== 'unavailable' && level !== 'not_sold';
+          })
+        : productCounts;
+
+      setProducts(filteredProducts);
     } catch (error) {
       console.error("Error fetching inventory:", error);
       toast({
