@@ -35,19 +35,21 @@ export const WorkspaceOnboarding = ({ workspaceId, workspaceName }: WorkspaceOnb
   const { currentTeamType } = useWorkspace();
   const { setLanguage } = useLanguage();
 
-  const isInstore = currentTeamType?.toLowerCase() === "instore";
+  const normalizedTeamType = currentTeamType?.toLowerCase() || null;
+  const isInstore = normalizedTeamType === "instore";
+  const hasNoTeam = !normalizedTeamType || normalizedTeamType === "hybrid";
 
   const onboardKey = workspaceId ? `onboarded_${workspaceId}` : null;
   const alreadyOnboarded = onboardKey ? !!localStorage.getItem(onboardKey) : true;
 
-  const [open, setOpen] = useState(!alreadyOnboarded && isInstore);
+  const [open, setOpen] = useState(!alreadyOnboarded && (isInstore || hasNoTeam));
   // Language selection is disabled for now but code is retained
   // Start at step 1 (team name) instead of step 0 (language)
   const [step, setStep] = useState(1);
 
-  if (!workspaceId || alreadyOnboarded || !isInstore) return null;
+  if (!workspaceId || alreadyOnboarded || (!isInstore && !hasNoTeam)) return null;
 
-  const teamDisplayName = teamTypeDisplayNames[currentTeamType?.toLowerCase() ?? "hybrid"] || "Hybrid";
+  const teamDisplayName = teamTypeDisplayNames[normalizedTeamType ?? "hybrid"] || "Hybrid";
 
   // Disabled: Language selection handler (retained for future use)
   const _handleLanguageSelect = (lang: Language) => {
