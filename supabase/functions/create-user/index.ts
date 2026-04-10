@@ -41,7 +41,7 @@ serve(async (req) => {
       userId = existingUser.id;
       console.log(`User already exists with ID: ${userId}`);
     } else {
-      // Create new user with a temporary password (they'll use magic link to sign in)
+      // Create new user (they'll use OTP to sign in)
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email,
         email_confirm: true,
@@ -182,18 +182,7 @@ serve(async (req) => {
       }
     }
 
-    // Send magic link for password setup
-    const { error: magicLinkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: "magiclink",
-      email,
-      options: {
-        redirectTo: "https://trakkit-mobile.lovable.app/auth/callback",
-      },
-    });
-
-    if (magicLinkError) {
-      console.error("Error generating magic link:", magicLinkError);
-    }
+    // User will sign in via OTP when they first access the app
 
     return new Response(
       JSON.stringify({ 

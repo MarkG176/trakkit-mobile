@@ -44,7 +44,7 @@ export const InviteAgentDialog = ({ open, onOpenChange, onSuccess }: InviteAgent
 
     setLoading(true);
     try {
-      // Send magic link invitation
+      // Send OTP invitation
       const { error: inviteError } = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: {
@@ -64,7 +64,7 @@ export const InviteAgentDialog = ({ open, onOpenChange, onSuccess }: InviteAgent
       
       toast({
         title: "Invitation sent!",
-        description: `A magic link has been sent to ${email}`,
+        description: `An invitation has been sent to ${email}`,
       });
 
       setEmail("");
@@ -93,7 +93,7 @@ export const InviteAgentDialog = ({ open, onOpenChange, onSuccess }: InviteAgent
             Invite Team Member
           </DialogTitle>
           <DialogDescription>
-            Send a magic link invitation to add a new team member
+            Send an invitation to add a new team member
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
