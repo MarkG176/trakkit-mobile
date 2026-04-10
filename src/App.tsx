@@ -42,6 +42,7 @@ import { ActivityDetail } from "./pages/ActivityDetail";
 import { Activity } from "./pages/Activity";
 import { RoleBasedRoute } from "./components/RoleBasedRoute";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
+import { TourOverlay } from "./components/onboarding/TourOverlay";
 
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
@@ -59,6 +60,7 @@ const App = () => (
           <BrowserRouter>
           
           <PWAInstallPrompt />
+          <TourOverlay />
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/auth/callback" element={<AuthCallback />} />

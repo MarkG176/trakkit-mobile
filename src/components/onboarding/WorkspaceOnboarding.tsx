@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useLanguage, Language } from "@/hooks/useLanguage";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { Globe, Users, HelpCircle, BookOpen, ExternalLink } from "lucide-react";
+import { Globe, Users, HelpCircle } from "lucide-react";
 
 const DOCS_URL = "https://trakkit.darajatech.com/docs";
 
@@ -26,35 +26,6 @@ const teamTypeDisplayNames: Record<string, string> = {
   market_research: "Market Research",
 };
 
-interface ComponentInfo {
-  name: string;
-  description: string;
-}
-
-const instoreComponents: ComponentInfo[] = [
-  { name: "Record Attendance", description: "Check in and out by taking a selfie" },
-  { name: "Set Location", description: "Select which store you're at today" },
-  { name: "Routes", description: "View and search your assigned stores" },
-  { name: "Reports", description: "Log customer feedback and competitor activity" },
-  { name: "Work Hours", description: "Track your daily work time" },
-];
-
-const defaultComponents: ComponentInfo[] = [
-  { name: "Record Attendance", description: "Check in and out by taking a selfie" },
-  { name: "Set Location", description: "Select which store you're at today" },
-  { name: "Routes", description: "View and search your assigned locations" },
-  { name: "Work Hours", description: "Track your daily work time" },
-];
-
-function getComponentsForTeamType(teamType: string): ComponentInfo[] {
-  switch (teamType?.toLowerCase()) {
-    case "instore":
-      return instoreComponents;
-    default:
-      return defaultComponents;
-  }
-}
-
 interface WorkspaceOnboardingProps {
   workspaceId: string | null;
   workspaceName?: string;
@@ -64,23 +35,36 @@ export const WorkspaceOnboarding = ({ workspaceId, workspaceName }: WorkspaceOnb
   const { currentTeamType } = useWorkspace();
   const { setLanguage } = useLanguage();
 
+  const isInstore = currentTeamType?.toLowerCase() === "instore";
+
   const onboardKey = workspaceId ? `onboarded_${workspaceId}` : null;
   const alreadyOnboarded = onboardKey ? !!localStorage.getItem(onboardKey) : true;
 
-  const [open, setOpen] = useState(!alreadyOnboarded);
-  const [step, setStep] = useState(0);
+  const [open, setOpen] = useState(!alreadyOnboarded && isInstore);
+  // Language selection is disabled for now but code is retained
+  // Start at step 1 (team name) instead of step 0 (language)
+  const [step, setStep] = useState(1);
 
-  if (!workspaceId || alreadyOnboarded) return null;
+  if (!workspaceId || alreadyOnboarded || !isInstore) return null;
 
   const teamDisplayName = teamTypeDisplayNames[currentTeamType?.toLowerCase() ?? "hybrid"] || "Hybrid";
-  const components = getComponentsForTeamType(currentTeamType);
 
-  const handleLanguageSelect = (lang: Language) => {
+  // Disabled: Language selection handler (retained for future use)
+  const _handleLanguageSelect = (lang: Language) => {
     setLanguage(lang);
     setStep(1);
   };
 
-  const handleComplete = () => {
+  const handleStartTour = () => {
+    if (onboardKey) localStorage.setItem(onboardKey, "true");
+    // Set tour active state for TourOverlay to pick up
+    if (workspaceId) localStorage.setItem(`tour_active_${workspaceId}`, "0");
+    setOpen(false);
+    // Force re-render of TourOverlay by dispatching a storage event
+    window.dispatchEvent(new Event("tour-started"));
+  };
+
+  const handleSkipTour = () => {
     if (onboardKey) localStorage.setItem(onboardKey, "true");
     setOpen(false);
   };
@@ -88,6 +72,8 @@ export const WorkspaceOnboarding = ({ workspaceId, workspaceName }: WorkspaceOnb
   return (
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent className="max-w-sm" onPointerDownOutside={(e) => e.preventDefault()}>
+        {/* Step 0: Language Selection (DISABLED) */}
+        {/* 
         {step === 0 && (
           <>
             <DialogHeader>
@@ -100,15 +86,16 @@ export const WorkspaceOnboarding = ({ workspaceId, workspaceName }: WorkspaceOnb
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-3 mt-4">
-              <Button onClick={() => handleLanguageSelect("en")} variant="outline" className="h-12 text-base">
+              <Button onClick={() => _handleLanguageSelect("en")} variant="outline" className="h-12 text-base">
                 🇬🇧 English
               </Button>
-              <Button onClick={() => handleLanguageSelect("sw")} variant="outline" className="h-12 text-base">
+              <Button onClick={() => _handleLanguageSelect("sw")} variant="outline" className="h-12 text-base">
                 🇰🇪 Kiswahili
               </Button>
             </div>
           </>
         )}
+        */}
 
         {step === 1 && (
           <>
@@ -139,49 +126,15 @@ export const WorkspaceOnboarding = ({ workspaceId, workspaceName }: WorkspaceOnb
               Have you used TraKKiT for <span className="font-semibold text-foreground">{teamDisplayName}</span> projects before?
             </p>
             <div className="flex gap-3 mt-6">
-              <Button onClick={() => setStep(3)} variant="outline" className="flex-1">
+              <Button onClick={handleStartTour} variant="outline" className="flex-1">
                 No
               </Button>
-              <Button onClick={() => setStep(3)} className="flex-1">
+              <Button onClick={handleStartTour} className="flex-1">
                 Yes
               </Button>
             </div>
-          </>
-        )}
-
-        {step === 3 && (
-          <>
-            <DialogHeader>
-              <div className="flex justify-center mb-2">
-                <BookOpen className="w-10 h-10 text-primary" />
-              </div>
-              <DialogTitle className="text-center">Quick Guide</DialogTitle>
-              <DialogDescription className="text-center">
-                Here's what you can do in the app
-              </DialogDescription>
-            </DialogHeader>
-            <div className="mt-4 space-y-3">
-              {components.map((comp) => (
-                <div key={comp.name} className="flex items-start gap-3 p-2 rounded-lg bg-muted/50">
-                  <div className="w-2 h-2 rounded-full bg-primary mt-2 shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium">{comp.name}</p>
-                    <p className="text-xs text-muted-foreground">{comp.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <a
-              href={DOCS_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 text-sm text-primary mt-4 hover:underline"
-            >
-              <ExternalLink className="w-4 h-4" />
-              View full docs
-            </a>
-            <Button onClick={handleComplete} className="w-full mt-4">
-              Get Started
+            <Button onClick={handleSkipTour} variant="ghost" className="w-full mt-2 text-xs text-muted-foreground">
+              Skip
             </Button>
           </>
         )}
