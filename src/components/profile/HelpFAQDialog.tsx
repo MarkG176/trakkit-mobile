@@ -34,11 +34,30 @@ const teamTypeAnswers: Record<string, string> = {
   brand_activation: "Guide coming soon for Brand Activation activations.",
   door_to_door: "Guide coming soon for Door to Door activations.",
   sampling: "Guide coming soon for Sampling activations.",
-  instore: "Guide coming soon for Instore activations.",
+  instore: "First, check in on the Dashboard using the Record Attendance form by taking a selfie. Set your location to select which store you're at today. Use Reports to log customer feedback and competitor activity. Track your daily work time with the Work Hours card. At the end of the day, check out on the Dashboard.",
   wholesale: "Guide coming soon for Wholesale activations.",
   seeding: "First, check in on the Dashboard, using the Record Attendance form. Next, add stores that you visit on the Routes page using the Add Location form. Carry out all interactions with the store. At the end of the day, check out on the Dashboard.",
   hybrid: "Guide coming soon for Hybrid activations.",
 };
+
+const instoreFaqItems = [
+  {
+    question: "How do I record attendance?",
+    answer: "Tap the Record Attendance button on the Dashboard. Allow location access when prompted and take a selfie to confirm you've arrived at the store.",
+  },
+  {
+    question: "How do I set my location?",
+    answer: "Use the Set Location button on the Dashboard to select which store you're working at today.",
+  },
+  {
+    question: "How do I submit reports?",
+    answer: "Go to the Reports page to log customer feedback and competitor activity throughout your shift.",
+  },
+  {
+    question: "How do I track my work hours?",
+    answer: "Your work hours are automatically tracked from when you check in to when you check out. View the Work Hours card on the Dashboard.",
+  },
+];
 
 const sharedFaqItems = [
   {
@@ -79,11 +98,14 @@ export const HelpFAQDialog = ({ teamType, variant = "button" }: HelpFAQDialogPro
   const displayName = teamTypeDisplayNames[teamType || "hybrid"] || "Hybrid";
   const teamAnswer = teamTypeAnswers[teamType || "hybrid"] || teamTypeAnswers.hybrid;
 
+  const teamSpecificItems = (teamType || "").toLowerCase() === "instore" ? instoreFaqItems : [];
+
   const faqItems = [
     {
       question: `How to use TraKKiT for ${displayName} activations?`,
       answer: teamAnswer,
     },
+    ...teamSpecificItems,
     ...sharedFaqItems,
   ];
 
