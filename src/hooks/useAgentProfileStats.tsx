@@ -74,6 +74,10 @@ export interface AgentProfileStats {
   weekWholesaleSales: number;
   weekWholesaleRevenue: number;
   hasSurveyAssigned: boolean;
+
+  // Reports (daily_stock_reports)
+  todayReportsCount: number;
+  allTimeReportsCount: number;
   
   // Loading state
   isLoading: boolean;
@@ -158,6 +162,8 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
     weekWholesaleSales: 0,
     weekWholesaleRevenue: 0,
     hasSurveyAssigned: false,
+    todayReportsCount: 0,
+    allTimeReportsCount: 0,
     isLoading: true,
   });
 
@@ -220,6 +226,8 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
           allTimeStoreVisitsData,
           allTimeWholesaleData,
           surveyCheck,
+          todayReports,
+          allTimeReports,
         ] = await Promise.all([
           // User role and display name
           supabase
@@ -592,6 +600,21 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
               .not('survey_template_id', 'is', null)
               .limit(1)
           ] : [Promise.resolve({ count: 0 })]),
+
+          // Today's reports (daily_stock_reports)
+          supabase
+            .from('daily_stock_reports')
+            .select('id', { count: 'exact', head: true })
+            .eq('agent_id', agentId)
+            .eq('workspace_id', currentWorkspaceId)
+            .eq('work_date', todayDate),
+
+          // All time reports (daily_stock_reports)
+          supabase
+            .from('daily_stock_reports')
+            .select('id', { count: 'exact', head: true })
+            .eq('agent_id', agentId)
+            .eq('workspace_id', currentWorkspaceId),
         ]);
 
         // Calculate totals
@@ -753,6 +776,8 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
           weekWholesaleSales: weekWsSales,
           weekWholesaleRevenue: weekWsRevenue,
           hasSurveyAssigned: hasSurvey,
+          todayReportsCount: (todayReports as any)?.count || 0,
+          allTimeReportsCount: (allTimeReports as any)?.count || 0,
           isLoading: false,
         });
       } catch (error) {

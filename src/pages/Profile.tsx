@@ -144,8 +144,8 @@ export const Profile = () => {
               </Card>
             )}
 
-            {/* Sales & Revenue - hide for survey */}
-            {!isSurvey && (
+            {/* Sales & Revenue - hide for survey and instore */}
+            {!isSurvey && !isInstore && (
             <Card>
               <CardContent className="p-4">
                 <SectionTitle>{t("sales_revenue")}</SectionTitle>
@@ -167,6 +167,16 @@ export const Profile = () => {
                     <MetricRow label={t("stores_added")} value={stats.todayStoresAdded} icon={MapPin} />
                   </>
                 )}
+              </CardContent>
+            </Card>
+            )}
+
+            {/* Reports - show for instore */}
+            {isInstore && (
+            <Card>
+              <CardContent className="p-4">
+                <SectionTitle>Reports</SectionTitle>
+                <MetricRow label="Reports Submitted" value={stats.todayReportsCount} icon={FileText} />
               </CardContent>
             </Card>
             )}
@@ -200,8 +210,8 @@ export const Profile = () => {
               </CardContent>
             </Card>
 
-            {/* Sales & Revenue - hide for survey */}
-            {!isSurvey && (
+            {/* Sales & Revenue - hide for survey and instore */}
+            {!isSurvey && !isInstore && (
             <Card>
               <CardContent className="p-4">
                 <SectionTitle>{t("sales_revenue")}</SectionTitle>
@@ -223,6 +233,16 @@ export const Profile = () => {
                     <MetricRow label={t("stores_added")} value={stats.allTimeStoresAdded} icon={MapPin} />
                   </>
                 )}
+              </CardContent>
+            </Card>
+            )}
+
+            {/* Reports - show for instore */}
+            {isInstore && (
+            <Card>
+              <CardContent className="p-4">
+                <SectionTitle>Reports</SectionTitle>
+                <MetricRow label="Reports Submitted" value={stats.allTimeReportsCount} icon={FileText} />
               </CardContent>
             </Card>
             )}
