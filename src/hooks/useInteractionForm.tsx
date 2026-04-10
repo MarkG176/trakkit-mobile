@@ -76,6 +76,13 @@ export const useInteractionForm = () => {
           }
         }));
 
+      logActivity({
+        action: `interaction_${formData.interactionType}`,
+        category: formData.interactionType === 'giveaway' ? 'giveaway' : formData.interactionType === 'survey' ? 'survey' : 'sales',
+        details: { interactionType: formData.interactionType, customerName: formData.customerName },
+        workspaceId: workspaceService.getCurrentWorkspaceId(),
+      });
+
       toast({
         title: "Interaction logged successfully!",
         description: "+10 points earned.",
@@ -84,6 +91,7 @@ export const useInteractionForm = () => {
       return true;
     } catch (error) {
       console.error('Error submitting interaction:', error);
+      logFailedActivity(`interaction_${formData.interactionType}`, 'sales', error, {}, workspaceService.getCurrentWorkspaceId());
       toast({
         title: "Error",
         description: "Failed to log interaction. Please try again.",
