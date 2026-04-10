@@ -40,24 +40,54 @@ const teamTypeAnswers: Record<string, string> = {
   hybrid: "Guide coming soon for Hybrid activations.",
 };
 
-const instoreFaqItems = [
-  {
-    question: "How do I record attendance?",
-    answer: "Tap the Record Attendance button on the Dashboard. Allow location access when prompted and take a selfie to confirm you've arrived at the store.",
-  },
-  {
-    question: "How do I set my location?",
-    answer: "Use the Set Location button on the Dashboard to select which store you're working at today.",
-  },
-  {
-    question: "How do I submit reports?",
-    answer: "Go to the Reports page to log customer feedback and competitor activity throughout your shift.",
-  },
-  {
-    question: "How do I track my work hours?",
-    answer: "Your work hours are automatically tracked from when you check in to when you check out. View the Work Hours card on the Dashboard.",
-  },
-];
+const teamSpecificFaqItems: Record<string, Array<{ question: string; answer: string }>> = {
+  instore: [
+    { question: "How do I record attendance?", answer: "Tap the Record Attendance button on the Dashboard. Allow location access when prompted and take a selfie to confirm you've arrived at the store." },
+    { question: "How do I set my location?", answer: "Use the Set Location button on the Dashboard to select which store you're working at today." },
+    { question: "How do I submit reports?", answer: "Go to the Reports page to log customer feedback and competitor activity throughout your shift." },
+    { question: "How do I track my work hours?", answer: "Your work hours are automatically tracked from when you check in to when you check out. View the Work Hours card on the Dashboard." },
+  ],
+  seeding: [
+    { question: "How do I check in?", answer: "Tap Record Attendance on the Dashboard, allow location access, and take a selfie." },
+    { question: "How do I add stores?", answer: "Go to the Routes page and use the Add Location form to register stores you visit." },
+    { question: "How do I track my work hours?", answer: "Your hours are tracked automatically between check-in and check-out. View them on the Dashboard Work Hours card." },
+  ],
+  sampling: [
+    { question: "How do I record attendance?", answer: "Tap Record Attendance on the Dashboard. Allow location access and take a selfie." },
+    { question: "What are Quick Actions?", answer: "Quick Actions on the Dashboard let you log sales and giveaways quickly." },
+    { question: "How do I set my assigned location?", answer: "Go to Routes and use Set Assigned Location to confirm where you're working." },
+  ],
+  sales_activation: [
+    { question: "How do I check in?", answer: "Tap Record Attendance on the Dashboard, allow location access, and take a selfie." },
+    { question: "How do I record a sale?", answer: "Use the Record Sale option from Quick Actions on the Dashboard." },
+    { question: "How do I manage inventory?", answer: "Go to the Inventory page to view and track your assigned stock." },
+  ],
+  survey_campaign: [
+    { question: "How do I check in?", answer: "Tap Record Attendance on the Dashboard, allow location access, and take a selfie." },
+    { question: "How do I complete surveys?", answer: "Use the Surveys page to fill out assigned survey forms for each interaction." },
+    { question: "How do I track my work hours?", answer: "Your hours are tracked automatically between check-in and check-out. View them on the Dashboard." },
+  ],
+  wholesale: [
+    { question: "How do I check in?", answer: "Tap Record Attendance on the Dashboard, allow location access, and take a selfie." },
+    { question: "How do I record a sale?", answer: "Use the Record Sale option from Quick Actions on the Dashboard." },
+    { question: "How do I track my work hours?", answer: "Your hours are tracked automatically between check-in and check-out." },
+  ],
+  market_research: [
+    { question: "How do I check in?", answer: "Tap Record Attendance on the Dashboard, allow location access, and take a selfie." },
+    { question: "How do I add stores?", answer: "Go to the Routes page and use the Add Location form. After adding a store, you'll be asked to complete a Stock Report." },
+    { question: "How do I track my work hours?", answer: "Your hours are tracked automatically between check-in and check-out." },
+  ],
+  door_to_door: [
+    { question: "How do I check in?", answer: "Tap Record Attendance on the Dashboard, allow location access, and take a selfie." },
+    { question: "How do I log interactions?", answer: "Use the Log Interaction page to record each door-to-door visit." },
+    { question: "How do I track my work hours?", answer: "Your hours are tracked automatically between check-in and check-out." },
+  ],
+  brand_activation: [
+    { question: "How do I check in?", answer: "Tap Record Attendance on the Dashboard, allow location access, and take a selfie." },
+    { question: "How do I record engagements?", answer: "Use Quick Actions on the Dashboard to log sales and giveaways." },
+    { question: "How do I manage inventory?", answer: "Go to the Inventory page to view your assigned stock and log distributions." },
+  ],
+};
 
 const sharedFaqItems = [
   {
