@@ -203,7 +203,7 @@ export const InstoreMorningStockCountDialog = ({
                 key={product.product_variant_id}
                 className="flex items-center gap-3 bg-muted/50 rounded-lg p-3"
               >
-                <Label className="text-sm font-medium flex-1 truncate">
+                <Label className="text-sm font-medium flex-1 break-words whitespace-normal leading-snug">
                   {product.name}
                 </Label>
                 <Input

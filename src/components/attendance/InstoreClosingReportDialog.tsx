@@ -243,7 +243,7 @@ export const InstoreClosingReportDialog = ({
                   key={product.product_variant_id}
                   className="grid grid-cols-[1fr_auto] items-center gap-2 bg-muted/50 rounded-lg p-3"
                 >
-                  <Label className="text-sm font-medium truncate">
+                  <Label className="text-sm font-medium break-words whitespace-normal leading-snug">
                     {product.name}
                   </Label>
                   <div className="grid grid-cols-3 gap-2 w-[180px]">

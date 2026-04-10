@@ -738,7 +738,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                             <ShoppingCart size={16} className="text-muted-foreground" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm truncate">{product.name || 'Unknown Product'}</p>
+                            <p className="font-medium text-sm break-words whitespace-normal leading-snug">{product.name || 'Unknown Product'}</p>
                             <p className="text-xs text-muted-foreground">Available: {product.amount_issued}</p>
                             {product.product_variants?.price > 0 && (
                               <p className="text-xs font-medium text-primary">KES {product.product_variants.price}</p>
