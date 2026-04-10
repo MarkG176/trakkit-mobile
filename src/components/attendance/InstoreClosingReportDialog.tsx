@@ -241,7 +241,7 @@ export const InstoreClosingReportDialog = ({
               {products.map((product, index) => (
                 <div
                   key={product.product_variant_id}
-                  className="grid grid-cols-[1fr_auto] items-center gap-2 bg-muted/50 rounded-lg p-3"
+                  className="grid grid-cols-[1fr_auto] items-start gap-2 bg-muted/50 rounded-lg p-3"
                 >
                   <Label className="text-sm font-medium break-words whitespace-normal leading-snug">
                     {product.name}
