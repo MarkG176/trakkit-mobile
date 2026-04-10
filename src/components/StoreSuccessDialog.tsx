@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { StockReportDialog } from "@/components/attendance/StockReportDialog";
 import { PriceReportDialog } from "@/components/attendance/PriceReportDialog";
+import { formatProductName } from "@/utils/formatProductName";
 
 interface StoreSuccessDialogProps {
   open: boolean;
@@ -45,6 +46,7 @@ interface InventoryItem {
   product_variant_id: string;
   amount_issued: number;
   name: string;
+  sku?: string | null;
 }
 
 export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, storeCounty }: StoreSuccessDialogProps) => {
@@ -141,15 +143,19 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
       if (user) {
         const { data } = await supabase
           .from('agent_task_inventory')
-          .select('id, product_variant_id, amount_issued, name, product_variants!inner(workspace_id, price)')
+          .select('id, product_variant_id, amount_issued, name, product_variants!inner(workspace_id, price, sku)')
           .eq('agent_id', user.id)
           .eq('is_deleted', false)
           .eq('product_variants.workspace_id', currentWorkspaceId);
         
+        const mapped = (data || []).map((item: any) => ({
+          ...item,
+          sku: item.product_variants?.sku || null,
+        }));
         if (action === "sale") {
-          setProducts(data || []);
+          setProducts(mapped);
         } else {
-          setInventory((data || []) as InventoryItem[]);
+          setInventory(mapped as InventoryItem[]);
         }
       }
     }
@@ -256,7 +262,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
     } else {
       setSaleCartItems([...saleCartItems, {
         id: product.id,
-        name: product.name || 'Unknown Product',
+        name: formatProductName(product.name, product.sku),
         price: product.product_variants?.price || 0,
         quantity: 1,
         productVariantId: product.product_variant_id
@@ -554,7 +560,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
     } else {
       setSelectedProducts([...selectedProducts, {
         id: item.id,
-        name: item.name || 'Unknown Product',
+        name: formatProductName(item.name, item.sku),
         quantity: 1,
         maxQuantity: item.amount_issued,
         productVariantId: item.product_variant_id
@@ -591,7 +597,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
       } else {
         setSelectedProducts([...selectedProducts, {
           id: item.id,
-          name: item.name || 'Unknown Product',
+          name: formatProductName(item.name, item.sku),
           quantity: clampedQuantity,
           maxQuantity: item.amount_issued,
           productVariantId: item.product_variant_id
@@ -738,7 +744,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                             <ShoppingCart size={16} className="text-muted-foreground" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm break-words whitespace-normal leading-snug">{product.name || 'Unknown Product'}</p>
+                            <p className="font-medium text-sm break-words whitespace-normal leading-snug">{formatProductName(product.name, product.sku)}</p>
                             <p className="text-xs text-muted-foreground">Available: {product.amount_issued}</p>
                             {product.product_variants?.price > 0 && (
                               <p className="text-xs font-medium text-primary">KES {product.product_variants.price}</p>
@@ -851,7 +857,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                 <Card key={item.id} className="p-3">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <p className="font-medium">{item.name || 'Unknown Product'}</p>
+                      <p className="font-medium break-words whitespace-normal leading-snug">{formatProductName(item.name, item.sku)}</p>
                       <p className="text-sm text-muted-foreground">Available: {item.amount_issued}</p>
                     </div>
                     <div className="flex items-center gap-2">

@@ -16,6 +16,7 @@ import { useInventory, InventoryItem } from "@/hooks/useInventory";
 import { SaleFeedbackDialog, FeedbackData } from "@/components/dashboard/SaleFeedbackDialog";
 import { useToast } from "@/hooks/use-toast";
 import { workspaceService } from "@/services/workspaceService";
+import { formatProductName } from "@/utils/formatProductName";
 interface CartItem {
   id: string;
   name: string;
@@ -98,7 +99,7 @@ export const RecordSale = () => {
     } else {
       setCartItems([...cartItems, { 
         id: item.product_variant_id, 
-        name: item.name || 'Unknown Product', 
+        name: formatProductName(item.name, item.sku), 
         price: itemPrice, 
         quantity: 1 
       }]);
@@ -430,7 +431,7 @@ export const RecordSale = () => {
                       
                       {/* Product Info */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-base">{item.name || 'Unknown Product'}</h3>
+                        <h3 className="font-medium text-base break-words whitespace-normal leading-snug">{formatProductName(item.name, item.sku)}</h3>
                         <p className="text-sm text-muted-foreground">Available: {item.amount_issued}</p>
                         {item.price > 0 && (
                           <p className="text-sm font-medium text-primary">KES {item.price}</p>

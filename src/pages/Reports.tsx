@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useInventory } from "@/hooks/useInventory";
+import { formatProductName } from "@/utils/formatProductName";
 import { workspaceService } from "@/services/workspaceService";
 import { toast } from "sonner";
 
@@ -52,7 +53,7 @@ export const Reports = () => {
       const records = entries.map(item => ({
         agent_id: user.id,
         product_variant_id: item.product_variant_id,
-        product_name: item.name,
+        product_name: formatProductName(item.name, item.sku),
         quantity_sold: salesQuantities[item.product_variant_id],
         total_value: 0,
         status_event: 'sale',
@@ -154,7 +155,7 @@ export const Reports = () => {
       const records = inventory.map(item => ({
         agent_id: user.id,
         product_variant_id: item.product_variant_id,
-        product_name: item.name,
+        product_name: formatProductName(item.name, item.sku),
         quantity_sold: salesQuantities[item.product_variant_id] || 0,
         total_value: 0,
         status_event: reportType,
@@ -218,7 +219,7 @@ export const Reports = () => {
                     <div key={item.id} className="p-3 rounded-lg border bg-card">
                       <div className="space-y-2">
                         <Label className="font-medium leading-tight block">
-                          {item.sku ? `${item.sku} - ${item.name || 'Unknown Product'}` : (item.name || 'Unknown Product')}
+                          {formatProductName(item.name, item.sku)}
                         </Label>
                         <div className="flex items-center gap-2">
                           <Label className="text-sm text-muted-foreground shrink-0">Qty sold:</Label>

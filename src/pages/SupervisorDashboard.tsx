@@ -13,6 +13,7 @@ import { ActivityCard } from "@/components/supervisor/ActivityCard";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { formatProductName } from "@/utils/formatProductName";
 
 interface Notification {
   id: string;
@@ -138,11 +139,11 @@ export const SupervisorDashboard = () => {
           // Get product name
           const { data: variant } = await supabase
             .from('product_variants')
-            .select('name')
+            .select('name, sku')
             .eq('id', record.product_variant_id)
             .single();
 
-          const productName = variant?.name || 'Product';
+          const productName = formatProductName(variant?.name, variant?.sku, 'Product');
           const message = `${agentName} sold ${record.quantity}x ${productName}`;
 
           addNotificationRef.current?.({

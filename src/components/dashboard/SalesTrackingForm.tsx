@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2 } from "lucide-react";
 import { InventoryItem } from "@/hooks/useInventory";
+import { formatProductName } from "@/utils/formatProductName";
 
 interface SaleEntry {
   product_variant_id: string;
@@ -59,7 +60,7 @@ export const SalesTrackingForm = ({ inventory, onSubmit, onSkip }: SalesTracking
                 <SelectContent>
                   {inventory.map((item) => (
                     <SelectItem key={item.product_variant_id} value={item.product_variant_id}>
-                      {item.sku ? `${item.sku} - ${item.name || "Unknown Product"}` : (item.name || "Unknown Product")}
+                      {formatProductName(item.name, item.sku)}
                     </SelectItem>
                   ))}
                 </SelectContent>

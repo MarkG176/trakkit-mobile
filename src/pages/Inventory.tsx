@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Package, Plus, Minus } from "lucide-react";
 import { useInventory } from "@/hooks/useInventory";
+import { formatProductName } from "@/utils/formatProductName";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { supabase } from "@/integrations/supabase/client";
@@ -168,7 +169,7 @@ export const Inventory = () => {
                   </div>
                   
                   <div className="flex-1">
-                    <h3 className="text-h3 mb-1">{item.sku ? `${item.sku} - ${item.name || 'Product'}` : (item.name || 'Product')}</h3>
+                    <h3 className="text-h3 mb-1">{formatProductName(item.name, item.sku)}</h3>
                     
                     <div className="flex items-center justify-between">
                       <span className="text-body font-medium">KES {item.price || 0}</span>
@@ -220,7 +221,7 @@ export const Inventory = () => {
                       <Package className={`w-6 h-6 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
                     </div>
                     <p className="text-[10px] font-medium text-center leading-tight line-clamp-2 h-6 mb-1">
-                      {product.name || 'Product'}
+                      {formatProductName(product.name, product.sku)}
                     </p>
                     <div className="flex items-center gap-1">
                       {isSelected && (
