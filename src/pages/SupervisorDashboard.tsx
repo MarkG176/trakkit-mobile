@@ -13,6 +13,7 @@ import { ActivityCard } from "@/components/supervisor/ActivityCard";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { formatProductName } from "@/utils/formatProductName";
 
 interface Notification {
   id: string;

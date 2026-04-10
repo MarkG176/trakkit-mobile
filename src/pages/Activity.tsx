@@ -9,6 +9,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { Activity as ActivityIcon, RefreshCw } from "lucide-react";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { ActivityCard } from "@/components/supervisor/ActivityCard";
+import { formatProductName } from "@/utils/formatProductName";
 
 interface ActivityItem {
   id: string;

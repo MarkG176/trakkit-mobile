@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useInventory } from "@/hooks/useInventory";
+import { formatProductName } from "@/utils/formatProductName";
 import { workspaceService } from "@/services/workspaceService";
 import { toast } from "sonner";
 

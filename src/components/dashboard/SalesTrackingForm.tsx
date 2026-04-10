@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2 } from "lucide-react";
 import { InventoryItem } from "@/hooks/useInventory";
+import { formatProductName } from "@/utils/formatProductName";
 
 interface SaleEntry {
   product_variant_id: string;

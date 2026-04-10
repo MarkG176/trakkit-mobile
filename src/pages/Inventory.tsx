@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Package, Plus, Minus } from "lucide-react";
 import { useInventory } from "@/hooks/useInventory";
+import { formatProductName } from "@/utils/formatProductName";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { supabase } from "@/integrations/supabase/client";

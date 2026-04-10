@@ -16,6 +16,7 @@ import { useInventory, InventoryItem } from "@/hooks/useInventory";
 import { SaleFeedbackDialog, FeedbackData } from "@/components/dashboard/SaleFeedbackDialog";
 import { useToast } from "@/hooks/use-toast";
 import { workspaceService } from "@/services/workspaceService";
+import { formatProductName } from "@/utils/formatProductName";
 interface CartItem {
   id: string;
   name: string;

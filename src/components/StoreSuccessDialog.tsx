@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { StockReportDialog } from "@/components/attendance/StockReportDialog";
 import { PriceReportDialog } from "@/components/attendance/PriceReportDialog";
+import { formatProductName } from "@/utils/formatProductName";
 
 interface StoreSuccessDialogProps {
   open: boolean;
@@ -45,6 +46,7 @@ interface InventoryItem {
   product_variant_id: string;
   amount_issued: number;
   name: string;
+  sku?: string | null;
 }
 
 export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, storeCounty }: StoreSuccessDialogProps) => {

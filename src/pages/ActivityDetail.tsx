@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { formatProductName } from "@/utils/formatProductName";
 
 interface ActivityData {
   id: string;

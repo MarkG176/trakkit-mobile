@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useInventory, InventoryItem } from "@/hooks/useInventory";
+import { formatProductName } from "@/utils/formatProductName";
 import { useInteractionForm } from "@/hooks/useInteractionForm";
 import { supabase } from "@/integrations/supabase/client";
 
