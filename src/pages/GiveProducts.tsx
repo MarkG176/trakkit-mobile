@@ -70,7 +70,7 @@ export const GiveProducts = () => {
     } else {
       setSelectedProducts(prev => [...prev, {
         id: item.id,
-        name: item.name || 'Unknown Product',
+        name: formatProductName(item.name, item.sku),
         sku: item.sku || null,
         quantity: 1,
         maxQuantity: item.amount_issued,
@@ -314,7 +314,7 @@ export const GiveProducts = () => {
                       </div>
                     )}
                   </div>
-                  <h3 className="font-medium text-xs text-center mb-1 line-clamp-2">{item.sku ? `${item.sku} - ${item.name || 'Unknown Product'}` : (item.name || 'Unknown Product')}</h3>
+                  <h3 className="font-medium text-xs text-center mb-1 line-clamp-2">{formatProductName(item.name, item.sku)}</h3>
                   <p className="text-xs text-muted-foreground mb-2 text-center">
                     Available: {item.amount_issued}
                   </p>

@@ -116,7 +116,7 @@ export const Activity = () => {
         if (!sale.agent_id) continue;
         const agent = await fetchAgentName(sale.agent_id);
         const pv = (sale.product_variants as any);
-        const productName = pv?.sku ? `${pv.sku} - ${pv.name || 'Product'}` : (pv?.name || 'Product');
+        const productName = formatProductName(pv?.name, pv?.sku, 'Product');
 
         allActivities.push({
           id: `sale-${sale.id}`,

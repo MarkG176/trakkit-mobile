@@ -55,7 +55,7 @@ export const ActivityDetail = () => {
 
         if (interaction) {
           const pv = (interaction as any).product_variants;
-          const productName = pv?.sku ? `${pv.sku} - ${pv.name || 'Product'}` : (pv?.name || null);
+          const productName = pv ? formatProductName(pv.name, pv.sku, 'Product') : null;
           setActivity({
             ...interaction,
             product_name: productName

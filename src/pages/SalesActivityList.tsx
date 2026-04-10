@@ -55,7 +55,7 @@ export const SalesActivityList = () => {
 
               return {
                 ...interaction,
-                product_name: (() => { const pv = (interaction as any).product_variants; return pv?.sku ? `${pv.sku} - ${pv.name || 'Product'}` : (pv?.name || null); })(),
+                product_name: (() => { const pv = (interaction as any).product_variants; return pv ? formatProductName(pv.name, pv.sku, 'Product') : null; })(),
                 has_notes: (notes?.length || 0) > 0,
                 has_images: !!interaction.image_url
               };
