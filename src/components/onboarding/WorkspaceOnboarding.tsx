@@ -103,16 +103,35 @@ export const WorkspaceOnboarding = ({ workspaceId, workspaceName }: WorkspaceOnb
           <>
             <DialogHeader>
               <div className="flex justify-center mb-2">
-                <Users className="w-10 h-10 text-primary" />
+                {hasNoTeam ? (
+                  <AlertTriangle className="w-10 h-10 text-destructive" />
+                ) : (
+                  <Users className="w-10 h-10 text-primary" />
+                )}
               </div>
-              <DialogTitle className="text-center">Your Team</DialogTitle>
+              <DialogTitle className="text-center">
+                {hasNoTeam ? "No Team Assigned" : "Your Team"}
+              </DialogTitle>
             </DialogHeader>
-            <p className="text-center text-muted-foreground mt-2">
-              You're part of the <span className="font-semibold text-foreground">{workspaceName || "your"}</span> team
-            </p>
-            <Button onClick={() => setStep(2)} className="w-full mt-6">
-              Continue
-            </Button>
+            {hasNoTeam ? (
+              <>
+                <p className="text-center text-muted-foreground mt-2">
+                  You haven't been assigned to a team yet. Please contact your administrator to get added to a team.
+                </p>
+                <Button onClick={handleSkipTour} className="w-full mt-6">
+                  OK
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="text-center text-muted-foreground mt-2">
+                  You're part of the <span className="font-semibold text-foreground">{workspaceName || "your"}</span> team
+                </p>
+                <Button onClick={() => setStep(2)} className="w-full mt-6">
+                  Continue
+                </Button>
+              </>
+            )}
           </>
         )}
 
