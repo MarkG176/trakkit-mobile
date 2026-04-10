@@ -128,7 +128,8 @@ export const HelpFAQDialog = ({ teamType, variant = "button" }: HelpFAQDialogPro
   const displayName = teamTypeDisplayNames[teamType || "hybrid"] || "Hybrid";
   const teamAnswer = teamTypeAnswers[teamType || "hybrid"] || teamTypeAnswers.hybrid;
 
-  const teamSpecificItems = (teamType || "").toLowerCase() === "instore" ? instoreFaqItems : [];
+  const normalizedType = (teamType || "").toLowerCase();
+  const teamSpecificItems = teamSpecificFaqItems[normalizedType] || [];
 
   const faqItems = [
     {
