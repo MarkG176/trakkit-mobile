@@ -47,7 +47,7 @@ export const BottomNavigation = ({ currentPage, currentTeamType }: BottomNavigat
       if (['survey', 'survey_campaign'].includes(teamType ?? '') && (item.id === 'inventory' || item.id === 'reports')) {
         return false;
       }
-      if (teamType === 'instore' && (item.id === 'surveys' || item.id === 'inventory')) {
+      if (teamType === 'instore' && (item.id === 'surveys' || item.id === 'inventory' || item.id === 'routes')) {
         return false;
       }
       return true;
