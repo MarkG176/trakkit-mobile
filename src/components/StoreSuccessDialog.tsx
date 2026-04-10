@@ -148,10 +148,14 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
           .eq('is_deleted', false)
           .eq('product_variants.workspace_id', currentWorkspaceId);
         
+        const mapped = (data || []).map((item: any) => ({
+          ...item,
+          sku: item.product_variants?.sku || null,
+        }));
         if (action === "sale") {
-          setProducts(data || []);
+          setProducts(mapped);
         } else {
-          setInventory((data || []) as InventoryItem[]);
+          setInventory(mapped as InventoryItem[]);
         }
       }
     }
