@@ -33,10 +33,20 @@ const isInIframeOrPreview = (): boolean => {
     window.location.hostname.includes('lovableproject.com');
 };
 
+const DISMISS_KEY = 'pwa-install-dismissed-at';
+
+const isDismissedRecently = (): boolean => {
+  const dismissed = localStorage.getItem(DISMISS_KEY);
+  if (!dismissed) return false;
+  const elapsed = Date.now() - parseInt(dismissed, 10);
+  return elapsed < 24 * 60 * 60 * 1000; // 24 hours
+};
+
 const PWAInstallPrompt: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(isStandaloneMode());
   const [device] = useState<DeviceType>(detectDevice);
+  const [dismissed, setDismissed] = useState(isDismissedRecently());
 
   useEffect(() => {
     if (isInIframeOrPreview()) return;
@@ -67,7 +77,12 @@ const PWAInstallPrompt: React.FC = () => {
     };
   }, []);
 
-  if (isInstalled || isInIframeOrPreview()) return null;
+  const handleDismiss = () => {
+    localStorage.setItem(DISMISS_KEY, Date.now().toString());
+    setDismissed(true);
+  };
+
+  if (isInstalled || isInIframeOrPreview() || dismissed) return null;
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
@@ -158,6 +173,16 @@ const PWAInstallPrompt: React.FC = () => {
       <Card className="bg-primary text-primary-foreground border-primary shadow-lg">
         <CardContent className="p-4">
           {renderContent()}
+          <div className="flex justify-end mt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/10 text-xs px-2 py-1 h-auto"
+              onClick={handleDismiss}
+            >
+              Later
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
