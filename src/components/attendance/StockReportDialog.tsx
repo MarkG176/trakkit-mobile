@@ -149,12 +149,13 @@ export const StockReportDialog = ({
       const today = new Date().toISOString().split("T")[0];
       
       if (reportType === "morning") {
-        // Morning report - stock levels
         const reports = inventory.map((item) => ({
           agent_id: user.id,
           product_variant_id: item.product_variant_id,
           stock_level: stockLevels[item.product_variant_id],
+          opening_stock: null,
           quantity_sold: null,
+          closing_stock: null,
           report_type: reportType,
           work_date: today,
           workspace_id: currentWorkspaceId,
@@ -167,12 +168,13 @@ export const StockReportDialog = ({
 
         if (error) throw error;
       } else {
-        // Evening report - numbers sold (read from sales data)
         const reports = inventory.map((item) => ({
           agent_id: user.id,
           product_variant_id: item.product_variant_id,
           stock_level: null,
+          opening_stock: null,
           quantity_sold: salesData[item.product_variant_id] || 0,
+          closing_stock: null,
           report_type: reportType,
           work_date: today,
           workspace_id: currentWorkspaceId,
