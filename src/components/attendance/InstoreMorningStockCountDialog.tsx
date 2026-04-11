@@ -13,14 +13,10 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useToast } from "@/hooks/use-toast";
+import { useInventory } from "@/hooks/useInventory";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Package, ClipboardList } from "lucide-react";
 import { logActivity, logFailedActivity } from "@/utils/activityLogger";
-
-interface InventoryProduct {
-  product_variant_id: string;
-  name: string;
-}
 
 interface ProductCount {
   product_variant_id: string;
@@ -46,68 +42,72 @@ export const InstoreMorningStockCountDialog = ({
   const { user } = useAuth();
   const { currentWorkspaceId } = useWorkspace();
   const { toast } = useToast();
+  const { inventory, loading: inventoryLoading } = useInventory();
 
   const [products, setProducts] = useState<ProductCount[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingExisting, setIsLoadingExisting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (open && user && currentWorkspaceId) {
-      fetchInventoryProducts();
-    }
-  }, [open, user, currentWorkspaceId]);
+    if (!open || !user || !currentWorkspaceId || inventoryLoading) return;
 
-  const fetchInventoryProducts = async () => {
-    if (!user || !currentWorkspaceId) return;
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("agent_task_inventory")
-        .select("id, product_variant_id, name, product_variants!inner(sku, workspace_id)")
-        .eq("agent_id", user.id)
-        .eq("is_deleted", false)
-        .eq("product_variants.workspace_id", currentWorkspaceId);
+    const syncProducts = async () => {
+      setIsLoadingExisting(true);
+      try {
+        const today = new Date().toISOString().split("T")[0];
 
-      if (error) throw error;
+        let query = supabase
+          .from("daily_stock_reports")
+          .select("product_variant_id, opening_stock, reported_at")
+          .eq("agent_id", user.id)
+          .eq("work_date", today)
+          .eq("report_type", "morning")
+          .eq("workspace_id", currentWorkspaceId)
+          .is("stock_level", null)
+          .order("reported_at", { ascending: false });
 
-      // Deduplicate by product_variant_id
-      const seen = new Set<string>();
-      const uniqueItems = (data || []).filter((item) => {
-        if (seen.has(item.product_variant_id)) return false;
-        seen.add(item.product_variant_id);
-        return true;
-      });
+        if (storeId) {
+          query = query.eq("store_id", storeId);
+        }
 
-      const productCounts: ProductCount[] = uniqueItems.map((item) => {
-        const sku = (item as any).product_variants?.sku;
-        const baseName = item.name || "Unknown Product";
-        return {
-          product_variant_id: item.product_variant_id,
-          name: sku ? `${sku} - ${baseName}` : baseName,
-          opening_stock: "",
-        };
-      });
+        const { data, error } = await query;
+        if (error) throw error;
 
-      // Filter out products marked as unavailable or not_sold in stock availability report
-      const filteredProducts = stockLevels
-        ? productCounts.filter((p) => {
-            const level = stockLevels[p.product_variant_id];
-            return level !== 'unavailable' && level !== 'not_sold';
-          })
-        : productCounts;
+        const existingCounts = new Map<string, number>();
+        (data || []).forEach((row) => {
+          if (!existingCounts.has(row.product_variant_id) && row.opening_stock !== null) {
+            existingCounts.set(row.product_variant_id, row.opening_stock);
+          }
+        });
 
-      setProducts(filteredProducts);
-    } catch (error) {
-      console.error("Error fetching inventory:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load products",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        const eligibleInventory = inventory.filter((item) => {
+          const level = stockLevels?.[item.product_variant_id];
+          return level !== "unavailable" && level !== "not_sold";
+        });
+
+        setProducts(
+          eligibleInventory.map((item) => ({
+            product_variant_id: item.product_variant_id,
+            name: item.sku ? `${item.sku} - ${item.name}` : item.name || "Unknown Product",
+            opening_stock: existingCounts.has(item.product_variant_id)
+              ? String(existingCounts.get(item.product_variant_id) ?? "")
+              : "",
+          }))
+        );
+      } catch (error) {
+        console.error("Error fetching morning stock count data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load products",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingExisting(false);
+      }
+    };
+
+    syncProducts();
+  }, [open, user, currentWorkspaceId, inventory, inventoryLoading, storeId, stockLevels, toast]);
 
   const updateProduct = (index: number, value: string) => {
     setProducts((prev) => {
@@ -127,7 +127,7 @@ export const InstoreMorningStockCountDialog = ({
       return;
     }
 
-    const hasData = products.some((p) => p.opening_stock);
+    const hasData = products.some((p) => p.opening_stock !== "");
     if (!hasData) {
       toast({
         title: "Error",
@@ -142,7 +142,7 @@ export const InstoreMorningStockCountDialog = ({
       const today = new Date().toISOString().split("T")[0];
 
       const reportsToInsert = products
-        .filter((p) => p.opening_stock)
+        .filter((p) => p.opening_stock !== "")
         .map((p) => ({
           agent_id: user.id,
           product_variant_id: p.product_variant_id,
@@ -161,7 +161,13 @@ export const InstoreMorningStockCountDialog = ({
 
       if (error) throw error;
 
-      logActivity({ action: 'morning_stock_count', category: 'stock_report', details: { productsCount: reportsToInsert.length, storeId }, workspaceId: currentWorkspaceId });
+      logActivity({
+        action: "morning_stock_count",
+        category: "stock_report",
+        details: { productsCount: reportsToInsert.length, storeId },
+        workspaceId: currentWorkspaceId,
+      });
+
       toast({
         title: "Success",
         description: "Morning stock count submitted successfully",
@@ -171,7 +177,7 @@ export const InstoreMorningStockCountDialog = ({
       onComplete?.();
     } catch (error) {
       console.error("Error submitting stock count:", error);
-      logFailedActivity('morning_stock_count', 'stock_report', error, { storeId }, currentWorkspaceId);
+      logFailedActivity("morning_stock_count", "stock_report", error, { storeId }, currentWorkspaceId);
       toast({
         title: "Error",
         description: "Failed to submit stock count",
@@ -181,6 +187,8 @@ export const InstoreMorningStockCountDialog = ({
       setIsSubmitting(false);
     }
   };
+
+  const isLoading = inventoryLoading || isLoadingExisting;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

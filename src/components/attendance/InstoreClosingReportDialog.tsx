@@ -13,15 +13,10 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useToast } from "@/hooks/use-toast";
+import { useInventory } from "@/hooks/useInventory";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Sun, DollarSign, Moon, Package } from "lucide-react";
 import { logActivity, logFailedActivity } from "@/utils/activityLogger";
-
-interface InventoryProduct {
-  id: string;
-  product_variant_id: string;
-  name: string | null;
-}
 
 interface ProductReport {
   product_variant_id: string;
@@ -47,81 +42,69 @@ export const InstoreClosingReportDialog = ({
   const { user } = useAuth();
   const { currentWorkspaceId } = useWorkspace();
   const { toast } = useToast();
+  const { inventory, loading: inventoryLoading } = useInventory();
 
   const [products, setProducts] = useState<ProductReport[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMorningCounts, setIsLoadingMorningCounts] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (open && user && currentWorkspaceId) {
-      fetchInventoryProducts();
-    }
-  }, [open, user, currentWorkspaceId]);
+    if (!open || !user || !currentWorkspaceId || inventoryLoading) return;
 
-  const fetchInventoryProducts = async () => {
-    if (!user || !currentWorkspaceId) return;
-    setIsLoading(true);
-    try {
-      // Fetch products and morning stock count in parallel
-      const today = new Date().toISOString().split("T")[0];
+    const syncProducts = async () => {
+      setIsLoadingMorningCounts(true);
+      try {
+        const today = new Date().toISOString().split("T")[0];
 
-      const [inventoryResult, morningCountResult] = await Promise.all([
-        supabase
-          .from("agent_task_inventory")
-          .select("id, product_variant_id, name, product_variants!inner(sku, workspace_id)")
-          .eq("agent_id", user.id)
-          .eq("is_deleted", false)
-          .eq("product_variants.workspace_id", currentWorkspaceId),
-        supabase
+        let query = supabase
           .from("daily_stock_reports")
-          .select("product_variant_id, opening_stock")
+          .select("product_variant_id, opening_stock, reported_at")
           .eq("agent_id", user.id)
           .eq("work_date", today)
           .eq("report_type", "morning")
-          .eq("workspace_id", currentWorkspaceId),
-      ]);
+          .eq("workspace_id", currentWorkspaceId)
+          .is("stock_level", null)
+          .order("reported_at", { ascending: false });
 
-      if (inventoryResult.error) throw inventoryResult.error;
+        if (storeId) {
+          query = query.eq("store_id", storeId);
+        }
 
-      // Build a map of morning opening_stock values
-      const morningStockMap: Record<string, number> = {};
-      (morningCountResult.data || []).forEach((row) => {
-        morningStockMap[row.product_variant_id] = row.opening_stock ?? 0;
-      });
+        const { data, error } = await query;
+        if (error) throw error;
 
-      // Deduplicate by product_variant_id
-      const seen = new Set<string>();
-      const uniqueItems = (inventoryResult.data || []).filter((item) => {
-        if (seen.has(item.product_variant_id)) return false;
-        seen.add(item.product_variant_id);
-        return true;
-      });
+        const morningStockMap = new Map<string, number>();
+        (data || []).forEach((row) => {
+          if (!morningStockMap.has(row.product_variant_id) && row.opening_stock !== null) {
+            morningStockMap.set(row.product_variant_id, row.opening_stock);
+          }
+        });
 
-      const productReports: ProductReport[] = uniqueItems.map((item) => {
-        const sku = (item as any).product_variants?.sku;
-        const baseName = item.name || "Unknown Product";
-        const morningValue = morningStockMap[item.product_variant_id];
-        return {
-          product_variant_id: item.product_variant_id,
-          name: sku ? `${sku} - ${baseName}` : baseName,
-          opening_stock: morningValue !== undefined ? String(morningValue) : "",
-          quantity_sold: "",
-          closing_stock: "",
-        };
-      });
+        setProducts(
+          inventory.map((item) => ({
+            product_variant_id: item.product_variant_id,
+            name: item.sku ? `${item.sku} - ${item.name}` : item.name || "Unknown Product",
+            opening_stock: morningStockMap.has(item.product_variant_id)
+              ? String(morningStockMap.get(item.product_variant_id) ?? "")
+              : "",
+            quantity_sold: "",
+            closing_stock: "",
+          }))
+        );
+      } catch (error) {
+        console.error("Error fetching closing report data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load products",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingMorningCounts(false);
+      }
+    };
 
-      setProducts(productReports);
-    } catch (error) {
-      console.error("Error fetching inventory:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load products",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    syncProducts();
+  }, [open, user, currentWorkspaceId, inventory, inventoryLoading, storeId, toast]);
 
   const updateProduct = (
     index: number,
@@ -145,10 +128,10 @@ export const InstoreClosingReportDialog = ({
       return;
     }
 
-    // Validate at least one product has data
     const hasData = products.some(
-      (p) => p.opening_stock || p.quantity_sold || p.closing_stock
+      (p) => p.opening_stock !== "" || p.quantity_sold !== "" || p.closing_stock !== ""
     );
+
     if (!hasData) {
       toast({
         title: "Error",
@@ -163,7 +146,7 @@ export const InstoreClosingReportDialog = ({
       const today = new Date().toISOString().split("T")[0];
 
       const reportsToInsert = products
-        .filter((p) => p.opening_stock || p.quantity_sold || p.closing_stock)
+        .filter((p) => p.opening_stock !== "" || p.quantity_sold !== "" || p.closing_stock !== "")
         .map((p) => ({
           agent_id: user.id,
           product_variant_id: p.product_variant_id,
@@ -182,7 +165,13 @@ export const InstoreClosingReportDialog = ({
 
       if (error) throw error;
 
-      logActivity({ action: 'closing_report', category: 'stock_report', details: { productsCount: reportsToInsert.length, storeId }, workspaceId: currentWorkspaceId });
+      logActivity({
+        action: "closing_report",
+        category: "stock_report",
+        details: { productsCount: reportsToInsert.length, storeId },
+        workspaceId: currentWorkspaceId,
+      });
+
       toast({
         title: "Success",
         description: "Closing report submitted successfully",
@@ -192,7 +181,7 @@ export const InstoreClosingReportDialog = ({
       onComplete?.();
     } catch (error) {
       console.error("Error submitting closing report:", error);
-      logFailedActivity('closing_report', 'stock_report', error, { storeId }, currentWorkspaceId);
+      logFailedActivity("closing_report", "stock_report", error, { storeId }, currentWorkspaceId);
       toast({
         title: "Error",
         description: "Failed to submit closing report",
@@ -202,6 +191,8 @@ export const InstoreClosingReportDialog = ({
       setIsSubmitting(false);
     }
   };
+
+  const isLoading = inventoryLoading || isLoadingMorningCounts;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -214,7 +205,6 @@ export const InstoreClosingReportDialog = ({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Column headers */}
           {!isLoading && products.length > 0 && (
             <div className="grid grid-cols-[1fr_auto] items-end gap-2">
               <div />
@@ -260,9 +250,7 @@ export const InstoreClosingReportDialog = ({
                       placeholder="0"
                       min="0"
                       value={product.opening_stock}
-                      onChange={(e) =>
-                        updateProduct(index, "opening_stock", e.target.value)
-                      }
+                      onChange={(e) => updateProduct(index, "opening_stock", e.target.value)}
                       className="h-9 text-center text-sm"
                     />
                     <Input
@@ -270,9 +258,7 @@ export const InstoreClosingReportDialog = ({
                       placeholder="0"
                       min="0"
                       value={product.quantity_sold}
-                      onChange={(e) =>
-                        updateProduct(index, "quantity_sold", e.target.value)
-                      }
+                      onChange={(e) => updateProduct(index, "quantity_sold", e.target.value)}
                       className="h-9 text-center text-sm"
                     />
                     <Input
@@ -280,9 +266,7 @@ export const InstoreClosingReportDialog = ({
                       placeholder="0"
                       min="0"
                       value={product.closing_stock}
-                      onChange={(e) =>
-                        updateProduct(index, "closing_stock", e.target.value)
-                      }
+                      onChange={(e) => updateProduct(index, "closing_stock", e.target.value)}
                       className="h-9 text-center text-sm"
                     />
                   </div>

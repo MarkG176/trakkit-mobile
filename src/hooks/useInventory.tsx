@@ -21,6 +21,7 @@ export const useInventory = () => {
 
   const fetchInventory = async () => {
     if (!user || !currentWorkspaceId) {
+      setInventory([]);
       setLoading(false);
       return;
     }
@@ -28,7 +29,7 @@ export const useInventory = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('agent_task_inventory')
+        .from("agent_task_inventory")
         .select(`
           id,
           name,
@@ -42,26 +43,45 @@ export const useInventory = () => {
             workspace_id
           )
         `)
-        .eq('agent_id', user.id)
-        .eq('is_deleted', false)
-        .eq('product_variants.workspace_id', currentWorkspaceId);
+        .eq("agent_id", user.id)
+        .eq("is_deleted", false)
+        .eq("product_variants.workspace_id", currentWorkspaceId);
 
       if (error) throw error;
 
-      // Transform data - prioritize product_variants.name over agent_task_inventory.name
-      const transformedData: InventoryItem[] = (data || []).map(item => ({
-        id: item.id,
-        name: (item.product_variants as any)?.name || item.name || 'Unknown Product',
-        product_variant_id: item.product_variant_id,
-        amount_issued: item.amount_issued,
-        price: (item.product_variants as any)?.price || 0,
-        sku: (item.product_variants as any)?.sku || null,
-      }));
+      const dedupedInventory = new Map<string, InventoryItem>();
 
-      setInventory(transformedData);
+      (data || []).forEach((item: any) => {
+        const variant = Array.isArray(item.product_variants)
+          ? item.product_variants[0]
+          : item.product_variants;
+
+        const productVariantId = item.product_variant_id;
+        const displayName = item.name || variant?.name || "Unknown Product";
+        const existing = dedupedInventory.get(productVariantId);
+
+        if (existing) {
+          existing.amount_issued += Number(item.amount_issued || 0);
+          if (!existing.name && displayName) existing.name = displayName;
+          if (!existing.sku && variant?.sku) existing.sku = variant.sku;
+          if (!existing.price && variant?.price) existing.price = Number(variant.price);
+          return;
+        }
+
+        dedupedInventory.set(productVariantId, {
+          id: productVariantId,
+          name: displayName,
+          product_variant_id: productVariantId,
+          amount_issued: Number(item.amount_issued || 0),
+          price: Number(variant?.price || 0),
+          sku: variant?.sku || null,
+        });
+      });
+
+      setInventory(Array.from(dedupedInventory.values()));
     } catch (error) {
-      console.error('Error fetching inventory:', error);
-      toast.error('Failed to load inventory');
+      console.error("Error fetching inventory:", error);
+      toast.error("Failed to load inventory");
     } finally {
       setLoading(false);
     }
