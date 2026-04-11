@@ -1,4 +1,4 @@
-import { Home, Users, Inbox, BarChart3 } from "lucide-react";
+import { Home, Users, Inbox, BarChart3, MapPin } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 interface NavItem {

@@ -6,262 +6,93 @@ import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, Trash2, LogOut } from "lucide-react";
+import { Bell, LogOut, CalendarIcon, Search, ChevronLeft, ChevronRight, Image as ImageIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { SupervisorBottomNav } from "@/components/supervisor/SupervisorBottomNav";
-import { ActivityCard } from "@/components/supervisor/ActivityCard";
 import { useAuth } from "@/hooks/useAuth";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { formatProductName } from "@/utils/formatProductName";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { useAgentActivities, useGalleryImages, useMostRecentActivityDate, AgentActivity } from "@/hooks/useAgentActivity";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useQueryClient } from "@tanstack/react-query";
 
-interface Notification {
-  id: string;
-  type: 'check_in' | 'check_out' | 'sale' | 'giveaway' | 'survey' | 'break_start' | 'break_end';
-  agentName: string;
-  message: string;
-  timestamp: Date;
-  data?: any;
-}
-
-const notificationLabels: Record<Notification['type'], string> = {
-  check_in: 'Check In',
-  check_out: 'Check Out',
-  sale: 'Sale',
-  giveaway: 'Giveaway',
-  survey: 'Survey',
-  break_start: 'Break Started',
-  break_end: 'Break Ended',
+const statusConfig: Record<string, { color: string; label: string }> = {
+  checked_in: { color: "bg-green-500", label: "Checked In" },
+  checked_out: { color: "bg-red-500", label: "Checked Out" },
+  set_location: { color: "bg-blue-500", label: "Set Location" },
+  lunch: { color: "bg-yellow-500", label: "On Break" },
+  break: { color: "bg-yellow-500", label: "On Break" },
+  back_from_break: { color: "bg-green-500", label: "Back" },
 };
 
 export const SupervisorDashboard = () => {
   const { currentWorkspaceId } = useWorkspace();
   const { toast } = useToast();
   const { user, signOut } = useAuth();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const agentCacheRef = useRef<Map<string, string>>(new Map());
+  const queryClient = useQueryClient();
 
-  // Fetch agent name from cache or database
-  const getAgentName = useCallback(async (agentId: string): Promise<string> => {
-    if (agentCacheRef.current.has(agentId)) {
-      return agentCacheRef.current.get(agentId)!;
+  const { data: mostRecentDate } = useMostRecentActivityDate(currentWorkspaceId);
+  const [filterDate, setFilterDate] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  // Set date from most recent activity
+  useEffect(() => {
+    if (mostRecentDate && !filterDate) {
+      setFilterDate(mostRecentDate);
     }
+  }, [mostRecentDate, filterDate]);
 
-    const { data } = await supabase
-      .from('user_roles')
-      .select('display_name, email')
-      .eq('user_id', agentId)
-      .single();
+  const { data: activitiesResult, isLoading } = useAgentActivities(
+    currentWorkspaceId, page, filterDate, searchQuery
+  );
+  const activities = activitiesResult?.data || [];
+  const totalCount = activitiesResult?.count || 0;
+  const totalPages = Math.ceil(totalCount / 50);
 
-    const name = data?.display_name || data?.email || 'Unknown Agent';
-    agentCacheRef.current.set(agentId, name);
-    return name;
-  }, []);
+  const { data: galleryImages = [] } = useGalleryImages(currentWorkspaceId, filterDate);
 
-  // Add notification and show toast - using ref to avoid stale closures
-  const addNotificationRef = useRef<(notification: Notification) => void>();
-  addNotificationRef.current = (notification: Notification) => {
-    setNotifications(prev => [notification, ...prev].slice(0, 100));
-    
-    const label = notificationLabels[notification.type];
-    toast({
-      title: `${label}: ${notification.agentName}`,
-      description: notification.message,
-    });
+  const isToday = filterDate === new Date().toISOString().split("T")[0];
+
+  // Real-time subscription for today
+  useEffect(() => {
+    if (!currentWorkspaceId || !isToday) return;
+
+    const channel = supabase
+      .channel("supervisor-status-live")
+      .on("postgres_changes", {
+        event: "INSERT",
+        schema: "public",
+        table: "agent_status_log",
+        filter: `workspace_id=eq.${currentWorkspaceId}`,
+      }, (payload) => {
+        const record = payload.new as any;
+        const name = record.agent_display_name || "Agent";
+        const cfg = statusConfig[record.status] || { label: record.status };
+        toast({ title: `${cfg.label}: ${name}`, description: `${name} updated status` });
+        queryClient.invalidateQueries({ queryKey: ["agent-activities"] });
+        queryClient.invalidateQueries({ queryKey: ["gallery-images"] });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [currentWorkspaceId, isToday, toast, queryClient]);
+
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setFilterDate(format(date, "yyyy-MM-dd"));
+      setPage(0);
+    }
   };
 
-  // Setup real-time subscriptions
-  useEffect(() => {
-    if (!currentWorkspaceId) return;
-
-    // Subscribe to agent status changes (check-in, check-out, breaks)
-    const statusChannel = supabase
-      .channel('supervisor-status')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'agent_status_log',
-          filter: `workspace_id=eq.${currentWorkspaceId}`,
-        },
-        async (payload) => {
-          const record = payload.new as any;
-          const agentName = record.agent_display_name || await getAgentName(record.agent_id);
-          
-          let type: Notification['type'] = 'check_in';
-          let message = '';
-          
-          switch (record.status) {
-            case 'checked_in':
-              type = 'check_in';
-              message = `${agentName} checked in`;
-              break;
-            case 'checked_out':
-              type = 'check_out';
-              message = `${agentName} checked out`;
-              break;
-            case 'lunch':
-            case 'break':
-              type = 'break_start';
-              message = `${agentName} started a break`;
-              break;
-            default:
-              message = `${agentName} updated status to ${record.status}`;
-          }
-
-          addNotificationRef.current?.({
-            id: record.id,
-            type,
-            agentName,
-            message,
-            timestamp: new Date(record.timestamp),
-            data: record,
-          });
-        }
-      )
-      .subscribe();
-
-    // Subscribe to sales
-    const salesChannel = supabase
-      .channel('supervisor-sales')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'sale_items',
-        },
-        async (payload) => {
-          const record = payload.new as any;
-          const agentName = await getAgentName(record.agent_id);
-          
-          // Get product name
-          const { data: variant } = await supabase
-            .from('product_variants')
-            .select('name, sku')
-            .eq('id', record.product_variant_id)
-            .single();
-
-          const productName = formatProductName(variant?.name, variant?.sku, 'Product');
-          const message = `${agentName} sold ${record.quantity}x ${productName}`;
-
-          addNotificationRef.current?.({
-            id: record.id,
-            type: 'sale',
-            agentName,
-            message,
-            timestamp: new Date(record.created_at),
-            data: record,
-          });
-        }
-      )
-      .subscribe();
-
-    // Subscribe to giveaways
-    const giveawayChannel = supabase
-      .channel('supervisor-giveaways')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'giveaways',
-          filter: `workspace_id=eq.${currentWorkspaceId}`,
-        },
-        async (payload) => {
-          const record = payload.new as any;
-          const agentName = await getAgentName(record.agent_id);
-          
-          const message = `${agentName} gave away ${record.total_items} items`;
-
-          addNotificationRef.current?.({
-            id: record.id,
-            type: 'giveaway',
-            agentName,
-            message,
-            timestamp: new Date(record.created_at),
-            data: record,
-          });
-        }
-      )
-      .subscribe();
-
-    // Subscribe to surveys/interactions
-    const interactionChannel = supabase
-      .channel('supervisor-interactions')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'interactions',
-          filter: `workspace_id=eq.${currentWorkspaceId}`,
-        },
-        async (payload) => {
-          const record = payload.new as any;
-          if (record.interaction_type !== 'survey') return;
-          
-          const agentName = await getAgentName(record.agent_id || '');
-          const message = `${agentName} completed a survey`;
-
-          addNotificationRef.current?.({
-            id: record.id,
-            type: 'survey',
-            agentName,
-            message,
-            timestamp: new Date(record.created_at),
-            data: record,
-          });
-        }
-      )
-      .subscribe();
-
-    // Subscribe to support tickets (non-bug only)
-    const ticketChannel = supabase
-      .channel('supervisor-tickets')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'support_tickets',
-          filter: `workspace_id=eq.${currentWorkspaceId}`,
-        },
-        async (payload) => {
-          const record = payload.new as any;
-          // Skip bug reports
-          if (record.ticket_type === 'bug_support') return;
-          
-          const agentName = record.agent_name || await getAgentName(record.agent_id);
-          const typeLabel = record.ticket_type === 'inventory_request' 
-            ? 'submitted an inventory request' 
-            : 'reported missing stats';
-          const message = `${agentName} ${typeLabel}`;
-
-          addNotificationRef.current?.({
-            id: record.id,
-            type: 'check_in', // reuse type for display
-            agentName,
-            message,
-            timestamp: new Date(record.created_at),
-            data: record,
-          });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(statusChannel);
-      supabase.removeChannel(salesChannel);
-      supabase.removeChannel(giveawayChannel);
-      supabase.removeChannel(interactionChannel);
-      supabase.removeChannel(ticketChannel);
-    };
-  }, [currentWorkspaceId, getAgentName]);
-
-  const clearNotifications = () => {
-    setNotifications([]);
+  const getInitials = (name: string | null) => {
+    if (!name) return "?";
+    return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
   };
 
   return (
@@ -271,102 +102,193 @@ export const SupervisorDashboard = () => {
         <div className="flex items-center justify-between mb-3">
           <div>
             <h1 className="text-xl font-bold">Supervisor Dashboard</h1>
-            <p className="text-sm opacity-90">Real-time agent activity</p>
+            <p className="text-sm opacity-90">Agent activity log</p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Bell className="w-5 h-5" />
-              <Badge variant="secondary" className="bg-white/20">
-                {notifications.length}
-              </Badge>
-            </div>
             <Popover>
               <PopoverTrigger asChild>
                 <button className="focus:outline-none">
                   <Avatar className="h-9 w-9 border-2 border-white/30">
                     <AvatarFallback className="bg-white/20 text-primary-foreground text-sm font-semibold">
-                      {user?.email?.charAt(0).toUpperCase() || 'S'}
+                      {user?.email?.charAt(0).toUpperCase() || "S"}
                     </AvatarFallback>
                   </Avatar>
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-48 p-2" align="end">
                 <p className="text-xs text-muted-foreground px-2 py-1 truncate">{user?.email}</p>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start text-destructive hover:text-destructive"
-                  onClick={() => signOut()}
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Sign Out
+                <Button variant="ghost" size="sm" className="w-full justify-start text-destructive hover:text-destructive" onClick={() => signOut()}>
+                  <LogOut className="w-4 h-4 mr-2" /> Sign Out
                 </Button>
               </PopoverContent>
             </Popover>
           </div>
         </div>
-        <div className="mt-3">
-          <WorkspaceSwitcher className="w-full" />
+        <WorkspaceSwitcher className="w-full" />
+      </div>
+
+      {/* Filters */}
+      <div className="p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1">
+                <CalendarIcon className="w-4 h-4" />
+                {filterDate ? format(new Date(filterDate + "T12:00:00"), "MMM d, yyyy") : "Pick date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={filterDate ? new Date(filterDate + "T12:00:00") : undefined}
+                onSelect={handleDateSelect}
+              />
+            </PopoverContent>
+          </Popover>
+          <Button variant={isToday ? "default" : "outline"} size="sm" onClick={() => { setFilterDate(new Date().toISOString().split("T")[0]); setPage(0); }}>
+            Today
+          </Button>
+          <Badge variant="secondary" className="ml-auto">{totalCount} entries</Badge>
+        </div>
+
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search agent name..."
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
+            className="pl-9"
+          />
         </div>
       </div>
 
-      {/* Notification Log */}
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Activity Log</h2>
-          {notifications.length > 0 && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={clearNotifications}
-              className="text-muted-foreground"
-            >
-              <Trash2 className="w-4 h-4 mr-1" />
-              Clear
-            </Button>
-          )}
-        </div>
+      {/* Content */}
+      <div className="px-4">
+        <Tabs defaultValue="feed">
+          <TabsList className="w-full">
+            <TabsTrigger value="feed" className="flex-1">Activity Feed</TabsTrigger>
+            <TabsTrigger value="gallery" className="flex-1">
+              Selfies ({galleryImages.length})
+            </TabsTrigger>
+          </TabsList>
 
-        {notifications.length === 0 ? (
-          <Card className="p-8 text-center">
-            <Bell className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-            <p className="text-muted-foreground">No activity yet</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Notifications will appear here when agents perform actions
-            </p>
-          </Card>
-        ) : (
-          <ScrollArea className="h-[calc(100vh-220px)]">
-            <div className="space-y-3">
-              {notifications.map((notification) => {
-                const initials = notification.agentName
-                  .split(' ')
-                  .map(n => n[0])
-                  .join('')
-                  .toUpperCase()
-                  .slice(0, 2);
+          <TabsContent value="feed" className="mt-3">
+            {isLoading ? (
+              <Card className="p-8 text-center">
+                <p className="text-muted-foreground">Loading activities...</p>
+              </Card>
+            ) : activities.length === 0 ? (
+              <Card className="p-8 text-center">
+                <Bell className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                <p className="text-muted-foreground">No activity found</p>
+                <p className="text-sm text-muted-foreground mt-1">Try selecting a different date</p>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {activities.map((activity) => (
+                  <ActivityFeedCard key={activity.id} activity={activity} onImageClick={setSelectedImage} />
+                ))}
 
-                return (
-                  <ActivityCard
-                    key={notification.id}
-                    activity={{
-                      id: notification.id,
-                      type: notification.type,
-                      agentName: notification.agentName,
-                      agentInitials: initials,
-                      timestamp: notification.timestamp.toISOString(),
-                      details: notification.message,
-                      value: notification.data?.total_price || notification.data?.total_value,
-                    }}
-                  />
-                );
-              })}
-            </div>
-          </ScrollArea>
-        )}
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between pt-2 pb-4">
+                    <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
+                      <ChevronLeft className="w-4 h-4 mr-1" /> Previous
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Page {page + 1} of {totalPages}
+                    </span>
+                    <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
+                      Next <ChevronRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="gallery" className="mt-3">
+            {galleryImages.length === 0 ? (
+              <Card className="p-8 text-center">
+                <ImageIcon className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                <p className="text-muted-foreground">No selfies for this date</p>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {galleryImages.map((img) => (
+                  <div key={img.id} className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group" onClick={() => setSelectedImage(img.selfie_url)}>
+                    <img src={img.selfie_url!} alt={img.agent_display_name || "Selfie"} className="w-full h-full object-cover" />
+                    <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[10px] px-1 py-0.5 truncate">
+                      {img.agent_display_name || "Agent"}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
+
+      {/* Image Dialog */}
+      <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+        <DialogContent className="max-w-md p-2">
+          {selectedImage && <img src={selectedImage} alt="Full size" className="w-full rounded" />}
+        </DialogContent>
+      </Dialog>
 
       <SupervisorBottomNav />
     </div>
   );
 };
+
+// Activity feed card component
+function ActivityFeedCard({ activity, onImageClick }: { activity: AgentActivity; onImageClick: (url: string) => void }) {
+  const cfg = statusConfig[activity.status] || { color: "bg-gray-500", label: activity.status };
+  const initials = activity.agent_display_name
+    ? activity.agent_display_name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
+    : "?";
+
+  return (
+    <Card className="p-3">
+      <div className="flex gap-3">
+        <Avatar className="w-10 h-10 shrink-0">
+          {activity.selfie_url && <AvatarImage src={activity.selfie_url} />}
+          <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">{initials}</AvatarFallback>
+        </Avatar>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <p className="font-medium text-sm truncate">{activity.agent_display_name || "Unknown Agent"}</p>
+            <Badge variant="secondary" className="shrink-0 text-xs">{cfg.label}</Badge>
+          </div>
+
+          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+            <span>{format(new Date(activity.timestamp), "h:mm a")}</span>
+            {activity.location_lat && activity.location_lng && (
+              <span className="truncate">
+                📍 {Number(activity.location_lat).toFixed(4)}, {Number(activity.location_lng).toFixed(4)}
+              </span>
+            )}
+            {activity.in_range !== null && (
+              <Badge variant={activity.in_range ? "default" : "destructive"} className="text-[10px] px-1 py-0">
+                {activity.in_range ? "In Range" : "Out of Range"}
+              </Badge>
+            )}
+          </div>
+
+          {activity.distance_from_assigned !== null && (
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Distance: {Number(activity.distance_from_assigned).toFixed(0)}m from store
+            </p>
+          )}
+        </div>
+
+        {activity.selfie_url && (
+          <button onClick={() => onImageClick(activity.selfie_url!)} className="shrink-0">
+            <img src={activity.selfie_url} alt="" className="w-12 h-12 rounded object-cover" />
+          </button>
+        )}
+      </div>
+    </Card>
+  );
+}
