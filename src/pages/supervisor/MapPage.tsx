@@ -148,7 +148,7 @@ export const MapPage = () => {
       {/* Map */}
       <div className="flex-1" style={{ minHeight: "calc(100vh - 280px)" }}>
         {isLoaded ? (
-          <GoogleMap mapContainerStyle={containerStyle} center={mapCenter} zoom={locations.length > 0 ? 12 : 10}>
+          <GoogleMap mapContainerStyle={{ width: "100%", height: "calc(100vh - 280px)" }} center={mapCenter} zoom={locations.length > 0 ? 12 : 10}>
             {locations.map((loc) => (
               <Marker
                 key={loc.agent_id}
