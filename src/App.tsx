@@ -18,6 +18,7 @@ import { RankingsPage } from "./pages/supervisor/RankingsPage";
 import { FeedbackPage } from "./pages/supervisor/FeedbackPage";
 import { InboxPage } from "./pages/supervisor/InboxPage";
 import { StatsPage } from "./pages/supervisor/StatsPage";
+import { MapPage } from "./pages/supervisor/MapPage";
 import { SupportTicket } from "./pages/SupportTicket";
 import { Surveys } from "./pages/Surveys";
 import { Routes as RoutesPage } from "./pages/Routes";
@@ -107,6 +108,11 @@ const App = () => (
             <Route path="/supervisor/stats" element={
               <RoleBasedRoute allowedRoles={['supervisor']} redirectTo="/agent">
                 <StatsPage />
+              </RoleBasedRoute>
+            } />
+            <Route path="/supervisor/map" element={
+              <RoleBasedRoute allowedRoles={['supervisor']} redirectTo="/agent">
+                <MapPage />
               </RoleBasedRoute>
             } />
             <Route path="/agent" element={
