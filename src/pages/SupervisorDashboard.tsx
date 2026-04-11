@@ -189,7 +189,7 @@ export const SupervisorDashboard = () => {
             ) : (
               <div className="space-y-3">
                 {activities.map((activity) => (
-                  <ActivityFeedCard key={activity.id} activity={activity} onImageClick={setSelectedImage} />
+                  <ActivityFeedCard key={activity.id} activity={activity} onImageClick={setSelectedImage} onAgentClick={(id, name) => { setSelectedAgentId(id); setSelectedAgentName(name); }} />
                 ))}
 
                 {/* Pagination */}
