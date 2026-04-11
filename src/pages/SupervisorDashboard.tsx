@@ -19,6 +19,7 @@ import { useAgentActivities, useGalleryImages, useMostRecentActivityDate, AgentA
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useQueryClient } from "@tanstack/react-query";
+import { UserDetailSheet } from "@/components/supervisor/UserDetailSheet";
 
 const statusConfig: Record<string, { color: string; label: string }> = {
   checked_in: { color: "bg-green-500", label: "Checked In" },
@@ -40,6 +41,8 @@ export const SupervisorDashboard = () => {
   const [page, setPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const [selectedAgentName, setSelectedAgentName] = useState<string | null>(null);
 
   // Set date from most recent activity
   useEffect(() => {
@@ -186,7 +189,7 @@ export const SupervisorDashboard = () => {
             ) : (
               <div className="space-y-3">
                 {activities.map((activity) => (
-                  <ActivityFeedCard key={activity.id} activity={activity} onImageClick={setSelectedImage} />
+                  <ActivityFeedCard key={activity.id} activity={activity} onImageClick={setSelectedImage} onAgentClick={(id, name) => { setSelectedAgentId(id); setSelectedAgentName(name); }} />
                 ))}
 
                 {/* Pagination */}
@@ -236,22 +239,33 @@ export const SupervisorDashboard = () => {
         </DialogContent>
       </Dialog>
 
+      {selectedAgentId && (
+        <UserDetailSheet
+          open={!!selectedAgentId}
+          onOpenChange={(open) => { if (!open) { setSelectedAgentId(null); setSelectedAgentName(null); } }}
+          userId={selectedAgentId}
+          displayName={selectedAgentName}
+          email=""
+          role="agent"
+        />
+      )}
+
       <SupervisorBottomNav />
     </div>
   );
 };
 
 // Activity feed card component
-function ActivityFeedCard({ activity, onImageClick }: { activity: AgentActivity; onImageClick: (url: string) => void }) {
+function ActivityFeedCard({ activity, onImageClick, onAgentClick }: { activity: AgentActivity; onImageClick: (url: string) => void; onAgentClick?: (agentId: string, name: string | null) => void }) {
   const cfg = statusConfig[activity.status] || { color: "bg-gray-500", label: activity.status };
   const initials = activity.agent_display_name
     ? activity.agent_display_name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
     : "?";
 
   return (
-    <Card className="p-3">
+    <Card className="p-3 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => onAgentClick?.(activity.agent_id, activity.agent_display_name)}>
       <div className="flex gap-3">
-        <Avatar className="w-10 h-10 shrink-0">
+        <Avatar className="w-10 h-10 shrink-0" onClick={(e) => { e.stopPropagation(); onAgentClick?.(activity.agent_id, activity.agent_display_name); }}>
           {activity.selfie_url && <AvatarImage src={activity.selfie_url} />}
           <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">{initials}</AvatarFallback>
         </Avatar>
