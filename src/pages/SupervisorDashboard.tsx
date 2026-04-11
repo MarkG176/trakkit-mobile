@@ -252,9 +252,9 @@ function ActivityFeedCard({ activity, onImageClick, onAgentClick }: { activity: 
     : "?";
 
   return (
-    <Card className="p-3">
+    <Card className="p-3 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => onAgentClick?.(activity.agent_id, activity.agent_display_name)}>
       <div className="flex gap-3">
-        <Avatar className="w-10 h-10 shrink-0">
+        <Avatar className="w-10 h-10 shrink-0" onClick={(e) => { e.stopPropagation(); onAgentClick?.(activity.agent_id, activity.agent_display_name); }}>
           {activity.selfie_url && <AvatarImage src={activity.selfie_url} />}
           <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">{initials}</AvatarFallback>
         </Avatar>
