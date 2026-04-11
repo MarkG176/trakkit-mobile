@@ -12,7 +12,6 @@ import { CalendarIcon, MapPin } from "lucide-react";
 import { format, startOfDay, endOfDay, subDays, startOfWeek, startOfMonth } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 
-const containerStyle = { width: "100%", height: "100%" };
 const defaultCenter = { lat: -1.2921, lng: 36.8219 }; // Nairobi
 
 interface AgentLocation {
