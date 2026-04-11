@@ -70,7 +70,15 @@ export const InstoreMorningStockCountDialog = ({
 
       if (error) throw error;
 
-      const productCounts: ProductCount[] = (data || []).map((item) => {
+      // Deduplicate by product_variant_id
+      const seen = new Set<string>();
+      const uniqueItems = (data || []).filter((item) => {
+        if (seen.has(item.product_variant_id)) return false;
+        seen.add(item.product_variant_id);
+        return true;
+      });
+
+      const productCounts: ProductCount[] = uniqueItems.map((item) => {
         const sku = (item as any).product_variants?.sku;
         const baseName = item.name || "Unknown Product";
         return {
