@@ -1,4 +1,4 @@
-import { Home, Users, Inbox, BarChart3 } from "lucide-react";
+import { Home, Users, Inbox, BarChart3, MapPin } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 interface NavItem {
@@ -11,6 +11,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { id: "dashboard", label: "Dashboard", icon: Home, path: "/supervisor" },
   { id: "users", label: "Users", icon: Users, path: "/supervisor/users" },
+  { id: "map", label: "Map", icon: MapPin, path: "/supervisor/map" },
   { id: "inbox", label: "Inbox", icon: Inbox, path: "/supervisor/inbox" },
   { id: "stats", label: "Stats", icon: BarChart3, path: "/supervisor/stats" },
 ];
