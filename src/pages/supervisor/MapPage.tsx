@@ -12,7 +12,6 @@ import { CalendarIcon, MapPin } from "lucide-react";
 import { format, startOfDay, endOfDay, subDays, startOfWeek, startOfMonth } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 
-const containerStyle = { width: "100%", height: "100%" };
 const defaultCenter = { lat: -1.2921, lng: 36.8219 }; // Nairobi
 
 interface AgentLocation {
@@ -149,7 +148,7 @@ export const MapPage = () => {
       {/* Map */}
       <div className="flex-1" style={{ minHeight: "calc(100vh - 280px)" }}>
         {isLoaded ? (
-          <GoogleMap mapContainerStyle={containerStyle} center={mapCenter} zoom={locations.length > 0 ? 12 : 10}>
+          <GoogleMap mapContainerStyle={{ width: "100%", height: "calc(100vh - 280px)" }} center={mapCenter} zoom={locations.length > 0 ? 12 : 10}>
             {locations.map((loc) => (
               <Marker
                 key={loc.agent_id}
