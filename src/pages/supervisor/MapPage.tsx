@@ -147,7 +147,7 @@ export const MapPage = () => {
       </div>
 
       {/* Map */}
-      <div className="flex-1 min-h-[400px]">
+      <div className="flex-1" style={{ minHeight: "calc(100vh - 280px)" }}>
         {isLoaded ? (
           <GoogleMap mapContainerStyle={containerStyle} center={mapCenter} zoom={locations.length > 0 ? 12 : 10}>
             {locations.map((loc) => (

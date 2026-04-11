@@ -19,6 +19,7 @@ import { useAgentActivities, useGalleryImages, useMostRecentActivityDate, AgentA
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useQueryClient } from "@tanstack/react-query";
+import { UserDetailSheet } from "@/components/supervisor/UserDetailSheet";
 
 const statusConfig: Record<string, { color: string; label: string }> = {
   checked_in: { color: "bg-green-500", label: "Checked In" },
