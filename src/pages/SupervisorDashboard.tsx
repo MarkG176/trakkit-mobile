@@ -245,7 +245,7 @@ export const SupervisorDashboard = () => {
 };
 
 // Activity feed card component
-function ActivityFeedCard({ activity, onImageClick }: { activity: AgentActivity; onImageClick: (url: string) => void }) {
+function ActivityFeedCard({ activity, onImageClick, onAgentClick }: { activity: AgentActivity; onImageClick: (url: string) => void; onAgentClick?: (agentId: string, name: string | null) => void }) {
   const cfg = statusConfig[activity.status] || { color: "bg-gray-500", label: activity.status };
   const initials = activity.agent_display_name
     ? activity.agent_display_name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
