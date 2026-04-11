@@ -77,7 +77,7 @@ export const InstoreClosingReportDialog = ({
           .select("product_variant_id, opening_stock")
           .eq("agent_id", user.id)
           .eq("work_date", today)
-          .eq("report_type", "stock_count")
+          .eq("report_type", "morning")
           .eq("workspace_id", currentWorkspaceId),
       ]);
 
@@ -89,7 +89,15 @@ export const InstoreClosingReportDialog = ({
         morningStockMap[row.product_variant_id] = row.opening_stock ?? 0;
       });
 
-      const productReports: ProductReport[] = (inventoryResult.data || []).map((item) => {
+      // Deduplicate by product_variant_id
+      const seen = new Set<string>();
+      const uniqueItems = (inventoryResult.data || []).filter((item) => {
+        if (seen.has(item.product_variant_id)) return false;
+        seen.add(item.product_variant_id);
+        return true;
+      });
+
+      const productReports: ProductReport[] = uniqueItems.map((item) => {
         const sku = (item as any).product_variants?.sku;
         const baseName = item.name || "Unknown Product";
         const morningValue = morningStockMap[item.product_variant_id];
@@ -162,7 +170,7 @@ export const InstoreClosingReportDialog = ({
           opening_stock: parseInt(p.opening_stock) || 0,
           quantity_sold: parseInt(p.quantity_sold) || 0,
           closing_stock: parseInt(p.closing_stock) || 0,
-          report_type: "closing",
+          report_type: "evening",
           work_date: today,
           workspace_id: currentWorkspaceId,
           store_id: storeId || null,
