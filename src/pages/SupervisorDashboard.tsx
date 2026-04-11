@@ -239,6 +239,17 @@ export const SupervisorDashboard = () => {
         </DialogContent>
       </Dialog>
 
+      {selectedAgentId && (
+        <UserDetailSheet
+          open={!!selectedAgentId}
+          onOpenChange={(open) => { if (!open) { setSelectedAgentId(null); setSelectedAgentName(null); } }}
+          userId={selectedAgentId}
+          displayName={selectedAgentName}
+          email=""
+          role="agent"
+        />
+      )}
+
       <SupervisorBottomNav />
     </div>
   );
