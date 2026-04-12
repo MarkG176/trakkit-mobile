@@ -1,12 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, LogOut, CalendarIcon, Search, ChevronLeft, ChevronRight, Image as ImageIcon, X } from "lucide-react";
+import { Bell, LogOut, CalendarIcon, Search, ChevronLeft, ChevronRight, Image as ImageIcon, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SupervisorBottomNav } from "@/components/supervisor/SupervisorBottomNav";
@@ -15,11 +14,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
-import { useAgentActivities, useGalleryImages, useMostRecentActivityDate, AgentActivity } from "@/hooks/useAgentActivity";
+import { useAgentActivities, useGalleryImages, useMostRecentActivityDate, useWorkspaceTeams, AgentActivity } from "@/hooks/useAgentActivity";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { UserDetailSheet } from "@/components/supervisor/UserDetailSheet";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const statusConfig: Record<string, { color: string; label: string }> = {
   checked_in: { color: "bg-green-500", label: "Checked In" },
@@ -37,14 +37,15 @@ export const SupervisorDashboard = () => {
   const queryClient = useQueryClient();
 
   const { data: mostRecentDate } = useMostRecentActivityDate(currentWorkspaceId);
+  const { data: teams = [] } = useWorkspaceTeams(currentWorkspaceId);
   const [filterDate, setFilterDate] = useState<string | null>(null);
+  const [filterTeamId, setFilterTeamId] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [selectedAgentName, setSelectedAgentName] = useState<string | null>(null);
 
-  // Set date from most recent activity
   useEffect(() => {
     if (mostRecentDate && !filterDate) {
       setFilterDate(mostRecentDate);
@@ -52,7 +53,7 @@ export const SupervisorDashboard = () => {
   }, [mostRecentDate, filterDate]);
 
   const { data: activitiesResult, isLoading } = useAgentActivities(
-    currentWorkspaceId, page, filterDate, searchQuery
+    currentWorkspaceId, page, filterDate, searchQuery, filterTeamId
   );
   const activities = activitiesResult?.data || [];
   const totalCount = activitiesResult?.count || 0;
@@ -91,11 +92,6 @@ export const SupervisorDashboard = () => {
       setFilterDate(format(date, "yyyy-MM-dd"));
       setPage(0);
     }
-  };
-
-  const getInitials = (name: string | null) => {
-    if (!name) return "?";
-    return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
   };
 
   return (
@@ -154,10 +150,28 @@ export const SupervisorDashboard = () => {
           <Badge variant="secondary" className="ml-auto">{totalCount} entries</Badge>
         </div>
 
+        {/* Team filter */}
+        {teams.length > 0 && (
+          <Select value={filterTeamId || "all"} onValueChange={(v) => { setFilterTeamId(v === "all" ? null : v); setPage(0); }}>
+            <SelectTrigger className="h-9">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                <SelectValue placeholder="All Teams" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Teams</SelectItem>
+              {teams.map((team) => (
+                <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Search agent name..."
+            placeholder="Search by name, email or outlet..."
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
             className="pl-9"
@@ -189,10 +203,14 @@ export const SupervisorDashboard = () => {
             ) : (
               <div className="space-y-3">
                 {activities.map((activity) => (
-                  <ActivityFeedCard key={activity.id} activity={activity} onImageClick={setSelectedImage} onAgentClick={(id, name) => { setSelectedAgentId(id); setSelectedAgentName(name); }} />
+                  <ActivityFeedCard
+                    key={activity.id}
+                    activity={activity}
+                    onImageClick={setSelectedImage}
+                    onAgentClick={(id, name) => { setSelectedAgentId(id); setSelectedAgentName(name); }}
+                  />
                 ))}
 
-                {/* Pagination */}
                 {totalPages > 1 && (
                   <div className="flex items-center justify-between pt-2 pb-4">
                     <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
@@ -265,7 +283,7 @@ function ActivityFeedCard({ activity, onImageClick, onAgentClick }: { activity: 
   return (
     <Card className="p-3 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => onAgentClick?.(activity.agent_id, activity.agent_display_name)}>
       <div className="flex gap-3">
-        <Avatar className="w-10 h-10 shrink-0" onClick={(e) => { e.stopPropagation(); onAgentClick?.(activity.agent_id, activity.agent_display_name); }}>
+        <Avatar className="w-10 h-10 shrink-0">
           {activity.selfie_url && <AvatarImage src={activity.selfie_url} />}
           <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">{initials}</AvatarFallback>
         </Avatar>
@@ -275,6 +293,10 @@ function ActivityFeedCard({ activity, onImageClick, onAgentClick }: { activity: 
             <p className="font-medium text-sm truncate">{activity.agent_display_name || "Unknown Agent"}</p>
             <Badge variant="secondary" className="shrink-0 text-xs">{cfg.label}</Badge>
           </div>
+
+          {activity.store_name && (
+            <p className="text-xs text-muted-foreground truncate">🏪 {activity.store_name}</p>
+          )}
 
           <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
             <span>{format(new Date(activity.timestamp), "h:mm a")}</span>
@@ -298,7 +320,7 @@ function ActivityFeedCard({ activity, onImageClick, onAgentClick }: { activity: 
         </div>
 
         {activity.selfie_url && (
-          <button onClick={() => onImageClick(activity.selfie_url!)} className="shrink-0">
+          <button onClick={(e) => { e.stopPropagation(); onImageClick(activity.selfie_url!); }} className="shrink-0">
             <img src={activity.selfie_url} alt="" className="w-12 h-12 rounded object-cover" />
           </button>
         )}
