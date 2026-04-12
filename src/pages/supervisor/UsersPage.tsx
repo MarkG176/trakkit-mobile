@@ -642,6 +642,16 @@ export const UsersPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Team Management Dialog */}
+      {currentWorkspaceId && (
+        <TeamManagementDialog
+          open={teamMgmtOpen}
+          onOpenChange={setTeamMgmtOpen}
+          workspaceId={currentWorkspaceId}
+          onTeamsChanged={fetchTeams}
+        />
+      )}
     </div>
   );
 };
