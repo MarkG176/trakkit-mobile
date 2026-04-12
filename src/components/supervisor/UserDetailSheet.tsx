@@ -11,8 +11,8 @@ import {
   Clock, 
   ShoppingCart, 
   LogIn,
-  Calendar,
-  Package
+  Package,
+  Store
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 
@@ -42,6 +42,11 @@ interface Sale {
   product_name: string | null;
 }
 
+interface AssignedStore {
+  store_id: string;
+  store_name: string;
+}
+
 export const UserDetailSheet = ({ 
   open, 
   onOpenChange, 
@@ -54,6 +59,7 @@ export const UserDetailSheet = ({
   const [loading, setLoading] = useState(true);
   const [lastCheckIn, setLastCheckIn] = useState<CheckIn | null>(null);
   const [recentSales, setRecentSales] = useState<Sale[]>([]);
+  const [assignedStore, setAssignedStore] = useState<AssignedStore | null>(null);
 
   const initials = (displayName || email || 'U')
     .split(' ')
@@ -71,44 +77,59 @@ export const UserDetailSheet = ({
   const fetchUserDetails = async () => {
     setLoading(true);
     try {
-      // Fetch last check-in
-      const { data: checkIns } = await supabase
-        .from('agent_status_log')
-        .select('id, status, timestamp, location_lat, location_lng, selfie_url')
-        .eq('agent_id', userId)
-        .eq('workspace_id', currentWorkspaceId)
-        .order('timestamp', { ascending: false })
-        .limit(1);
+      // Fetch last check-in, recent sales, and assigned store in parallel
+      const [checkInResult, salesResult, storeResult] = await Promise.all([
+        // Last check-in
+        supabase
+          .from('agent_status_log')
+          .select('id, status, timestamp, location_lat, location_lng, selfie_url')
+          .eq('agent_id', userId)
+          .eq('workspace_id', currentWorkspaceId!)
+          .order('timestamp', { ascending: false })
+          .limit(1),
 
-      setLastCheckIn(checkIns?.[0] || null);
+        // Today's sales
+        supabase
+          .from('daily_sales_tracking')
+          .select('id, quantity_sold, total_value, created_at, product_name')
+          .eq('agent_id', userId)
+          .eq('workspace_id', currentWorkspaceId!)
+          .eq('work_date', new Date().toISOString().split('T')[0])
+          .order('created_at', { ascending: false })
+          .limit(10),
 
-      // Fetch recent sales (today)
-      const today = new Date().toISOString().split('T')[0];
-      const { data: sales } = await supabase
-        .from('interactions')
-        .select(`
-          id,
-          quantity_sold,
-          sale_value,
-          created_at,
-          product_variants (name, sku)
-        `)
-        .eq('agent_id', userId)
-        .eq('workspace_id', currentWorkspaceId)
-        .eq('interaction_type', 'sale')
-        .gte('created_at', today + 'T00:00:00')
-        .order('created_at', { ascending: false })
-        .limit(5);
+        // Assigned store: most recent set_location with a store_id
+        supabase
+          .from('agent_status_log')
+          .select('store_id, stores:store_id(store_name)')
+          .eq('agent_id', userId)
+          .eq('workspace_id', currentWorkspaceId!)
+          .eq('status', 'set_location')
+          .not('store_id', 'is', null)
+          .order('timestamp', { ascending: false })
+          .limit(1)
+          .single(),
+      ]);
 
-      const formattedSales: Sale[] = (sales || []).map(sale => ({
+      setLastCheckIn(checkInResult.data?.[0] || null);
+
+      const formattedSales: Sale[] = (salesResult.data || []).map(sale => ({
         id: sale.id,
         quantity_sold: sale.quantity_sold,
-        sale_value: sale.sale_value,
+        sale_value: sale.total_value,
         created_at: sale.created_at || '',
-        product_name: (() => { const pv = (sale.product_variants as any); return pv?.sku ? `${pv.sku} - ${pv.name || 'Product'}` : (pv?.name || 'Product'); })(),
+        product_name: sale.product_name || 'Product',
       }));
-
       setRecentSales(formattedSales);
+
+      if (storeResult.data?.store_id) {
+        setAssignedStore({
+          store_id: storeResult.data.store_id,
+          store_name: (storeResult.data as any).stores?.store_name || 'Unknown Store',
+        });
+      } else {
+        setAssignedStore(null);
+      }
     } catch (error) {
       console.error('Error fetching user details:', error);
     } finally {
@@ -118,30 +139,20 @@ export const UserDetailSheet = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'checked_in':
-        return 'bg-green-500';
-      case 'checked_out':
-        return 'bg-red-500';
-      case 'lunch':
-      case 'break':
-        return 'bg-amber-500';
-      default:
-        return 'bg-gray-500';
+      case 'checked_in': return 'bg-green-500';
+      case 'checked_out': return 'bg-red-500';
+      case 'lunch': case 'break': return 'bg-amber-500';
+      default: return 'bg-gray-500';
     }
   };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'checked_in':
-        return 'Checked In';
-      case 'checked_out':
-        return 'Checked Out';
-      case 'lunch':
-        return 'On Lunch';
-      case 'break':
-        return 'On Break';
-      default:
-        return status;
+      case 'checked_in': return 'Checked In';
+      case 'checked_out': return 'Checked Out';
+      case 'lunch': return 'On Lunch';
+      case 'break': return 'On Break';
+      default: return status;
     }
   };
 
@@ -157,13 +168,39 @@ export const UserDetailSheet = ({
             </Avatar>
             <div>
               <SheetTitle className="text-left">{displayName || 'No name'}</SheetTitle>
-              <p className="text-sm text-muted-foreground">{email}</p>
-              <Badge variant="secondary" className="mt-1 capitalize">{role}</Badge>
+              {email && <p className="text-sm text-muted-foreground">{email}</p>}
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant="secondary" className="capitalize">{role}</Badge>
+                {assignedStore && (
+                  <Badge variant="outline" className="gap-1">
+                    <Store className="w-3 h-3" />
+                    {assignedStore.store_name}
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
         </SheetHeader>
 
         <div className="space-y-4 overflow-y-auto pb-8">
+          {/* Assigned Store Card */}
+          {!loading && assignedStore && (
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                <Store className="w-4 h-4" />
+                Assigned Store
+              </h3>
+              <Card className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <Store className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <p className="font-medium">{assignedStore.store_name}</p>
+                </div>
+              </Card>
+            </div>
+          )}
+
           {/* Last Check-in Card */}
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
