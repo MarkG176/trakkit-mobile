@@ -65,6 +65,7 @@ export const UsersPage = () => {
   const [assigningTeam, setAssigningTeam] = useState(false);
   const [isCreatingNewTeam, setIsCreatingNewTeam] = useState(false);
   const [newTeamName, setNewTeamName] = useState("");
+  const [teamMgmtOpen, setTeamMgmtOpen] = useState(false);
 
   // Fetch users from workspace
   const fetchUsers = async () => {
@@ -288,14 +289,24 @@ export const UsersPage = () => {
             <h1 className="text-xl font-bold">Users</h1>
             <p className="text-sm opacity-90">Manage workspace members</p>
           </div>
-          <Button 
-            variant="secondary" 
-            size="sm"
-            onClick={() => setInviteDialogOpen(true)}
-          >
-            <UserPlus className="w-4 h-4 mr-2" />
-            Add
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="secondary" 
+              size="icon"
+              onClick={() => setTeamMgmtOpen(true)}
+              title="Manage Teams"
+            >
+              <Settings2 className="w-4 h-4" />
+            </Button>
+            <Button 
+              variant="secondary" 
+              size="sm"
+              onClick={() => setInviteDialogOpen(true)}
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Add
+            </Button>
+          </div>
         </div>
       </div>
 
