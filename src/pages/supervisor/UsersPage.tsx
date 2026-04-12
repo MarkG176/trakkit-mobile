@@ -22,10 +22,12 @@ import {
   Mail,
   AlertCircle,
   CheckCircle,
-  Plus
+  Plus,
+  Settings2
 } from "lucide-react";
 import { SupervisorBottomNav } from "@/components/supervisor/SupervisorBottomNav";
 import { MobileWorkspaceMembers } from "@/components/supervisor/MobileWorkspaceMembers";
+import { TeamManagementDialog } from "@/components/supervisor/TeamManagementDialog";
 
 interface WorkspaceUser {
   user_id: string;
