@@ -9,9 +9,10 @@ interface ProfileHeaderProps {
   currentRank: string;
   totalPoints: number;
   teamType?: string;
+  teamName?: string | null;
 }
 
-export const ProfileHeader = ({ displayName, teamType }: ProfileHeaderProps) => {
+export const ProfileHeader = ({ displayName, teamType, teamName }: ProfileHeaderProps) => {
   const { language, setLanguage } = useLanguage();
   const today = new Date();
   const formattedDate = today.toLocaleDateString(language === 'sw' ? 'sw-KE' : 'en-US', {
@@ -33,7 +34,17 @@ export const ProfileHeader = ({ displayName, teamType }: ProfileHeaderProps) => 
       <div>
         <h1 className="text-xl font-bold">{displayName}</h1>
         <p className="text-sm text-primary-foreground/80 mt-0.5">{formattedDate}</p>
-        {teamLabel && (
+        {teamName && (
+          <div className="mt-1.5">
+            <p className="text-sm font-medium text-primary-foreground">{teamName}</p>
+            {teamLabel && (
+              <Badge className="mt-0.5 bg-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/30 text-xs">
+                {teamLabel}
+              </Badge>
+            )}
+          </div>
+        )}
+        {!teamName && teamLabel && (
           <Badge className="mt-1.5 bg-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/30 text-xs">
             {teamLabel} Team
           </Badge>
