@@ -9,9 +9,10 @@ interface ProfileHeaderProps {
   currentRank: string;
   totalPoints: number;
   teamType?: string;
+  teamName?: string | null;
 }
 
-export const ProfileHeader = ({ displayName, teamType }: ProfileHeaderProps) => {
+export const ProfileHeader = ({ displayName, teamType, teamName }: ProfileHeaderProps) => {
   const { language, setLanguage } = useLanguage();
   const today = new Date();
   const formattedDate = today.toLocaleDateString(language === 'sw' ? 'sw-KE' : 'en-US', {

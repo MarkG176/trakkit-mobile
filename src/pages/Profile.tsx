@@ -8,6 +8,8 @@ import { useAgentProfileStats } from "@/hooks/useAgentProfileStats";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -41,10 +43,27 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
 
 export const Profile = () => {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
-  const { currentTeamType, isInitialized, isLoading: isWorkspaceLoading } = useWorkspace();
+  const { signOut, user } = useAuth();
+  const { currentTeamType, currentWorkspaceId, isInitialized, isLoading: isWorkspaceLoading } = useWorkspace();
   const { t } = useLanguage();
   const stats = useAgentProfileStats();
+  const [teamName, setTeamName] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchTeamName = async () => {
+      if (!user?.id || !currentWorkspaceId) return;
+      const { data } = await supabase
+        .from('team_members')
+        .select('team_id, teams:team_id(name)')
+        .eq('agent_id', user.id)
+        .eq('workspace_id', currentWorkspaceId)
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle();
+      setTeamName((data?.teams as any)?.name || null);
+    };
+    fetchTeamName();
+  }, [user?.id, currentWorkspaceId]);
   const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
   const isSeeding = ['seeding', 'market_research'].includes(currentTeamType?.toLowerCase() ?? '');
   const isInstore = currentTeamType?.toLowerCase() === 'instore';
