@@ -2,17 +2,13 @@ import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { 
-  MapPin, 
-  Clock, 
-  ShoppingCart, 
-  LogIn,
-  Package,
-  Store
+  MapPin, Clock, ShoppingCart, LogIn, Package, Store,
+  Gift, FileText, MessageSquare, ClipboardList
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 
@@ -42,31 +38,54 @@ interface Sale {
   product_name: string | null;
 }
 
+interface Giveaway {
+  id: string;
+  recipient_name: string | null;
+  total_items: number;
+  recorded_at: string;
+  products_given: any;
+}
+
+interface Interaction {
+  id: string;
+  interaction_type: string | null;
+  customer_name: string | null;
+  timestamp: string | null;
+  outcome: string | null;
+  quantity_sold: number;
+  sale_value: number | null;
+}
+
+interface StockReport {
+  id: string;
+  report_type: string;
+  work_date: string;
+  opening_stock: number | null;
+  closing_stock: number | null;
+  reported_at: string;
+}
+
 interface AssignedStore {
   store_id: string;
   store_name: string;
 }
 
 export const UserDetailSheet = ({ 
-  open, 
-  onOpenChange, 
-  userId, 
-  displayName, 
-  email, 
-  role 
+  open, onOpenChange, userId, displayName, email, role 
 }: UserDetailSheetProps) => {
   const { currentWorkspaceId } = useWorkspace();
   const [loading, setLoading] = useState(true);
   const [lastCheckIn, setLastCheckIn] = useState<CheckIn | null>(null);
   const [recentSales, setRecentSales] = useState<Sale[]>([]);
+  const [giveaways, setGiveaways] = useState<Giveaway[]>([]);
+  const [interactions, setInteractions] = useState<Interaction[]>([]);
+  const [stockReports, setStockReports] = useState<StockReport[]>([]);
   const [assignedStore, setAssignedStore] = useState<AssignedStore | null>(null);
 
+  const today = new Date().toISOString().split('T')[0];
+
   const initials = (displayName || email || 'U')
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
+    .split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   useEffect(() => {
     if (open && userId && currentWorkspaceId) {
@@ -77,9 +96,7 @@ export const UserDetailSheet = ({
   const fetchUserDetails = async () => {
     setLoading(true);
     try {
-      // Fetch last check-in, recent sales, and assigned store in parallel
-      const [checkInResult, salesResult, storeResult] = await Promise.all([
-        // Last check-in
+      const [checkInResult, salesResult, storeResult, giveawayResult, interactionResult, stockResult] = await Promise.all([
         supabase
           .from('agent_status_log')
           .select('id, status, timestamp, location_lat, location_lng, selfie_url')
@@ -88,17 +105,15 @@ export const UserDetailSheet = ({
           .order('timestamp', { ascending: false })
           .limit(1),
 
-        // Today's sales
         supabase
           .from('daily_sales_tracking')
           .select('id, quantity_sold, total_value, created_at, product_name')
           .eq('agent_id', userId)
           .eq('workspace_id', currentWorkspaceId!)
-          .eq('work_date', new Date().toISOString().split('T')[0])
+          .eq('work_date', today)
           .order('created_at', { ascending: false })
           .limit(10),
 
-        // Assigned store: most recent set_location with a store_id
         supabase
           .from('agent_status_log')
           .select('store_id, stores:store_id(store_name)')
@@ -109,18 +124,48 @@ export const UserDetailSheet = ({
           .order('timestamp', { ascending: false })
           .limit(1)
           .single(),
+
+        supabase
+          .from('giveaways')
+          .select('id, recipient_name, total_items, recorded_at, products_given')
+          .eq('agent_id', userId)
+          .eq('workspace_id', currentWorkspaceId!)
+          .gte('recorded_at', `${today}T00:00:00`)
+          .lte('recorded_at', `${today}T23:59:59`)
+          .order('recorded_at', { ascending: false })
+          .limit(10),
+
+        supabase
+          .from('interactions')
+          .select('id, interaction_type, customer_name, timestamp, outcome, quantity_sold, sale_value')
+          .eq('agent_id', userId)
+          .eq('workspace_id', currentWorkspaceId!)
+          .gte('timestamp', `${today}T00:00:00`)
+          .lte('timestamp', `${today}T23:59:59`)
+          .order('timestamp', { ascending: false })
+          .limit(10),
+
+        supabase
+          .from('daily_stock_reports')
+          .select('id, report_type, work_date, opening_stock, closing_stock, reported_at')
+          .eq('agent_id', userId)
+          .eq('workspace_id', currentWorkspaceId!)
+          .eq('work_date', today)
+          .order('reported_at', { ascending: false })
+          .limit(10),
       ]);
 
       setLastCheckIn(checkInResult.data?.[0] || null);
 
-      const formattedSales: Sale[] = (salesResult.data || []).map(sale => ({
-        id: sale.id,
-        quantity_sold: sale.quantity_sold,
-        sale_value: sale.total_value,
-        created_at: sale.created_at || '',
-        product_name: sale.product_name || 'Product',
-      }));
-      setRecentSales(formattedSales);
+      setRecentSales((salesResult.data || []).map(s => ({
+        id: s.id, quantity_sold: s.quantity_sold,
+        sale_value: s.total_value, created_at: s.created_at || '',
+        product_name: s.product_name || 'Product',
+      })));
+
+      setGiveaways(giveawayResult.data || []);
+      setInteractions(interactionResult.data || []);
+      setStockReports(stockResult.data || []);
 
       if (storeResult.data?.store_id) {
         setAssignedStore({
@@ -156,6 +201,19 @@ export const UserDetailSheet = ({
     }
   };
 
+  const getInteractionIcon = (type: string | null) => {
+    switch (type) {
+      case 'survey': return <ClipboardList className="w-5 h-5 text-purple-600" />;
+      case 'sale': return <ShoppingCart className="w-5 h-5 text-green-600" />;
+      case 'giveaway': return <Gift className="w-5 h-5 text-orange-600" />;
+      default: return <MessageSquare className="w-5 h-5 text-blue-600" />;
+    }
+  };
+
+  const totalSalesQty = recentSales.reduce((s, x) => s + x.quantity_sold, 0);
+  const totalSalesValue = recentSales.reduce((s, x) => s + (x.sale_value || 0), 0);
+  const totalGiveawayItems = giveaways.reduce((s, x) => s + x.total_items, 0);
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl">
@@ -169,7 +227,7 @@ export const UserDetailSheet = ({
             <div>
               <SheetTitle className="text-left">{displayName || 'No name'}</SheetTitle>
               {email && <p className="text-sm text-muted-foreground">{email}</p>}
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <Badge variant="secondary" className="capitalize">{role}</Badge>
                 {assignedStore && (
                   <Badge variant="outline" className="gap-1">
@@ -183,44 +241,36 @@ export const UserDetailSheet = ({
         </SheetHeader>
 
         <div className="space-y-4 overflow-y-auto pb-8">
-          {/* Assigned Store Card */}
-          {!loading && assignedStore && (
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
-                <Store className="w-4 h-4" />
-                Assigned Store
-              </h3>
-              <Card className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                    <Store className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <p className="font-medium">{assignedStore.store_name}</p>
-                </div>
+          {/* Summary Cards */}
+          {!loading && (
+            <div className="grid grid-cols-3 gap-2">
+              <Card className="p-3 text-center">
+                <p className="text-lg font-bold text-primary">{totalSalesQty}</p>
+                <p className="text-xs text-muted-foreground">Sales</p>
+              </Card>
+              <Card className="p-3 text-center">
+                <p className="text-lg font-bold text-orange-600">{totalGiveawayItems}</p>
+                <p className="text-xs text-muted-foreground">Giveaways</p>
+              </Card>
+              <Card className="p-3 text-center">
+                <p className="text-lg font-bold text-purple-600">{interactions.length}</p>
+                <p className="text-xs text-muted-foreground">Interactions</p>
               </Card>
             </div>
           )}
 
-          {/* Last Check-in Card */}
+          {/* Last Check-in */}
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
-              <LogIn className="w-4 h-4" />
-              Last Check-in
+              <LogIn className="w-4 h-4" /> Last Check-in
             </h3>
             {loading ? (
-              <Card className="p-4">
-                <Skeleton className="h-4 w-32 mb-2" />
-                <Skeleton className="h-3 w-48" />
-              </Card>
+              <Card className="p-4"><Skeleton className="h-4 w-32 mb-2" /><Skeleton className="h-3 w-48" /></Card>
             ) : lastCheckIn ? (
               <Card className="p-4">
                 <div className="flex items-start gap-3">
                   {lastCheckIn.selfie_url && (
-                    <img 
-                      src={lastCheckIn.selfie_url} 
-                      alt="Check-in selfie" 
-                      className="w-16 h-16 rounded-lg object-cover"
-                    />
+                    <img src={lastCheckIn.selfie_url} alt="Check-in selfie" className="w-16 h-16 rounded-lg object-cover" />
                   )}
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
@@ -241,23 +291,22 @@ export const UserDetailSheet = ({
                 </div>
               </Card>
             ) : (
-              <Card className="p-4 text-center text-muted-foreground">
-                <p className="text-sm">No check-in recorded</p>
-              </Card>
+              <Card className="p-4 text-center text-muted-foreground"><p className="text-sm">No check-in recorded</p></Card>
             )}
           </div>
 
           {/* Today's Sales */}
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
-              <ShoppingCart className="w-4 h-4" />
-              Today's Sales
+              <ShoppingCart className="w-4 h-4" /> Today's Sales
+              {recentSales.length > 0 && totalSalesValue > 0 && (
+                <Badge variant="secondary" className="ml-auto text-xs">
+                  KES {totalSalesValue.toLocaleString()}
+                </Badge>
+              )}
             </h3>
             {loading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
-              </div>
+              <div className="space-y-2"><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>
             ) : recentSales.length > 0 ? (
               <div className="space-y-2">
                 {recentSales.map(sale => (
@@ -269,31 +318,120 @@ export const UserDetailSheet = ({
                         </div>
                         <div>
                           <p className="font-medium text-sm">{sale.product_name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Qty: {sale.quantity_sold}
-                          </p>
+                          <p className="text-xs text-muted-foreground">Qty: {sale.quantity_sold}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        {sale.sale_value && (
-                          <p className="font-medium text-primary">
-                            KES {sale.sale_value.toLocaleString()}
-                          </p>
+                        {sale.sale_value != null && (
+                          <p className="font-medium text-primary">KES {sale.sale_value.toLocaleString()}</p>
                         )}
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(sale.created_at), 'HH:mm')}
-                        </p>
+                        <p className="text-xs text-muted-foreground">{format(new Date(sale.created_at), 'HH:mm')}</p>
                       </div>
                     </div>
                   </Card>
                 ))}
               </div>
             ) : (
-              <Card className="p-4 text-center text-muted-foreground">
-                <p className="text-sm">No sales recorded today</p>
-              </Card>
+              <Card className="p-4 text-center text-muted-foreground"><p className="text-sm">No sales recorded today</p></Card>
             )}
           </div>
+
+          {/* Today's Giveaways */}
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+              <Gift className="w-4 h-4" /> Today's Giveaways
+            </h3>
+            {loading ? (
+              <Skeleton className="h-16 w-full" />
+            ) : giveaways.length > 0 ? (
+              <div className="space-y-2">
+                {giveaways.map(g => (
+                  <Card key={g.id} className="p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+                          <Gift className="w-5 h-5 text-orange-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">{g.recipient_name || 'Recipient'}</p>
+                          <p className="text-xs text-muted-foreground">{g.total_items} item{g.total_items !== 1 ? 's' : ''}</p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{format(new Date(g.recorded_at), 'HH:mm')}</p>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card className="p-4 text-center text-muted-foreground"><p className="text-sm">No giveaways today</p></Card>
+            )}
+          </div>
+
+          {/* Today's Interactions */}
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" /> Today's Interactions
+            </h3>
+            {loading ? (
+              <Skeleton className="h-16 w-full" />
+            ) : interactions.length > 0 ? (
+              <div className="space-y-2">
+                {interactions.map(i => (
+                  <Card key={i.id} className="p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                          {getInteractionIcon(i.interaction_type)}
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm capitalize">{i.interaction_type || 'Interaction'}</p>
+                          <p className="text-xs text-muted-foreground">{i.customer_name || 'N/A'}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        {i.outcome && <Badge variant="outline" className="text-xs">{i.outcome}</Badge>}
+                        {i.timestamp && (
+                          <p className="text-xs text-muted-foreground mt-1">{format(new Date(i.timestamp), 'HH:mm')}</p>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card className="p-4 text-center text-muted-foreground"><p className="text-sm">No interactions today</p></Card>
+            )}
+          </div>
+
+          {/* Today's Stock Reports */}
+          {!loading && stockReports.length > 0 && (
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                <FileText className="w-4 h-4" /> Today's Stock Reports
+              </h3>
+              <div className="space-y-2">
+                {stockReports.map(sr => (
+                  <Card key={sr.id} className="p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-teal-100 flex items-center justify-center">
+                          <FileText className="w-5 h-5 text-teal-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm capitalize">{sr.report_type.replace(/_/g, ' ')}</p>
+                          {sr.opening_stock != null && <p className="text-xs text-muted-foreground">Open: {sr.opening_stock}</p>}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        {sr.closing_stock != null && <p className="text-xs font-medium">Close: {sr.closing_stock}</p>}
+                        <p className="text-xs text-muted-foreground">{format(new Date(sr.reported_at), 'HH:mm')}</p>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>
