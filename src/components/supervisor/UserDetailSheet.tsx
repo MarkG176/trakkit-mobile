@@ -4,13 +4,16 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useNavigate } from "react-router-dom";
 import { 
   MapPin, Clock, ShoppingCart, LogIn, Package, Store,
-  Gift, FileText, MessageSquare, ClipboardList
+  Gift, FileText, MessageSquare, ClipboardList, StickyNote, ExternalLink
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
+import { toast } from "sonner";
 
 interface UserDetailSheetProps {
   open: boolean;
@@ -56,6 +59,15 @@ interface Interaction {
   sale_value: number | null;
 }
 
+interface Note {
+  id: string;
+  content: string;
+  note_type: string | null;
+  customer_name: string | null;
+  created_at: string | null;
+  priority: string | null;
+}
+
 interface StockReport {
   id: string;
   report_type: string;
@@ -70,17 +82,26 @@ interface AssignedStore {
   store_name: string;
 }
 
+interface StoreOption {
+  id: string;
+  store_name: string;
+}
+
 export const UserDetailSheet = ({ 
   open, onOpenChange, userId, displayName, email, role 
 }: UserDetailSheetProps) => {
   const { currentWorkspaceId } = useWorkspace();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [lastCheckIn, setLastCheckIn] = useState<CheckIn | null>(null);
   const [recentSales, setRecentSales] = useState<Sale[]>([]);
   const [giveaways, setGiveaways] = useState<Giveaway[]>([]);
   const [interactions, setInteractions] = useState<Interaction[]>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
   const [stockReports, setStockReports] = useState<StockReport[]>([]);
   const [assignedStore, setAssignedStore] = useState<AssignedStore | null>(null);
+  const [allStores, setAllStores] = useState<StoreOption[]>([]);
+  const [assigningStore, setAssigningStore] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -90,13 +111,24 @@ export const UserDetailSheet = ({
   useEffect(() => {
     if (open && userId && currentWorkspaceId) {
       fetchUserDetails();
+      fetchStores();
     }
   }, [open, userId, currentWorkspaceId]);
+
+  const fetchStores = async () => {
+    const { data } = await supabase
+      .from('stores')
+      .select('id, store_name')
+      .eq('workspace_id', currentWorkspaceId!)
+      .eq('is_deleted', false)
+      .order('store_name');
+    if (data) setAllStores(data);
+  };
 
   const fetchUserDetails = async () => {
     setLoading(true);
     try {
-      const [checkInResult, salesResult, storeResult, giveawayResult, interactionResult, stockResult] = await Promise.all([
+      const [checkInResult, salesResult, storeResult, giveawayResult, interactionResult, stockResult, notesResult] = await Promise.all([
         supabase
           .from('agent_status_log')
           .select('id, status, timestamp, location_lat, location_lng, selfie_url')
@@ -153,6 +185,16 @@ export const UserDetailSheet = ({
           .eq('work_date', today)
           .order('reported_at', { ascending: false })
           .limit(10),
+
+        supabase
+          .from('notes')
+          .select('id, content, note_type, customer_name, created_at, priority')
+          .eq('agent_id', userId)
+          .eq('workspace_id', currentWorkspaceId!)
+          .gte('created_at', `${today}T00:00:00`)
+          .lte('created_at', `${today}T23:59:59`)
+          .order('created_at', { ascending: false })
+          .limit(10),
       ]);
 
       setLastCheckIn(checkInResult.data?.[0] || null);
@@ -165,6 +207,7 @@ export const UserDetailSheet = ({
 
       setGiveaways(giveawayResult.data || []);
       setInteractions(interactionResult.data || []);
+      setNotes(notesResult.data || []);
       setStockReports(stockResult.data || []);
 
       if (storeResult.data?.store_id) {
@@ -179,6 +222,41 @@ export const UserDetailSheet = ({
       console.error('Error fetching user details:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAssignStore = async (storeId: string) => {
+    if (!currentWorkspaceId) return;
+    setAssigningStore(true);
+    try {
+      const { error } = await supabase
+        .from('agent_status_log')
+        .insert({
+          agent_id: userId,
+          workspace_id: currentWorkspaceId,
+          status: 'set_location',
+          store_id: storeId,
+          timestamp: new Date().toISOString(),
+          agent_display_name: displayName,
+        });
+
+      if (error) throw error;
+
+      const store = allStores.find(s => s.id === storeId);
+      setAssignedStore({ store_id: storeId, store_name: store?.store_name || 'Store' });
+      toast.success('Store assigned successfully');
+    } catch (error) {
+      console.error('Error assigning store:', error);
+      toast.error('Failed to assign store');
+    } finally {
+      setAssigningStore(false);
+    }
+  };
+
+  const handleStoreClick = () => {
+    if (assignedStore) {
+      onOpenChange(false);
+      navigate('/reports');
     }
   };
 
@@ -210,6 +288,15 @@ export const UserDetailSheet = ({
     }
   };
 
+  const getPriorityColor = (priority: string | null) => {
+    switch (priority) {
+      case 'high': return 'text-red-600';
+      case 'medium': return 'text-amber-600';
+      case 'low': return 'text-green-600';
+      default: return 'text-muted-foreground';
+    }
+  };
+
   const totalSalesQty = recentSales.reduce((s, x) => s + x.quantity_sold, 0);
   const totalSalesValue = recentSales.reduce((s, x) => s + (x.sale_value || 0), 0);
   const totalGiveawayItems = giveaways.reduce((s, x) => s + x.total_items, 0);
@@ -230,9 +317,14 @@ export const UserDetailSheet = ({
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <Badge variant="secondary" className="capitalize">{role}</Badge>
                 {assignedStore && (
-                  <Badge variant="outline" className="gap-1">
+                  <Badge 
+                    variant="outline" 
+                    className="gap-1 cursor-pointer hover:bg-primary/10 transition-colors"
+                    onClick={handleStoreClick}
+                  >
                     <Store className="w-3 h-3" />
                     {assignedStore.store_name}
+                    <ExternalLink className="w-3 h-3" />
                   </Badge>
                 )}
               </div>
@@ -241,6 +333,29 @@ export const UserDetailSheet = ({
         </SheetHeader>
 
         <div className="space-y-4 overflow-y-auto pb-8">
+          {/* Store Assignment */}
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+              <Store className="w-4 h-4" /> Assign Store
+            </h3>
+            <Select
+              value={assignedStore?.store_id || ''}
+              onValueChange={handleAssignStore}
+              disabled={assigningStore}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={assigningStore ? 'Assigning...' : 'Select a store'} />
+              </SelectTrigger>
+              <SelectContent>
+                {allStores.map(store => (
+                  <SelectItem key={store.id} value={store.id}>
+                    {store.store_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Summary Cards */}
           {!loading && (
             <div className="grid grid-cols-3 gap-2">
@@ -400,6 +515,47 @@ export const UserDetailSheet = ({
               </div>
             ) : (
               <Card className="p-4 text-center text-muted-foreground"><p className="text-sm">No interactions today</p></Card>
+            )}
+          </div>
+
+          {/* Today's Notes */}
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+              <StickyNote className="w-4 h-4" /> Today's Notes
+            </h3>
+            {loading ? (
+              <Skeleton className="h-16 w-full" />
+            ) : notes.length > 0 ? (
+              <div className="space-y-2">
+                {notes.map(n => (
+                  <Card key={n.id} className="p-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center shrink-0">
+                        <StickyNote className="w-5 h-5 text-yellow-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-medium text-sm capitalize">{n.note_type?.replace(/_/g, ' ') || 'Note'}</p>
+                          {n.priority && n.priority !== 'medium' && (
+                            <span className={`text-xs font-medium ${getPriorityColor(n.priority)}`}>
+                              {n.priority}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2">{n.content}</p>
+                        {n.customer_name && (
+                          <p className="text-xs text-muted-foreground mt-1">Re: {n.customer_name}</p>
+                        )}
+                      </div>
+                      {n.created_at && (
+                        <p className="text-xs text-muted-foreground shrink-0">{format(new Date(n.created_at), 'HH:mm')}</p>
+                      )}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card className="p-4 text-center text-muted-foreground"><p className="text-sm">No notes today</p></Card>
             )}
           </div>
 
