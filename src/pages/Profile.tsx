@@ -127,6 +127,7 @@ export const Profile = () => {
         currentRank={stats.currentRank}
         totalPoints={stats.totalPoints}
         teamType={currentTeamType || undefined}
+        teamName={teamName}
       />
 
       <div className="p-4 space-y-4 -mt-4">
