@@ -42,6 +42,7 @@ import { GiveawayActivityList } from "./pages/GiveawayActivityList";
 import { ActivityDetail } from "./pages/ActivityDetail";
 import { Activity } from "./pages/Activity";
 import { RoleBasedRoute } from "./components/RoleBasedRoute";
+import { ProjectComponentGate } from "./components/ProjectComponentGate";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import { TourOverlay } from "./components/onboarding/TourOverlay";
 
