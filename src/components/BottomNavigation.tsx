@@ -1,7 +1,8 @@
 import { Home, ClipboardList, Map, Package, User, Clipboard, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BottomNavigationProps {
   currentPage: string;
@@ -20,7 +21,31 @@ const navItems = [
 
 export const BottomNavigation = ({ currentPage, currentTeamType }: BottomNavigationProps) => {
   const navigate = useNavigate();
-  const { isInitialized } = useWorkspace();
+  const { isInitialized, currentWorkspaceId } = useWorkspace();
+  const [hasSurveys, setHasSurveys] = useState(false);
+
+  // Check whether the workspace has any survey templates (for seeding/market_research overrides)
+  useEffect(() => {
+    const teamType = currentTeamType?.toLowerCase();
+    const isSeedingLike = ['seeding', 'market_research'].includes(teamType ?? '');
+    if (!currentWorkspaceId || !isSeedingLike) {
+      setHasSurveys(false);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      const { count } = await supabase
+        .from('survey_templates')
+        .select('id', { count: 'exact', head: true })
+        .eq('workspace_id', currentWorkspaceId);
+      if (!cancelled) setHasSurveys((count ?? 0) > 0);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentWorkspaceId, currentTeamType]);
 
   // Filter nav items based on team type
   const filteredNavItems = useMemo(() => {
@@ -38,8 +63,9 @@ export const BottomNavigation = ({ currentPage, currentTeamType }: BottomNavigat
       if (teamType === 'wholesale' && (item.id === 'reports' || item.id === 'inventory')) {
         return false;
       }
-      if (['seeding', 'market_research'].includes(teamType) && (item.id === 'reports' || item.id === 'surveys')) {
-        return false;
+      if (['seeding', 'market_research'].includes(teamType)) {
+        if (item.id === 'reports') return false;
+        if (item.id === 'surveys') return hasSurveys;
       }
       if (teamType === 'sampling' && (item.id === 'reports' || item.id === 'surveys' || item.id === 'inventory')) {
         return false;
@@ -52,7 +78,7 @@ export const BottomNavigation = ({ currentPage, currentTeamType }: BottomNavigat
       }
       return true;
     });
-  }, [currentTeamType, isInitialized]);
+  }, [currentTeamType, isInitialized, hasSurveys]);
 
   return (
     <div className="bottom-nav">
