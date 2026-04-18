@@ -2136,6 +2136,63 @@ export type Database = {
           },
         ]
       }
+      project_components: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          enable_activity: boolean
+          enable_give_products: boolean
+          enable_inventory: boolean
+          enable_log_interaction: boolean
+          enable_manage_agents: boolean
+          enable_record_sale: boolean
+          enable_reports: boolean
+          enable_routes: boolean
+          enable_stock_reports: boolean
+          enable_take_surveys: boolean
+          id: string
+          project_id: string
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          enable_activity?: boolean
+          enable_give_products?: boolean
+          enable_inventory?: boolean
+          enable_log_interaction?: boolean
+          enable_manage_agents?: boolean
+          enable_record_sale?: boolean
+          enable_reports?: boolean
+          enable_routes?: boolean
+          enable_stock_reports?: boolean
+          enable_take_surveys?: boolean
+          id?: string
+          project_id: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          enable_activity?: boolean
+          enable_give_products?: boolean
+          enable_inventory?: boolean
+          enable_log_interaction?: boolean
+          enable_manage_agents?: boolean
+          enable_record_sale?: boolean
+          enable_reports?: boolean
+          enable_routes?: boolean
+          enable_stock_reports?: boolean
+          enable_take_surveys?: boolean
+          id?: string
+          project_id?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
       project_inventory: {
         Row: {
           created_at: string | null
