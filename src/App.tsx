@@ -42,6 +42,7 @@ import { GiveawayActivityList } from "./pages/GiveawayActivityList";
 import { ActivityDetail } from "./pages/ActivityDetail";
 import { Activity } from "./pages/Activity";
 import { RoleBasedRoute } from "./components/RoleBasedRoute";
+import { ProjectComponentGate } from "./components/ProjectComponentGate";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import { TourOverlay } from "./components/onboarding/TourOverlay";
 
@@ -127,17 +128,23 @@ const App = () => (
             } />
             <Route path="/surveys" element={
               <ProtectedRoute>
-                <Surveys />
+                <ProjectComponentGate component="enable_take_surveys">
+                  <Surveys />
+                </ProjectComponentGate>
               </ProtectedRoute>
             } />
             <Route path="/routes" element={
               <ProtectedRoute>
-                <RoutesPage />
+                <ProjectComponentGate component="enable_routes">
+                  <RoutesPage />
+                </ProjectComponentGate>
               </ProtectedRoute>
             } />
             <Route path="/inventory" element={
               <ProtectedRoute>
-                <Inventory />
+                <ProjectComponentGate component="enable_inventory">
+                  <Inventory />
+                </ProjectComponentGate>
               </ProtectedRoute>
             } />
             <Route path="/more" element={
@@ -147,17 +154,23 @@ const App = () => (
             } />
             <Route path="/record-sale" element={
               <ProtectedRoute>
-                <RecordSale />
+                <ProjectComponentGate component="enable_record_sale">
+                  <RecordSale />
+                </ProjectComponentGate>
               </ProtectedRoute>
             } />
             <Route path="/give-products" element={
               <ProtectedRoute>
-                <GiveProducts />
+                <ProjectComponentGate component="enable_give_products">
+                  <GiveProducts />
+                </ProjectComponentGate>
               </ProtectedRoute>
             } />
             <Route path="/log-interaction" element={
               <ProtectedRoute>
-                <LogInteraction />
+                <ProjectComponentGate component="enable_log_interaction">
+                  <LogInteraction />
+                </ProjectComponentGate>
               </ProtectedRoute>
             } />
             <Route path="/interaction-history" element={
@@ -172,7 +185,9 @@ const App = () => (
             } />
             <Route path="/reports" element={
               <ProtectedRoute>
-                <Reports />
+                <ProjectComponentGate component="enable_reports">
+                  <Reports />
+                </ProjectComponentGate>
               </ProtectedRoute>
             } />
             <Route path="/documentation" element={
