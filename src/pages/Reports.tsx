@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Camera, FileText, Download, Package, Loader2 } from "lucide-react";
+import { ArrowLeft, Camera, FileText, Download, Package, Loader2, Sunrise, Sunset } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,15 +14,20 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { useInventory } from "@/hooks/useInventory";
 import { formatProductName } from "@/utils/formatProductName";
 import { workspaceService } from "@/services/workspaceService";
+import { StockReportDialog } from "@/components/attendance/StockReportDialog";
 import { toast } from "sonner";
 
 export const Reports = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { currentWorkspaceId, currentTeamType } = useWorkspace();
-  const isSurvey = ['survey', 'survey_campaign'].includes(currentTeamType?.toLowerCase() ?? '');
-  const isInstore = currentTeamType?.toLowerCase() === 'instore';
-  const hideSalesReport = isSurvey || isInstore;
+  const normalizedTeamType = currentTeamType?.toLowerCase() ?? '';
+  const isSurvey = ['survey', 'survey_campaign'].includes(normalizedTeamType);
+  const isInstore = normalizedTeamType === 'instore';
+  const isHybrid = normalizedTeamType === 'hybrid';
+  const hideSalesReport = isSurvey || isInstore || isHybrid;
+  const [showMorningReport, setShowMorningReport] = useState(false);
+  const [showEveningReport, setShowEveningReport] = useState(false);
   const { inventory, loading: inventoryLoading } = useInventory();
   const [submitting, setSubmitting] = useState(false);
   const [salesQuantities, setSalesQuantities] = useState<Record<string, number>>({});
