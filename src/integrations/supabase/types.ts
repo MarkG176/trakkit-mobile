@@ -2141,6 +2141,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           enable_activity: boolean
+          enable_closing_report: boolean
           enable_give_products: boolean
           enable_inventory: boolean
           enable_log_interaction: boolean
@@ -2159,6 +2160,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           enable_activity?: boolean
+          enable_closing_report?: boolean
           enable_give_products?: boolean
           enable_inventory?: boolean
           enable_log_interaction?: boolean
@@ -2177,6 +2179,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           enable_activity?: boolean
+          enable_closing_report?: boolean
           enable_give_products?: boolean
           enable_inventory?: boolean
           enable_log_interaction?: boolean

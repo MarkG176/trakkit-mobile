@@ -15,11 +15,13 @@ import { InstoreClosingReportDialog } from "@/components/attendance/InstoreClosi
 import { InstoreMorningStockCountDialog } from "@/components/attendance/InstoreMorningStockCountDialog";
 import { SurveyClosingReportDialog } from "@/components/attendance/SurveyClosingReportDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { useProjectComponents } from "@/hooks/useProjectComponents";
 
 export const RecordAttendanceForm = () => {
   const { user } = useAuth();
   const { currentStatus, loading, updateStatus } = useAgentStatus();
-  const { currentTeamType } = useWorkspace();
+  const { currentTeamType, currentProjectId } = useWorkspace();
+  const { flags: projectFlags } = useProjectComponents(currentProjectId);
   const { toast } = useToast();
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
@@ -144,8 +146,14 @@ export const RecordAttendanceForm = () => {
         } else if (isSeeding && statusToSet === 'checked_out') {
           // Seeding check-out - show seeding evening report (sales + notes + photos)
           setShowSeedingEveningReport(true);
-        } else if (['survey', 'survey_campaign'].includes(currentTeamType?.toLowerCase() ?? '') && statusToSet === 'checked_out') {
-          // Survey check-out - show survey closing report
+        } else if (
+          statusToSet === 'checked_out' &&
+          (
+            ['survey', 'survey_campaign'].includes(currentTeamType?.toLowerCase() ?? '') ||
+            projectFlags.enable_closing_report
+          )
+        ) {
+          // Survey check-out OR project explicitly opts into a closing report
           setShowSurveyClosingReport(true);
         }
       } else {
