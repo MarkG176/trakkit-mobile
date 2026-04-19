@@ -201,7 +201,7 @@ export const Reports = () => {
       </div>
 
       <div className="p-4 space-y-6">
-        {isHybrid ? (
+        {!hideSalesReport && (
           <Card>
             <CardContent className="p-6">
               <h3 className="text-h3 mb-6 text-black flex items-center gap-2">
@@ -227,58 +227,6 @@ export const Reports = () => {
                   <span>Start Evening Report</span>
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-        ) : !hideSalesReport && (
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="text-h3 mb-6 text-black flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Sales Report
-              </h3>
-
-              {inventoryLoading ? (
-                <div className="py-8 text-center text-muted-foreground flex items-center justify-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading inventory...
-                </div>
-              ) : inventory.length === 0 ? (
-                <div className="py-8 text-center text-muted-foreground">
-                  No products in your inventory to report.
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {inventory.map((item) => (
-                    <div key={item.id} className="p-3 rounded-lg border bg-card">
-                      <div className="space-y-2">
-                        <Label className="font-medium leading-tight block">
-                          {formatProductName(item.name, item.sku)}
-                        </Label>
-                        <div className="flex items-center gap-2">
-                          <Label className="text-sm text-muted-foreground shrink-0">Qty sold:</Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            placeholder="0"
-                            value={salesQuantities[item.product_variant_id] || ''}
-                            onChange={(e) => handleQuantityChange(item.product_variant_id, e.target.value)}
-                            className="w-24"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  <Button
-                    type="button"
-                    onClick={handleSubmitSales}
-                    disabled={submitting || inventory.length === 0}
-                    className="w-full mt-4"
-                  >
-                    {submitting ? "Submitting..." : "Submit Report"}
-                  </Button>
-                </div>
-              )}
             </CardContent>
           </Card>
         )}
@@ -381,7 +329,7 @@ export const Reports = () => {
         )}
       </div>
 
-      {isHybrid && (
+      {!hideSalesReport && (
         <>
           <StockReportDialog
             open={showMorningReport}
