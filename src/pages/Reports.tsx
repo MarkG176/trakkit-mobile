@@ -382,6 +382,23 @@ export const Reports = () => {
           </div>
         )}
       </div>
+
+      {isHybrid && (
+        <>
+          <StockReportDialog
+            open={showMorningReport}
+            onOpenChange={setShowMorningReport}
+            reportType="morning"
+            onComplete={() => setShowMorningReport(false)}
+          />
+          <StockReportDialog
+            open={showEveningReport}
+            onOpenChange={setShowEveningReport}
+            reportType="evening"
+            onComplete={() => setShowEveningReport(false)}
+          />
+        </>
+      )}
     </MobileLayout>
   );
 };
