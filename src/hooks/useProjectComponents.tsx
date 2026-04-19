@@ -12,6 +12,7 @@ export interface ProjectComponentFlags {
   enable_reports: boolean;
   enable_activity: boolean;
   enable_manage_agents: boolean;
+  enable_closing_report: boolean;
 }
 
 const DEFAULT_FLAGS: ProjectComponentFlags = {
@@ -25,6 +26,7 @@ const DEFAULT_FLAGS: ProjectComponentFlags = {
   enable_reports: true,
   enable_activity: true,
   enable_manage_agents: true,
+  enable_closing_report: false,
 };
 
 /**
@@ -51,7 +53,7 @@ export const useProjectComponents = (currentProjectId: string | null) => {
       const { data, error } = await supabase
         .from("project_components")
         .select(
-          "enable_record_sale, enable_give_products, enable_take_surveys, enable_log_interaction, enable_stock_reports, enable_inventory, enable_routes, enable_reports, enable_activity, enable_manage_agents"
+          "enable_record_sale, enable_give_products, enable_take_surveys, enable_log_interaction, enable_stock_reports, enable_inventory, enable_routes, enable_reports, enable_activity, enable_manage_agents, enable_closing_report"
         )
         .eq("project_id", currentProjectId)
         .maybeSingle();
@@ -73,6 +75,7 @@ export const useProjectComponents = (currentProjectId: string | null) => {
           enable_reports: data.enable_reports ?? true,
           enable_activity: data.enable_activity ?? true,
           enable_manage_agents: data.enable_manage_agents ?? true,
+          enable_closing_report: (data as any).enable_closing_report ?? false,
         });
       } else {
         setFlags(DEFAULT_FLAGS);
