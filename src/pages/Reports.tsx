@@ -201,6 +201,36 @@ export const Reports = () => {
       </div>
 
       <div className="p-4 space-y-6">
+        {isHybrid && (
+          <Card>
+            <CardContent className="p-6">
+              <h3 className="text-h3 mb-6 text-black flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Stock Reports
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Button
+                  type="button"
+                  className="w-full h-auto py-4 flex flex-col items-center gap-2"
+                  onClick={() => setShowMorningReport(true)}
+                >
+                  <Sunrise className="h-6 w-6" />
+                  <span>Start Morning Report</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="w-full h-auto py-4 flex flex-col items-center gap-2"
+                  onClick={() => setShowEveningReport(true)}
+                >
+                  <Sunset className="h-6 w-6" />
+                  <span>Start Evening Report</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {!hideSalesReport && (
           <Card>
             <CardContent className="p-6">
