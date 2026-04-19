@@ -329,7 +329,7 @@ export const Reports = () => {
         )}
       </div>
 
-      {isHybrid && (
+      {!hideSalesReport && (
         <>
           <StockReportDialog
             open={showMorningReport}
