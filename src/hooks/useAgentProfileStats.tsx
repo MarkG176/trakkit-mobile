@@ -374,18 +374,18 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
           // Today's status logs for work time (same calculation as WorkHoursCard)
           supabase
             .from('agent_status_log')
-            .select('status, created_at')
+            .select('status, timestamp')
              .eq('agent_id', agentId)
-            .gte('created_at', todayStart)
-            .order('created_at', { ascending: true }),
+            .gte('timestamp', todayStart)
+            .order('timestamp', { ascending: true }),
           
           // Week's status logs for work time
           supabase
             .from('agent_status_log')
-            .select('status, created_at')
+            .select('status, timestamp')
              .eq('agent_id', agentId)
-            .gte('created_at', weekStart)
-            .order('created_at', { ascending: true }),
+            .gte('timestamp', weekStart)
+            .order('timestamp', { ascending: true }),
 
           // ====== NEW QUERIES ======
 
@@ -705,20 +705,20 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
               currentCheckIn = log;
               // End lunch if active
               if (currentLunchStart) {
-                const start = new Date(currentLunchStart.created_at).getTime();
-                const end = new Date(log.created_at).getTime();
+                const start = new Date(currentLunchStart.timestamp).getTime();
+                const end = new Date(log.timestamp).getTime();
                 lunchMinutes += Math.max(0, (end - start) / 60000);
                 currentLunchStart = null;
               }
             } else if (log.status === 'lunch' && currentCheckIn) {
-              const checkInTime = new Date(currentCheckIn.created_at).getTime();
-              const checkOutTime = new Date(log.created_at).getTime();
+              const checkInTime = new Date(currentCheckIn.timestamp).getTime();
+              const checkOutTime = new Date(log.timestamp).getTime();
               workMinutes += Math.max(0, (checkOutTime - checkInTime) / 60000);
               currentCheckIn = null;
               currentLunchStart = log;
             } else if (log.status === 'checked_out' && currentCheckIn) {
-              const checkInTime = new Date(currentCheckIn.created_at).getTime();
-              const checkOutTime = new Date(log.created_at).getTime();
+              const checkInTime = new Date(currentCheckIn.timestamp).getTime();
+              const checkOutTime = new Date(log.timestamp).getTime();
               workMinutes += Math.max(0, (checkOutTime - checkInTime) / 60000);
               currentCheckIn = null;
             }
@@ -726,11 +726,11 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
 
           // If still checked in
           if (currentCheckIn) {
-            const checkInTime = new Date(currentCheckIn.created_at).getTime();
+            const checkInTime = new Date(currentCheckIn.timestamp).getTime();
             workMinutes += Math.max(0, (Date.now() - checkInTime) / 60000);
           }
           if (currentLunchStart) {
-            const start = new Date(currentLunchStart.created_at).getTime();
+            const start = new Date(currentLunchStart.timestamp).getTime();
             lunchMinutes += Math.max(0, (Date.now() - start) / 60000);
           }
 

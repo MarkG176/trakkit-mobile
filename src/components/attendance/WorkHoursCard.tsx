@@ -58,9 +58,9 @@ export const WorkHoursCard = () => {
           .from('agent_status_log')
           .select('*')
           .eq('agent_id', user.id)
-          .gte('created_at', startOfMonth.toISOString())
-          .lte('created_at', endOfMonth.toISOString())
-          .order('created_at', { ascending: true });
+          .gte('timestamp', startOfMonth.toISOString())
+          .lte('timestamp', endOfMonth.toISOString())
+          .order('timestamp', { ascending: true });
 
         if (error) {
           console.error('Error fetching status logs:', error);
@@ -69,13 +69,13 @@ export const WorkHoursCard = () => {
 
         // Calculate today's hours
         const todayLogs = statusLogs?.filter(log => {
-          const logDate = new Date(log.created_at);
+          const logDate = new Date(log.timestamp);
           return logDate >= startOfDay && logDate <= endOfDay;
         }) || [];
 
         // Calculate weekly hours
         const weeklyLogs = statusLogs?.filter(log => {
-          const logDate = new Date(log.created_at);
+          const logDate = new Date(log.timestamp);
           return logDate >= startOfWeek && logDate <= endOfWeek;
         }) || [];
 
@@ -88,8 +88,8 @@ export const WorkHoursCard = () => {
             if (log.status === 'checked_in' && !currentCheckIn) {
               currentCheckIn = log;
             } else if ((log.status === 'lunch' || log.status === 'checked_out') && currentCheckIn) {
-              const checkInTime = new Date(currentCheckIn.created_at);
-              const checkOutTime = new Date(log.created_at);
+              const checkInTime = new Date(currentCheckIn.timestamp);
+              const checkOutTime = new Date(log.timestamp);
               const diffMinutes = (checkOutTime.getTime() - checkInTime.getTime()) / (1000 * 60);
               totalMinutes += Math.max(0, diffMinutes);
               currentCheckIn = null;
@@ -98,7 +98,7 @@ export const WorkHoursCard = () => {
 
           // If still checked in at end of logs
           if (currentCheckIn) {
-            const checkInTime = new Date(currentCheckIn.created_at);
+            const checkInTime = new Date(currentCheckIn.timestamp);
             const now = new Date();
             const diffMinutes = (now.getTime() - checkInTime.getTime()) / (1000 * 60);
             totalMinutes += Math.max(0, diffMinutes);
