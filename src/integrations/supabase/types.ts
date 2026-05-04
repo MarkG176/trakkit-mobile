@@ -2142,14 +2142,30 @@ export type Database = {
           created_by: string | null
           enable_activity: boolean
           enable_closing_report: boolean
+          enable_dashboard: boolean
+          enable_evening_stock_report: boolean
           enable_give_products: boolean
+          enable_giveaway_activity_list: boolean
+          enable_interaction_history: boolean
           enable_inventory: boolean
           enable_log_interaction: boolean
           enable_manage_agents: boolean
+          enable_morning_stock_report: boolean
           enable_record_sale: boolean
           enable_reports: boolean
           enable_routes: boolean
+          enable_sales_activity_list: boolean
           enable_stock_reports: boolean
+          enable_supervisor_feedback: boolean
+          enable_supervisor_gallery: boolean
+          enable_supervisor_inbox: boolean
+          enable_supervisor_map: boolean
+          enable_supervisor_rankings: boolean
+          enable_supervisor_sales: boolean
+          enable_supervisor_stats: boolean
+          enable_supervisor_users: boolean
+          enable_survey_activity_list: boolean
+          enable_surveys_page: boolean
           enable_take_surveys: boolean
           id: string
           project_id: string
@@ -2161,14 +2177,30 @@ export type Database = {
           created_by?: string | null
           enable_activity?: boolean
           enable_closing_report?: boolean
+          enable_dashboard?: boolean
+          enable_evening_stock_report?: boolean
           enable_give_products?: boolean
+          enable_giveaway_activity_list?: boolean
+          enable_interaction_history?: boolean
           enable_inventory?: boolean
           enable_log_interaction?: boolean
           enable_manage_agents?: boolean
+          enable_morning_stock_report?: boolean
           enable_record_sale?: boolean
           enable_reports?: boolean
           enable_routes?: boolean
+          enable_sales_activity_list?: boolean
           enable_stock_reports?: boolean
+          enable_supervisor_feedback?: boolean
+          enable_supervisor_gallery?: boolean
+          enable_supervisor_inbox?: boolean
+          enable_supervisor_map?: boolean
+          enable_supervisor_rankings?: boolean
+          enable_supervisor_sales?: boolean
+          enable_supervisor_stats?: boolean
+          enable_supervisor_users?: boolean
+          enable_survey_activity_list?: boolean
+          enable_surveys_page?: boolean
           enable_take_surveys?: boolean
           id?: string
           project_id: string
@@ -2180,14 +2212,30 @@ export type Database = {
           created_by?: string | null
           enable_activity?: boolean
           enable_closing_report?: boolean
+          enable_dashboard?: boolean
+          enable_evening_stock_report?: boolean
           enable_give_products?: boolean
+          enable_giveaway_activity_list?: boolean
+          enable_interaction_history?: boolean
           enable_inventory?: boolean
           enable_log_interaction?: boolean
           enable_manage_agents?: boolean
+          enable_morning_stock_report?: boolean
           enable_record_sale?: boolean
           enable_reports?: boolean
           enable_routes?: boolean
+          enable_sales_activity_list?: boolean
           enable_stock_reports?: boolean
+          enable_supervisor_feedback?: boolean
+          enable_supervisor_gallery?: boolean
+          enable_supervisor_inbox?: boolean
+          enable_supervisor_map?: boolean
+          enable_supervisor_rankings?: boolean
+          enable_supervisor_sales?: boolean
+          enable_supervisor_stats?: boolean
+          enable_supervisor_users?: boolean
+          enable_survey_activity_list?: boolean
+          enable_surveys_page?: boolean
           enable_take_surveys?: boolean
           id?: string
           project_id?: string

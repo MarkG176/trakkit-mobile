@@ -31,11 +31,23 @@ serve(async (req) => {
       );
     }
 
-    // Check if user already exists
-    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-    const existingUser = existingUsers?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
+    // Check if user already exists - paginate through all auth users
+    const emailLower = email.toLowerCase();
+    const findUserByEmail = async (): Promise<{ id: string } | null> => {
+      const perPage = 1000;
+      for (let page = 1; page <= 50; page++) {
+        const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
+        if (error) throw error;
+        const users = data?.users ?? [];
+        const match = users.find(u => u.email?.toLowerCase() === emailLower);
+        if (match) return { id: match.id };
+        if (users.length < perPage) break;
+      }
+      return null;
+    };
 
     let userId: string;
+    const existingUser = await findUserByEmail();
 
     if (existingUser) {
       userId = existingUser.id;
@@ -49,11 +61,20 @@ serve(async (req) => {
       });
 
       if (createError) {
-        throw createError;
+        // Race / pagination fallback: if email is already registered, look it up again
+        const msg = (createError as Error).message?.toLowerCase() ?? "";
+        if (msg.includes("already") && msg.includes("registered")) {
+          const retry = await findUserByEmail();
+          if (!retry) throw createError;
+          userId = retry.id;
+          console.log(`Recovered existing user via fallback: ${userId}`);
+        } else {
+          throw createError;
+        }
+      } else {
+        userId = newUser.user.id;
+        console.log(`Created new user with ID: ${userId}`);
       }
-
-      userId = newUser.user.id;
-      console.log(`Created new user with ID: ${userId}`);
     }
 
     // Create or update user_roles entry
