@@ -102,6 +102,19 @@ const getTodayDateString = () => {
   return new Date().toISOString().split('T')[0];
 };
 
+const hasQueryErrors = (results: Array<{ error?: unknown } | null | undefined>) => {
+  const errors = results
+    .map(result => result?.error)
+    .filter(Boolean);
+
+  if (errors.length === 0) {
+    return false;
+  }
+
+  errors.forEach(error => console.error('Agent profile stats query error:', error));
+  return true;
+};
+
 export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStats => {
   const { user } = useAuth();
   const { currentWorkspaceId, currentProjectId, isInitialized } = useWorkspace();
@@ -616,6 +629,51 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
             .eq('agent_id', agentId)
             .eq('workspace_id', currentWorkspaceId),
         ]);
+
+        if (hasQueryErrors([
+          userRoleData,
+          rankData,
+          todayStores,
+          weekStores,
+          todaySales,
+          weekSales,
+          todayDailySales,
+          weekDailySales,
+          todaySurveys,
+          weekSurveys,
+          todayGiveaways,
+          weekGiveaways,
+          todayWorkSegments,
+          weekWorkSegments,
+          todayCheckIns,
+          weekCheckIns,
+          todayNotes,
+          weekNotes,
+          todayInteractions,
+          weekInteractions,
+          todayStoreVisits,
+          weekStoreVisits,
+          todayTasks,
+          reportSummary,
+          todayWholesalePurchases,
+          weekWholesalePurchases,
+          allTimeStores,
+          allTimeSalesData,
+          allTimeDailySalesData,
+          allTimeSurveyData,
+          allTimeGiveawayData,
+          allTimeCheckInsData,
+          allTimeNotesData,
+          allTimeInteractionsData,
+          allTimeStoreVisitsData,
+          allTimeWholesaleData,
+          surveyCheck,
+          todayReports,
+          allTimeReports,
+        ])) {
+          setStats(prev => ({ ...prev, isLoading: false }));
+          return;
+        }
 
         // Calculate totals
         const todayInteractionSalesUnits = todaySales.data?.reduce(
