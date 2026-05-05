@@ -6,8 +6,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAgentStatus } from "@/hooks/useAgentStatus";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, Clock, MapPin, Camera } from "lucide-react";
+import { usePermissions } from "@/hooks/usePermissions";
+import { CheckCircle, Clock, MapPin, Camera, AlertCircle } from "lucide-react";
 import { CameraCapture } from "@/components/CameraCapture";
+import { PermissionGuidance } from "@/components/PermissionGuidance";
 import { StockReportDialog } from "@/components/attendance/StockReportDialog";
 import { EveningReportDialog } from "@/components/attendance/EveningReportDialog";
 import { SeedingEveningReportDialog } from "@/components/attendance/SeedingEveningReportDialog";
@@ -23,6 +25,7 @@ export const RecordAttendanceForm = () => {
   const { currentTeamType, currentProjectId } = useWorkspace();
   const { flags: projectFlags } = useProjectComponents(currentProjectId);
   const { toast } = useToast();
+  const { permissions, browserType } = usePermissions();
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<'checked_in' | 'lunch' | 'checked_out' | null>(null);
@@ -292,6 +295,22 @@ export const RecordAttendanceForm = () => {
           <span className="text-sm font-medium">Current Status:</span>
           {getStatusBadge()}
         </div>
+
+        {permissions?.location?.status === 'denied' && (
+          <div className="space-y-2">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <span className="text-xs text-yellow-700">
+                Location permission is required for attendance tracking
+              </span>
+            </div>
+            <PermissionGuidance
+              permissionType="location"
+              browserType={browserType}
+              className="mb-2"
+            />
+          </div>
+        )}
 
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">

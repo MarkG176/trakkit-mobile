@@ -1,16 +1,18 @@
 import { useState, useRef, forwardRef, useImperativeHandle } from 'react';
-import { Camera, X } from 'lucide-react';
+import { Camera, X, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useAgentStatus } from '@/hooks/useAgentStatus';
 import { useAuth } from '@/hooks/useAuth';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { addTextOverlayToImage, ImageOverlayData, formatTimestamp } from '@/utils/imageOverlay';
 import { workspaceService } from '@/services/workspaceService';
 import { ImageCaptionInput } from '@/components/ImageCaptionInput';
+import { PermissionGuidance } from '@/components/PermissionGuidance';
 
 interface CameraCaptureProps {
   onCapture?: (imageData: string) => void;
@@ -26,12 +28,14 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
   const [caption, setCaption] = useState('');
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
+  const [showPermissionDenied, setShowPermissionDenied] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { currentStatus, updateStatus } = useAgentStatus();
   const { user } = useAuth();
   const { currentWorkspaceId, currentProjectId } = useWorkspace();
   const { displayName } = useUserProfile();
   const { toast } = useToast();
+  const { permissions, requestPermission, browserType } = usePermissions();
 
   // Expose the file input ref and listWorkspaceImages function to parent component
   useImperativeHandle(ref, () => ({
@@ -101,7 +105,23 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
     }
   };
 
-  const handleCameraClick = () => {
+  const handleCameraClick = async () => {
+    const cameraStatus = permissions?.camera?.status;
+    
+    if (cameraStatus === 'denied') {
+      setShowPermissionDenied(true);
+      return;
+    }
+    
+    if (cameraStatus !== 'granted') {
+      // Try to request camera permission
+      const result = await requestPermission('camera');
+      if (!result) {
+        setShowPermissionDenied(true);
+        return;
+      }
+    }
+    
     fileInputRef.current?.click();
   };
 
@@ -341,6 +361,37 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
                 {isProcessing ? 'Uploading...' : 'Upload'}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Permission Denied Dialog */}
+      <Dialog open={showPermissionDenied} onOpenChange={setShowPermissionDenied}>
+        <DialogContent className="max-w-sm">
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-red-900">Camera Permission Denied</h3>
+                <p className="text-sm text-red-700 mt-1">
+                  Camera permission is required to capture photos. Please enable it in your browser settings.
+                </p>
+              </div>
+            </div>
+            
+            <PermissionGuidance
+              permissionType="camera"
+              browserType={browserType}
+              onRetry={() => setShowPermissionDenied(false)}
+            />
+
+            <Button 
+              onClick={() => setShowPermissionDenied(false)} 
+              variant="outline"
+              className="w-full"
+            >
+              Close
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

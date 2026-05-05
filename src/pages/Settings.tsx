@@ -4,13 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Bell, Moon, Globe, Database, MapPin, Mic, Trash2, Info } from "lucide-react";
+import { ArrowLeft, Bell, Moon, Globe, Database, MapPin, Mic, Trash2, Info, Camera, HardDrive, Loader } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PermissionGuidance } from "@/components/PermissionGuidance";
+import { Badge } from "@/components/ui/badge";
+import { PermissionStatus } from "@/utils/permissionUtils";
 
 export const Settings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { permissions, requestPermission, browserType } = usePermissions();
+  const [requestingPermission, setRequestingPermission] = useState<string | null>(null);
   
   const [notifications, setNotifications] = useState({
     newTasks: true,
@@ -21,14 +27,113 @@ export const Settings = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [language, setLanguage] = useState("english");
   const [offlineMode, setOfflineMode] = useState(true);
-  const [locationServices, setLocationServices] = useState(true);
-  const [microphoneAccess, setMicrophoneAccess] = useState(true);
 
   const handleClearCache = () => {
     toast({
       title: "Cache Cleared",
       description: "App cache has been successfully cleared"
     });
+  };
+
+  const getStatusBadge = (status: PermissionStatus | null) => {
+    switch (status) {
+      case 'granted':
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">✓ Granted</Badge>;
+      case 'denied':
+        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">✗ Denied</Badge>;
+      case 'prompt':
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">? Need to grant</Badge>;
+      default:
+        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Unknown</Badge>;
+    }
+  };
+
+  const handleRequestPermission = async (type: 'camera' | 'location' | 'storage' | 'microphone' | 'notification') => {
+    setRequestingPermission(type);
+    try {
+      const result = await requestPermission(type);
+      if (result) {
+        toast({
+          title: "Permission Granted",
+          description: `${type.charAt(0).toUpperCase() + type.slice(1)} permission granted successfully.`
+        });
+      } else {
+        toast({
+          title: "Permission Denied",
+          description: `Unable to grant ${type} permission. Please check browser settings.`,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to request permission",
+        variant: "destructive"
+      });
+    } finally {
+      setRequestingPermission(null);
+    }
+  };
+
+  const PermissionRow = ({ 
+    type, 
+    title, 
+    description, 
+    icon 
+  }: { 
+    type: 'camera' | 'location' | 'storage' | 'microphone' | 'notification'; 
+    title: string; 
+    description: string; 
+    icon: React.ReactNode;
+  }) => {
+    const status = permissions?.[type]?.status || 'unknown';
+    const isGranted = status === 'granted';
+    const isDenied = status === 'denied';
+
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-3">
+            {icon}
+            <span className="text-black">{title}</span>
+          </div>
+          {getStatusBadge(status as PermissionStatus | null)}
+        </div>
+        <p className="text-xs text-gray-500 ml-8 mb-2">{description}</p>
+        
+        {!isGranted && (
+          <div className="ml-8">
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs"
+              onClick={() => handleRequestPermission(type)}
+              disabled={requestingPermission !== null}
+            >
+              {requestingPermission === type ? (
+                <>
+                  <Loader className="h-3 w-3 mr-1 animate-spin" />
+                  Requesting...
+                </>
+              ) : (
+                'Grant Permission'
+              )}
+            </Button>
+          </div>
+        )}
+
+        {isDenied && (
+          <div className="ml-0 mt-2">
+            <PermissionGuidance
+              permissionType={type}
+              browserType={browserType}
+              onRetry={() => handleRequestPermission(type)}
+              className="mt-2"
+            />
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -159,43 +264,54 @@ export const Settings = () => {
           </CardContent>
         </Card>
 
-        {/* Privacy */}
+        {/* Privacy & Permissions */}
         <Card>
           <CardContent className="p-4">
-            <h3 className="text-h3 mb-4 text-black">Privacy</h3>
+            <h3 className="text-h3 mb-4 text-black">Permissions</h3>
             
             <div className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <MapPin className="w-5 h-5 text-gray-600" />
-                    <span className="text-black">Location Services</span>
-                  </div>
-                  <Switch 
-                    checked={locationServices}
-                    onCheckedChange={setLocationServices}
-                  />
-                </div>
-                <p className="text-xs text-gray-500 ml-8 mt-1">
-                  Used for tracking visits and route optimization
-                </p>
-              </div>
+              <PermissionRow
+                type="camera"
+                title="Camera"
+                description="For check-in selfies and photo captures"
+                icon={<Camera className="w-5 h-5 text-gray-600" />}
+              />
 
-              <div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Mic className="w-5 h-5 text-gray-600" />
-                    <span className="text-black">Microphone Access</span>
-                  </div>
-                  <Switch 
-                    checked={microphoneAccess}
-                    onCheckedChange={setMicrophoneAccess}
-                  />
-                </div>
-                <p className="text-xs text-gray-500 ml-8 mt-1">
-                  Required for audio recording during interactions
-                </p>
-              </div>
+              <div className="border-t border-gray-200 pt-4" />
+
+              <PermissionRow
+                type="location"
+                title="Location Services"
+                description="For tracking visits and route optimization"
+                icon={<MapPin className="w-5 h-5 text-gray-600" />}
+              />
+
+              <div className="border-t border-gray-200 pt-4" />
+
+              <PermissionRow
+                type="microphone"
+                title="Microphone"
+                description="For audio recording during interactions"
+                icon={<Mic className="w-5 h-5 text-gray-600" />}
+              />
+
+              <div className="border-t border-gray-200 pt-4" />
+
+              <PermissionRow
+                type="storage"
+                title="Storage"
+                description="For offline data and app caching"
+                icon={<HardDrive className="w-5 h-5 text-gray-600" />}
+              />
+
+              <div className="border-t border-gray-200 pt-4" />
+
+              <PermissionRow
+                type="notification"
+                title="Notifications"
+                description="For important alerts and reminders"
+                icon={<Bell className="w-5 h-5 text-gray-600" />}
+              />
             </div>
           </CardContent>
         </Card>

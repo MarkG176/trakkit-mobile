@@ -45,6 +45,7 @@ import { RoleBasedRoute } from "./components/RoleBasedRoute";
 import { ProjectComponentGate } from "./components/ProjectComponentGate";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import { TourOverlay } from "./components/onboarding/TourOverlay";
+import { PermissionRequestProvider } from "./components/PermissionRequestProvider";
 
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
@@ -56,13 +57,13 @@ const App = () => (
     <AuthProvider>
       <WorkspaceProvider>
         <LanguageProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-          
-          <PWAInstallPrompt />
-          <TourOverlay />
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <PermissionRequestProvider>
+                <PWAInstallPrompt />
+                <TourOverlay />
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
@@ -247,8 +248,9 @@ const App = () => (
             } />
             <Route path="*" element={<NotFound />} />
           </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
+              </PermissionRequestProvider>
+            </BrowserRouter>
+          </TooltipProvider>
         </LanguageProvider>
       </WorkspaceProvider>
     </AuthProvider>
