@@ -667,9 +667,9 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
           allTimeInteractionsData,
           allTimeStoreVisitsData,
           allTimeWholesaleData,
-          surveyCheck,
-          todayReports,
-          allTimeReports,
+          surveyCheck as any,
+          todayReports as any,
+          allTimeReports as any,
         ])) {
           setStats(prev => ({ ...prev, isLoading: false }));
           return;
