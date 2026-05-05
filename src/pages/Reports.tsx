@@ -14,7 +14,8 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { useInventory } from "@/hooks/useInventory";
 import { formatProductName } from "@/utils/formatProductName";
 import { workspaceService } from "@/services/workspaceService";
-import { StockReportDialog } from "@/components/attendance/StockReportDialog";
+import { InstoreClosingReportDialog } from "@/components/attendance/InstoreClosingReportDialog";
+import { InstoreMorningStockCountDialog } from "@/components/attendance/InstoreMorningStockCountDialog";
 import { toast } from "sonner";
 
 export const Reports = () => {
@@ -331,16 +332,14 @@ export const Reports = () => {
 
       {!hideSalesReport && (
         <>
-          <StockReportDialog
+          <InstoreMorningStockCountDialog
             open={showMorningReport}
             onOpenChange={setShowMorningReport}
-            reportType="morning"
             onComplete={() => setShowMorningReport(false)}
           />
-          <StockReportDialog
+          <InstoreClosingReportDialog
             open={showEveningReport}
             onOpenChange={setShowEveningReport}
-            reportType="evening"
             onComplete={() => setShowEveningReport(false)}
           />
         </>
