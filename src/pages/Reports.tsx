@@ -26,7 +26,9 @@ export const Reports = () => {
   const isSurvey = ['survey', 'survey_campaign'].includes(normalizedTeamType);
   const isInstore = normalizedTeamType === 'instore';
   const isHybrid = normalizedTeamType === 'hybrid';
-  const hideSalesReport = isSurvey || isInstore || isHybrid;
+  const hideSalesReport = isSurvey || isHybrid;
+  const showStockReports = !isSurvey && !isHybrid; // includes instore + others
+  const showExportReport = !hideSalesReport && !isInstore;
   const [showMorningReport, setShowMorningReport] = useState(false);
   const [showEveningReport, setShowEveningReport] = useState(false);
   const { inventory, loading: inventoryLoading } = useInventory();
@@ -290,7 +292,7 @@ export const Reports = () => {
           </CardContent>
         </Card>
 
-        {!hideSalesReport && (
+        {showExportReport && (
           <Card>
             <CardContent className="p-6">
               <h3 className="text-h3 mb-6 text-black">Export Report</h3>
