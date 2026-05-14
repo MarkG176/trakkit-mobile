@@ -1420,6 +1420,135 @@ export type Database = {
           },
         ]
       }
+      google_invite_forms: {
+        Row: {
+          created_at: string
+          created_by: string
+          default_role: string | null
+          default_team_id: string | null
+          form_id: string
+          form_url: string
+          id: string
+          is_active: boolean
+          is_deleted: boolean
+          last_processed_at: string | null
+          responder_url: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          default_role?: string | null
+          default_team_id?: string | null
+          form_id: string
+          form_url: string
+          id?: string
+          is_active?: boolean
+          is_deleted?: boolean
+          last_processed_at?: string | null
+          responder_url: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          default_role?: string | null
+          default_team_id?: string | null
+          form_id?: string
+          form_url?: string
+          id?: string
+          is_active?: boolean
+          is_deleted?: boolean
+          last_processed_at?: string | null
+          responder_url?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      google_oauth_tokens: {
+        Row: {
+          access_token: string
+          created_at: string
+          expires_at: string | null
+          google_email: string | null
+          id: string
+          is_deleted: boolean
+          refresh_token: string | null
+          scopes: string[] | null
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          expires_at?: string | null
+          google_email?: string | null
+          id?: string
+          is_deleted?: boolean
+          refresh_token?: string | null
+          scopes?: string[] | null
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          expires_at?: string | null
+          google_email?: string | null
+          id?: string
+          is_deleted?: boolean
+          refresh_token?: string | null
+          scopes?: string[] | null
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      google_sheet_links: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          is_deleted: boolean
+          last_synced_at: string | null
+          resource_type: string
+          sheet_id: string
+          sheet_url: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          is_deleted?: boolean
+          last_synced_at?: string | null
+          resource_type: string
+          sheet_id: string
+          sheet_url: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_deleted?: boolean
+          last_synced_at?: string | null
+          resource_type?: string
+          sheet_id?: string
+          sheet_url?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       interactions: {
         Row: {
           agent_id: string | null
