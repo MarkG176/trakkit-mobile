@@ -1,47 +1,53 @@
-
 ## Goal
-Add Postgres B-tree indexes to columns that are frequently used in WHERE, JOIN, ORDER BY, and equality filters across the app — primarily `user_id`/`agent_id`, `workspace_id`, `project_id`, `store_id`, `team_id`, foreign keys, status fields, and timestamp columns used for sorting (`created_at`, `timestamp`, `recorded_at`, `reported_at`, `work_date`).
 
-## Approach
-One migration file with `CREATE INDEX IF NOT EXISTS` statements (idempotent, safe to re-run). All indexes are plain B-tree on `public` schema tables only. Skipping `auth`, `storage`, and other reserved schemas. Skipping views (e.g. `agent_tasks_view`). Existing indexes are preserved.
+Cache each user's active mobile components on `user_workspaces.active_components` so the mobile app can render its navigation and gates immediately after sign-in, without an extra round-trip to `project_components` / `project_plans` on every load.
 
-In addition to single-column indexes, we add a small number of high-value composite indexes that match the app's most common access patterns (e.g. `(workspace_id, agent_id, work_date)` for daily reports/sales, `(agent_id, timestamp DESC)` for status logs).
+Source of truth: `project_plans.mobile_components` (jsonb) of the project the user's team is assigned to (`team_members.agent_id` → `teams.project_id` → `project_plans.id`).
 
-## Indexes to add
+## Database changes (single migration)
 
-Single-column (representative — full list in migration):
-- `agent_status_log`: `status`, `store_id`, `created_at`
-- `agent_tasks`: `status`, `created_at`, `started_at`, `completed_at`, `assigned_product_variant_id`
-- `agent_task_inventory`: `agent_id`, `task_id`, `product_variant_id`, `is_deleted`, `created_at`
-- `daily_sales_tracking`: `work_date`, `recorded_at`, `created_at`
-- `daily_stock_reports`: `work_date`, `reported_at`, `store_id`, `created_at`
-- `interactions`: `interaction_type`, `product_variant_id`, `survey_template_id`, `is_deleted`, `created_at`
-- `customer_purchases`: `store_id`, `product_variant_id`, `created_at`
-- `giveaways`: `store_id`, `created_at`
-- `notes`: foreign keys + `created_at`
-- `sale_items`: foreign keys + `created_at`
-- `stores`: workspace/project FKs + `is_deleted`
-- `teams` / `team_members`: `team_id`, `agent_id`, `is_active`, `created_at`
-- `tasks`, `day_plans`, `checkout_requests`, `stock_movements`, `inventory_transactions`, `product_returns`, `support_tickets`, `messages`, `activity_logs`, `agent_battery_status`, `agent_device_status`, `agent_daily_work_summary`, `agent_work_segments`, `agent_ranks`, `agent_kpi_results`, `customers`, `survey_*`, `user_workspaces`, `user_roles`: missing FK / `created_at` / `status` columns
+1. **Add column**
+   - `ALTER TABLE public.user_workspaces ADD COLUMN active_components jsonb;`
+   - Nullable; `NULL` = "not yet computed, fall back to defaults".
 
-Composite (high-value):
-- `agent_status_log (agent_id, timestamp DESC)`
-- `agent_status_log (workspace_id, timestamp DESC)`
-- `daily_sales_tracking (workspace_id, agent_id, work_date)`
-- `daily_stock_reports (workspace_id, agent_id, work_date)`
-- `interactions (workspace_id, agent_id, timestamp DESC)`
-- `interactions (agent_id, timestamp DESC)`
-- `sale_items (workspace_id, created_at DESC)`
-- `notes (workspace_id, created_at DESC)`
-- `giveaways (workspace_id, recorded_at DESC)`
-- `team_members (team_id, agent_id)`
-- `user_workspaces (user_id, workspace_id)`
+2. **Helper function** `public.compute_user_workspace_active_components(p_user_id uuid, p_workspace_id uuid) RETURNS jsonb`
+   - Looks up the user's team in that workspace via `team_members` (active, not deleted), joins `teams` → `project_plans`, returns `project_plans.mobile_components`.
+   - Returns `NULL` if no team / no plan / no mobile_components.
 
-## Notes
-- All statements use `CREATE INDEX IF NOT EXISTS` so re-runs are no-ops.
-- Skipping `CONCURRENTLY` because Supabase migrations run inside a transaction; tables are small enough that a brief lock is acceptable. If needed later, the indexes can be rebuilt concurrently.
-- This is purely additive — no schema or data changes, no risk to existing queries.
-- Pre-existing TypeScript build errors in `src/utils/permissionUtils.ts` are unrelated to this change and will be addressed separately.
+3. **Sync triggers** (all `SECURITY DEFINER`, `search_path = public`)
+   - `trg_sync_active_components_on_team_member` — AFTER INSERT/UPDATE/DELETE on `team_members`: recompute for the affected agent in that team's workspace.
+   - `trg_sync_active_components_on_team` — AFTER UPDATE OF `project_id, workspace_id` on `teams`: recompute for every member of that team.
+   - `trg_sync_active_components_on_plan` — AFTER UPDATE OF `mobile_components` on `project_plans`: recompute for every user whose team is on that plan.
 
-## Deliverable
-A single new migration file under `supabase/migrations/` containing the `CREATE INDEX IF NOT EXISTS` statements.
+4. **Backfill**
+   - One-shot `UPDATE public.user_workspaces uw SET active_components = public.compute_user_workspace_active_components(uw.user_id, uw.workspace_id);` at the end of the migration.
+
+No RLS changes — existing `user_workspaces` policies already cover the new column.
+
+## Frontend changes
+
+1. **`src/services/workspaceService.ts`**
+   - Add `active_components` to the `UserWorkspace` interface and to the `select(...)` in `loadUserWorkspaces`.
+   - Store it on the cached `userWorkspaces[]`.
+   - Expose `getCurrentActiveComponents(): ProjectComponentFlags | null` that returns the entry for `currentWorkspaceId`.
+
+2. **`src/hooks/useWorkspace.tsx`**
+   - Surface `currentActiveComponents` on the context, derived from the cached `userWorkspaces` entry — zero extra queries after sign-in.
+
+3. **`src/hooks/useProjectComponents.tsx`**
+   - New fast path: if `useWorkspace().currentActiveComponents` is present, return it synchronously (`isLoaded = true` on first render).
+   - Keep the existing `project_components` fetch as a fallback only when the cached value is missing, so older workspaces keep working until the backfill / trigger fills them in.
+   - Continue to merge over `DEFAULT_FLAGS` to tolerate partial jsonb.
+
+4. **Types**
+   - `src/integrations/supabase/types.ts` will be regenerated automatically after the migration; do not edit by hand.
+
+## Shape of `active_components`
+
+Stored exactly as `project_plans.mobile_components` (jsonb object of boolean flags, e.g. `{ "enable_record_sale": true, "enable_inventory": false, ... }`). Frontend merges with `DEFAULT_FLAGS` so any missing key is treated as enabled (matching today's behavior).
+
+## Out of scope
+
+- No changes to `project_components` table or supervisor UI that edits it. If you later want `project_components` to also flow into `active_components`, that's a follow-up.
+- No RLS / auth changes.
+- No new UI surfaces — purely a perf / cold-start improvement.
