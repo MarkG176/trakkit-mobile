@@ -212,6 +212,18 @@ class WorkspaceService {
   }
 
   /**
+   * Get cached active component flags for the current workspace
+   * (denormalized from project_plans.mobile_components via DB trigger).
+   */
+  getCurrentActiveComponents(): Record<string, boolean> | null {
+    if (!this.currentWorkspaceId) return null;
+    const uw = this.userWorkspaces.find(
+      (w) => w.workspace_id === this.currentWorkspaceId
+    );
+    return uw?.active_components ?? null;
+  }
+
+  /**
    * Update team_type from the current workspace
    */
   private updateTeamTypeFromWorkspace(workspaceId: string): void {
