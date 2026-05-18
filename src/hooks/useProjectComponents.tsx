@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useMemo } from "react";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { workspaceService } from "@/services/workspaceService";
 
 export interface ProjectComponentFlags {
   enable_record_sale: boolean;
@@ -29,66 +30,45 @@ const DEFAULT_FLAGS: ProjectComponentFlags = {
   enable_closing_report: false,
 };
 
+const mergeFlags = (raw: Record<string, boolean> | null | undefined): ProjectComponentFlags => {
+  if (!raw) return DEFAULT_FLAGS;
+  return {
+    enable_record_sale: raw.enable_record_sale ?? DEFAULT_FLAGS.enable_record_sale,
+    enable_give_products: raw.enable_give_products ?? DEFAULT_FLAGS.enable_give_products,
+    enable_take_surveys: raw.enable_take_surveys ?? DEFAULT_FLAGS.enable_take_surveys,
+    enable_log_interaction: raw.enable_log_interaction ?? DEFAULT_FLAGS.enable_log_interaction,
+    enable_stock_reports: raw.enable_stock_reports ?? DEFAULT_FLAGS.enable_stock_reports,
+    enable_inventory: raw.enable_inventory ?? DEFAULT_FLAGS.enable_inventory,
+    enable_routes: raw.enable_routes ?? DEFAULT_FLAGS.enable_routes,
+    enable_reports: raw.enable_reports ?? DEFAULT_FLAGS.enable_reports,
+    enable_activity: raw.enable_activity ?? DEFAULT_FLAGS.enable_activity,
+    enable_manage_agents: raw.enable_manage_agents ?? DEFAULT_FLAGS.enable_manage_agents,
+    enable_closing_report: raw.enable_closing_report ?? DEFAULT_FLAGS.enable_closing_report,
+  };
+};
+
 /**
- * Loads per-project component toggles from `project_components`.
- * If no row exists for the project, all components are enabled by default.
+ * Reads per-project component flags from the cached `user_workspaces.active_components`
+ * field, which is hydrated once at sign-in by `workspaceService.loadUserWorkspaces()`
+ * and kept in sync by Postgres triggers on `team_members`, `teams`, and
+ * `project_plans.mobile_components`.
+ *
+ * `currentProjectId` is accepted for backwards compatibility but no longer triggers
+ * a network request — flags resolve synchronously from the workspace context.
  */
-export const useProjectComponents = (currentProjectId: string | null) => {
-  const [flags, setFlags] = useState<ProjectComponentFlags>(DEFAULT_FLAGS);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isLoaded, setIsLoaded] = useState<boolean>(false);
+export const useProjectComponents = (_currentProjectId?: string | null) => {
+  const { userWorkspaces, currentWorkspaceId, isInitialized } = useWorkspace();
 
-  useEffect(() => {
-    if (!currentProjectId) {
-      setFlags(DEFAULT_FLAGS);
-      setIsLoaded(true);
-      return;
-    }
+  const flags = useMemo(() => {
+    const raw =
+      userWorkspaces.find((w) => w.workspace_id === currentWorkspaceId)?.active_components ??
+      workspaceService.getCurrentActiveComponents();
+    return mergeFlags(raw);
+  }, [userWorkspaces, currentWorkspaceId]);
 
-    let cancelled = false;
-    setIsLoading(true);
-    setIsLoaded(false);
-
-    (async () => {
-      const { data, error } = await supabase
-        .from("project_components")
-        .select(
-          "enable_record_sale, enable_give_products, enable_take_surveys, enable_log_interaction, enable_stock_reports, enable_inventory, enable_routes, enable_reports, enable_activity, enable_manage_agents, enable_closing_report"
-        )
-        .eq("project_id", currentProjectId)
-        .maybeSingle();
-
-      if (cancelled) return;
-
-      if (error) {
-        console.error("[useProjectComponents] load error", error);
-        setFlags(DEFAULT_FLAGS);
-      } else if (data) {
-        setFlags({
-          enable_record_sale: data.enable_record_sale ?? true,
-          enable_give_products: data.enable_give_products ?? true,
-          enable_take_surveys: data.enable_take_surveys ?? true,
-          enable_log_interaction: data.enable_log_interaction ?? true,
-          enable_stock_reports: data.enable_stock_reports ?? true,
-          enable_inventory: data.enable_inventory ?? true,
-          enable_routes: data.enable_routes ?? true,
-          enable_reports: data.enable_reports ?? true,
-          enable_activity: data.enable_activity ?? true,
-          enable_manage_agents: data.enable_manage_agents ?? true,
-          enable_closing_report: (data as any).enable_closing_report ?? false,
-        });
-      } else {
-        setFlags(DEFAULT_FLAGS);
-      }
-
-      setIsLoading(false);
-      setIsLoaded(true);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [currentProjectId]);
-
-  return { flags, isLoading, isLoaded };
+  return {
+    flags,
+    isLoading: !isInitialized,
+    isLoaded: isInitialized,
+  };
 };

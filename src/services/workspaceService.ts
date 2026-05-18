@@ -31,6 +31,7 @@ interface UserWorkspace {
   joined_at: string;
   workspace: Workspace;
   team_type: string | null;
+  active_components: Record<string, boolean> | null;
 }
 
 const WORKSPACE_STORAGE_KEY = 'trakkit_current_workspace_id';
@@ -111,6 +112,7 @@ class WorkspaceService {
           workspace_id,
           role,
           team_type,
+          active_components,
           created_at,
           workspace:workspaces!inner (
             id,
@@ -140,7 +142,8 @@ class WorkspaceService {
         role: item.role as 'admin' | 'member' | 'viewer',
         joined_at: item.created_at,
         workspace: item.workspace as Workspace,
-        team_type: item.team_type
+        team_type: item.team_type,
+        active_components: (item as any).active_components ?? null
       }));
 
       // Preserve current workspace if it still exists in user's workspaces
@@ -206,6 +209,18 @@ class WorkspaceService {
    */
   getCurrentProjectId(): string | null {
     return this.currentProjectId;
+  }
+
+  /**
+   * Get cached active component flags for the current workspace
+   * (denormalized from project_plans.mobile_components via DB trigger).
+   */
+  getCurrentActiveComponents(): Record<string, boolean> | null {
+    if (!this.currentWorkspaceId) return null;
+    const uw = this.userWorkspaces.find(
+      (w) => w.workspace_id === this.currentWorkspaceId
+    );
+    return uw?.active_components ?? null;
   }
 
   /**

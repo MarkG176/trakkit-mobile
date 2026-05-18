@@ -4061,6 +4061,7 @@ export type Database = {
       }
       user_workspaces: {
         Row: {
+          active_components: Json | null
           created_at: string | null
           email: string | null
           id: string
@@ -4074,6 +4075,7 @@ export type Database = {
           workspace_id: string | null
         }
         Insert: {
+          active_components?: Json | null
           created_at?: string | null
           email?: string | null
           id?: string
@@ -4087,6 +4089,7 @@ export type Database = {
           workspace_id?: string | null
         }
         Update: {
+          active_components?: Json | null
           created_at?: string | null
           email?: string | null
           id?: string
@@ -4343,6 +4346,10 @@ export type Database = {
           p_window_seconds?: number
         }
         Returns: boolean
+      }
+      compute_user_workspace_active_components: {
+        Args: { p_user_id: string; p_workspace_id: string }
+        Returns: Json
       }
       confirm_product_return: {
         Args: {
