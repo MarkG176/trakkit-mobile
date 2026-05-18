@@ -2265,114 +2265,6 @@ export type Database = {
           },
         ]
       }
-      project_components: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          enable_activity: boolean
-          enable_closing_report: boolean
-          enable_dashboard: boolean
-          enable_evening_stock_report: boolean
-          enable_give_products: boolean
-          enable_giveaway_activity_list: boolean
-          enable_interaction_history: boolean
-          enable_inventory: boolean
-          enable_log_interaction: boolean
-          enable_manage_agents: boolean
-          enable_morning_stock_report: boolean
-          enable_record_sale: boolean
-          enable_reports: boolean
-          enable_routes: boolean
-          enable_sales_activity_list: boolean
-          enable_stock_reports: boolean
-          enable_supervisor_feedback: boolean
-          enable_supervisor_gallery: boolean
-          enable_supervisor_inbox: boolean
-          enable_supervisor_map: boolean
-          enable_supervisor_rankings: boolean
-          enable_supervisor_sales: boolean
-          enable_supervisor_stats: boolean
-          enable_supervisor_users: boolean
-          enable_survey_activity_list: boolean
-          enable_surveys_page: boolean
-          enable_take_surveys: boolean
-          id: string
-          project_id: string
-          updated_at: string
-          workspace_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          enable_activity?: boolean
-          enable_closing_report?: boolean
-          enable_dashboard?: boolean
-          enable_evening_stock_report?: boolean
-          enable_give_products?: boolean
-          enable_giveaway_activity_list?: boolean
-          enable_interaction_history?: boolean
-          enable_inventory?: boolean
-          enable_log_interaction?: boolean
-          enable_manage_agents?: boolean
-          enable_morning_stock_report?: boolean
-          enable_record_sale?: boolean
-          enable_reports?: boolean
-          enable_routes?: boolean
-          enable_sales_activity_list?: boolean
-          enable_stock_reports?: boolean
-          enable_supervisor_feedback?: boolean
-          enable_supervisor_gallery?: boolean
-          enable_supervisor_inbox?: boolean
-          enable_supervisor_map?: boolean
-          enable_supervisor_rankings?: boolean
-          enable_supervisor_sales?: boolean
-          enable_supervisor_stats?: boolean
-          enable_supervisor_users?: boolean
-          enable_survey_activity_list?: boolean
-          enable_surveys_page?: boolean
-          enable_take_surveys?: boolean
-          id?: string
-          project_id: string
-          updated_at?: string
-          workspace_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          enable_activity?: boolean
-          enable_closing_report?: boolean
-          enable_dashboard?: boolean
-          enable_evening_stock_report?: boolean
-          enable_give_products?: boolean
-          enable_giveaway_activity_list?: boolean
-          enable_interaction_history?: boolean
-          enable_inventory?: boolean
-          enable_log_interaction?: boolean
-          enable_manage_agents?: boolean
-          enable_morning_stock_report?: boolean
-          enable_record_sale?: boolean
-          enable_reports?: boolean
-          enable_routes?: boolean
-          enable_sales_activity_list?: boolean
-          enable_stock_reports?: boolean
-          enable_supervisor_feedback?: boolean
-          enable_supervisor_gallery?: boolean
-          enable_supervisor_inbox?: boolean
-          enable_supervisor_map?: boolean
-          enable_supervisor_rankings?: boolean
-          enable_supervisor_sales?: boolean
-          enable_supervisor_stats?: boolean
-          enable_supervisor_users?: boolean
-          enable_survey_activity_list?: boolean
-          enable_surveys_page?: boolean
-          enable_take_surveys?: boolean
-          id?: string
-          project_id?: string
-          updated_at?: string
-          workspace_id?: string | null
-        }
-        Relationships: []
-      }
       project_inventory: {
         Row: {
           created_at: string | null
@@ -2445,6 +2337,7 @@ export type Database = {
           is_deleted: boolean | null
           is_public: boolean | null
           metrics_updated_at: string | null
+          mobile_components: Json
           phases: Json
           product_focus: string
           project_name: string | null
@@ -2480,6 +2373,7 @@ export type Database = {
           is_deleted?: boolean | null
           is_public?: boolean | null
           metrics_updated_at?: string | null
+          mobile_components?: Json
           phases?: Json
           product_focus: string
           project_name?: string | null
@@ -2515,6 +2409,7 @@ export type Database = {
           is_deleted?: boolean | null
           is_public?: boolean | null
           metrics_updated_at?: string | null
+          mobile_components?: Json
           phases?: Json
           product_focus?: string
           project_name?: string | null
