@@ -1,3 +1,4 @@
+// [CMP-16eb8f] InteractionHistory — logged interactions history
 import { useEffect, useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Card, CardContent } from "@/components/ui/card";

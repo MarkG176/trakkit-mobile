@@ -1,3 +1,4 @@
+// [CMP-71a723] QuickActions — quick actions component
 import { Plus, ShoppingCart, Gift, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";

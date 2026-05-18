@@ -1,3 +1,4 @@
+// [CMP-8c20c6] InviteAgentDialog — invite agent dialog component
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";

@@ -1,3 +1,4 @@
+// [CMP-f88960] UsersPage — supervisor users management page
 import { useState, useEffect } from "react";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { supabase } from "@/integrations/supabase/client";

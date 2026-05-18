@@ -1,3 +1,4 @@
+// [CMP-5fd7f5] BackgroundLocationTracker — background location tracker component
 import { useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAgentStatus } from '@/hooks/useAgentStatus';

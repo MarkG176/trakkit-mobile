@@ -1,3 +1,4 @@
+// [CMP-f31aa8] SurveyActivityList — survey submissions list
 import { useEffect, useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";

@@ -1,3 +1,4 @@
+// [CMP-dd8985] Profile — agent profile and stats page
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

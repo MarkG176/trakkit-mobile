@@ -1,3 +1,4 @@
+// [CMP-8b2eec] PerformanceCards — performance cards component
 import { Calendar, CheckCircle, Target } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Label } from "@/components/ui/label";

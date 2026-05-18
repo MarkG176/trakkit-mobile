@@ -1,3 +1,4 @@
+// [CMP-dd96f0] Surveys — surveys take/list page
 import { useState, useEffect, useRef } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { TopBar } from "@/components/dashboard/TopBar";

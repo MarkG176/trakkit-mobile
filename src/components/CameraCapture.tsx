@@ -1,3 +1,4 @@
+// [CMP-c5aa7b] CameraCapture — camera capture component
 import { useState, useRef, forwardRef, useImperativeHandle } from 'react';
 import { Camera, X, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';

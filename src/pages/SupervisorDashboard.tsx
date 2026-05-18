@@ -1,3 +1,4 @@
+// [CMP-64d2b5] SupervisorDashboard — supervisor dashboard root
 import { useState, useEffect } from "react";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";

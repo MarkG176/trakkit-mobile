@@ -1,3 +1,4 @@
+// [CMP-a76686] TeamManagementDialog — team management dialog component
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";

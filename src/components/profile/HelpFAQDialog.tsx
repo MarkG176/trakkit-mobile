@@ -1,3 +1,4 @@
+// [CMP-574b4e] HelpFAQDialog — help f a q dialog component
 import { useState } from "react";
 import {
   Dialog,

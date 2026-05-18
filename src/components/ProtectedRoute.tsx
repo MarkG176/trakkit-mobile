@@ -1,3 +1,4 @@
+// [CMP-e42a73] ProtectedRoute — protected route component
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';

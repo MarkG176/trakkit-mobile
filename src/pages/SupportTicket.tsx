@@ -1,3 +1,4 @@
+// [CMP-4d41b1] SupportTicket — support ticket submission
 import { useState, useEffect } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";

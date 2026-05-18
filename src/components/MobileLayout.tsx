@@ -1,3 +1,4 @@
+// [CMP-6118e9] MobileLayout — mobile layout component
 import { ReactNode } from "react";
 import { BottomNavigation } from "./BottomNavigation";
 import { BackgroundLocationTracker } from "./BackgroundLocationTracker";

@@ -1,3 +1,4 @@
+// [CMP-eeb457] SurveyClosingReportDialog — survey closing report dialog component
 import React, { useState, useEffect } from "react";
 import {
   Dialog,

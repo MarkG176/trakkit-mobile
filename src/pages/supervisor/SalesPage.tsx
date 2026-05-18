@@ -1,3 +1,4 @@
+// [CMP-b926d6] SalesPage — supervisor sales page
 import { useState } from "react";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

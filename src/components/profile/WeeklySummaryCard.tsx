@@ -1,3 +1,4 @@
+// [CMP-eb77f7] WeeklySummaryCard — weekly summary card component
 import { Card, CardContent } from "@/components/ui/card";
 import { Store, TrendingUp, ClipboardList, Gift, Clock } from "lucide-react";
 

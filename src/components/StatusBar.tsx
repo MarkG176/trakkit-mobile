@@ -1,3 +1,4 @@
+// [CMP-fefb06] StatusBar — status bar component
 import * as React from 'react';
 import { Clock, CheckCircle, XCircle, Coffee } from 'lucide-react';
 import { AgentStatus } from '@/hooks/useAgentStatus';

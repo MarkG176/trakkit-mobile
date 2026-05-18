@@ -1,3 +1,4 @@
+// [CMP-74cfd9] UpcomingSchedule — upcoming schedule component
 import { Clock, MapPin } from "lucide-react";
 
 interface ScheduleItem {

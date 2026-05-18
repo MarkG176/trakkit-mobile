@@ -1,3 +1,4 @@
+// [CMP-eb753a] WorkspaceOnboarding — workspace onboarding component
 import { useState } from "react";
 import {
   Dialog,

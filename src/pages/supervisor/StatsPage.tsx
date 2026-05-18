@@ -1,3 +1,4 @@
+// [CMP-48dfe3] StatsPage — supervisor stats page
 import { useState, useEffect, useMemo } from "react";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useAgentProfileStats } from "@/hooks/useAgentProfileStats";

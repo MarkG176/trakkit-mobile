@@ -1,3 +1,4 @@
+// [CMP-060d51] Documentation — in-app documentation page
 import { useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";

@@ -1,3 +1,4 @@
+// [CMP-2388e4] GoogleMapsStatus — google maps status component
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, CheckCircle, XCircle, AlertCircle } from 'lucide-react';

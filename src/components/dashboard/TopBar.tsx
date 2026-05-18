@@ -1,3 +1,4 @@
+// [CMP-697f97] TopBar — top bar component
 import { MapPin, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";

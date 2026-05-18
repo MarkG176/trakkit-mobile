@@ -1,3 +1,4 @@
+// [CMP-0a7d23] WorkHoursCard — work hours card component
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";

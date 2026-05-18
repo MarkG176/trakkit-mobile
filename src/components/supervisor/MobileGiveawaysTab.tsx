@@ -1,3 +1,4 @@
+// [CMP-f0cbdd] MobileGiveawaysTab — mobile giveaways tab component
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

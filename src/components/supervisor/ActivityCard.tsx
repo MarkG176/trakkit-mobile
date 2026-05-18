@@ -1,3 +1,4 @@
+// [CMP-c285f4] ActivityCard — activity card component
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

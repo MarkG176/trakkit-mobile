@@ -1,3 +1,4 @@
+// [CMP-92a1d6] MobileGalleryTab — mobile gallery tab component
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent } from "@/components/ui/dialog";

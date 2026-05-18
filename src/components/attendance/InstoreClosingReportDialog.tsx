@@ -1,3 +1,4 @@
+// [CMP-3c908b] InstoreClosingReportDialog — instore closing report dialog component
 import React, { useState, useEffect } from "react";
 import {
   Dialog,

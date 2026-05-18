@@ -1,3 +1,4 @@
+// [CMP-7b0b58] StockReportDialog — stock report dialog component
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
