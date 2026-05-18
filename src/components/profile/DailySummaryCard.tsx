@@ -1,3 +1,4 @@
+// [CMP-2eb170] DailySummaryCard — daily summary card component
 import { Card, CardContent } from "@/components/ui/card";
 import { Store, TrendingUp, ClipboardList, Gift, Clock } from "lucide-react";
 

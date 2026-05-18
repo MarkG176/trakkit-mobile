@@ -1,3 +1,4 @@
+// [CMP-fd0ca7] Index — root index route
 // Update this page (the content is just a fallback if you fail to update the page)
 
 const Index = () => {

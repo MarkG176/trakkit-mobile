@@ -1,3 +1,4 @@
+// [CMP-0d8d7d] MapPage — supervisor agent map page
 import { useState, useMemo, useCallback } from "react";
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
 import { useWorkspace } from "@/hooks/useWorkspace";

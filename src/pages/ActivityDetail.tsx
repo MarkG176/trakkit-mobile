@@ -1,3 +1,4 @@
+// [CMP-74f55f] ActivityDetail — activity detail view
 import { useEffect, useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";

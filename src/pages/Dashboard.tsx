@@ -1,3 +1,4 @@
+// [CMP-deb010] Dashboard — main agent dashboard screen
 import { MobileLayout } from "@/components/MobileLayout";
 import { TopBar } from "@/components/dashboard/TopBar";
 import { QuickActions } from "@/components/dashboard/QuickActions";

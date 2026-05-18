@@ -1,3 +1,4 @@
+// [CMP-1aa599] InboxPage — supervisor inbox/messages page
 import { useState, useEffect, useMemo } from "react";
 import { SupervisorBottomNav } from "@/components/supervisor/SupervisorBottomNav";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";

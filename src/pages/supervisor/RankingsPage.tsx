@@ -1,3 +1,4 @@
+// [CMP-33afa7] RankingsPage — supervisor rankings page
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { SupervisorBottomNav } from "@/components/supervisor/SupervisorBottomNav";
 import { MobileRankingsTab } from "@/components/supervisor/MobileRankingsTab";

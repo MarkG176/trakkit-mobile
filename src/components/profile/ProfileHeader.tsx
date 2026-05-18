@@ -1,3 +1,4 @@
+// [CMP-ae7595] ProfileHeader — profile header component
 import { HelpFAQDialog } from "@/components/profile/HelpFAQDialog";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/hooks/useLanguage";

@@ -1,3 +1,4 @@
+// [CMP-59fc1d] PriceReportDialog — price report dialog component
 import React, { useState } from "react";
 import {
   Dialog,

@@ -1,3 +1,4 @@
+// [CMP-a4a4ba] Settings — app settings page
 import { useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";

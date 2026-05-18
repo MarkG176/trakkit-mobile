@@ -1,3 +1,4 @@
+// [CMP-6cd9f2] PermissionRequestDialog — permission request dialog component
 import React, { useState } from 'react';
 import { AlertCircle, Camera, MapPin, HardDrive, Mic, Bell, Loader } from 'lucide-react';
 import { Button } from '@/components/ui/button';

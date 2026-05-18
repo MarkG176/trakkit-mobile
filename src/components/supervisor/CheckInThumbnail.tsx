@@ -1,3 +1,4 @@
+// [CMP-ae3f23] CheckInThumbnail — check in thumbnail component
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Clock, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";

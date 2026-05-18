@@ -1,3 +1,4 @@
+// [CMP-26edea] ManageAgents — supervisor agent management
 import { useState, useEffect } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Card } from "@/components/ui/card";

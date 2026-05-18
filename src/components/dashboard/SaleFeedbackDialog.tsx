@@ -1,3 +1,4 @@
+// [CMP-569b1f] SaleFeedbackDialog — sale feedback dialog component
 import { useState } from "react";
 import {
   Dialog,

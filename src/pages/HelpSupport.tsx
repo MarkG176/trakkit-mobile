@@ -1,3 +1,4 @@
+// [CMP-d4f378] HelpSupport — help and support page
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

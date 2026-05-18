@@ -1,3 +1,4 @@
+// [CMP-15023f] ImageCaptionInput — image caption input component
 import { Input } from "@/components/ui/input";
 
 interface ImageCaptionInputProps {

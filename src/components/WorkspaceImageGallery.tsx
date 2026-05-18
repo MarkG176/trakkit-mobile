@@ -1,3 +1,4 @@
+// [CMP-5c381a] WorkspaceImageGallery — workspace image gallery component
 import React, { useState, useEffect, useRef } from 'react';
 import { CameraCapture } from './CameraCapture';
 import { useWorkspace } from '@/hooks/useWorkspace';

@@ -1,3 +1,4 @@
+// [CMP-e927b3] Inventory — agent inventory view
 import { useState, useEffect } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Package, Plus, Minus } from "lucide-react";

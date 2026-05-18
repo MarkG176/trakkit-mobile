@@ -1,3 +1,4 @@
+// [CMP-5e6401] RecordSale — record sale transaction flow
 import { useState, useEffect, useCallback, useRef } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";

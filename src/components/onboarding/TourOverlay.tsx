@@ -1,3 +1,4 @@
+// [CMP-f4a7d8] TourOverlay — tour overlay component
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useWorkspace } from "@/hooks/useWorkspace";

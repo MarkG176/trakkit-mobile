@@ -1,3 +1,4 @@
+// [CMP-7e3f0a] MobileWorkspaceMembers — mobile workspace members component
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';

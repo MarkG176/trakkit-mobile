@@ -1,3 +1,4 @@
+// [CMP-5605ea] SalesActivityList — sales activity feed list
 import { useEffect, useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";

@@ -1,3 +1,4 @@
+// [CMP-99a88d] PermissionRequestProvider — permission request provider component
 import React, { useState, useEffect, ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { PermissionRequestDialog } from './PermissionRequestDialog';

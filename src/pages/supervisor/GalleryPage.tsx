@@ -1,3 +1,4 @@
+// [CMP-957c2f] GalleryPage — supervisor check-in gallery page
 import { useState } from "react";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { SupervisorBottomNav } from "@/components/supervisor/SupervisorBottomNav";

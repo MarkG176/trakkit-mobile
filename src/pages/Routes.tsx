@@ -1,3 +1,4 @@
+// [CMP-b80512] Routes — routes/store assignments page
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { MapPin, Plus } from "lucide-react";

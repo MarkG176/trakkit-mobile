@@ -1,3 +1,4 @@
+// [CMP-2b9e7d] BottomNavigation — bottom navigation component
 import { Home, ClipboardList, Map, Package, User, Clipboard, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMemo } from "react";

@@ -1,3 +1,4 @@
+// [CMP-32a628] EveningReportDialog — evening report dialog component
 import React, { useState } from "react";
 import {
   Dialog,

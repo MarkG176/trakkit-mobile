@@ -1,3 +1,4 @@
+// [CMP-d6ff17] RecordingIndicator — recording indicator component
 import { Mic, MicOff } from "lucide-react";
 
 interface RecordingIndicatorProps {

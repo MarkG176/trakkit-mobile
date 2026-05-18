@@ -1,3 +1,4 @@
+// [CMP-a2756f] InstoreMorningStockCountDialog — instore morning stock count dialog component
 import React, { useState, useEffect } from "react";
 import {
   Dialog,

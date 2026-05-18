@@ -1,3 +1,4 @@
+// [CMP-615da8] GiveawayActivityList — list of past giveaways
 import { useEffect, useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";

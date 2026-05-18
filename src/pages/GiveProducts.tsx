@@ -1,3 +1,4 @@
+// [CMP-0c1669] GiveProducts — give/sample products flow page
 import { useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";

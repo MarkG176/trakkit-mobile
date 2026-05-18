@@ -1,3 +1,4 @@
+// [CMP-26ea03] ProjectComponentGate — project component gate component
 import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useWorkspace } from "@/hooks/useWorkspace";

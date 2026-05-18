@@ -1,3 +1,4 @@
+// [CMP-cad6c2] LogInteraction — log new customer interaction
 import { useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";

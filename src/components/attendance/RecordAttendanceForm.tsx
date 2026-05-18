@@ -1,3 +1,4 @@
+// [CMP-79c907] RecordAttendanceForm — record attendance form component
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

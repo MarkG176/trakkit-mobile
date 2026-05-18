@@ -1,3 +1,4 @@
+// [CMP-e2ff2c] PermissionGuidance — permission guidance component
 import React from 'react';
 import { AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';

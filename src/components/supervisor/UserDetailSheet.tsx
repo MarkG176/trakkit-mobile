@@ -1,3 +1,4 @@
+// [CMP-b3cc36] UserDetailSheet — user detail sheet component
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Card } from "@/components/ui/card";
