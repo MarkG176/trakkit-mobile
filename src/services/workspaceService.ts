@@ -31,6 +31,7 @@ interface UserWorkspace {
   joined_at: string;
   workspace: Workspace;
   team_type: string | null;
+  active_components: Record<string, boolean> | null;
 }
 
 const WORKSPACE_STORAGE_KEY = 'trakkit_current_workspace_id';
