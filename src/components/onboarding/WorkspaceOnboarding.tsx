@@ -50,7 +50,7 @@ export const WorkspaceOnboarding = ({ workspaceId, workspaceName }: WorkspaceOnb
 
   if (!workspaceId || alreadyOnboarded || (!isInstore && !hasNoTeam)) return null;
 
-  const teamDisplayName = teamTypeDisplayNames[normalizedTeamType ?? "hybrid"] || "Hybrid";
+  const teamDisplayName = teamTypeDisplayNames[normalizedLabel ?? "hybrid"] || "Hybrid";
 
   // Disabled: Language selection handler (retained for future use)
   const _handleLanguageSelect = (lang: Language) => {

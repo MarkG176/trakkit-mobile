@@ -186,13 +186,13 @@ export const Reports = () => {
   };
 
   return (
-    <MobileLayout currentPage="more">
+    <MobileLayout currentPage="reports">
       <div className="bg-primary text-primary-foreground p-4">
         <div className="flex items-center gap-3 mb-4">
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate("/more")}
+            onClick={() => navigate("/")}
             className="text-primary-foreground hover:bg-primary-foreground/20"
           >
             <ArrowLeft size={20} />

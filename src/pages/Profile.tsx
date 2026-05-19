@@ -76,6 +76,11 @@ export const Profile = () => {
   const showSurveys = isEnabled('CRM-0097');
   const showReports = isEnabled('CRM-0099');
   const showTasks = isEnabled('CRM-0051') || isEnabled('CRM-0090');
+  // Legacy team-type aliases derived from CRM flags (used by the All-Time tab).
+  const isInstore = isEnabled('CRM-0021');
+  const isWholesale = isEnabled('CRM-0022');
+  const isSeeding = isEnabled('CRM-0024');
+  const isSurvey = isEnabled('CRM-0023');
 
   if (!isInitialized || isWorkspaceLoading) {
     return (

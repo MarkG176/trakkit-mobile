@@ -27,9 +27,35 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    if (user && workspaceService.isInitialized()) {
-      updateWorkspaceState();
+    if (!user) {
+      setIsInitialized(false);
+      return;
     }
+
+    let cancelled = false;
+
+    const ensureInitialized = async () => {
+      try {
+        if (!workspaceService.isInitialized()) {
+          await workspaceService.initialize(user);
+        }
+      } catch (error) {
+        console.error('Workspace initialization failed:', error);
+      } finally {
+        if (!cancelled) {
+          // Always sync state — even on error — so route guards stop
+          // showing a permanent blank/loading screen.
+          updateWorkspaceState();
+          setIsInitialized(true);
+        }
+      }
+    };
+
+    ensureInitialized();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   // Continuously monitor workspace changes
