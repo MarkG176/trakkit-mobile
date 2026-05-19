@@ -178,29 +178,28 @@ export const Routes = () => {
     });
   };
 
+  const resolveCountyAndCountry = async (
+    location: { latitude: number; longitude: number },
+  ): Promise<{ county: string; country: string }> => {
+    if (
+      geocodedLocation &&
+      currentLocation?.latitude === location.latitude &&
+      currentLocation?.longitude === location.longitude
+    ) {
+      return geocodedLocation;
+    }
+
+    const result = await reverseGeocode(location.latitude, location.longitude);
+    setGeocodedLocation(result);
+    setGeocodingError(null);
+    return result;
+  };
+
   const handleAddLocation = async () => {
     if (!newStoreName.trim()) {
       toast({
         title: "Missing Information",
         description: "Please enter a store name.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!currentLocation) {
-      toast({
-        title: "Location Required",
-        description: "Please enable location access to add a new store.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!geocodedLocation) {
-      toast({
-        title: "Address Required",
-        description: geocodingError || "Could not determine location details from your GPS. Please refresh your location and try again.",
         variant: "destructive",
       });
       return;
@@ -218,6 +217,27 @@ export const Routes = () => {
     try {
       setIsSubmittingStore(true);
 
+      let location = currentLocation;
+      if (!location) {
+        location = await getCurrentLocation();
+        setCurrentLocation(location);
+      }
+
+      let locationDetails: { county: string; country: string };
+      try {
+        locationDetails = await resolveCountyAndCountry(location);
+      } catch (error: any) {
+        toast({
+          title: "Location Required",
+          description:
+            error.message ||
+            geocodingError ||
+            "Could not determine county and country from your location. Please enable location access and try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Get current user for added_by field
       const {
         data: { user },
@@ -227,13 +247,13 @@ export const Routes = () => {
         .from("stores")
         .insert({
           store_name: newStoreName.trim(),
-          county: geocodedLocation.county,
-          store_lat: currentLocation.latitude,
-          store_long: currentLocation.longitude,
+          county: locationDetails.county,
+          store_lat: location.latitude,
+          store_long: location.longitude,
           contact: newStoreContact.trim() || null,
           added_by: user?.id || null,
           workspace_id: currentWorkspaceId,
-          country: geocodedLocation.country,
+          country: locationDetails.country,
         })
         .select("id")
         .single();
@@ -279,7 +299,7 @@ export const Routes = () => {
       setAddedStore({
         id: insertedStore.id,
         name: newStoreName.trim(),
-        county: geocodedLocation.county,
+        county: locationDetails.county,
       });
       setShowSuccessDialog(true);
 
@@ -600,10 +620,10 @@ export const Routes = () => {
                   </Button>
                   <Button
                     onClick={handleAddLocation}
-                    disabled={isSubmittingStore}
+                    disabled={isSubmittingStore || isLoadingLocation}
                     className="flex-1"
                   >
-                    {isSubmittingStore ? "Adding..." : "Add Store"}
+                    {isSubmittingStore ? "Adding..." : isLoadingLocation ? "Getting location..." : "Add Store"}
                   </Button>
                 </div>
               </div>
