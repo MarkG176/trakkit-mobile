@@ -1,7 +1,7 @@
 // [CMP-b80512] Routes — routes/store assignments page
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
-import { MapPin, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -544,7 +544,16 @@ export const Routes = () => {
             </div>
 
             {!showAddLocationForm ? (
-              <Button onClick={() => setShowAddLocationForm(true)} variant="outline" className="w-full">
+              <Button
+                onClick={() => {
+                  setShowAddLocationForm(true);
+                  if (!currentLocation && !isLoadingLocation) {
+                    requestLocation();
+                  }
+                }}
+                variant="outline"
+                className="w-full"
+              >
                 <Plus size={16} className="mr-2" />
                 Add New Store Location
               </Button>
@@ -577,39 +586,6 @@ export const Routes = () => {
                   />
                 </div>
 
-                <div className="p-3 bg-muted rounded-lg">
-                  <p className="text-sm font-medium text-foreground mb-2">Location</p>
-                  {currentLocation ? (
-                    <div className="text-xs text-muted-foreground space-y-1">
-                      <p>Latitude: {currentLocation.latitude.toFixed(6)}</p>
-                      <p>Longitude: {currentLocation.longitude.toFixed(6)}</p>
-                      {isGeocoding && <p>Resolving location...</p>}
-                      {geocodingError && !isGeocoding && (
-                        <p className="text-destructive">{geocodingError}</p>
-                      )}
-                      {geocodedLocation && !isGeocoding && (
-                        <p>Country: {geocodedLocation.country}</p>
-                      )}
-                      <p className="text-green-600">✓ Using current location</p>
-                    </div>
-                  ) : (
-                    <div className="text-xs text-muted-foreground">
-                      <p className="text-orange-600">⚠ Location not available</p>
-                      <p>Please enable location access to add a store</p>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={requestLocation}
-                        disabled={isLoadingLocation}
-                        className="mt-2"
-                      >
-                        <MapPin size={14} className="mr-1" />
-                        {isLoadingLocation ? "Getting location..." : "Refresh Location"}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
                 <div className="flex gap-3">
                   <Button
                     variant="outline"
@@ -624,7 +600,7 @@ export const Routes = () => {
                   </Button>
                   <Button
                     onClick={handleAddLocation}
-                    disabled={isSubmittingStore || !currentLocation || isGeocoding || !geocodedLocation}
+                    disabled={isSubmittingStore}
                     className="flex-1"
                   >
                     {isSubmittingStore ? "Adding..." : "Add Store"}
