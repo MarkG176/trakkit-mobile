@@ -23,8 +23,7 @@ import { useProjectComponents } from "@/hooks/useProjectComponents";
 export const RecordAttendanceForm = () => {
   const { user } = useAuth();
   const { currentStatus, loading, updateStatus } = useAgentStatus();
-  const { currentTeamType, currentProjectId } = useWorkspace();
-  const { flags: projectFlags } = useProjectComponents(currentProjectId);
+  const { isEnabled } = useProjectComponents();
   const { toast } = useToast();
   const { permissions, browserType } = usePermissions();
   const [isCheckingIn, setIsCheckingIn] = useState(false);
