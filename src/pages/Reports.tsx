@@ -10,7 +10,6 @@ import { Camera, FileText, Package, Sunrise, Sunset } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { workspaceService } from "@/services/workspaceService";
 import {
   getStockReportCapabilities,
   hasAnyStockReportCapability,
@@ -43,9 +42,7 @@ export const Reports = () => {
   const { currentWorkspaceId, userWorkspaces } = useWorkspace();
 
   const stockCaps = useMemo(() => {
-    const raw =
-      userWorkspaces.find((w) => w.workspace_id === currentWorkspaceId)?.active_components ??
-      workspaceService.getCurrentActiveComponents();
+    const raw = userWorkspaces.find((w) => w.workspace_id === currentWorkspaceId)?.active_components;
     return getStockReportCapabilities(raw);
   }, [userWorkspaces, currentWorkspaceId]);
 
@@ -68,20 +65,18 @@ export const Reports = () => {
     };
   }, []);
 
-  const resolveWorkspaceId = () =>
-    currentWorkspaceId ?? workspaceService.getCurrentWorkspaceId();
-
   const handleSaveNotes = async () => {
     if (!user || !notes.trim()) {
       toast.error("Please enter some notes");
       return;
     }
 
-    const workspaceId = resolveWorkspaceId();
-    if (!workspaceId) {
+    if (!currentWorkspaceId) {
       toast.error("No workspace selected.");
       return;
     }
+
+    const workspaceId = currentWorkspaceId;
 
     setSubmitting(true);
     try {
