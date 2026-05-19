@@ -43,6 +43,7 @@ import { ActivityDetail } from "./pages/ActivityDetail";
 import { Activity } from "./pages/Activity";
 import { RoleBasedRoute } from "./components/RoleBasedRoute";
 import { ProjectComponentGate } from "./components/ProjectComponentGate";
+import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import { TourOverlay } from "./components/onboarding/TourOverlay";
 import { PermissionRequestProvider } from "./components/PermissionRequestProvider";
@@ -186,9 +187,11 @@ const App = () => (
             } />
             <Route path="/reports" element={
               <ProtectedRoute>
-                <ProjectComponentGate code="CRM-0099">
-                  <Reports />
-                </ProjectComponentGate>
+                <RouteErrorBoundary pageName="Reports">
+                  <ProjectComponentGate code="CRM-0099">
+                    <Reports />
+                  </ProjectComponentGate>
+                </RouteErrorBoundary>
               </ProtectedRoute>
             } />
             <Route path="/documentation" element={

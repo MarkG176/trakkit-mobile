@@ -42,9 +42,9 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
       } catch (error) {
         console.error('Workspace initialization failed:', error);
       } finally {
-        if (!cancelled) {
-          // Always sync state — even on error — so route guards stop
-          // showing a permanent blank/loading screen.
+        // Sync when the effect is still active, or when the service finished
+        // during a Strict Mode / fast-remount cancel (common on mobile Chrome).
+        if (!cancelled || workspaceService.isInitialized()) {
           updateWorkspaceState();
           setIsInitialized(true);
         }

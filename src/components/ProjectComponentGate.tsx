@@ -5,6 +5,8 @@ import { Loader2 } from "lucide-react";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useProjectComponents } from "@/hooks/useProjectComponents";
 import { BottomNavigation } from "@/components/BottomNavigation";
+import { workspaceService } from "@/services/workspaceService";
+import { mergeWithDefaults } from "@/data/mobileComponentsCatalog";
 
 interface ProjectComponentGateProps {
   /** CRM-XXXX code from mobileComponentsCatalog. */
@@ -22,13 +24,24 @@ const NAV_PAGE_BY_PATH: Record<string, string> = {
   "/profile": "profile",
 };
 
+function GateLoadingShell({ currentPage }: { currentPage: string }) {
+  return (
+    <div className="min-h-[100dvh] min-h-screen bg-background">
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+      <BottomNavigation currentPage={currentPage} />
+    </div>
+  );
+}
+
 /**
  * Route guard that blocks access to a page if the active workspace has
  * the matching CRM component code disabled in `active_components`.
  *
  * While workspace/component flags are still loading, renders a branded
  * spinner inside the mobile shell (with bottom nav) instead of a blank
- * full-screen state — especially important on iOS PWA / mobile browsers.
+ * full-screen state — especially important on Android Chrome / mobile browsers.
  */
 export const ProjectComponentGate = ({
   code,
@@ -40,18 +53,19 @@ export const ProjectComponentGate = ({
   const location = useLocation();
   const currentPage = NAV_PAGE_BY_PATH[location.pathname] ?? "dashboard";
 
-  if (!isInitialized || !isLoaded) {
-    return (
-      <div className="min-h-[100dvh] min-h-screen bg-background">
-        <div className="flex min-h-[60vh] items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-        <BottomNavigation currentPage={currentPage} />
-      </div>
-    );
+  // React context can lag behind workspaceService on Android Chrome; trust the service when ready.
+  const workspaceReady = isInitialized || workspaceService.isInitialized();
+  const componentsReady = isLoaded || workspaceService.isInitialized();
+
+  const componentEnabled = componentsReady
+    ? isEnabled(code)
+    : (mergeWithDefaults(workspaceService.getCurrentActiveComponents())[code] ?? true);
+
+  if (!workspaceReady || !componentsReady) {
+    return <GateLoadingShell currentPage={currentPage} />;
   }
 
-  if (!isEnabled(code)) {
+  if (!componentEnabled) {
     return <Navigate to={redirectTo} replace />;
   }
 
