@@ -132,10 +132,13 @@ export const RecordAttendanceForm = () => {
         const enableSurveyClosing = isEnabled('CRM-0023');
 
         if (statusToSet === 'checked_in' && previousStatus === 'checked_out') {
-          // Morning check-in — stock availability report (if enabled). InstoreMorningStockCount chains via the dialog's onComplete.
-          if (enableStockReport || enableInstoreMorningCount) {
+          // Morning check-in — stock availability report when enabled.
+          // If only morning stock count is enabled, open it directly.
+          if (enableStockReport) {
             setStockReportType('morning');
             setShowStockReport(true);
+          } else if (enableInstoreMorningCount) {
+            setShowInstoreMorningStockCount(true);
           }
         } else if (statusToSet === 'checked_out') {
           // Priority: instore closing → seeding evening → evening report → survey closing.
