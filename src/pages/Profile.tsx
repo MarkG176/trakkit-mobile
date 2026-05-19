@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAgentProfileStats } from "@/hooks/useAgentProfileStats";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useProjectComponents } from "@/hooks/useProjectComponents";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useState, useEffect } from "react";
@@ -65,11 +66,16 @@ export const Profile = () => {
     };
     fetchTeamName();
   }, [user?.id, currentWorkspaceId]);
-  // Team-type gates removed. Drive feature visibility from CRM active components instead.
-  const isWholesale = false;
-  const isSeeding = false;
-  const isInstore = false;
-  const isSurvey = false;
+  // Drive feature visibility from CRM active components
+  const { isEnabled } = useProjectComponents();
+  const showDailySummary = isEnabled('CRM-0063');
+  const showWeeklySummary = isEnabled('CRM-0064');
+  const showWorkHours = isEnabled('CRM-0053');
+  const showSalesMetrics = isEnabled('CRM-0034');
+  const showGiveaways = isEnabled('CRM-0034G');
+  const showSurveys = isEnabled('CRM-0097');
+  const showReports = isEnabled('CRM-0099');
+  const showTasks = isEnabled('CRM-0051') || isEnabled('CRM-0090');
 
   if (!isInitialized || isWorkspaceLoading) {
     return (
@@ -146,15 +152,15 @@ export const Profile = () => {
             <Card>
               <CardContent className="p-4">
                 <SectionTitle>{t("activity_attendance")}</SectionTitle>
-                {!isWholesale && !isSeeding && !isInstore && !isSurvey && <MetricRow label={t("store_visits")} value={stats.todayStoreVisits} icon={Store} />}
+                {showDailySummary && <MetricRow label={t("store_visits")} value={stats.todayStoreVisits} icon={Store} />}
                 <MetricRow label={t("check_ins")} value={stats.todayCheckIns} icon={CheckCircle} />
-                <MetricRow label={t("work_time")} value={formatWorkTime(stats.todayWorkMinutes)} icon={Clock} />
-                {isSeeding && <MetricRow label={t("stores_added")} value={stats.todayStoresAdded} icon={MapPin} />}
+                {showWorkHours && <MetricRow label={t("work_time")} value={formatWorkTime(stats.todayWorkMinutes)} icon={Clock} />}
+                {showDailySummary && <MetricRow label={t("stores_added")} value={stats.todayStoresAdded} icon={MapPin} />}
               </CardContent>
             </Card>
 
             {/* Tasks - hide for wholesale, seeding, instore, and survey */}
-            {!isWholesale && !isSeeding && !isInstore && !isSurvey && (
+            {showTasks && (
               <Card>
                 <CardContent className="p-4">
                   <SectionTitle>{t("tasks")}</SectionTitle>
@@ -166,34 +172,22 @@ export const Profile = () => {
             )}
 
             {/* Sales & Revenue - hide for survey and instore */}
-            {!isSurvey && !isInstore && (
+            {showSalesMetrics && (
             <Card>
               <CardContent className="p-4">
                 <SectionTitle>{t("sales_revenue")}</SectionTitle>
-                {isWholesale ? (
-                  <>
-                    <MetricRow label={t("products_sold")} value={stats.todayWholesaleSales} icon={ShoppingCart} />
-                    <MetricRow label={t("revenue")} value={formatCurrency(stats.todayWholesaleRevenue)} icon={ShoppingCart} />
-                  </>
-                ) : isSeeding ? (
-                  <>
-                    <MetricRow label={t("sales_made")} value={stats.todaySales} icon={ShoppingCart} />
-                    <MetricRow label={t("revenue")} value={formatCurrency(stats.todayRevenue)} icon={ShoppingCart} />
-                    <MetricRow label={t("giveaways")} value={stats.todayGiveaways} icon={Star} />
-                  </>
-                ) : (
-                  <>
-                    <MetricRow label={t("sales_made")} value={stats.todaySales} icon={ShoppingCart} />
-                    <MetricRow label={t("revenue")} value={formatCurrency(stats.todayRevenue)} icon={ShoppingCart} />
-                    <MetricRow label={t("stores_added")} value={stats.todayStoresAdded} icon={MapPin} />
-                  </>
-                )}
+                <>
+                  <MetricRow label={t("sales_made")} value={stats.todaySales} icon={ShoppingCart} />
+                  <MetricRow label={t("revenue")} value={formatCurrency(stats.todayRevenue)} icon={ShoppingCart} />
+                  {showGiveaways && <MetricRow label={t("giveaways")} value={stats.todayGiveaways} icon={Star} />}
+                  {showDailySummary && <MetricRow label={t("stores_added")} value={stats.todayStoresAdded} icon={MapPin} />}
+                </>
               </CardContent>
             </Card>
             )}
 
             {/* Reports - show for instore */}
-            {isInstore && (
+            {showReports && (
             <Card>
               <CardContent className="p-4">
                 <SectionTitle>Reports</SectionTitle>
@@ -203,17 +197,15 @@ export const Profile = () => {
             )}
 
             {/* Engagement - hide for instore */}
-            {!isInstore && (
+            { (showSurveys || showDailySummary || showSalesMetrics) && (
             <Card>
               <CardContent className="p-4">
                 <SectionTitle>{t("engagement")}</SectionTitle>
-                {(!isWholesale || isSeeding) && !isSurvey && <MetricRow label={t("interactions")} value={stats.todayInteractionsCount} icon={MessageSquare} />}
-                {(!isWholesale || stats.hasSurveyAssigned || isSeeding || isSurvey) && (
-                  <MetricRow label={t("surveys_done")} value={stats.todaySurveys} icon={FileText} />
-                )}
-                {!isSeeding && !isSurvey && <MetricRow label={t("giveaways")} value={stats.todayGiveaways} icon={Star} />}
-                {!isWholesale && !isSeeding && !isSurvey && <MetricRow label={t("items_given")} value={stats.todayGiveawayItems} icon={Star} />}
-                {!isSeeding && !isSurvey && <MetricRow label={t("notes")} value={stats.todayNotesCount} icon={FileText} />}
+                {<MetricRow label={t("interactions")} value={stats.todayInteractionsCount} icon={MessageSquare} />}
+                {showSurveys && <MetricRow label={t("surveys_done")} value={stats.todaySurveys} icon={FileText} />}
+                {showGiveaways && <MetricRow label={t("giveaways")} value={stats.todayGiveaways} icon={Star} />}
+                {showGiveaways && <MetricRow label={t("items_given")} value={stats.todayGiveawayItems} icon={Star} />}
+                {showDailySummary && <MetricRow label={t("notes")} value={stats.todayNotesCount} icon={FileText} />}
               </CardContent>
             </Card>
             )}

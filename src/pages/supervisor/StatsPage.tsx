@@ -1,6 +1,7 @@
 // [CMP-48dfe3] StatsPage — supervisor stats page
 import { useState, useEffect, useMemo } from "react";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useProjectComponents } from "@/hooks/useProjectComponents";
 import { useAgentProfileStats } from "@/hooks/useAgentProfileStats";
 import { SupervisorBottomNav } from "@/components/supervisor/SupervisorBottomNav";
 import { Card, CardContent } from "@/components/ui/card";
@@ -55,8 +56,9 @@ export const StatsPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   const stats = useAgentProfileStats(selectedUserId || undefined);
-  const isWholesale = false;
-  const isSeeding = false;
+  const { isEnabled } = useProjectComponents();
+  const isWholesale = isEnabled('CRM-0034');
+  const isSeeding = isEnabled('CRM-0024') || isEnabled('CRM-0023');
 
   useEffect(() => {
     if (!currentWorkspaceId) return;
