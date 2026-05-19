@@ -13,6 +13,7 @@ import { useSalesForm } from "@/hooks/useSalesForm";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useProjectComponents } from "@/hooks/useProjectComponents";
 import { useInventory, InventoryItem } from "@/hooks/useInventory";
 import { SaleFeedbackDialog, FeedbackData } from "@/components/dashboard/SaleFeedbackDialog";
 import { useToast } from "@/hooks/use-toast";
@@ -49,7 +50,10 @@ export const RecordSale = () => {
   const navigate = useNavigate();
   const { submitSale, loading: submitting } = useSalesForm();
   const { user } = useAuth();
-  const { currentWorkspaceId, currentProjectId, currentTeamType } = useWorkspace();
+  const { currentWorkspaceId, currentProjectId } = useWorkspace();
+  const { isEnabled } = useProjectComponents();
+  const isSalePhotoRequired = isEnabled('CRM-0034P');
+  const canOverridePrice = isEnabled('CRM-0034C');
   const { inventory, loading } = useInventory();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
@@ -73,19 +77,18 @@ export const RecordSale = () => {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Check if current team type is wholesale
-  const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
+  const isWholesale = isSalePhotoRequired || canOverridePrice;
 
   // Get price for a product, using cached price for wholesale
   const getProductPrice = useCallback((item: InventoryItem): number => {
-    if (isWholesale) {
+    if (canOverridePrice) {
       const cached = getCachedPrices();
       if (cached[item.product_variant_id] !== undefined) {
         return cached[item.product_variant_id];
       }
     }
     return item.price || 0;
-  }, [isWholesale]);
+  }, [canOverridePrice]);
 
   const addToCart = (item: InventoryItem) => {
     const existingItem = cartItems.find(cartItem => cartItem.id === item.product_variant_id);
@@ -122,8 +125,7 @@ export const RecordSale = () => {
     setCartItems(cartItems.map(item => 
       item.id === id ? { ...item, price: newPrice } : item
     ));
-    // Cache the price for wholesale
-    if (isWholesale) {
+    if (canOverridePrice) {
       savePriceToCache(id, newPrice);
     }
     setEditingPriceId(null);
@@ -217,7 +219,7 @@ export const RecordSale = () => {
     }
     
     // For wholesale, require photo before proceeding
-    if (isWholesale && !salePhotoUrl) {
+    if (isSalePhotoRequired && !salePhotoUrl) {
       toast({
         title: "Photo Required",
         description: "Please capture a photo of the sale before completing.",
@@ -323,7 +325,7 @@ export const RecordSale = () => {
         sentiment: feedbackData.sentiment,
         imageUrl: salePhotoUrl || undefined,
         ...(salePhotoCaption ? {
-          imageMetadata: { caption: salePhotoCaption, type: 'sale_photo', team_type: 'wholesale' }
+          imageMetadata: { caption: salePhotoCaption, type: 'sale_photo' }
         } : {})
       });
 

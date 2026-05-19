@@ -33,12 +33,12 @@ interface WorkspaceOnboardingProps {
 }
 
 export const WorkspaceOnboarding = ({ workspaceId, workspaceName }: WorkspaceOnboardingProps) => {
-  const { currentTeamType } = useWorkspace();
+  const { currentWorkspaceLabel } = useWorkspace();
   const { setLanguage } = useLanguage();
 
-  const normalizedTeamType = currentTeamType?.toLowerCase() || null;
-  const isInstore = normalizedTeamType === "instore";
-  const hasNoTeam = !normalizedTeamType || normalizedTeamType === "hybrid";
+  const normalizedLabel = currentWorkspaceLabel?.toLowerCase() || null;
+  const isInstore = normalizedLabel === "instore";
+  const hasNoTeam = !normalizedLabel || normalizedLabel === "hybrid";
 
   const onboardKey = workspaceId ? `onboarded_${workspaceId}` : null;
   const alreadyOnboarded = onboardKey ? !!localStorage.getItem(onboardKey) : true;

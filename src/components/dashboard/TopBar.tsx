@@ -12,7 +12,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 
 export const TopBar = () => {
   const { user, signOut } = useAuth();
-  const { currentTeamType } = useWorkspace();
   const showSetLocation = false;
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState<string>("");

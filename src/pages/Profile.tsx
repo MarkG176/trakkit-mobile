@@ -45,7 +45,7 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
 export const Profile = () => {
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
-  const { currentTeamType, currentWorkspaceId, isInitialized, isLoading: isWorkspaceLoading } = useWorkspace();
+  const { currentWorkspaceId, isInitialized, isLoading: isWorkspaceLoading } = useWorkspace();
   const { t } = useLanguage();
   const stats = useAgentProfileStats();
   const [teamName, setTeamName] = useState<string | null>(null);
@@ -65,10 +65,11 @@ export const Profile = () => {
     };
     fetchTeamName();
   }, [user?.id, currentWorkspaceId]);
-  const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
-  const isSeeding = ['seeding', 'market_research'].includes(currentTeamType?.toLowerCase() ?? '');
-  const isInstore = currentTeamType?.toLowerCase() === 'instore';
-  const isSurvey = ['survey', 'survey_campaign'].includes(currentTeamType?.toLowerCase() ?? '');
+  // Team-type gates removed. Drive feature visibility from CRM active components instead.
+  const isWholesale = false;
+  const isSeeding = false;
+  const isInstore = false;
+  const isSurvey = false;
 
   if (!isInitialized || isWorkspaceLoading) {
     return (
@@ -127,7 +128,6 @@ export const Profile = () => {
         displayName={stats.displayName}
         currentRank={stats.currentRank}
         totalPoints={stats.totalPoints}
-        teamType={currentTeamType || undefined}
         teamName={teamName}
       />
 

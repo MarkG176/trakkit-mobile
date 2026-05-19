@@ -8,10 +8,8 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { WorkspaceOnboarding } from "@/components/onboarding/WorkspaceOnboarding";
 
 export const Dashboard = () => {
-  const { currentWorkspaceId, currentTeamType, userWorkspaces } = useWorkspace();
+  const { currentWorkspaceId, userWorkspaces } = useWorkspace();
   const currentWorkspaceName = userWorkspaces.find(w => w.workspace_id === currentWorkspaceId)?.workspace?.name;
-  const isSeeding = ['seeding', 'market_research'].includes(currentTeamType?.toLowerCase() ?? '');
-  const isInstore = currentTeamType?.toLowerCase() === 'instore';
 
   return (
     <MobileLayout currentPage="dashboard">
@@ -23,7 +21,7 @@ export const Dashboard = () => {
         <RecordAttendanceForm />
       </div>
 
-      {!isSeeding && !isInstore && <QuickActions />}
+      <QuickActions />
       
       {/* Work Hours Card */}
       <div className="px-4 pb-4">

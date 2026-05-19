@@ -18,6 +18,7 @@ import { calculateDistance, formatDistance, debugDistanceCalculation } from "@/u
 import { useAgentActions } from "@/hooks/useAgentActions";
 import { StoreSuccessDialog } from "@/components/StoreSuccessDialog";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useProjectComponents } from "@/hooks/useProjectComponents";
 
 interface Store {
   id: string;
@@ -80,13 +81,12 @@ export const Routes = () => {
   const [addedStore, setAddedStore] = useState<{ id: string; name: string; county: string } | null>(null);
   const { toast } = useToast();
   const { recordLocationSet } = useAgentActions();
-  const { currentWorkspaceId, currentProjectId, currentTeamType } = useWorkspace();
+  const { currentWorkspaceId, currentProjectId } = useWorkspace();
+  const { isEnabled } = useProjectComponents();
 
   // Check if current team type is wholesale/instore - hide Add Location for these types
-  const isWholesale = currentTeamType?.toLowerCase() === "wholesale";
-  const isSeeding = ['seeding', 'market_research'].includes(currentTeamType?.toLowerCase() ?? '');
-  const isSampling = currentTeamType?.toLowerCase() === "sampling";
-  const isInstore = currentTeamType?.toLowerCase() === "instore";
+  const showAddStore = isEnabled('CRM-0098A');
+  const showStoresList = isEnabled('CRM-0098L');
 
   // Fetch the project's country
   useEffect(() => {
@@ -465,7 +465,7 @@ export const Routes = () => {
 
       {/* Location Selection Form */}
       {/* Set Assigned Location - Hidden for seeding */}
-      {!isSeeding && (
+      {showAddStore && (
         <div className="px-4 pt-4 pb-20">
           <Card className="p-4">
             <h2 className="text-h2 mb-4">Set Your Assigned Location</h2>
@@ -555,7 +555,7 @@ export const Routes = () => {
 
       <div className="px-4 pb-20">
         {/* Add Location Form - Hidden for wholesale, instore, sampling */}
-        {!isWholesale && !isSampling && !isInstore && (
+        {showStoresList && (
           <Card className="p-4 mt-2">
             <div className="flex items-center gap-2 mb-4">
               <Plus size={20} className="text-primary" />

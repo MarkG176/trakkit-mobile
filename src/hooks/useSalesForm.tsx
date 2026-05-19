@@ -72,7 +72,7 @@ export const useSalesForm = () => {
             image_metadata: formData.imageUrl ? {
               type: 'sale_photo',
               captured_at: new Date().toISOString(),
-              team_type: 'wholesale'
+              team_label: workspaceService.getCurrentWorkspaceLabel() || null
             } : null,
             metadata: {
               engagement_type: formData.engagementType,

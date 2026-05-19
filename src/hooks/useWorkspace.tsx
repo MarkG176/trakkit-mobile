@@ -5,7 +5,7 @@ import { useAuth } from './useAuth';
 interface WorkspaceContextType {
   currentWorkspaceId: string | null;
   currentProjectId: string | null;
-  currentTeamType: string;
+  currentWorkspaceLabel: string | null;
   userWorkspaces: UserWorkspace[];
   currentWorkspaceRole: 'admin' | 'member' | 'viewer' | null;
   isLoading: boolean;
@@ -20,7 +20,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [currentWorkspaceId, setCurrentWorkspaceId] = useState<string | null>(null);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
-  const [currentTeamType, setCurrentTeamType] = useState<string>('hybrid');
+  const [currentWorkspaceLabel, setCurrentWorkspaceLabel] = useState<string | null>(null);
   const [userWorkspaces, setUserWorkspaces] = useState<UserWorkspace[]>([]);
   const [currentWorkspaceRole, setCurrentWorkspaceRole] = useState<'admin' | 'member' | 'viewer' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -51,7 +51,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   const updateWorkspaceState = () => {
     setCurrentWorkspaceId(workspaceService.getCurrentWorkspaceId());
     setCurrentProjectId(workspaceService.getCurrentProjectId());
-    setCurrentTeamType(workspaceService.getCurrentTeamType());
+    setCurrentWorkspaceLabel(workspaceService.getCurrentWorkspaceLabel());
     setUserWorkspaces(workspaceService.getUserWorkspaces());
     setCurrentWorkspaceRole(workspaceService.getCurrentWorkspaceRole());
     setIsInitialized(workspaceService.isInitialized());
@@ -89,7 +89,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     <WorkspaceContext.Provider value={{
       currentWorkspaceId,
       currentProjectId,
-      currentTeamType,
+      currentWorkspaceLabel,
       userWorkspaces,
       currentWorkspaceRole,
       isLoading,

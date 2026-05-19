@@ -48,15 +48,15 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
 );
 
 export const StatsPage = () => {
-  const { currentWorkspaceId, currentTeamType } = useWorkspace();
+  const { currentWorkspaceId } = useWorkspace();
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   const stats = useAgentProfileStats(selectedUserId || undefined);
-  const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
-  const isSeeding = ['seeding', 'market_research'].includes(currentTeamType?.toLowerCase() ?? '');
+  const isWholesale = false;
+  const isSeeding = false;
 
   useEffect(() => {
     if (!currentWorkspaceId) return;

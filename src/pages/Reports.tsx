@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useProjectComponents } from "@/hooks/useProjectComponents";
 import { useInventory } from "@/hooks/useInventory";
 import { formatProductName } from "@/utils/formatProductName";
 import { workspaceService } from "@/services/workspaceService";
@@ -22,14 +23,11 @@ import { toast } from "sonner";
 export const Reports = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { currentWorkspaceId, currentTeamType } = useWorkspace();
-  const normalizedTeamType = currentTeamType?.toLowerCase() ?? '';
-  const isSurvey = ['survey', 'survey_campaign'].includes(normalizedTeamType);
-  const isInstore = normalizedTeamType === 'instore';
-  const isHybrid = normalizedTeamType === 'hybrid';
-  const hideSalesReport = isSurvey || isHybrid;
-  const showStockReports = !isSurvey && !isHybrid; // includes instore + others
-  const showExportReport = !hideSalesReport && !isInstore;
+  const { currentWorkspaceId } = useWorkspace();
+  const { isEnabled } = useProjectComponents();
+  const showSalesReport = isEnabled('CRM-0099S');
+  const showStockReports = isEnabled('CRM-0099K');
+  const showExportReport = isEnabled('CRM-0099X');
   const [showMorningReport, setShowMorningReport] = useState(false);
   const [showEveningReport, setShowEveningReport] = useState(false);
   const { inventory, loading: inventoryLoading } = useInventory();
@@ -199,13 +197,13 @@ export const Reports = () => {
           >
             <ArrowLeft size={20} />
           </Button>
-          <h1 className="text-h1">{hideSalesReport ? 'Notes & Images' : 'Sales Report'}</h1>
+              <h1 className="text-h1">{showSalesReport ? 'Sales Report' : 'Notes & Images'}</h1>
         </div>
-        <p className="text-sm opacity-90">{hideSalesReport ? 'Add notes and attach images' : 'Record your sales for the day'}</p>
+        <p className="text-sm opacity-90">{showSalesReport ? 'Record your sales for the day' : 'Add notes and attach images'}</p>
       </div>
 
       <div className="p-4 space-y-6">
-        {!hideSalesReport && (
+        {showStockReports && (
           <Card>
             <CardContent className="p-6">
               <h3 className="text-h3 mb-6 text-black flex items-center gap-2">

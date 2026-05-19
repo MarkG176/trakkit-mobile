@@ -30,7 +30,6 @@ interface UserWorkspace {
   role: 'admin' | 'member' | 'viewer';
   joined_at: string;
   workspace: Workspace;
-  team_type: string | null;
   active_components: Record<string, boolean> | null;
 }
 
@@ -39,7 +38,7 @@ const WORKSPACE_STORAGE_KEY = 'trakkit_current_workspace_id';
 class WorkspaceService {
   private currentWorkspaceId: string | null = null;
   private currentProjectId: string | null = null;
-  private currentTeamType: string | null = null;
+  private currentWorkspaceLabel: string | null = null;
   private userWorkspaces: UserWorkspace[] = [];
   private user: User | null = null;
   private initialized: boolean = false;
@@ -111,7 +110,6 @@ class WorkspaceService {
           user_id,
           workspace_id,
           role,
-          team_type,
           active_components,
           created_at,
           workspace:workspaces!inner (
@@ -142,25 +140,24 @@ class WorkspaceService {
         role: item.role as 'admin' | 'member' | 'viewer',
         joined_at: item.created_at,
         workspace: item.workspace as Workspace,
-        team_type: item.team_type,
         active_components: (item as any).active_components ?? null
       }));
 
       // Preserve current workspace if it still exists in user's workspaces
       if (previousWorkspaceId && this.userWorkspaces.some(w => w.workspace_id === previousWorkspaceId)) {
         this.currentWorkspaceId = previousWorkspaceId;
-        this.updateTeamTypeFromWorkspace(previousWorkspaceId);
+        await this.loadCurrentWorkspaceLabel();
         console.log('🏢 Preserving current workspace:', this.getWorkspaceName());
         await this.loadProjectsForWorkspace(this.currentWorkspaceId);
       } else if (!this.currentWorkspaceId && this.userWorkspaces.length > 0) {
         // Only set default if no workspace was previously set
         this.currentWorkspaceId = this.userWorkspaces[0].workspace_id;
-        this.updateTeamTypeFromWorkspace(this.userWorkspaces[0].workspace_id);
+        await this.loadCurrentWorkspaceLabel();
         console.log('🏢 Default workspace set to:', this.userWorkspaces[0].workspace.name);
         await this.loadProjectsForWorkspace(this.currentWorkspaceId);
       } else if (this.currentWorkspaceId && this.userWorkspaces.length > 0) {
         // If workspace is already set, just ensure projects are loaded
-        this.updateTeamTypeFromWorkspace(this.currentWorkspaceId);
+        await this.loadCurrentWorkspaceLabel();
         console.log('🏢 Workspace already set, maintaining:', this.getWorkspaceName());
         await this.loadProjectsForWorkspace(this.currentWorkspaceId);
       }
@@ -224,21 +221,33 @@ class WorkspaceService {
   }
 
   /**
-   * Update team_type from the current workspace
+   * Load the current workspace label from the active project plan
    */
-  private updateTeamTypeFromWorkspace(workspaceId: string): void {
-    const userWorkspace = this.userWorkspaces.find(
-      uw => uw.workspace_id === workspaceId
-    );
-    this.currentTeamType = userWorkspace?.team_type || 'hybrid';
-    console.log('🏷️ Team type set to:', this.currentTeamType);
+  private async loadCurrentWorkspaceLabel(): Promise<void> {
+    this.currentWorkspaceLabel = null;
+    if (!this.currentProjectId) return;
+    try {
+      const { data, error } = await supabase
+        .from('project_plans')
+        .select('team_label')
+        .eq('id', this.currentProjectId)
+        .single() as any;
+      if (error) {
+        console.error('Error loading current workspace label:', error);
+        return;
+      }
+      this.currentWorkspaceLabel = data?.team_label ?? null;
+      console.log('🏷️ Workspace label set to:', this.currentWorkspaceLabel);
+    } catch (error) {
+      console.error('Error loading current workspace label:', error);
+    }
   }
 
   /**
-   * Get the current team type
+   * Get current workspace label
    */
-  getCurrentTeamType(): string {
-    return this.currentTeamType || 'hybrid';
+  getCurrentWorkspaceLabel(): string | null {
+    return this.currentWorkspaceLabel;
   }
 
   /**
@@ -252,7 +261,7 @@ class WorkspaceService {
 
     this.currentWorkspaceId = workspaceId;
     this.saveWorkspaceId(workspaceId);
-    this.updateTeamTypeFromWorkspace(workspaceId);
+    await this.loadCurrentWorkspaceLabel();
     console.log('🏢 Workspace changed to:', workspaceId);
     
     // Load projects for the new workspace
@@ -280,6 +289,7 @@ class WorkspaceService {
 
       // Set the first project as current, or null if none exist
       this.currentProjectId = data?.[0]?.id || null;
+      await this.loadCurrentWorkspaceLabel();
     } catch (error) {
       console.error('Error loading projects for workspace:', error);
     }
@@ -288,8 +298,9 @@ class WorkspaceService {
   /**
    * Set the current project
    */
-  setCurrentProject(projectId: string): void {
+  async setCurrentProject(projectId: string): Promise<void> {
     this.currentProjectId = projectId;
+    await this.loadCurrentWorkspaceLabel();
     console.log('📋 Project changed to:', projectId);
   }
 

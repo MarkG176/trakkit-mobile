@@ -23,9 +23,13 @@ export const ProfileHeader = ({ displayName, teamType, teamName }: ProfileHeader
     day: 'numeric'
   });
 
-  const teamLabel = teamType
+  const teamLabelFromType = teamType
     ? teamType.charAt(0).toUpperCase() + teamType.slice(1).toLowerCase()
     : null;
+
+  // Prefer explicit team name when available; fallback to team type label.
+  const showTeamName = !!teamName;
+  const teamLabel = showTeamName ? null : teamLabelFromType;
 
   // @ts-ignore - __APP_VERSION__ is defined by Vite at build time
   const appVersion = (typeof __APP_VERSION__ !== 'undefined') ? __APP_VERSION__ : 'dev';
@@ -38,11 +42,6 @@ export const ProfileHeader = ({ displayName, teamType, teamName }: ProfileHeader
         {teamName && (
           <div className="mt-1.5">
             <p className="text-sm font-medium text-primary-foreground">{teamName}</p>
-            {teamLabel && (
-              <Badge className="mt-0.5 bg-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/30 text-xs">
-                {teamLabel}
-              </Badge>
-            )}
           </div>
         )}
         {!teamName && teamLabel && (

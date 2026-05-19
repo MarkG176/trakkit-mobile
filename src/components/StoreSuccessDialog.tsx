@@ -86,25 +86,12 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
-  // Check if current workspace has a "Market Research" type project
+  // Derive Market Research flag from current project's team label (no project_type usage)
+  const { currentWorkspaceLabel } = useWorkspace();
   useEffect(() => {
-    const checkProjectType = async () => {
-      if (!currentWorkspaceId || !open) return;
-      try {
-        const { data } = await supabase
-          .from('project_plans')
-          .select('project_type')
-          .eq('workspace_id', currentWorkspaceId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        setIsMarketResearch(data?.project_type?.toLowerCase() === 'market_research');
-      } catch {
-        setIsMarketResearch(false);
-      }
-    };
-    checkProjectType();
-  }, [currentWorkspaceId, open]);
+    if (!open) return;
+    setIsMarketResearch(currentWorkspaceLabel?.toLowerCase() === 'market_research');
+  }, [currentWorkspaceLabel, open]);
 
   const handleActionClick = async (action: ActionType) => {
     setActiveAction(action);

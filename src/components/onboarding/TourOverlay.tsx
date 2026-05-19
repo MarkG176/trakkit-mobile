@@ -26,7 +26,7 @@ const instoreTourSteps: TourStep[] = [
   {
     path: "/profile",
     title: "Help & FAQ",
-    description: "Tap the help icon on your Profile page for guides and FAQs about your team type.",
+      description: "Tap the help icon on your Profile page for guides and FAQs about your team.",
   },
   {
     path: "/dashboard",
@@ -36,12 +36,12 @@ const instoreTourSteps: TourStep[] = [
 ];
 
 export const TourOverlay = () => {
-  const { currentWorkspaceId, currentTeamType } = useWorkspace();
+  const { currentWorkspaceId, currentWorkspaceLabel } = useWorkspace();
   const navigate = useNavigate();
   const location = useLocation();
   const [tourStep, setTourStep] = useState<number | null>(null);
 
-  const isInstore = currentTeamType?.toLowerCase() === "instore";
+  const isInstore = currentWorkspaceLabel?.toLowerCase() === "instore";
   const tourKey = currentWorkspaceId ? `tour_active_${currentWorkspaceId}` : null;
 
   const checkTour = useCallback(() => {
