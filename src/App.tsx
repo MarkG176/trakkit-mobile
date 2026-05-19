@@ -129,21 +129,21 @@ const App = () => (
             } />
             <Route path="/surveys" element={
               <ProtectedRoute>
-                <ProjectComponentGate component="enable_take_surveys">
+                <ProjectComponentGate code="CRM-0097">
                   <Surveys />
                 </ProjectComponentGate>
               </ProtectedRoute>
             } />
             <Route path="/routes" element={
               <ProtectedRoute>
-                <ProjectComponentGate component="enable_routes">
+                <ProjectComponentGate code="CRM-0098">
                   <RoutesPage />
                 </ProjectComponentGate>
               </ProtectedRoute>
             } />
             <Route path="/inventory" element={
               <ProtectedRoute>
-                <ProjectComponentGate component="enable_inventory">
+                <ProjectComponentGate code="CRM-0093">
                   <Inventory />
                 </ProjectComponentGate>
               </ProtectedRoute>
@@ -155,21 +155,21 @@ const App = () => (
             } />
             <Route path="/record-sale" element={
               <ProtectedRoute>
-                <ProjectComponentGate component="enable_record_sale">
+                <ProjectComponentGate code="CRM-0094">
                   <RecordSale />
                 </ProjectComponentGate>
               </ProtectedRoute>
             } />
             <Route path="/give-products" element={
               <ProtectedRoute>
-                <ProjectComponentGate component="enable_give_products">
+                <ProjectComponentGate code="CRM-0095">
                   <GiveProducts />
                 </ProjectComponentGate>
               </ProtectedRoute>
             } />
             <Route path="/log-interaction" element={
               <ProtectedRoute>
-                <ProjectComponentGate component="enable_log_interaction">
+                <ProjectComponentGate code="CRM-0096">
                   <LogInteraction />
                 </ProjectComponentGate>
               </ProtectedRoute>
@@ -186,7 +186,7 @@ const App = () => (
             } />
             <Route path="/reports" element={
               <ProtectedRoute>
-                <ProjectComponentGate component="enable_reports">
+                <ProjectComponentGate code="CRM-0099">
                   <Reports />
                 </ProjectComponentGate>
               </ProtectedRoute>
