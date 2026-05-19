@@ -21,9 +21,9 @@ export const QuickActions = () => {
     <div className="px-4 py-4">
       <h2 className="text-h3 mb-3 text-black">Quick Actions</h2>
       <div className="grid grid-cols-2 gap-3">
-        {actions.map(({ key, label, icon: Icon, path }) => (
+        {actions.map(({ code, label, icon: Icon, path }) => (
           <Button
-            key={key}
+            key={code}
             className="h-14 flex flex-col gap-1"
             onClick={() => navigate(path)}
           >
