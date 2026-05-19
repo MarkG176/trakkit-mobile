@@ -1,5 +1,5 @@
 // [CMP-eb753a] WorkspaceOnboarding — workspace onboarding component
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,6 +10,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { useLanguage, Language } from "@/hooks/useLanguage";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Globe, Users, HelpCircle, AlertTriangle } from "lucide-react";
 
 const DOCS_URL = "https://trakkit.darajatech.com/docs";
@@ -34,21 +36,68 @@ interface WorkspaceOnboardingProps {
 
 export const WorkspaceOnboarding = ({ workspaceId, workspaceName }: WorkspaceOnboardingProps) => {
   const { currentWorkspaceLabel } = useWorkspace();
+  const { user } = useAuth();
   const { setLanguage } = useLanguage();
 
   const normalizedLabel = currentWorkspaceLabel?.toLowerCase() || null;
   const isInstore = normalizedLabel === "instore";
-  const hasNoTeam = !normalizedLabel || normalizedLabel === "hybrid";
+
+  const [hasTeamInWorkspace, setHasTeamInWorkspace] = useState<boolean | null>(null);
+  const [teamName, setTeamName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!workspaceId || !user?.id) {
+      setHasTeamInWorkspace(null);
+      setTeamName(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const checkTeamMembership = async () => {
+      setHasTeamInWorkspace(null);
+      const { data } = await supabase
+        .from("team_members")
+        .select("team_id, teams:team_id(name)")
+        .eq("agent_id", user.id)
+        .eq("workspace_id", workspaceId)
+        .eq("is_active", true)
+        .limit(1)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      setHasTeamInWorkspace(!!data?.team_id);
+      setTeamName((data?.teams as { name?: string } | null)?.name ?? null);
+    };
+
+    checkTeamMembership();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [workspaceId, user?.id]);
+
+  const hasNoTeam = hasTeamInWorkspace === false;
 
   const onboardKey = workspaceId ? `onboarded_${workspaceId}` : null;
   const alreadyOnboarded = onboardKey ? !!localStorage.getItem(onboardKey) : true;
 
-  const [open, setOpen] = useState(!alreadyOnboarded && (isInstore || hasNoTeam));
+  const shouldShow = !alreadyOnboarded && (isInstore || hasNoTeam);
+  const [open, setOpen] = useState(false);
   // Language selection is disabled for now but code is retained
   // Start at step 1 (team name) instead of step 0 (language)
   const [step, setStep] = useState(1);
 
-  if (!workspaceId || alreadyOnboarded || (!isInstore && !hasNoTeam)) return null;
+  useEffect(() => {
+    if (shouldShow) {
+      setOpen(true);
+    }
+  }, [shouldShow]);
+
+  if (!workspaceId || alreadyOnboarded) return null;
+  if (hasTeamInWorkspace === null) return null;
+  if (!isInstore && !hasNoTeam) return null;
 
   const teamDisplayName = teamTypeDisplayNames[normalizedLabel ?? "hybrid"] || "Hybrid";
 
@@ -126,7 +175,11 @@ export const WorkspaceOnboarding = ({ workspaceId, workspaceName }: WorkspaceOnb
             ) : (
               <>
                 <p className="text-center text-muted-foreground mt-2">
-                  You're part of the <span className="font-semibold text-foreground">{workspaceName || "your"}</span> team
+                  You're part of the{" "}
+                  <span className="font-semibold text-foreground">
+                    {teamName || workspaceName || "your"}
+                  </span>{" "}
+                  team
                 </p>
                 <Button onClick={() => setStep(2)} className="w-full mt-6">
                   Continue
