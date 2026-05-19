@@ -200,7 +200,7 @@ export const Routes = () => {
     if (!geocodedLocation) {
       toast({
         title: "Address Required",
-        description: geocodingError || "Could not determine county and country from your location. Please refresh your location and try again.",
+        description: geocodingError || "Could not determine location details from your GPS. Please refresh your location and try again.",
         variant: "destructive",
       });
       return;
@@ -583,15 +583,12 @@ export const Routes = () => {
                     <div className="text-xs text-muted-foreground space-y-1">
                       <p>Latitude: {currentLocation.latitude.toFixed(6)}</p>
                       <p>Longitude: {currentLocation.longitude.toFixed(6)}</p>
-                      {isGeocoding && <p>Resolving county and country...</p>}
+                      {isGeocoding && <p>Resolving location...</p>}
                       {geocodingError && !isGeocoding && (
                         <p className="text-destructive">{geocodingError}</p>
                       )}
                       {geocodedLocation && !isGeocoding && (
-                        <>
-                          <p>County: {geocodedLocation.county}</p>
-                          <p>Country: {geocodedLocation.country}</p>
-                        </>
+                        <p>Country: {geocodedLocation.country}</p>
                       )}
                       <p className="text-green-600">✓ Using current location</p>
                     </div>
