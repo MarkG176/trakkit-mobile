@@ -1,53 +1,83 @@
-## Goal
+# Remove team_type / project_type — drive UI from active_components CRM codes
 
-Cache each user's active mobile components on `user_workspaces.active_components` so the mobile app can render its navigation and gates immediately after sign-in, without an extra round-trip to `project_components` / `project_plans` on every load.
+The Trakkit project wizard already stores per-project component selections in `project_plans.mobile_components` keyed by CRM codes (`CRM-0010`, `CRM-0034`, …). DB triggers copy that jsonb into `user_workspaces.active_components`, and `workspaceService` already loads it. This plan rewires the mobile app to consume CRM codes exclusively and removes every reference to `team_type` and `project_type`.
 
-Source of truth: `project_plans.mobile_components` (jsonb) of the project the user's team is assigned to (`team_members.agent_id` → `teams.project_id` → `project_plans.id`).
+## 1. New shared catalog
 
-## Database changes (single migration)
+Add `src/data/mobileComponentsCatalog.ts` mirroring the wizard project so codes/types stay in sync:
+- `MOBILE_COMPONENTS` list + groups
+- `DEFAULT_MOBILE_COMPONENTS` (all true)
+- `mergeWithDefaults(stored)` — sparse jsonb merge
 
-1. **Add column**
-   - `ALTER TABLE public.user_workspaces ADD COLUMN active_components jsonb;`
-   - Nullable; `NULL` = "not yet computed, fall back to defaults".
+## 2. Rewrite `useProjectComponents`
 
-2. **Helper function** `public.compute_user_workspace_active_components(p_user_id uuid, p_workspace_id uuid) RETURNS jsonb`
-   - Looks up the user's team in that workspace via `team_members` (active, not deleted), joins `teams` → `project_plans`, returns `project_plans.mobile_components`.
-   - Returns `NULL` if no team / no plan / no mobile_components.
+- Replace `ProjectComponentFlags` (`enable_*`) with a `useComponent(code)` style hook backed by CRM codes.
+- New shape: `{ isEnabled(code: string): boolean, codes: Record<string, boolean>, isLoaded }`.
+- Source: `userWorkspaces.find(w => w.workspace_id === currentWorkspaceId)?.active_components`, merged with `DEFAULT_MOBILE_COMPONENTS`.
+- Keep export name `useProjectComponents` to minimise diffs.
 
-3. **Sync triggers** (all `SECURITY DEFINER`, `search_path = public`)
-   - `trg_sync_active_components_on_team_member` — AFTER INSERT/UPDATE/DELETE on `team_members`: recompute for the affected agent in that team's workspace.
-   - `trg_sync_active_components_on_team` — AFTER UPDATE OF `project_id, workspace_id` on `teams`: recompute for every member of that team.
-   - `trg_sync_active_components_on_plan` — AFTER UPDATE OF `mobile_components` on `project_plans`: recompute for every user whose team is on that plan.
+## 3. Replace nav gating
 
-4. **Backfill**
-   - One-shot `UPDATE public.user_workspaces uw SET active_components = public.compute_user_workspace_active_components(uw.user_id, uw.workspace_id);` at the end of the migration.
+`BottomNavigation`:
+- Drop `currentTeamType` prop and all `teamType === "wholesale" / "seeding" / "instore" / …` branches.
+- Each `NavItem` gets a `code` (CRM page code). Visible iff `isEnabled(code)` or `alwaysShow`.
+- Dashboard/Profile/Chat keep `alwaysShow`.
 
-No RLS changes — existing `user_workspaces` policies already cover the new column.
+`MobileLayout`: stop passing `currentTeamType`.
 
-## Frontend changes
+`SupervisorBottomNav`: each tab maps to a supervisor page code; gate identically.
 
-1. **`src/services/workspaceService.ts`**
-   - Add `active_components` to the `UserWorkspace` interface and to the `select(...)` in `loadUserWorkspaces`.
-   - Store it on the cached `userWorkspaces[]`.
-   - Expose `getCurrentActiveComponents(): ProjectComponentFlags | null` that returns the entry for `currentWorkspaceId`.
+## 4. Replace page/feature gating
 
-2. **`src/hooks/useWorkspace.tsx`**
-   - Surface `currentActiveComponents` on the context, derived from the cached `userWorkspaces` entry — zero extra queries after sign-in.
+Every file that branches on `currentTeamType` is rewritten to call `isEnabled('CRM-XXXX')` for the specific dialog/section it gates:
 
-3. **`src/hooks/useProjectComponents.tsx`**
-   - New fast path: if `useWorkspace().currentActiveComponents` is present, return it synchronously (`isLoaded = true` on first render).
-   - Keep the existing `project_components` fetch as a fallback only when the cached value is missing, so older workspaces keep working until the backfill / trigger fills them in.
-   - Continue to merge over `DEFAULT_FLAGS` to tolerate partial jsonb.
+| File | team_type branch today | New gate |
+|---|---|---|
+| `Dashboard.tsx` | `isSeeding`/`isInstore` hide QuickActions | `isEnabled('CRM-0051')` (Quick Actions card) |
+| `RecordAttendanceForm.tsx` | wholesale → stock dialog; seeding → seeding evening; instore → morning/closing | `isEnabled('CRM-0022')`, `'CRM-0024'`, `'CRM-0021'`, `'CRM-0020'`, `'CRM-0019'`, `'CRM-0023'` |
+| `StoreSuccessDialog.tsx` | market-research price-report enablement | `isEnabled('CRM-0025')` |
+| `Reports.tsx` / `Routes.tsx` / `RecordSale.tsx` / `Profile.tsx` / `supervisor/StatsPage.tsx` | wholesale/seeding/instore/survey branches | corresponding CRM codes per branch |
+| `useSalesForm.tsx` | wholesale photo requirement | `isEnabled('CRM-0055')` (Store Success / sale photo) — or introduce a dedicated `CRM-0034P` later if needed |
+| `TopBar.tsx` | team-type label | drop label, show workspace name only |
+| `WorkspaceOnboarding.tsx` / `TourOverlay.tsx` | team-type-keyed copy | use generic copy keyed off enabled actions |
+| `ProfileHeader.tsx` / `HelpFAQDialog.tsx` | display team_type label | drop the label (workspace name remains) |
 
-4. **Types**
-   - `src/integrations/supabase/types.ts` will be regenerated automatically after the migration; do not edit by hand.
+Wholesale-only **business logic** that has no matching catalog entry (custom pricing in `useSalesForm`, image metadata tag `team_type: 'wholesale'`) is replaced as follows:
+- Custom pricing keeps working — it is keyed on workspace/product in localStorage, not on team_type. The conditional that only enables it for wholesale is removed; pricing override UI shows whenever Record Sale is enabled.
+- Drop the `team_type: 'wholesale'` tag in `imageMetadata`; supervisors already see project context via project_id.
 
-## Shape of `active_components`
+## 5. Strip workspace plumbing
 
-Stored exactly as `project_plans.mobile_components` (jsonb object of boolean flags, e.g. `{ "enable_record_sale": true, "enable_inventory": false, ... }`). Frontend merges with `DEFAULT_FLAGS` so any missing key is treated as enabled (matching today's behavior).
+`workspaceService.ts`:
+- Remove `currentTeamType`, `getCurrentTeamType`, `updateTeamTypeFromWorkspace`.
+- Remove `team_type` from the `user_workspaces` select and the `UserWorkspace` interface.
+- `getCurrentActiveComponents()` stays.
 
-## Out of scope
+`useWorkspace.tsx`:
+- Remove `currentTeamType` from context and all consumers.
+- Add `currentActiveComponents: Record<string, boolean> | null` for convenience.
 
-- No changes to `project_components` table or supervisor UI that edits it. If you later want `project_components` to also flow into `active_components`, that's a follow-up.
-- No RLS / auth changes.
-- No new UI surfaces — purely a perf / cold-start improvement.
+## 6. Files touched (~20)
+
+- new: `src/data/mobileComponentsCatalog.ts`
+- edit: `src/hooks/useProjectComponents.tsx`, `src/hooks/useWorkspace.tsx`, `src/hooks/useSalesForm.tsx`, `src/services/workspaceService.ts`
+- edit: `src/components/MobileLayout.tsx`, `BottomNavigation.tsx`, `StoreSuccessDialog.tsx`
+- edit: `src/components/supervisor/SupervisorBottomNav.tsx`
+- edit: `src/components/attendance/RecordAttendanceForm.tsx`
+- edit: `src/components/dashboard/TopBar.tsx`
+- edit: `src/components/onboarding/{WorkspaceOnboarding,TourOverlay}.tsx`
+- edit: `src/components/profile/{ProfileHeader,HelpFAQDialog}.tsx`
+- edit: `src/pages/{Dashboard,Reports,Routes,RecordSale,Profile}.tsx`
+- edit: `src/pages/supervisor/StatsPage.tsx`
+
+## 7. Out of scope
+
+- No DB migration. `team_type` and `project_type` columns stay in the DB (other systems / supervisor analytics may read them); we only stop the mobile app from reading or branching on them.
+- No changes to `project_plans`, triggers, or backfill — already done.
+- No new flags added to the wizard. If a behavior currently relies on team_type and has no matching CRM code, it is gated by the closest existing code (documented above) and called out for follow-up.
+
+## Risks / follow-ups
+
+- Wholesale "mandatory sale photo" no longer enforced separately from Store Success dialog. If you want it as its own toggle, we'll need a new catalog code (e.g. `CRM-0034P`) added in the wizard project.
+- Profile/onboarding copy becomes generic; team-type-flavored wording is lost.
+- Supervisor analytics that group by team_type are untouched (they read DB directly).

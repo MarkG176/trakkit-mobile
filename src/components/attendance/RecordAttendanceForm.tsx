@@ -23,8 +23,7 @@ import { useProjectComponents } from "@/hooks/useProjectComponents";
 export const RecordAttendanceForm = () => {
   const { user } = useAuth();
   const { currentStatus, loading, updateStatus } = useAgentStatus();
-  const { currentTeamType, currentProjectId } = useWorkspace();
-  const { flags: projectFlags } = useProjectComponents(currentProjectId);
+  const { isEnabled } = useProjectComponents();
   const { toast } = useToast();
   const { permissions, browserType } = usePermissions();
   const [isCheckingIn, setIsCheckingIn] = useState(false);
@@ -124,41 +123,31 @@ export const RecordAttendanceForm = () => {
           console.error('Error resolving current store:', err);
         }
 
-        // Check if we need to show stock report dialog for wholesale team_type
-        const isWholesale = currentTeamType?.toLowerCase() === 'wholesale';
-        const isInstore = currentTeamType?.toLowerCase() === 'instore';
-        const isSeeding = ['seeding', 'market_research'].includes(currentTeamType?.toLowerCase() ?? '');
-        
-        if (isWholesale) {
-          // Show stock report after check-in (morning) or evening report after check-out
-          if (statusToSet === 'checked_in' && previousStatus === 'checked_out') {
-            // Morning check-in - show stock report
+        // Gate post-attendance dialogs by CRM component codes (active_components).
+        const enableStockReport = isEnabled('CRM-0022');
+        const enableInstoreMorningCount = isEnabled('CRM-0021');
+        const enableInstoreClosing = isEnabled('CRM-0020');
+        const enableSeedingEvening = isEnabled('CRM-0024');
+        const enableEveningReport = isEnabled('CRM-0019');
+        const enableSurveyClosing = isEnabled('CRM-0023');
+
+        if (statusToSet === 'checked_in' && previousStatus === 'checked_out') {
+          // Morning check-in — stock availability report (if enabled). InstoreMorningStockCount chains via the dialog's onComplete.
+          if (enableStockReport || enableInstoreMorningCount) {
             setStockReportType('morning');
             setShowStockReport(true);
-          } else if (statusToSet === 'checked_out') {
-            // Evening check-out - show evening report (sales summary + notes)
-            setShowEveningReport(true);
           }
-        } else if (isInstore) {
-          // Instore: morning stock availability report after check-in, closing report before checkout
-          if (statusToSet === 'checked_in' && previousStatus === 'checked_out') {
-            setStockReportType('morning');
-            setShowStockReport(true);
-          } else if (statusToSet === 'checked_out') {
+        } else if (statusToSet === 'checked_out') {
+          // Priority: instore closing → seeding evening → evening report → survey closing.
+          if (enableInstoreClosing) {
             setShowInstoreClosingReport(true);
+          } else if (enableSeedingEvening) {
+            setShowSeedingEveningReport(true);
+          } else if (enableEveningReport) {
+            setShowEveningReport(true);
+          } else if (enableSurveyClosing) {
+            setShowSurveyClosingReport(true);
           }
-        } else if (isSeeding && statusToSet === 'checked_out') {
-          // Seeding check-out - show seeding evening report (sales + notes + photos)
-          setShowSeedingEveningReport(true);
-        } else if (
-          statusToSet === 'checked_out' &&
-          (
-            ['survey', 'survey_campaign'].includes(currentTeamType?.toLowerCase() ?? '') ||
-            projectFlags.enable_closing_report
-          )
-        ) {
-          // Survey check-out OR project explicitly opts into a closing report
-          setShowSurveyClosingReport(true);
         }
       } else {
         toast({
@@ -182,7 +171,7 @@ export const RecordAttendanceForm = () => {
         isProcessingRef.current = false;
       }, 1000);
     }
-  }, [user, pendingStatus, currentStatus, updateStatus, toast, currentTeamType]);
+  }, [user, pendingStatus, currentStatus, updateStatus, toast, isEnabled]);
 
   const getCurrentLocation = (): Promise<{ lat: number; lng: number }> => {
     return new Promise((resolve, reject) => {
@@ -368,9 +357,8 @@ export const RecordAttendanceForm = () => {
         onStockLevelsChange={(levels) => setInstoreStockLevels(levels)}
         onComplete={() => {
           console.log('Stock report completed');
-          // For instore, chain to morning stock count dialog after stock availability report
-          const isInstore = currentTeamType?.toLowerCase() === 'instore';
-          if (isInstore && stockReportType === 'morning') {
+          // Chain to morning stock count dialog if that CRM component is enabled.
+          if (isEnabled('CRM-0021') && stockReportType === 'morning') {
             setShowInstoreMorningStockCount(true);
           }
         }}

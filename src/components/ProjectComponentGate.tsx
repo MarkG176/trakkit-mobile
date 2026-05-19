@@ -1,33 +1,33 @@
-// [CMP-26ea03] ProjectComponentGate — project component gate component
+// [CMP-26ea03] ProjectComponentGate — route guard keyed on CRM-XXXX component codes
 import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useProjectComponents, ProjectComponentFlags } from "@/hooks/useProjectComponents";
+import { useProjectComponents } from "@/hooks/useProjectComponents";
 
 interface ProjectComponentGateProps {
-  component: keyof ProjectComponentFlags;
+  /** CRM-XXXX code from mobileComponentsCatalog. */
+  code: string;
   redirectTo?: string;
   children: ReactNode;
 }
 
 /**
- * Route guard that blocks access to a page if the active project has
- * the matching component disabled in `project_components`.
+ * Route guard that blocks access to a page if the active workspace has
+ * the matching CRM component code disabled in `active_components`.
  */
 export const ProjectComponentGate = ({
-  component,
+  code,
   redirectTo = "/",
   children,
 }: ProjectComponentGateProps) => {
-  const { currentProjectId, isInitialized } = useWorkspace();
-  const { flags, isLoaded } = useProjectComponents(currentProjectId);
+  const { isInitialized } = useWorkspace();
+  const { isEnabled, isLoaded } = useProjectComponents();
 
-  // Wait for both workspace + components to load before deciding
   if (!isInitialized || !isLoaded) {
     return null;
   }
 
-  if (!flags[component]) {
+  if (!isEnabled(code)) {
     return <Navigate to={redirectTo} replace />;
   }
 
