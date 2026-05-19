@@ -1,10 +1,11 @@
 // [CMP-dcdd9f] WorkspaceSwitcher — workspace switcher component
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Building, RefreshCw, Users } from 'lucide-react';
-import { workspaceService, UserWorkspace } from '@/services/workspaceService';
+import { Building, RefreshCw } from 'lucide-react';
+import { workspaceService } from '@/services/workspaceService';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { useToast } from '@/hooks/use-toast';
 
 interface WorkspaceSwitcherProps {
@@ -13,96 +14,49 @@ interface WorkspaceSwitcherProps {
 }
 
 export const WorkspaceSwitcher = ({ onWorkspaceChange, className }: WorkspaceSwitcherProps) => {
-  const [workspaces, setWorkspaces] = useState<UserWorkspace[]>([]);
-  const [currentWorkspaceId, setCurrentWorkspaceId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const {
+    userWorkspaces,
+    currentWorkspaceId,
+    switchWorkspace,
+    refreshWorkspaces,
+    isLoading,
+  } = useWorkspace();
   const [refreshing, setRefreshing] = useState(false);
   const { toast } = useToast();
-
-  useEffect(() => {
-    loadWorkspaces();
-  }, []);
-
-  // Listen for workspace changes from other components
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const currentId = workspaceService.getCurrentWorkspaceId();
-      if (currentId !== currentWorkspaceId) {
-        setCurrentWorkspaceId(currentId);
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [currentWorkspaceId]);
-
-  const loadWorkspaces = async () => {
-    try {
-      setLoading(true);
-      const userWorkspaces = workspaceService.getUserWorkspaces();
-      setWorkspaces(userWorkspaces);
-      setCurrentWorkspaceId(workspaceService.getCurrentWorkspaceId());
-    } catch (error) {
-      console.error('Error loading workspaces:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load workspaces",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleWorkspaceChange = async (workspaceId: string) => {
     if (workspaceId === currentWorkspaceId) return;
 
-    try {
-      setLoading(true);
-      const success = await workspaceService.setCurrentWorkspace(workspaceId);
-      
-      if (success) {
-        setCurrentWorkspaceId(workspaceId);
-        onWorkspaceChange?.(workspaceId);
-        
-        toast({
-          title: "Workspace Changed",
-          description: `Switched to ${workspaceService.getWorkspaceNameById(workspaceId)}`,
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to switch workspace",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Error switching workspace:', error);
+    const success = await switchWorkspace(workspaceId);
+    if (success) {
+      onWorkspaceChange?.(workspaceId);
       toast({
-        title: "Error",
-        description: "Failed to switch workspace",
-        variant: "destructive",
+        title: 'Workspace Changed',
+        description: `Switched to ${workspaceService.getWorkspaceNameById(workspaceId)}`,
       });
-    } finally {
-      setLoading(false);
+    } else {
+      toast({
+        title: 'Error',
+        description: 'Failed to switch workspace',
+        variant: 'destructive',
+      });
     }
   };
 
   const handleRefresh = async () => {
     try {
       setRefreshing(true);
-      await workspaceService.refresh();
-      await loadWorkspaces();
-      
+      await refreshWorkspaces();
       toast({
-        title: "Refreshed",
-        description: "Workspace data updated",
+        title: 'Refreshed',
+        description: 'Workspace data updated',
       });
     } catch (error) {
       console.error('Error refreshing workspaces:', error);
       toast({
-        title: "Error",
-        description: "Failed to refresh workspaces",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to refresh workspaces',
+        variant: 'destructive',
       });
     } finally {
       setRefreshing(false);
@@ -122,7 +76,7 @@ export const WorkspaceSwitcher = ({ onWorkspaceChange, className }: WorkspaceSwi
     }
   };
 
-  if (workspaces.length === 0) {
+  if (userWorkspaces.length === 0) {
     return (
       <div className={`flex items-center gap-2 ${className}`}>
         <Building className="h-4 w-4 text-muted-foreground" />
@@ -145,13 +99,13 @@ export const WorkspaceSwitcher = ({ onWorkspaceChange, className }: WorkspaceSwi
       <Select
         value={currentWorkspaceId || ''}
         onValueChange={handleWorkspaceChange}
-        disabled={loading}
+        disabled={isLoading}
       >
         <SelectTrigger className="w-[200px] bg-white/90 border-white/20 text-black">
           <SelectValue placeholder="Select workspace" />
         </SelectTrigger>
         <SelectContent>
-          {workspaces.map((userWorkspace) => (
+          {userWorkspaces.map((userWorkspace) => (
             <SelectItem key={userWorkspace.workspace_id} value={userWorkspace.workspace_id}>
               <div className="flex items-center justify-between w-full">
                 <span>{userWorkspace.workspace.name}</span>
@@ -161,7 +115,6 @@ export const WorkspaceSwitcher = ({ onWorkspaceChange, className }: WorkspaceSwi
           ))}
         </SelectContent>
       </Select>
-      
       <Button
         variant="ghost"
         size="sm"
