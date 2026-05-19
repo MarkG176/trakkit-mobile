@@ -331,7 +331,7 @@ export const Reports = () => {
         )}
       </div>
 
-      {!hideSalesReport && (
+      {!showSalesReport && (
         <>
           <InstoreMorningStockCountDialog
             open={showMorningReport}
