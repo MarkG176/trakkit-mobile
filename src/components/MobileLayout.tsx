@@ -1,8 +1,7 @@
-// [CMP-6118e9] MobileLayout — mobile layout component
+// [CMP-6118e9] MobileLayout — agent mobile shell with background tracker + bottom nav
 import { ReactNode } from "react";
 import { BottomNavigation } from "./BottomNavigation";
 import { BackgroundLocationTracker } from "./BackgroundLocationTracker";
-import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface MobileLayoutProps {
   children: ReactNode;
@@ -10,14 +9,12 @@ interface MobileLayoutProps {
   onCameraCapture?: (imageData: string) => void;
 }
 
-export const MobileLayout = ({ children, currentPage, onCameraCapture }: MobileLayoutProps) => {
-  const { currentTeamType } = useWorkspace();
-
+export const MobileLayout = ({ children, currentPage }: MobileLayoutProps) => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <BackgroundLocationTracker />
       {children}
-      <BottomNavigation currentPage={currentPage} currentTeamType={currentTeamType} />
+      <BottomNavigation currentPage={currentPage} />
     </div>
   );
 };
