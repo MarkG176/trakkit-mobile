@@ -171,7 +171,7 @@ export const RecordAttendanceForm = () => {
         isProcessingRef.current = false;
       }, 1000);
     }
-  }, [user, pendingStatus, currentStatus, updateStatus, toast, currentTeamType]);
+  }, [user, pendingStatus, currentStatus, updateStatus, toast, isEnabled]);
 
   const getCurrentLocation = (): Promise<{ lat: number; lng: number }> => {
     return new Promise((resolve, reject) => {
