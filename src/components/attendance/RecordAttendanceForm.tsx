@@ -357,9 +357,8 @@ export const RecordAttendanceForm = () => {
         onStockLevelsChange={(levels) => setInstoreStockLevels(levels)}
         onComplete={() => {
           console.log('Stock report completed');
-          // For instore, chain to morning stock count dialog after stock availability report
-          const isInstore = currentTeamType?.toLowerCase() === 'instore';
-          if (isInstore && stockReportType === 'morning') {
+          // Chain to morning stock count dialog if that CRM component is enabled.
+          if (isEnabled('CRM-0021') && stockReportType === 'morning') {
             setShowInstoreMorningStockCount(true);
           }
         }}
