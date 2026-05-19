@@ -11,9 +11,11 @@ interface MobileLayoutProps {
 
 export const MobileLayout = ({ children, currentPage }: MobileLayoutProps) => {
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-[100dvh] min-h-screen bg-background">
       <BackgroundLocationTracker />
-      {children}
+      <main className="pb-[calc(5rem+env(safe-area-inset-bottom,0px))]">
+        {children}
+      </main>
       <BottomNavigation currentPage={currentPage} />
     </div>
   );

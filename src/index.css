@@ -164,7 +164,8 @@
   
   /* Mobile Bottom Navigation */
   .bottom-nav {
-    @apply fixed bottom-0 left-0 right-0 bg-card border-t border-border;
+    @apply fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   
   .bottom-nav-item {

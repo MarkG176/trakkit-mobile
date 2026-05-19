@@ -1,7 +1,6 @@
 // [CMP-8d141b] Reports — field notes, images, and optional stock reports
 import { useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
-import { TopBar } from "@/components/dashboard/TopBar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -99,8 +98,6 @@ export const Reports = () => {
 
   return (
     <MobileLayout currentPage="reports">
-      <TopBar />
-
       <div className="bg-primary text-primary-foreground p-4">
         <h1 className="text-h1">Reports</h1>
         <p className="text-sm opacity-90">
@@ -116,7 +113,7 @@ export const Reports = () => {
                 <Package className="h-5 w-5" />
                 Stock Reports
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3">
                 {showMorningStock && (
                   <Button
                     type="button"
@@ -204,17 +201,22 @@ export const Reports = () => {
         </Card>
       </div>
 
-      {showMorningStock && (
+      {/* Mount dialogs only when opened — avoids Radix portal / useInventory side-effects on mobile */}
+      {showMorningStock && showMorningReport && (
         <InstoreMorningStockCountDialog
-          open={showMorningReport}
-          onOpenChange={setShowMorningReport}
+          open
+          onOpenChange={(open) => {
+            if (!open) setShowMorningReport(false);
+          }}
           onComplete={() => setShowMorningReport(false)}
         />
       )}
-      {showClosingStock && (
+      {showClosingStock && showEveningReport && (
         <InstoreClosingReportDialog
-          open={showEveningReport}
-          onOpenChange={setShowEveningReport}
+          open
+          onOpenChange={(open) => {
+            if (!open) setShowEveningReport(false);
+          }}
           onComplete={() => setShowEveningReport(false)}
         />
       )}
