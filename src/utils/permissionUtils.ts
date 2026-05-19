@@ -182,7 +182,7 @@ const getLocationPermissionStatus = (): PermissionStatus => {
   return cached?.status || 'prompt';
 };
 
-const requestLocationPermission = (): boolean => {
+const requestLocationPermission = async (): Promise<boolean> => {
   if (!navigator.geolocation) {
     console.warn('Geolocation not supported');
     return false;
@@ -259,8 +259,8 @@ const getNotificationPermissionStatus = (): PermissionStatus => {
     return 'unknown';
   }
 
-  const status = (Notification.permission as unknown as PermissionStatus);
-  return status === 'default' ? 'prompt' : status;
+  const status = Notification.permission as unknown as string;
+  return (status === 'default' ? 'prompt' : status) as PermissionStatus;
 };
 
 const requestNotificationPermission = async (): Promise<boolean> => {
@@ -353,7 +353,7 @@ const setupPushSubscription = async (): Promise<void> => {
 
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as BufferSource,
       });
 
       // Send subscription to backend
