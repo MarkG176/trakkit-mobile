@@ -3,18 +3,14 @@ import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { MapPin, Plus } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Check, ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
-import { calculateGoogleMapsDistance } from "@/utils/googleMapsDistance";
 import { calculateDistance, formatDistance, debugDistanceCalculation } from "@/utils/distanceCalculator";
+import { reverseGeocode } from "@/utils/googleMapsGeocoding";
 import { useAgentActions } from "@/hooks/useAgentActions";
 import { StoreSuccessDialog } from "@/components/StoreSuccessDialog";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -36,27 +32,7 @@ export const Routes = () => {
   const [selectedStore, setSelectedStore] = useState<string>("all");
   const [storeSearchText, setStoreSearchText] = useState<string>("");
   const [showStoreList, setShowStoreList] = useState<boolean>(false);
-  const [counties, setCounties] = useState<string[]>([]);
   const [countries, setCountries] = useState<string[]>([]);
-  const [projectCountry, setProjectCountry] = useState<string | null>(null);
-
-  const TANZANIA_REGIONS = [
-    "Arusha", "Dar es Salaam", "Dodoma", "Geita", "Iringa", "Kagera", "Katavi",
-    "Kigoma", "Kilimanjaro", "Lindi", "Manyara", "Mara", "Mbeya", "Morogoro",
-    "Mtwara", "Mwanza", "Njombe", "Pwani", "Rukwa", "Ruvuma", "Shinyanga",
-    "Simiyu", "Singida", "Tabora", "Tanga",
-    "Pemba North", "Pemba South", "Zanzibar Central/South", "Zanzibar North", "Zanzibar Urban/West",
-  ];
-
-  const KENYA_COUNTIES = [
-    "Baringo", "Bomet", "Bungoma", "Busia", "Elgeyo-Marakwet", "Embu", "Garissa",
-    "Homa Bay", "Isiolo", "Kajiado", "Kakamega", "Kericho", "Kiambu", "Kilifi",
-    "Kirinyaga", "Kisii", "Kisumu", "Kitui", "Kwale", "Laikipia", "Lamu",
-    "Machakos", "Makueni", "Mandera", "Marsabit", "Meru", "Migori", "Mombasa",
-    "Murang'a", "Nairobi", "Nakuru", "Nandi", "Narok", "Nyamira", "Nyandarua",
-    "Nyeri", "Samburu", "Siaya", "Taita-Taveta", "Tana River", "Tharaka-Nithi",
-    "Trans-Nzoia", "Turkana", "Uasin Gishu", "Vihiga", "Wajir", "West Pokot",
-  ];
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -64,54 +40,22 @@ export const Routes = () => {
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [showAddLocationForm, setShowAddLocationForm] = useState(false);
   const [newStoreName, setNewStoreName] = useState("");
-  const [newStoreCounty, setNewStoreCounty] = useState("");
   const [newStoreContact, setNewStoreContact] = useState("");
+  const [geocodedLocation, setGeocodedLocation] = useState<{ county: string; country: string } | null>(null);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [geocodingError, setGeocodingError] = useState<string | null>(null);
 
-  // Load last selected county from localStorage on mount
-  useEffect(() => {
-    const lastCounty = localStorage.getItem("lastSelectedCounty");
-    if (lastCounty && counties.includes(lastCounty)) {
-      setNewStoreCounty(lastCounty);
-    } else if (counties.length > 0 && !newStoreCounty) {
-      setNewStoreCounty(counties[0]);
-    }
-  }, [counties]);
   const [isSubmittingStore, setIsSubmittingStore] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [addedStore, setAddedStore] = useState<{ id: string; name: string; county: string } | null>(null);
   const { toast } = useToast();
   const { recordLocationSet } = useAgentActions();
-  const { currentWorkspaceId, currentProjectId } = useWorkspace();
+  const { currentWorkspaceId } = useWorkspace();
   const { isEnabled } = useProjectComponents();
 
   // Check if current team type is wholesale/instore - hide Add Location for these types
   const showAddStore = isEnabled('CRM-0098A');
   const showStoresList = isEnabled('CRM-0098L');
-
-  // Fetch the project's country
-  useEffect(() => {
-    const fetchProjectCountry = async () => {
-      if (!currentProjectId) return;
-      const { data } = await supabase
-        .from("project_plans")
-        .select("country")
-        .eq("id", currentProjectId)
-        .single();
-      if (data?.country) {
-        setProjectCountry(data.country);
-      }
-    };
-    fetchProjectCountry();
-  }, [currentProjectId]);
-
-  // Get country-specific regions for the Add Store county dropdown
-  const getCountryRegions = (): string[] => {
-    const country = projectCountry?.toLowerCase();
-    if (country === "tanzania") return TANZANIA_REGIONS;
-    if (country === "kenya") return KENYA_COUNTIES;
-    // If no project country, show all
-    return [...TANZANIA_REGIONS, ...KENYA_COUNTIES];
-  };
 
   useEffect(() => {
     fetchStores();
@@ -157,8 +101,6 @@ export const Routes = () => {
 
     if (data) {
       setStores(data);
-      const uniqueCounties = Array.from(new Set(data.map((store) => store.county)));
-      setCounties(uniqueCounties);
       const uniqueCountries = Array.from(new Set(data.map((store) => store.country).filter(Boolean))) as string[];
       setCountries(uniqueCountries);
       // Auto-select first country if none selected
@@ -175,6 +117,40 @@ export const Routes = () => {
   const storeSearchResults = filteredStores.filter((store) =>
     store.store_name.toLowerCase().includes(storeSearchText.toLowerCase())
   );
+
+  useEffect(() => {
+    if (!currentLocation) {
+      setGeocodedLocation(null);
+      setGeocodingError(null);
+      return;
+    }
+
+    let cancelled = false;
+    setIsGeocoding(true);
+    setGeocodingError(null);
+
+    reverseGeocode(currentLocation.latitude, currentLocation.longitude)
+      .then((result) => {
+        if (!cancelled) {
+          setGeocodedLocation(result);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setGeocodedLocation(null);
+          setGeocodingError(error.message || "Failed to resolve address from location");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsGeocoding(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentLocation]);
 
   const getCurrentLocation = (): Promise<{ latitude: number; longitude: number }> => {
     return new Promise((resolve, reject) => {
@@ -203,10 +179,10 @@ export const Routes = () => {
   };
 
   const handleAddLocation = async () => {
-    if (!newStoreName.trim() || !newStoreCounty.trim()) {
+    if (!newStoreName.trim()) {
       toast({
         title: "Missing Information",
-        description: "Please fill in both store name and county.",
+        description: "Please enter a store name.",
         variant: "destructive",
       });
       return;
@@ -216,6 +192,15 @@ export const Routes = () => {
       toast({
         title: "Location Required",
         description: "Please enable location access to add a new store.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!geocodedLocation) {
+      toast({
+        title: "Address Required",
+        description: geocodingError || "Could not determine county and country from your location. Please refresh your location and try again.",
         variant: "destructive",
       });
       return;
@@ -233,9 +218,6 @@ export const Routes = () => {
     try {
       setIsSubmittingStore(true);
 
-      // Save selected county to localStorage
-      localStorage.setItem("lastSelectedCounty", newStoreCounty.trim());
-
       // Get current user for added_by field
       const {
         data: { user },
@@ -245,13 +227,13 @@ export const Routes = () => {
         .from("stores")
         .insert({
           store_name: newStoreName.trim(),
-          county: newStoreCounty.trim(),
+          county: geocodedLocation.county,
           store_lat: currentLocation.latitude,
           store_long: currentLocation.longitude,
           contact: newStoreContact.trim() || null,
           added_by: user?.id || null,
           workspace_id: currentWorkspaceId,
-          country: projectCountry,
+          country: geocodedLocation.country,
         })
         .select("id")
         .single();
@@ -297,14 +279,13 @@ export const Routes = () => {
       setAddedStore({
         id: insertedStore.id,
         name: newStoreName.trim(),
-        county: newStoreCounty.trim(),
+        county: geocodedLocation.county,
       });
       setShowSuccessDialog(true);
 
       // Reset form
       setNewStoreName("");
       setNewStoreContact("");
-      // Don't reset county - keep the last selected value
       setShowAddLocationForm(false);
 
       // Refresh stores list
@@ -583,47 +564,6 @@ export const Routes = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="store-county" className="text-sm font-medium text-foreground mb-2 block">
-                    County
-                  </Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        className={cn(
-                          "w-full justify-between font-normal",
-                          !newStoreCounty && "text-muted-foreground"
-                        )}
-                      >
-                        {newStoreCounty || "Select county/region"}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start" side="bottom" sideOffset={4}>
-                      <Command>
-                        <CommandInput placeholder="Search county/region..." />
-                        <CommandList className="max-h-[200px]">
-                          <CommandEmpty>No county found.</CommandEmpty>
-                          <CommandGroup>
-                            {Array.from(new Set([...counties, ...getCountryRegions()])).sort().map((county) => (
-                              <CommandItem
-                                key={county}
-                                value={county}
-                                onSelect={() => setNewStoreCounty(county)}
-                              >
-                                <Check className={cn("mr-2 h-4 w-4", newStoreCounty === county ? "opacity-100" : "opacity-0")} />
-                                {county}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                <div>
                   <Label htmlFor="store-contact" className="text-sm font-medium text-foreground mb-2 block">
                     Contact Number
                   </Label>
@@ -638,11 +578,21 @@ export const Routes = () => {
                 </div>
 
                 <div className="p-3 bg-muted rounded-lg">
-                  <p className="text-sm font-medium text-foreground mb-2">Location Coordinates</p>
+                  <p className="text-sm font-medium text-foreground mb-2">Location</p>
                   {currentLocation ? (
                     <div className="text-xs text-muted-foreground space-y-1">
                       <p>Latitude: {currentLocation.latitude.toFixed(6)}</p>
                       <p>Longitude: {currentLocation.longitude.toFixed(6)}</p>
+                      {isGeocoding && <p>Resolving county and country...</p>}
+                      {geocodingError && !isGeocoding && (
+                        <p className="text-destructive">{geocodingError}</p>
+                      )}
+                      {geocodedLocation && !isGeocoding && (
+                        <>
+                          <p>County: {geocodedLocation.county}</p>
+                          <p>Country: {geocodedLocation.country}</p>
+                        </>
+                      )}
                       <p className="text-green-600">✓ Using current location</p>
                     </div>
                   ) : (
@@ -669,7 +619,6 @@ export const Routes = () => {
                     onClick={() => {
                       setShowAddLocationForm(false);
                       setNewStoreName("");
-                      setNewStoreCounty("");
                       setNewStoreContact("");
                     }}
                     className="flex-1"
@@ -678,7 +627,7 @@ export const Routes = () => {
                   </Button>
                   <Button
                     onClick={handleAddLocation}
-                    disabled={isSubmittingStore || !currentLocation}
+                    disabled={isSubmittingStore || !currentLocation || isGeocoding || !geocodedLocation}
                     className="flex-1"
                   >
                     {isSubmittingStore ? "Adding..." : "Add Store"}
