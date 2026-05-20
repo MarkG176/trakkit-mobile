@@ -17,6 +17,7 @@ import { workspaceService } from "@/services/workspaceService";
 import { useInStoreWorkLocation } from "@/hooks/useInStoreWorkLocation";
 import { useProjectComponents } from "@/hooks/useProjectComponents";
 import { useInventory, InventoryItem } from "@/hooks/useInventory";
+import { useProductFocusInventory, ProductFocusItem } from "@/hooks/useProductFocusInventory";
 import { SaleFeedbackDialog, FeedbackData } from "@/components/dashboard/SaleFeedbackDialog";
 import { useToast } from "@/hooks/use-toast";
 import { formatProductName } from "@/utils/formatProductName";
@@ -51,11 +52,12 @@ export const RecordSale = () => {
   const navigate = useNavigate();
   const { submitSale, loading: submitting } = useSalesForm();
   const { user } = useAuth();
-  const { currentWorkspaceId, currentProjectId } = useWorkspace();
+  const { currentWorkspaceId, currentProjectId, currentWorkspaceLabel } = useWorkspace();
   const { isEnabled } = useProjectComponents();
   const isSalePhotoRequired = isEnabled('CRM-0034P');
   const canOverridePrice = isEnabled('CRM-0034C');
-  const { inventory, loading } = useInventory();
+  const { inventory, loading: inventoryLoading } = useInventory();
+  const { products: productFocusProducts, loading: productFocusLoading } = useProductFocusInventory();
   const hideInventoryCounts = useInStoreWorkLocation();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
@@ -79,10 +81,15 @@ export const RecordSale = () => {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  /** Sale flow UI: photo + optional price edit from CRM flags */
   const isWholesale = isSalePhotoRequired || canOverridePrice;
 
-  // Get price for a product, using cached price for wholesale
-  const getProductPrice = useCallback((item: InventoryItem): number => {
+  /** Product list: project-focus SKUs when team label is wholesale */
+  const isWholesaleTeam = currentWorkspaceLabel?.toLowerCase() === 'wholesale';
+  const currentInventory = isWholesaleTeam ? productFocusProducts : inventory;
+  const currentLoading = isWholesaleTeam ? productFocusLoading : inventoryLoading;
+
+  const getProductPrice = useCallback((item: InventoryItem | ProductFocusItem): number => {
     if (canOverridePrice) {
       const cached = getCachedPrices();
       if (cached[item.product_variant_id] !== undefined) {
@@ -92,7 +99,7 @@ export const RecordSale = () => {
     return item.price || 0;
   }, [canOverridePrice]);
 
-  const addToCart = (item: InventoryItem) => {
+  const addToCart = (item: InventoryItem | ProductFocusItem) => {
     const existingItem = cartItems.find(cartItem => cartItem.id === item.product_variant_id);
     const itemPrice = getProductPrice(item);
     
@@ -375,7 +382,7 @@ export const RecordSale = () => {
     });
   };
 
-  const filteredInventory = inventory.filter(item =>
+  const filteredInventory = currentInventory.filter(item =>
     item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.product_variant_id.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -415,13 +422,13 @@ export const RecordSale = () => {
 
         {/* Product List */}
         <div className="flex-1 overflow-y-auto px-4 pb-20">
-          {loading ? (
+          {currentLoading ? (
             <div className="flex items-center justify-center h-32">
-              <p className="text-muted-foreground">Loading inventory...</p>
+              <p className="text-muted-foreground">Loading products...</p>
             </div>
           ) : filteredInventory.length === 0 ? (
             <div className="flex items-center justify-center h-32">
-              <p className="text-muted-foreground">No products in inventory</p>
+              <p className="text-muted-foreground">No products available</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -437,7 +444,7 @@ export const RecordSale = () => {
                       {/* Product Info */}
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-base break-words whitespace-normal leading-snug">{formatProductName(item.name, item.sku)}</h3>
-                        {!hideInventoryCounts && (
+                        {!hideInventoryCounts && "amount_issued" in item && (
                           <p className="text-sm text-muted-foreground">Available: {item.amount_issued}</p>
                         )}
                         {item.price > 0 && (

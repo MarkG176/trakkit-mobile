@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useInStoreWorkLocation } from "@/hooks/useInStoreWorkLocation";
 import { useInventory, InventoryItem } from "@/hooks/useInventory";
+import { useProductFocusInventory, ProductFocusItem } from "@/hooks/useProductFocusInventory";
 import { formatProductName } from "@/utils/formatProductName";
 import { useInteractionForm } from "@/hooks/useInteractionForm";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,8 +30,9 @@ interface SelectedProduct {
 export const GiveProducts = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { currentWorkspaceId, currentProjectId } = useWorkspace();
-  const { inventory, loading } = useInventory();
+  const { currentWorkspaceId, currentProjectId, currentWorkspaceLabel } = useWorkspace();
+  const { inventory, loading: inventoryLoading } = useInventory();
+  const { products: productFocusProducts, loading: productFocusLoading } = useProductFocusInventory();
   const { submitInteraction } = useInteractionForm();
   const hideInventoryCounts = useInStoreWorkLocation();
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
@@ -41,6 +43,13 @@ export const GiveProducts = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Product-focus list when project team label is wholesale
+  const isWholesale = currentWorkspaceLabel?.toLowerCase() === 'wholesale';
+
+  // Determine which inventory to use based on team type
+  const currentInventory = isWholesale ? productFocusProducts : inventory;
+  const currentLoading = isWholesale ? productFocusLoading : inventoryLoading;
 
   const startRecording = () => {
     setIsRecording(true);
@@ -58,14 +67,15 @@ export const GiveProducts = () => {
     setRecordingDuration(0);
   };
 
-  const addProduct = (item: InventoryItem) => {
+  const addProduct = (item: InventoryItem | ProductFocusItem) => {
     const existingProduct = selectedProducts.find(p => p.id === item.id);
-    
+
     if (existingProduct) {
-      if (existingProduct.quantity < existingProduct.maxQuantity) {
-        setSelectedProducts(prev => 
-          prev.map(p => 
-            p.id === item.id 
+      // For wholesale, no quantity limits
+      if (isWholesale || existingProduct.quantity < existingProduct.maxQuantity) {
+        setSelectedProducts(prev =>
+          prev.map(p =>
+            p.id === item.id
               ? { ...p, quantity: p.quantity + 1 }
               : p
           )
@@ -77,7 +87,7 @@ export const GiveProducts = () => {
         name: formatProductName(item.name, item.sku),
         sku: item.sku || null,
         quantity: 1,
-        maxQuantity: item.amount_issued,
+        maxQuantity: isWholesale ? 999 : item.amount_issued, // High limit for wholesale
         productVariantId: item.product_variant_id
       }]);
     }
