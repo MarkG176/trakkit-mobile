@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { workspaceService } from "@/services/workspaceService";
+import { useInStoreWorkLocation } from "@/hooks/useInStoreWorkLocation";
 import { useProjectComponents } from "@/hooks/useProjectComponents";
 import { useInventory, InventoryItem } from "@/hooks/useInventory";
 import { SaleFeedbackDialog, FeedbackData } from "@/components/dashboard/SaleFeedbackDialog";
@@ -55,7 +56,7 @@ export const RecordSale = () => {
   const isSalePhotoRequired = isEnabled('CRM-0034P');
   const canOverridePrice = isEnabled('CRM-0034C');
   const { inventory, loading } = useInventory();
-  const hideInventoryCounts = workspaceService.isCurrentWorkspaceInStoreMode();
+  const hideInventoryCounts = useInStoreWorkLocation();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [cartItems, setCartItems] = useState<CartItem[]>([]);

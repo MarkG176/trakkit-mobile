@@ -11,7 +11,7 @@ import { ShoppingCart, Gift, ClipboardList, Star, Plus, Minus, CheckCircle2, Tra
 import { ImageCaptionInput } from "@/components/ImageCaptionInput";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { workspaceService } from "@/services/workspaceService";
+import { useInStoreWorkLocation } from "@/hooks/useInStoreWorkLocation";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { StockReportDialog } from "@/components/attendance/StockReportDialog";
 import { PriceReportDialog } from "@/components/attendance/PriceReportDialog";
@@ -54,7 +54,7 @@ interface InventoryItem {
 export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, storeCounty }: StoreSuccessDialogProps) => {
   const { toast } = useToast();
   const { currentWorkspaceId, currentProjectId } = useWorkspace();
-  const hideInventoryCounts = workspaceService.isCurrentWorkspaceInStoreMode();
+  const hideInventoryCounts = useInStoreWorkLocation();
   const [activeAction, setActiveAction] = useState<ActionType>(null);
   const [loading, setLoading] = useState(false);
   const [showStockReport, setShowStockReport] = useState(false);

@@ -7,7 +7,7 @@ import { formatProductName } from "@/utils/formatProductName";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { supabase } from "@/integrations/supabase/client";
-import { workspaceService } from "@/services/workspaceService";
+import { useInStoreWorkLocation } from "@/hooks/useInStoreWorkLocation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -31,7 +31,7 @@ export const Inventory = () => {
   const { user } = useAuth();
   const { currentWorkspaceId } = useWorkspace();
   const { toast } = useToast();
-  const hideInventoryCounts = workspaceService.isCurrentWorkspaceInStoreMode();
+  const hideInventoryCounts = useInStoreWorkLocation();
 
   const [isSupervisor, setIsSupervisor] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);

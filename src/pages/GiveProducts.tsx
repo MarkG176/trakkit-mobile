@@ -11,7 +11,7 @@ import { ArrowLeft, Plus, Minus, Search, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { workspaceService } from "@/services/workspaceService";
+import { useInStoreWorkLocation } from "@/hooks/useInStoreWorkLocation";
 import { useInventory, InventoryItem } from "@/hooks/useInventory";
 import { formatProductName } from "@/utils/formatProductName";
 import { useInteractionForm } from "@/hooks/useInteractionForm";
@@ -32,7 +32,7 @@ export const GiveProducts = () => {
   const { currentWorkspaceId, currentProjectId } = useWorkspace();
   const { inventory, loading } = useInventory();
   const { submitInteraction } = useInteractionForm();
-  const hideInventoryCounts = workspaceService.isCurrentWorkspaceInStoreMode();
+  const hideInventoryCounts = useInStoreWorkLocation();
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
   const [recipientName, setRecipientName] = useState("");
   const [recipientPhone, setRecipientPhone] = useState("");

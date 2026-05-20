@@ -33,6 +33,18 @@ interface UserWorkspace {
   active_components: Record<string, boolean | string> | null;
 }
 
+/**
+ * True when `user_workspaces.active_components.work_location` is in-store mode
+ * (denormalized from project plan). Case-insensitive; trims whitespace.
+ */
+export function isInStoreWorkLocation(
+  activeComponents: Record<string, boolean | string> | null | undefined,
+): boolean {
+  const raw = activeComponents?.work_location;
+  if (typeof raw !== 'string') return false;
+  return raw.trim().toLowerCase() === 'in_store';
+}
+
 const WORKSPACE_STORAGE_KEY = 'trakkit_current_workspace_id';
 
 class WorkspaceService {
@@ -224,8 +236,7 @@ class WorkspaceService {
    * Returns true when the current workspace is configured as in-store work location.
    */
   isCurrentWorkspaceInStoreMode(): boolean {
-    const activeComponents = this.getCurrentActiveComponents();
-    return activeComponents?.work_location === 'in_store';
+    return isInStoreWorkLocation(this.getCurrentActiveComponents() ?? undefined);
   }
 
   /**

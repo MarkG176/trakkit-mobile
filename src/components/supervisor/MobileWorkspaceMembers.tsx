@@ -36,6 +36,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { isInStoreWorkLocation } from '@/services/workspaceService';
 
 interface WorkspaceMember {
   id: string;
@@ -51,6 +52,8 @@ interface MemberDetails {
   lastLocation: { lat: number; lng: number; timestamp: string } | null;
   inventory: { name: string; quantity: number; product_variant_id?: string }[];
   sales: { units: number; value: number };
+  /** When the agent's `user_workspaces.active_components.work_location` is in-store */
+  hideInventoryCounts: boolean;
 }
 
 interface ProductVariant {
@@ -199,6 +202,19 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
   const fetchMemberDetails = async (member: WorkspaceMember) => {
     setDetailsLoading(true);
     try {
+      const { data: agentWorkspaceRow } = await supabase
+        .from('user_workspaces')
+        .select('active_components')
+        .eq('user_id', member.user_id)
+        .eq('workspace_id', workspaceId)
+        .eq('is_deleted', false)
+        .maybeSingle();
+
+      const hideInventoryCounts = isInStoreWorkLocation(
+        (agentWorkspaceRow as { active_components?: Record<string, boolean | string> | null } | null)
+          ?.active_components ?? null,
+      );
+
       const { data: teamData } = await supabase
         .from('team_members')
         .select('teams:teams!team_members_team_id_fkey(id, name)')
@@ -246,7 +262,8 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
           timestamp: locationData.timestamp
         } : null,
         inventory,
-        sales
+        sales,
+        hideInventoryCounts,
       });
     } catch (error) {
       console.error('Error fetching member details:', error);
@@ -574,9 +591,11 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
                   {memberDetails.inventory.length > 0 ? (
                     <div className="space-y-2">
                       {memberDetails.inventory.map((item, i) => (
-                        <div key={i} className="flex justify-between text-sm">
-                          <span>{item.name}</span>
-                          <span className="font-medium">{item.quantity} units</span>
+                        <div key={i} className="flex justify-between text-sm gap-2">
+                          <span className="min-w-0 break-words">{item.name}</span>
+                          {!memberDetails.hideInventoryCounts && (
+                            <span className="font-medium shrink-0">{item.quantity} units</span>
+                          )}
                         </div>
                       ))}
                     </div>
