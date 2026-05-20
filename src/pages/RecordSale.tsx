@@ -13,11 +13,11 @@ import { useSalesForm } from "@/hooks/useSalesForm";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { workspaceService } from "@/services/workspaceService";
 import { useProjectComponents } from "@/hooks/useProjectComponents";
 import { useInventory, InventoryItem } from "@/hooks/useInventory";
 import { SaleFeedbackDialog, FeedbackData } from "@/components/dashboard/SaleFeedbackDialog";
 import { useToast } from "@/hooks/use-toast";
-import { workspaceService } from "@/services/workspaceService";
 import { formatProductName } from "@/utils/formatProductName";
 interface CartItem {
   id: string;
@@ -55,6 +55,7 @@ export const RecordSale = () => {
   const isSalePhotoRequired = isEnabled('CRM-0034P');
   const canOverridePrice = isEnabled('CRM-0034C');
   const { inventory, loading } = useInventory();
+  const hideInventoryCounts = workspaceService.isCurrentWorkspaceInStoreMode();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -435,7 +436,9 @@ export const RecordSale = () => {
                       {/* Product Info */}
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-base break-words whitespace-normal leading-snug">{formatProductName(item.name, item.sku)}</h3>
-                        <p className="text-sm text-muted-foreground">Available: {item.amount_issued}</p>
+                        {!hideInventoryCounts && (
+                          <p className="text-sm text-muted-foreground">Available: {item.amount_issued}</p>
+                        )}
                         {item.price > 0 && (
                           <p className="text-sm font-medium text-primary">KES {item.price}</p>
                         )}

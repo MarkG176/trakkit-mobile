@@ -30,7 +30,7 @@ interface UserWorkspace {
   role: 'admin' | 'member' | 'viewer';
   joined_at: string;
   workspace: Workspace;
-  active_components: Record<string, boolean> | null;
+  active_components: Record<string, boolean | string> | null;
 }
 
 const WORKSPACE_STORAGE_KEY = 'trakkit_current_workspace_id';
@@ -212,12 +212,20 @@ class WorkspaceService {
    * Get cached active component flags for the current workspace
    * (denormalized from project_plans.mobile_components via DB trigger).
    */
-  getCurrentActiveComponents(): Record<string, boolean> | null {
+  getCurrentActiveComponents(): Record<string, boolean | string> | null {
     if (!this.currentWorkspaceId) return null;
     const uw = this.userWorkspaces.find(
       (w) => w.workspace_id === this.currentWorkspaceId
     );
     return uw?.active_components ?? null;
+  }
+
+  /**
+   * Returns true when the current workspace is configured as in-store work location.
+   */
+  isCurrentWorkspaceInStoreMode(): boolean {
+    const activeComponents = this.getCurrentActiveComponents();
+    return activeComponents?.work_location === 'in_store';
   }
 
   /**

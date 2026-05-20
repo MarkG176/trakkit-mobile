@@ -11,6 +11,7 @@ import { ShoppingCart, Gift, ClipboardList, Star, Plus, Minus, CheckCircle2, Tra
 import { ImageCaptionInput } from "@/components/ImageCaptionInput";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { workspaceService } from "@/services/workspaceService";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { StockReportDialog } from "@/components/attendance/StockReportDialog";
 import { PriceReportDialog } from "@/components/attendance/PriceReportDialog";
@@ -53,6 +54,7 @@ interface InventoryItem {
 export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, storeCounty }: StoreSuccessDialogProps) => {
   const { toast } = useToast();
   const { currentWorkspaceId, currentProjectId } = useWorkspace();
+  const hideInventoryCounts = workspaceService.isCurrentWorkspaceInStoreMode();
   const [activeAction, setActiveAction] = useState<ActionType>(null);
   const [loading, setLoading] = useState(false);
   const [showStockReport, setShowStockReport] = useState(false);
@@ -733,7 +735,9 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm break-words whitespace-normal leading-snug">{formatProductName(product.name, product.sku)}</p>
-                            <p className="text-xs text-muted-foreground">Available: {product.amount_issued}</p>
+                            {!hideInventoryCounts && (
+                              <p className="text-xs text-muted-foreground">Available: {product.amount_issued}</p>
+                            )}
                             {product.product_variants?.price > 0 && (
                               <p className="text-xs font-medium text-primary">KES {product.product_variants.price}</p>
                             )}
@@ -846,7 +850,9 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <p className="font-medium break-words whitespace-normal leading-snug">{formatProductName(item.name, item.sku)}</p>
-                      <p className="text-sm text-muted-foreground">Available: {item.amount_issued}</p>
+                      {!hideInventoryCounts && (
+                        <p className="text-sm text-muted-foreground">Available: {item.amount_issued}</p>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <Button

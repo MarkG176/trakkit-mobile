@@ -11,6 +11,7 @@ import { ArrowLeft, Plus, Minus, Search, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { workspaceService } from "@/services/workspaceService";
 import { useInventory, InventoryItem } from "@/hooks/useInventory";
 import { formatProductName } from "@/utils/formatProductName";
 import { useInteractionForm } from "@/hooks/useInteractionForm";
@@ -31,6 +32,7 @@ export const GiveProducts = () => {
   const { currentWorkspaceId, currentProjectId } = useWorkspace();
   const { inventory, loading } = useInventory();
   const { submitInteraction } = useInteractionForm();
+  const hideInventoryCounts = workspaceService.isCurrentWorkspaceInStoreMode();
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
   const [recipientName, setRecipientName] = useState("");
   const [recipientPhone, setRecipientPhone] = useState("");
@@ -317,9 +319,11 @@ export const GiveProducts = () => {
                     )}
                   </div>
                   <h3 className="font-medium text-xs text-center mb-1 line-clamp-2">{formatProductName(item.name, item.sku)}</h3>
-                  <p className="text-xs text-muted-foreground mb-2 text-center">
-                    Available: {item.amount_issued}
-                  </p>
+                  {!hideInventoryCounts && (
+                    <p className="text-xs text-muted-foreground mb-2 text-center">
+                      Available: {item.amount_issued}
+                    </p>
+                  )}
                   
                   <div className="flex items-center gap-1">
                     <Button

@@ -95,8 +95,8 @@ export const DEFAULT_MOBILE_COMPONENTS: Record<string, boolean> = Object.fromEnt
 );
 
 export const mergeWithDefaults = (
-  stored: Record<string, boolean> | null | undefined,
-): Record<string, boolean> => ({
+  stored: Record<string, boolean | string> | null | undefined,
+): Record<string, boolean | string> => ({
   ...DEFAULT_MOBILE_COMPONENTS,
   ...(stored ?? {}),
 });

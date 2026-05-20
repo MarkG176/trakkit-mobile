@@ -7,6 +7,7 @@ import { formatProductName } from "@/utils/formatProductName";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { supabase } from "@/integrations/supabase/client";
+import { workspaceService } from "@/services/workspaceService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -30,6 +31,7 @@ export const Inventory = () => {
   const { user } = useAuth();
   const { currentWorkspaceId } = useWorkspace();
   const { toast } = useToast();
+  const hideInventoryCounts = workspaceService.isCurrentWorkspaceInStoreMode();
 
   const [isSupervisor, setIsSupervisor] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
@@ -174,11 +176,8 @@ export const Inventory = () => {
                     
                     <div className="flex items-center justify-between">
                       <span className="text-body font-medium">KES {item.price || 0}</span>
-                      <span className={`text-sm font-medium ${
-                        item.amount_issued < 5 ? "text-destructive" : 
-                        item.amount_issued < 10 ? "text-warning" : "text-success"
-                      }`}>
-                        {item.amount_issued} in stock
+                      <span className={`text-sm font-medium ${hideInventoryCounts ? 'text-muted-foreground' : item.amount_issued < 5 ? "text-destructive" : item.amount_issued < 10 ? "text-warning" : "text-success"}`}>
+                        {hideInventoryCounts ? 'Assigned' : `${item.amount_issued} in stock`}
                       </span>
                     </div>
                   </div>
