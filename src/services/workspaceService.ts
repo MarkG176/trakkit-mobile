@@ -34,15 +34,23 @@ interface UserWorkspace {
 }
 
 /**
+ * Normalize `active_components.work_location` values from project `mobile_components`, e.g.
+ * `in_store`, `instore`, `in-store`, `in store` → `instore`.
+ */
+export function normalizeWorkLocationMode(value: string): string {
+  return value.trim().toLowerCase().replace(/[\s_-]+/g, '');
+}
+
+/**
  * True when `user_workspaces.active_components.work_location` is in-store mode
- * (denormalized from project plan). Case-insensitive; trims whitespace.
+ * (denormalized from project plan). Accepts common spellings and separators.
  */
 export function isInStoreWorkLocation(
   activeComponents: Record<string, boolean | string> | null | undefined,
 ): boolean {
   const raw = activeComponents?.work_location;
   if (typeof raw !== 'string') return false;
-  return raw.trim().toLowerCase() === 'in_store';
+  return normalizeWorkLocationMode(raw) === 'instore';
 }
 
 const WORKSPACE_STORAGE_KEY = 'trakkit_current_workspace_id';

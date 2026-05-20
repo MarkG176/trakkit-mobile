@@ -3,8 +3,8 @@ import { useWorkspace } from '@/hooks/useWorkspace';
 import { isInStoreWorkLocation } from '@/services/workspaceService';
 
 /**
- * Reactive in-store flag from `user_workspaces.active_components` for the current workspace.
- * Use this in UI that must update when workspace data loads or the user switches workspace.
+ * Reactive in-store flag from the signed-in user's `user_workspaces.active_components`
+ * row for the current workspace (JSON from DB). Does not infer from labels or other caches.
  */
 export function useInStoreWorkLocation(): boolean {
   const { userWorkspaces, currentWorkspaceId } = useWorkspace();
