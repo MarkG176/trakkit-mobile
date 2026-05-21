@@ -184,6 +184,8 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
 
   useEffect(() => {
     if (workspaceId) {
+      setSelectedMember(null);
+      setMemberDetails(null);
       fetchMembers();
       fetchAvailableTeams();
       fetchProductVariants();
@@ -234,14 +236,33 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
 
       const { data: inventoryData } = await supabase
         .from('agent_task_inventory')
-        .select('amount_issued, product_variants:product_variant_id(name)')
+        .select('amount_issued, product_variant_id, product_variants!inner(name)')
         .eq('agent_id', member.user_id)
-        .eq('is_deleted', false);
+        .eq('is_deleted', false)
+        .eq('product_variants.workspace_id', workspaceId);
 
-      const inventory = inventoryData?.map((i: any) => ({
-        name: i.product_variants?.name || 'Unknown',
-        quantity: i.amount_issued
-      })) || [];
+      const inventoryByVariant = new Map<string, { name: string; quantity: number }>();
+      (inventoryData || []).forEach((row: {
+        product_variant_id: string;
+        amount_issued: number;
+        product_variants: { name: string } | { name: string }[];
+      }) => {
+        const variant = Array.isArray(row.product_variants)
+          ? row.product_variants[0]
+          : row.product_variants;
+        const name = variant?.name || 'Unknown';
+        const existing = inventoryByVariant.get(row.product_variant_id);
+        if (existing) {
+          existing.quantity += Number(row.amount_issued || 0);
+        } else {
+          inventoryByVariant.set(row.product_variant_id, {
+            name,
+            quantity: Number(row.amount_issued || 0),
+          });
+        }
+      });
+
+      const inventory = Array.from(inventoryByVariant.values());
 
       const { data: salesData } = await supabase
         .from('daily_sales_tracking')

@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MapPin, Star, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface Agent {
   user_id: string;
@@ -19,6 +20,7 @@ interface Agent {
 }
 
 export const ManageAgents = () => {
+  const { currentWorkspaceId } = useWorkspace();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedAgents, setSelectedAgents] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -26,24 +28,21 @@ export const ManageAgents = () => {
 
   useEffect(() => {
     fetchAgents();
-  }, []);
+  }, [currentWorkspaceId]);
 
   const fetchAgents = async () => {
+    if (!currentWorkspaceId) {
+      setAgents([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
     try {
-      // Get Capwell workspace ID
-      const { data: capwellWorkspace, error: workspaceError } = await supabase
-        .from('workspaces')
-        .select('id')
-        .eq('name', 'Capwell')
-        .single();
-
-      if (workspaceError) throw workspaceError;
-
-      // Fetch agents using user_workspaces table
       const { data: workspaceUsers, error: workspaceUsersError } = await supabase
         .from('user_workspaces')
         .select('user_id')
-        .eq('workspace_id', capwellWorkspace.id)
+        .eq('workspace_id', currentWorkspaceId)
         .eq('is_active', true);
 
       if (workspaceUsersError) throw workspaceUsersError;
@@ -54,6 +53,7 @@ export const ManageAgents = () => {
         .from('user_roles')
         .select('user_id, display_name, role_title, location, years_experience, rating, email')
         .in('user_id', userIds)
+        .eq('workspace_id', currentWorkspaceId)
         .eq('role', 'agent')
         .eq('is_active', true)
         .order('rating', { ascending: false });
@@ -99,7 +99,7 @@ export const ManageAgents = () => {
     <MobileLayout currentPage="more">
       <div className="bg-primary text-primary-foreground p-4">
         <h1 className="text-h1">Manage Agents</h1>
-        <p className="text-sm opacity-90">Capwell workspace agents</p>
+        <p className="text-sm opacity-90">Agents in the selected workspace</p>
         <div className="mt-3">
           <WorkspaceSwitcher onWorkspaceChange={fetchAgents} />
         </div>
@@ -155,7 +155,7 @@ export const ManageAgents = () => {
 
         {agents.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">No agents found in Capwell workspace</p>
+            <p className="text-muted-foreground">No agents found in this workspace</p>
           </div>
         )}
       </div>

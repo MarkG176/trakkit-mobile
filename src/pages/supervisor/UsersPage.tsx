@@ -92,7 +92,8 @@ export const UsersPage = () => {
       const { data: userDetails, error: detailsError } = await supabase
         .from('user_roles')
         .select('user_id, email, display_name')
-        .in('user_id', userIds);
+        .in('user_id', userIds)
+        .eq('workspace_id', currentWorkspaceId);
 
       if (detailsError) throw detailsError;
 

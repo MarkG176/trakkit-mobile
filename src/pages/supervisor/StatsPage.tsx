@@ -71,9 +71,13 @@ export const StatsPage = () => {
         .eq('is_active', true);
       if (data) {
         setMembers(data);
-        if (data.length > 0 && !selectedUserId) {
-          setSelectedUserId(data[0].user_id);
-        }
+        setSelectedUserId((prev) => {
+          if (prev && data.some((m) => m.user_id === prev)) return prev;
+          return data.length > 0 ? data[0].user_id : null;
+        });
+      } else {
+        setMembers([]);
+        setSelectedUserId(null);
       }
     };
     fetchMembers();
