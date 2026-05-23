@@ -146,10 +146,12 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
       if (user) {
         const { data } = await supabase
           .from('agent_task_inventory')
-          .select('id, product_variant_id, amount_issued, name, product_variants!inner(workspace_id, price, sku)')
+          .select('id, product_variant_id, amount_issued, name, product_variants!inner(workspace_id, price, sku), agent_tasks!inner(workspace_id, is_deleted)')
           .eq('agent_id', user.id)
           .eq('is_deleted', false)
-          .eq('product_variants.workspace_id', currentWorkspaceId);
+          .eq('product_variants.workspace_id', currentWorkspaceId)
+          .eq('agent_tasks.workspace_id', currentWorkspaceId)
+          .eq('agent_tasks.is_deleted', false);
         
         const mapped = (data || []).map((item: any) => ({
           ...item,

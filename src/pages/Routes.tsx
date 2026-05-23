@@ -58,9 +58,21 @@ export const Routes = () => {
   const showStoresList = isEnabled('CRM-0098L');
 
   useEffect(() => {
+    if (!currentWorkspaceId) {
+      setStores([]);
+      setCountries([]);
+      setSelectedCountry("");
+      setSelectedStore("all");
+      setStoreSearchText("");
+      return;
+    }
+
     fetchStores();
     requestLocation();
-  }, []);
+    setSelectedCountry("");
+    setSelectedStore("all");
+    setStoreSearchText("");
+  }, [currentWorkspaceId]);
 
   const requestLocation = () => {
     if (!navigator.geolocation) {
@@ -92,7 +104,17 @@ export const Routes = () => {
   };
 
   const fetchStores = async () => {
-    const { data, error } = await supabase.from("stores").select("*");
+    if (!currentWorkspaceId) {
+      setStores([]);
+      setCountries([]);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("stores")
+      .select("*")
+      .eq("workspace_id", currentWorkspaceId)
+      .eq("is_deleted", false);
 
     if (error) {
       console.error("Error fetching stores:", error);
@@ -103,10 +125,9 @@ export const Routes = () => {
       setStores(data);
       const uniqueCountries = Array.from(new Set(data.map((store) => store.country).filter(Boolean))) as string[];
       setCountries(uniqueCountries);
-      // Auto-select first country if none selected
-      if (!selectedCountry && uniqueCountries.length > 0) {
-        setSelectedCountry(uniqueCountries[0]);
-      }
+      setSelectedCountry((prev) =>
+        prev && uniqueCountries.includes(prev) ? prev : uniqueCountries[0] ?? "",
+      );
     }
   };
 

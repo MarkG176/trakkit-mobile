@@ -41,11 +41,17 @@ export const useInventory = () => {
             sku,
             price,
             workspace_id
+          ),
+          agent_tasks!inner (
+            workspace_id,
+            is_deleted
           )
         `)
         .eq("agent_id", user.id)
         .eq("is_deleted", false)
-        .eq("product_variants.workspace_id", currentWorkspaceId);
+        .eq("product_variants.workspace_id", currentWorkspaceId)
+        .eq("agent_tasks.workspace_id", currentWorkspaceId)
+        .eq("agent_tasks.is_deleted", false);
 
       if (error) throw error;
 

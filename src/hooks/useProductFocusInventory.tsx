@@ -30,6 +30,7 @@ export const useProductFocusInventory = () => {
         .from("project_plans")
         .select("product_focus")
         .eq("id", currentProjectId)
+        .eq("workspace_id", currentWorkspaceId)
         .single();
 
       if (projectError || !projectData?.product_focus) {

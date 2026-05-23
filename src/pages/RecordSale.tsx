@@ -95,6 +95,16 @@ export const RecordSale = () => {
   const currentInventory = isWholesaleTeam ? productFocusProducts : inventory;
   const currentLoading = isWholesaleTeam ? productFocusLoading : inventoryLoading;
 
+  // Clear cart when workspace changes so line items stay scoped to current workspace inventory
+  useEffect(() => {
+    setCartItems([]);
+    setShowCart(false);
+    setShowCustomerInfo(false);
+    setShowDealsView(false);
+    setDealDrafts({});
+    setPendingSaleData(null);
+  }, [currentWorkspaceId]);
+
   const getProductPrice = useCallback((item: InventoryItem | ProductFocusItem): number => {
     if (canOverridePrice) {
       const cached = getCachedPrices();
@@ -422,26 +432,28 @@ export const RecordSale = () => {
 
   const totalAmount = cartItems.reduce((sum, item) => sum + getLineTotal(item), 0);
 
+  const hasCart = cartItems.length > 0;
+
   return (
     <MobileLayout currentPage="dashboard">
-      {/* Header */}
-      <div className="bg-primary text-primary-foreground p-4">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/")}
-            className="text-primary-foreground hover:bg-primary-foreground/20"
-          >
-            <ArrowLeft size={20} />
-          </Button>
-          <h1 className="text-xl font-semibold">Record a Sale</h1>
+      <div className="flex flex-col min-h-[calc(100dvh-5rem-env(safe-area-inset-bottom,0px))]">
+        {/* Header */}
+        <div className="bg-primary text-primary-foreground p-4 shrink-0">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/")}
+              className="text-primary-foreground hover:bg-primary-foreground/20"
+            >
+              <ArrowLeft size={20} />
+            </Button>
+            <h1 className="text-xl font-semibold">Record a Sale</h1>
+          </div>
         </div>
-      </div>
 
-      <div className="flex flex-col h-[calc(100vh-140px)]">
         {/* Search Bar */}
-        <div className="p-4 bg-background">
+        <div className="p-4 bg-background shrink-0">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={16} />
             <Input
@@ -454,7 +466,7 @@ export const RecordSale = () => {
         </div>
 
         {/* Product List */}
-        <div className="flex-1 overflow-y-auto px-4 pb-20">
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
           {currentLoading ? (
             <div className="flex items-center justify-center h-32">
               <p className="text-muted-foreground">Loading products...</p>
@@ -501,11 +513,23 @@ export const RecordSale = () => {
             </div>
           )}
         </div>
+
+        {/* Complete Sale — in flow above bottom nav (MobileLayout padding) */}
+        {hasCart && (
+          <div className="shrink-0 p-4 bg-background border-t">
+            <Button
+              onClick={() => setShowCart(true)}
+              className="w-full h-14 text-lg bg-primary hover:bg-primary/90"
+            >
+              Complete Sale • KES {totalAmount.toFixed(2)}
+            </Button>
+          </div>
+        )}
       </div>
 
-      {/* Floating Cart Button */}
-      {cartItems.length > 0 && (
-        <div className="fixed bottom-20 right-4 z-50">
+      {/* Floating Cart Button — above complete-sale bar and bottom nav */}
+      {hasCart && (
+        <div className="fixed right-4 z-50 bottom-[calc(5rem+env(safe-area-inset-bottom,0px)+6.5rem)]">
           <Button
             onClick={() => setShowCart(true)}
             className="h-14 w-14 rounded-full bg-primary hover:bg-primary/90 shadow-lg"
@@ -517,18 +541,6 @@ export const RecordSale = () => {
                 {cartItems.reduce((sum, item) => sum + item.quantity, 0)}
               </span>
             </div>
-          </Button>
-        </div>
-      )}
-
-      {/* Persistent Complete Sale Button */}
-      {cartItems.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-40">
-          <Button
-            onClick={() => setShowCart(true)}
-            className="w-full h-14 text-lg bg-primary hover:bg-primary/90"
-          >
-            Complete Sale • KES {totalAmount.toFixed(2)}
           </Button>
         </div>
       )}
@@ -853,7 +865,6 @@ export const RecordSale = () => {
           customerName={pendingSaleData.customerName}
         />
       )}
-
     </MobileLayout>
   );
 };
