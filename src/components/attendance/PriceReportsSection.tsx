@@ -20,8 +20,6 @@ export function PriceReportsSection({
 
   if (!isEnabled("CRM-0025")) return null;
 
-  const hasStockLevels = Object.keys(stockLevels).length > 0;
-
   return (
     <>
       <Card>
@@ -34,7 +32,6 @@ export function PriceReportsSection({
             type="button"
             variant="outline"
             className="w-full h-auto py-4 flex flex-col items-center gap-2"
-            disabled={!hasStockLevels}
             onClick={() => setShowPriceReport(true)}
           >
             <DollarSign className="h-6 w-6" />
@@ -42,6 +39,7 @@ export function PriceReportsSection({
           </Button>
         </CardContent>
       </Card>
+
 
       <PriceReportDialog
         open={showPriceReport}
