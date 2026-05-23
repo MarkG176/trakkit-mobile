@@ -11,13 +11,8 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { CheckCircle, Clock, MapPin, Camera, AlertCircle } from "lucide-react";
 import { CameraCapture } from "@/components/CameraCapture";
 import { PermissionGuidance } from "@/components/PermissionGuidance";
-import { StockReportDialog } from "@/components/attendance/StockReportDialog";
 import { EveningReportDialog } from "@/components/attendance/EveningReportDialog";
 import { SeedingEveningReportDialog } from "@/components/attendance/SeedingEveningReportDialog";
-import { InstoreClosingReportDialog } from "@/components/attendance/InstoreClosingReportDialog";
-import { InstoreMorningStockCountDialog } from "@/components/attendance/InstoreMorningStockCountDialog";
-import { SurveyClosingReportDialog } from "@/components/attendance/SurveyClosingReportDialog";
-import { supabase } from "@/integrations/supabase/client";
 import { useProjectComponents } from "@/hooks/useProjectComponents";
 
 export const RecordAttendanceForm = () => {
@@ -30,15 +25,8 @@ export const RecordAttendanceForm = () => {
   const [showCamera, setShowCamera] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<'checked_in' | 'lunch' | 'checked_out' | null>(null);
   const [loadingOverride, setLoadingOverride] = useState(false);
-  const [showStockReport, setShowStockReport] = useState(false);
-  const [stockReportType, setStockReportType] = useState<'morning' | 'evening'>('morning');
   const [showEveningReport, setShowEveningReport] = useState(false);
   const [showSeedingEveningReport, setShowSeedingEveningReport] = useState(false);
-  const [showInstoreClosingReport, setShowInstoreClosingReport] = useState(false);
-  const [showInstoreMorningStockCount, setShowInstoreMorningStockCount] = useState(false);
-  const [showSurveyClosingReport, setShowSurveyClosingReport] = useState(false);
-  const [currentStoreId, setCurrentStoreId] = useState<string | null>(null);
-  const [instoreStockLevels, setInstoreStockLevels] = useState<Record<string, string>>({});
   const cameraRef = useRef<HTMLInputElement>(null);
   // Ref-based guard to prevent duplicate calls (survives re-renders and is synchronous)
   const isProcessingRef = useRef(false);
@@ -102,54 +90,15 @@ export const RecordAttendanceForm = () => {
           description: successMessage,
         });
 
-        // Resolve the agent's current store from store_visits
-        const today = new Date().toISOString().split("T")[0];
-        try {
-          const { data: visitData } = await supabase
-            .from('store_visits')
-            .select('store_id')
-            .eq('agent_id', user.id)
-            .eq('planned_date', today)
-            .not('check_in_time', 'is', null)
-            .is('check_out_time', null)
-            .order('check_in_time', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (visitData?.store_id) {
-            setCurrentStoreId(visitData.store_id);
-          }
-        } catch (err) {
-          console.error('Error resolving current store:', err);
-        }
-
         // Gate post-attendance dialogs by CRM component codes (active_components).
-        const enableStockReport = isEnabled('CRM-0022');
-        const enableInstoreMorningCount = isEnabled('CRM-0021');
-        const enableInstoreClosing = isEnabled('CRM-0020');
         const enableSeedingEvening = isEnabled('CRM-0024');
         const enableEveningReport = isEnabled('CRM-0019');
-        const enableSurveyClosing = isEnabled('CRM-0023');
 
-        if (statusToSet === 'checked_in' && previousStatus === 'checked_out') {
-          // Morning check-in — stock availability report when enabled.
-          // If only morning stock count is enabled, open it directly.
-          if (enableStockReport) {
-            setStockReportType('morning');
-            setShowStockReport(true);
-          } else if (enableInstoreMorningCount) {
-            setShowInstoreMorningStockCount(true);
-          }
-        } else if (statusToSet === 'checked_out') {
-          // Priority: instore closing → seeding evening → evening report → survey closing.
-          if (enableInstoreClosing) {
-            setShowInstoreClosingReport(true);
-          } else if (enableSeedingEvening) {
+        if (statusToSet === 'checked_out') {
+          if (enableSeedingEvening) {
             setShowSeedingEveningReport(true);
           } else if (enableEveningReport) {
             setShowEveningReport(true);
-          } else if (enableSurveyClosing) {
-            setShowSurveyClosingReport(true);
           }
         }
       } else {
@@ -351,22 +300,6 @@ export const RecordAttendanceForm = () => {
         variant="inline"
       />
 
-      {/* Stock Report Dialog for Wholesale (Morning only) */}
-      <StockReportDialog
-        open={showStockReport}
-        onOpenChange={setShowStockReport}
-        reportType={stockReportType}
-        storeId={currentStoreId}
-        onStockLevelsChange={(levels) => setInstoreStockLevels(levels)}
-        onComplete={() => {
-          console.log('Stock report completed');
-          // Chain to morning stock count dialog if that CRM component is enabled.
-          if (isEnabled('CRM-0021') && stockReportType === 'morning') {
-            setShowInstoreMorningStockCount(true);
-          }
-        }}
-      />
-
       {/* Evening Report Dialog for Wholesale */}
       <EveningReportDialog
         open={showEveningReport}
@@ -382,33 +315,6 @@ export const RecordAttendanceForm = () => {
         onOpenChange={setShowSeedingEveningReport}
         onComplete={() => {
           console.log('Seeding evening report completed');
-        }}
-      />
-      {/* Instore Closing Report Dialog */}
-      <InstoreClosingReportDialog
-        open={showInstoreClosingReport}
-        onOpenChange={setShowInstoreClosingReport}
-        storeId={currentStoreId}
-        onComplete={() => {
-          console.log('Instore closing report completed');
-        }}
-      />
-      {/* Instore Morning Stock Count Dialog */}
-      <InstoreMorningStockCountDialog
-        open={showInstoreMorningStockCount}
-        onOpenChange={setShowInstoreMorningStockCount}
-        storeId={currentStoreId}
-        stockLevels={instoreStockLevels}
-        onComplete={() => {
-          console.log('Instore morning stock count completed');
-        }}
-      />
-      {/* Survey Closing Report Dialog */}
-      <SurveyClosingReportDialog
-        open={showSurveyClosingReport}
-        onOpenChange={setShowSurveyClosingReport}
-        onComplete={() => {
-          console.log('Survey closing report completed');
         }}
       />
     </Card>
