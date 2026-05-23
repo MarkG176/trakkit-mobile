@@ -7,13 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShoppingCart, Gift, ClipboardList, Star, Plus, Minus, CheckCircle2, Trash2, Edit2, Search, Camera, X, ImageIcon, MessageSquare, Package } from "lucide-react";
+import { ShoppingCart, Gift, ClipboardList, Star, Plus, Minus, CheckCircle2, Trash2, Edit2, Search, Camera, X, ImageIcon, MessageSquare } from "lucide-react";
 import { ImageCaptionInput } from "@/components/ImageCaptionInput";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useInStoreWorkLocation } from "@/hooks/useInStoreWorkLocation";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { StockReportDialog } from "@/components/attendance/StockReportDialog";
+import { StockReportsSection } from "@/components/attendance/StockReportsSection";
 import { PriceReportDialog } from "@/components/attendance/PriceReportDialog";
 import { formatProductName } from "@/utils/formatProductName";
 
@@ -57,7 +57,6 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
   const hideInventoryCounts = useInStoreWorkLocation();
   const [activeAction, setActiveAction] = useState<ActionType>(null);
   const [loading, setLoading] = useState(false);
-  const [showStockReport, setShowStockReport] = useState(false);
   const [showPriceReport, setShowPriceReport] = useState(false);
   const [stockReportLevels, setStockReportLevels] = useState<Record<string, string>>({});
   const [isMarketResearch, setIsMarketResearch] = useState(false);
@@ -94,6 +93,13 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
     if (!open) return;
     setIsMarketResearch(currentWorkspaceLabel?.toLowerCase() === 'market_research');
   }, [currentWorkspaceLabel, open]);
+
+  useEffect(() => {
+    if (!open) {
+      setStockReportLevels({});
+      setShowPriceReport(false);
+    }
+  }, [open]);
 
   const handleActionClick = async (action: ActionType) => {
     setActiveAction(action);
@@ -1036,27 +1042,25 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                   <span className="text-xs">Collect Feedback</span>
                 </Button>
                 {isMarketResearch && (
-                  <>
-                    <Button
-                      variant="outline"
-                      className="h-24 flex flex-col gap-2"
-                      onClick={() => setShowStockReport(true)}
-                    >
-                      <Package size={24} />
-                      <span className="text-xs">Stock Report</span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="h-24 flex flex-col gap-2"
-                      onClick={() => setShowPriceReport(true)}
-                      disabled={Object.keys(stockReportLevels).length === 0}
-                    >
-                      <ShoppingCart size={24} />
-                      <span className="text-xs">Price Report</span>
-                    </Button>
-                  </>
+                  <Button
+                    variant="outline"
+                    className="h-24 flex flex-col gap-2"
+                    onClick={() => setShowPriceReport(true)}
+                    disabled={Object.keys(stockReportLevels).length === 0}
+                  >
+                    <ShoppingCart size={24} />
+                    <span className="text-xs">Price Report</span>
+                  </Button>
                 )}
               </div>
+
+              <StockReportsSection
+                key={storeId}
+                embedded
+                storeId={storeId}
+                onStockLevelsChange={setStockReportLevels}
+              />
+
               <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full">
                 Close
               </Button>
@@ -1075,18 +1079,6 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
           )}
         </div>
       </DialogContent>
-
-      {/* Stock Report Dialog for Market Research projects */}
-      <StockReportDialog
-        open={showStockReport}
-        onOpenChange={setShowStockReport}
-        reportType="morning"
-        storeId={storeId}
-        onStockLevelsChange={(levels) => setStockReportLevels(levels)}
-        onComplete={() => {
-          setShowStockReport(false);
-        }}
-      />
 
       {/* Price Report Dialog for Market Research projects */}
       <PriceReportDialog
