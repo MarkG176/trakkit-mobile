@@ -48,10 +48,14 @@ export const PriceReportDialog = ({
       setCurrentIndex(0);
     }
   }, [open]);
-  const eligibleProducts = inventory.filter((item) => {
-    const level = stockLevels[item.product_variant_id];
-    return level === "available" || level === "low_stock" || level === "unavailable";
-  });
+  const hasStockContext = Object.keys(stockLevels).length > 0;
+  const eligibleProducts = hasStockContext
+    ? inventory.filter((item) => {
+        const level = stockLevels[item.product_variant_id];
+        return level === "available" || level === "low_stock" || level === "unavailable";
+      })
+    : inventory;
+
 
   const currentProduct = eligibleProducts[currentIndex];
   const totalProducts = eligibleProducts.length;
