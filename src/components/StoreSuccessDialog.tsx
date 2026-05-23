@@ -33,7 +33,11 @@ interface SaleCartItem {
   price: number;
   quantity: number;
   productVariantId: string;
+  lineTotal?: number;
 }
+
+const getSaleLineTotal = (item: SaleCartItem) =>
+  item.lineTotal ?? item.price * item.quantity;
 
 interface SelectedProduct {
   id: string;
@@ -71,6 +75,8 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
   const [saleCartItems, setSaleCartItems] = useState<SaleCartItem[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [editingSalePriceId, setEditingSalePriceId] = useState<string | null>(null);
+  const [showSaleDealsView, setShowSaleDealsView] = useState(false);
+  const [saleDealDrafts, setSaleDealDrafts] = useState<Record<string, string>>({});
   const [saleSearchTerm, setSaleSearchTerm] = useState("");
   const [showSaleCart, setShowSaleCart] = useState(false);
 
@@ -98,6 +104,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
     if (!open) {
       setStockReportLevels({});
       setShowPriceReport(false);
+      setShowSaleDealsView(false);
     }
   }, [open]);
 
@@ -252,7 +259,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
     if (existing) {
       setSaleCartItems(saleCartItems.map(item =>
         item.productVariantId === product.product_variant_id
-          ? { ...item, quantity: item.quantity + 1 }
+          ? { ...item, quantity: item.quantity + 1, lineTotal: undefined }
           : item
       ));
     } else {
@@ -271,19 +278,50 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
       setSaleCartItems(saleCartItems.filter(item => item.productVariantId !== productVariantId));
     } else {
       setSaleCartItems(saleCartItems.map(item =>
-        item.productVariantId === productVariantId ? { ...item, quantity: newQuantity } : item
+        item.productVariantId === productVariantId
+          ? { ...item, quantity: newQuantity, lineTotal: undefined }
+          : item
       ));
     }
   };
 
   const updateSalePrice = (productVariantId: string, newPrice: number) => {
     setSaleCartItems(saleCartItems.map(item =>
-      item.productVariantId === productVariantId ? { ...item, price: newPrice } : item
+      item.productVariantId === productVariantId
+        ? { ...item, price: newPrice, lineTotal: undefined }
+        : item
     ));
     setEditingSalePriceId(null);
   };
 
-  const saleTotalAmount = saleCartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const openSaleDealsView = () => {
+    setSaleDealDrafts(
+      Object.fromEntries(
+        saleCartItems.map((item) => [
+          item.productVariantId,
+          getSaleLineTotal(item).toFixed(2),
+        ])
+      )
+    );
+    setShowSaleDealsView(true);
+  };
+
+  const applySaleDealsAndClose = () => {
+    setSaleCartItems(
+      saleCartItems.map((item) => ({
+        ...item,
+        lineTotal: parseFloat(saleDealDrafts[item.productVariantId] ?? "") || 0,
+      }))
+    );
+    setShowSaleDealsView(false);
+  };
+
+  const closeSaleCart = () => {
+    setShowSaleCart(false);
+    setShowSaleDealsView(false);
+  };
+
+  const saleTotalAmount = saleCartItems.reduce((sum, item) => sum + getSaleLineTotal(item), 0);
 
   const handleSubmitSale = async () => {
     if (saleCartItems.length === 0) return;
@@ -324,7 +362,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
           customer_name: storeName,
           product_variant_id: item.productVariantId,
           quantity_sold: item.quantity,
-          sale_value: item.price * item.quantity,
+          sale_value: getSaleLineTotal(item),
           outcome: 'completed',
           latitude: location.latitude,
           longitude: location.longitude,
@@ -339,7 +377,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
           agent_id: user.id,
           product_variant_id: item.productVariantId,
           quantity: item.quantity,
-          total_value: item.price * item.quantity,
+          total_value: getSaleLineTotal(item),
           location_lat: location.latitude,
           location_lng: location.longitude,
           workspace_id: currentWorkspaceId,
@@ -766,11 +804,53 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                   </Button>
                 )}
               </>
+            ) : showSaleDealsView ? (
+              <>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-bold">Deals</h3>
+                  <Button variant="ghost" size="sm" onClick={applySaleDealsAndClose}>
+                    Done
+                  </Button>
+                </div>
+
+                <div className="space-y-3 max-h-[50vh] overflow-y-auto">
+                  {saleCartItems.map((item) => (
+                    <div key={item.productVariantId} className="p-4 bg-muted rounded-lg space-y-2">
+                      <h4 className="font-medium text-sm truncate">{item.name}</h4>
+                      <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                      <div className="flex items-center gap-2">
+                        <Label className="text-sm text-muted-foreground shrink-0">Total</Label>
+                        <span className="text-sm text-muted-foreground">KES</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={saleDealDrafts[item.productVariantId] ?? ""}
+                          onChange={(e) =>
+                            setSaleDealDrafts((prev) => ({
+                              ...prev,
+                              [item.productVariantId]: e.target.value,
+                            }))
+                          }
+                          className="h-9 text-sm"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             ) : (
               <>
                 {/* Sale Items Cart View */}
                 <div>
                   <h3 className="text-lg font-bold">Sale Items</h3>
+                  {saleCartItems.length > 0 && (
+                    <div className="flex justify-end mt-1">
+                      <Button variant="ghost" size="sm" onClick={openSaleDealsView}>
+                        Deals
+                      </Button>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center text-xl font-bold mt-1">
                     <span>Total:</span>
                     <span>KES {saleTotalAmount.toFixed(2)}</span>
@@ -778,63 +858,96 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                 </div>
 
                 <div className="space-y-3 max-h-[40vh] overflow-y-auto">
-                  {saleCartItems.map((item) => (
-                    <div key={item.productVariantId} className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                      <div className="w-10 h-10 bg-background rounded-lg flex items-center justify-center shrink-0">
-                        <ShoppingCart size={14} className="text-muted-foreground" />
-                      </div>
+                  {saleCartItems.map((item) => {
+                    const hasDeal =
+                      item.lineTotal !== undefined &&
+                      item.lineTotal !== item.price * item.quantity;
 
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm">{item.name}</h4>
-                        {editingSalePriceId === item.productVariantId ? (
-                          <div className="flex items-center gap-1 mt-1">
-                            <span className="text-xs text-muted-foreground">KES</span>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              defaultValue={item.price}
-                              onBlur={(e) => updateSalePrice(item.productVariantId, parseFloat(e.target.value) || 0)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  updateSalePrice(item.productVariantId, parseFloat((e.target as HTMLInputElement).value) || 0);
-                                }
-                              }}
-                              autoFocus
-                              className="w-24 h-7 text-sm p-1"
-                            />
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1">
-                            <p className="text-xs text-muted-foreground">KES {item.price}</p>
-                            <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => setEditingSalePriceId(item.productVariantId)}>
-                              <Edit2 size={10} />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
+                    return (
+                      <div key={item.productVariantId} className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                        <div className="w-10 h-10 bg-background rounded-lg flex items-center justify-center shrink-0">
+                          <ShoppingCart size={14} className="text-muted-foreground" />
+                        </div>
 
-                      <div className="flex items-center gap-1">
-                        <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => updateSaleQuantity(item.productVariantId, item.quantity - 1)}>
-                          <Minus size={14} />
-                        </Button>
-                        <Input
-                          type="number"
-                          min="1"
-                          value={item.quantity}
-                          onChange={(e) => updateSaleQuantity(item.productVariantId, parseInt(e.target.value) || 1)}
-                          className="w-12 h-8 text-center p-0 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
-                        <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => updateSaleQuantity(item.productVariantId, item.quantity + 1)}>
-                          <Plus size={14} />
-                        </Button>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-sm">{item.name}</h4>
+                          {editingSalePriceId === item.productVariantId ? (
+                            <div className="flex items-center gap-1 mt-1">
+                              <span className="text-xs text-muted-foreground">KES</span>
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                defaultValue={item.price}
+                                onBlur={(e) => updateSalePrice(item.productVariantId, parseFloat(e.target.value) || 0)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    updateSalePrice(
+                                      item.productVariantId,
+                                      parseFloat((e.target as HTMLInputElement).value) || 0
+                                    );
+                                  }
+                                }}
+                                autoFocus
+                                className="w-24 h-7 text-sm p-1"
+                              />
+                            </div>
+                          ) : (
+                            <div className="flex flex-col gap-0.5">
+                              <div className="flex items-center gap-1">
+                                <p className="text-xs text-muted-foreground">KES {item.price}</p>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-5 w-5"
+                                  onClick={() => setEditingSalePriceId(item.productVariantId)}
+                                >
+                                  <Edit2 size={10} />
+                                </Button>
+                              </div>
+                              {hasDeal && (
+                                <p className="text-xs font-medium text-primary">
+                                  Line total: KES {getSaleLineTotal(item).toFixed(2)}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8"
+                            onClick={() => updateSaleQuantity(item.productVariantId, item.quantity - 1)}
+                          >
+                            <Minus size={14} />
+                          </Button>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            onChange={(e) =>
+                              updateSaleQuantity(item.productVariantId, parseInt(e.target.value) || 1)
+                            }
+                            className="w-12 h-8 text-center p-0 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          />
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8"
+                            onClick={() => updateSaleQuantity(item.productVariantId, item.quantity + 1)}
+                          >
+                            <Plus size={14} />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Add Product button */}
-                <Button variant="outline" onClick={() => setShowSaleCart(false)} className="w-full">
+                <Button variant="outline" onClick={closeSaleCart} className="w-full">
                   <Plus size={16} className="mr-2" /> Add Product
                 </Button>
 
@@ -1069,7 +1182,11 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
             <>
               <Button
                 variant="ghost"
-                onClick={() => setActiveAction(null)}
+                onClick={() => {
+                  setActiveAction(null);
+                  setShowSaleDealsView(false);
+                  setShowSaleCart(false);
+                }}
                 className="w-full"
               >
                 ← Back to Actions

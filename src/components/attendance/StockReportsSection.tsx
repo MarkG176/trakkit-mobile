@@ -2,7 +2,8 @@
 import { lazy, Suspense, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Package, Sunrise, Sunset } from "lucide-react";
+import { DollarSign, Package, Sunrise, Sunset } from "lucide-react";
+import { PriceReportDialog } from "@/components/attendance/PriceReportDialog";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useProjectComponents } from "@/hooks/useProjectComponents";
 import {
@@ -59,7 +60,10 @@ export function StockReportsSection({
 
   const [morningDialog, setMorningDialog] = useState<MorningDialog>(null);
   const [eveningDialog, setEveningDialog] = useState<EveningDialog>(null);
+  const [showPriceReport, setShowPriceReport] = useState(false);
   const [instoreStockLevels, setInstoreStockLevels] = useState<Record<string, string>>({});
+  const showPriceReportButton = isEnabled("CRM-0025");
+  const hasStockLevels = Object.keys(instoreStockLevels).length > 0;
 
   const handleStockLevelsChange = (levels: Record<string, string>) => {
     setInstoreStockLevels(levels);
@@ -174,6 +178,19 @@ export function StockReportsSection({
     </div>
   );
 
+  const priceReportButton = showPriceReportButton ? (
+    <Button
+      type="button"
+      variant="outline"
+      className="w-full h-auto py-4 flex flex-col items-center gap-2"
+      disabled={!hasStockLevels}
+      onClick={() => setShowPriceReport(true)}
+    >
+      <DollarSign className="h-6 w-6" />
+      <span>Start Price Report</span>
+    </Button>
+  ) : null;
+
   return (
     <>
       {embedded ? (
@@ -183,15 +200,17 @@ export function StockReportsSection({
             Stock Reports
           </p>
           {buttons}
+          {priceReportButton}
         </div>
       ) : (
         <Card>
-          <CardContent className="p-6">
-            <h3 className="text-h3 mb-6 text-black flex items-center gap-2">
+          <CardContent className="p-6 space-y-6">
+            <h3 className="text-h3 text-black flex items-center gap-2">
               <Package className="h-5 w-5" />
               Stock Reports
             </h3>
             {buttons}
+            {priceReportButton}
           </CardContent>
         </Card>
       )}
@@ -247,6 +266,16 @@ export function StockReportsSection({
           />
         )}
       </Suspense>
+
+      {showPriceReportButton && (
+        <PriceReportDialog
+          open={showPriceReport}
+          onOpenChange={setShowPriceReport}
+          storeId={storeId}
+          stockLevels={instoreStockLevels}
+          onComplete={() => setShowPriceReport(false)}
+        />
+      )}
     </>
   );
 }
