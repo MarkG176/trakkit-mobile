@@ -9,7 +9,11 @@ interface SaleItem {
   productVariantId: string;
   quantity: number;
   price: number;
+  lineTotal?: number;
 }
+
+const getSaleLineTotal = (item: SaleItem) =>
+  item.lineTotal ?? item.price * item.quantity;
 
 interface SaleFormData {
   items: SaleItem[];
@@ -49,7 +53,7 @@ export const useSalesForm = () => {
         .maybeSingle();
 
       const totalValue = formData.items.reduce(
-        (sum, item) => sum + (item.price * item.quantity), 
+        (sum, item) => sum + getSaleLineTotal(item),
         0
       );
 
@@ -65,7 +69,7 @@ export const useSalesForm = () => {
             customer_phone: formData.customerPhone,
             product_variant_id: item.productVariantId,
             quantity_sold: item.quantity,
-            sale_value: item.price * item.quantity,
+            sale_value: getSaleLineTotal(item),
             outcome: 'sale',
             workspace_id: workspaceService.getCurrentWorkspaceId(),
             image_url: formData.imageUrl || null, // Sale photo for wholesale
@@ -93,7 +97,7 @@ export const useSalesForm = () => {
             reference: `Sale to ${formData.customerName || 'Customer'}`,
             metadata: {
               task_id: currentTask?.id || null,
-              sale_value: item.price * item.quantity
+              sale_value: getSaleLineTotal(item)
             }
           }));
       }
