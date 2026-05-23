@@ -12,7 +12,7 @@ import { useLanguage, Language } from "@/hooks/useLanguage";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Globe, Users, HelpCircle, AlertTriangle } from "lucide-react";
+import { Globe, Users, HelpCircle } from "lucide-react";
 
 const DOCS_URL = "https://trakkit.darajatech.com/docs";
 
@@ -42,20 +42,17 @@ export const WorkspaceOnboarding = ({ workspaceId, workspaceName }: WorkspaceOnb
   const normalizedLabel = currentWorkspaceLabel?.toLowerCase() || null;
   const isInstore = normalizedLabel === "instore";
 
-  const [hasTeamInWorkspace, setHasTeamInWorkspace] = useState<boolean | null>(null);
   const [teamName, setTeamName] = useState<string | null>(null);
 
   useEffect(() => {
     if (!workspaceId || !user?.id) {
-      setHasTeamInWorkspace(null);
       setTeamName(null);
       return;
     }
 
     let cancelled = false;
 
-    const checkTeamMembership = async () => {
-      setHasTeamInWorkspace(null);
+    const loadTeamName = async () => {
       const { data } = await supabase
         .from("team_members")
         .select("team_id, teams:team_id(name)")
@@ -67,23 +64,20 @@ export const WorkspaceOnboarding = ({ workspaceId, workspaceName }: WorkspaceOnb
 
       if (cancelled) return;
 
-      setHasTeamInWorkspace(!!data?.team_id);
       setTeamName((data?.teams as { name?: string } | null)?.name ?? null);
     };
 
-    checkTeamMembership();
+    loadTeamName();
 
     return () => {
       cancelled = true;
     };
   }, [workspaceId, user?.id]);
 
-  const hasNoTeam = hasTeamInWorkspace === false;
-
   const onboardKey = workspaceId ? `onboarded_${workspaceId}` : null;
   const alreadyOnboarded = onboardKey ? !!localStorage.getItem(onboardKey) : true;
 
-  const shouldShow = !alreadyOnboarded && (isInstore || hasNoTeam);
+  const shouldShow = !alreadyOnboarded && isInstore;
   const [open, setOpen] = useState(false);
   // Language selection is disabled for now but code is retained
   // Start at step 1 (team name) instead of step 0 (language)
@@ -95,9 +89,7 @@ export const WorkspaceOnboarding = ({ workspaceId, workspaceName }: WorkspaceOnb
     }
   }, [shouldShow]);
 
-  if (!workspaceId || alreadyOnboarded) return null;
-  if (hasTeamInWorkspace === null) return null;
-  if (!isInstore && !hasNoTeam) return null;
+  if (!workspaceId || alreadyOnboarded || !isInstore) return null;
 
   const teamDisplayName = teamTypeDisplayNames[normalizedLabel ?? "hybrid"] || "Hybrid";
 
@@ -153,39 +145,20 @@ export const WorkspaceOnboarding = ({ workspaceId, workspaceName }: WorkspaceOnb
           <>
             <DialogHeader>
               <div className="flex justify-center mb-2">
-                {hasNoTeam ? (
-                  <AlertTriangle className="w-10 h-10 text-destructive" />
-                ) : (
-                  <Users className="w-10 h-10 text-primary" />
-                )}
+                <Users className="w-10 h-10 text-primary" />
               </div>
-              <DialogTitle className="text-center">
-                {hasNoTeam ? "No Team Assigned" : "Your Team"}
-              </DialogTitle>
+              <DialogTitle className="text-center">Your Team</DialogTitle>
             </DialogHeader>
-            {hasNoTeam ? (
-              <>
-                <p className="text-center text-muted-foreground mt-2">
-                  You're part of <span className="font-semibold text-foreground">{workspaceName || "your workspace"}</span>, but you haven't been assigned to a team yet. Please contact your administrator to get added to a team.
-                </p>
-                <Button onClick={handleSkipTour} className="w-full mt-6">
-                  OK
-                </Button>
-              </>
-            ) : (
-              <>
-                <p className="text-center text-muted-foreground mt-2">
-                  You're part of the{" "}
-                  <span className="font-semibold text-foreground">
-                    {teamName || workspaceName || "your"}
-                  </span>{" "}
-                  team
-                </p>
-                <Button onClick={() => setStep(2)} className="w-full mt-6">
-                  Continue
-                </Button>
-              </>
-            )}
+            <p className="text-center text-muted-foreground mt-2">
+              You're part of the{" "}
+              <span className="font-semibold text-foreground">
+                {teamName || workspaceName || "your"}
+              </span>{" "}
+              team
+            </p>
+            <Button onClick={() => setStep(2)} className="w-full mt-6">
+              Continue
+            </Button>
           </>
         )}
 
