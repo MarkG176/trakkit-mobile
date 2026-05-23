@@ -6,6 +6,7 @@ import { DollarSign, Package, Sunrise, Sunset } from "lucide-react";
 import { PriceReportDialog } from "@/components/attendance/PriceReportDialog";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useProjectComponents } from "@/hooks/useProjectComponents";
+import { ButtonLabelRows } from "@/components/reports/ButtonLabelRows";
 import {
   getStockReportCapabilities,
   hasAnyStockReportCapability,
@@ -39,12 +40,15 @@ export interface StockReportsSectionProps {
   onStockLevelsChange?: (levels: Record<string, string>) => void;
   /** Hide outer card wrapper (e.g. inside Store Success Dialog) */
   embedded?: boolean;
+  /** Show price report entry inside this block (Store Success Dialog). Reports page uses PriceReportsSection instead. */
+  includePriceReport?: boolean;
 }
 
 export function StockReportsSection({
   storeId = null,
   onStockLevelsChange,
   embedded = false,
+  includePriceReport = embedded,
 }: StockReportsSectionProps) {
   const { currentWorkspaceId, userWorkspaces } = useWorkspace();
   const { isEnabled } = useProjectComponents();
@@ -62,7 +66,7 @@ export function StockReportsSection({
   const [eveningDialog, setEveningDialog] = useState<EveningDialog>(null);
   const [showPriceReport, setShowPriceReport] = useState(false);
   const [instoreStockLevels, setInstoreStockLevels] = useState<Record<string, string>>({});
-  const showPriceReportButton = isEnabled("CRM-0025");
+  const showPriceReportButton = includePriceReport && isEnabled("CRM-0025");
   const hasStockLevels = Object.keys(instoreStockLevels).length > 0;
 
   const handleStockLevelsChange = (levels: Record<string, string>) => {
@@ -88,6 +92,13 @@ export function StockReportsSection({
 
   if (!showStockSection) return null;
 
+  const label = (text: string, className?: string) =>
+    embedded ? (
+      <span className={className}>{text}</span>
+    ) : (
+      <ButtonLabelRows label={text} className={className} />
+    );
+
   const buttons = (
     <div
       className={`grid gap-3 ${
@@ -106,7 +117,7 @@ export function StockReportsSection({
                   onClick={() => setMorningDialog("availability")}
                 >
                   <Sunrise className="h-5 w-5" />
-                  <span className="text-sm">Stock Availability</span>
+                  {label("Stock Availability", "text-sm")}
                 </Button>
               )}
               {stockCaps.morningCount && (
@@ -117,7 +128,7 @@ export function StockReportsSection({
                   onClick={() => setMorningDialog("count")}
                 >
                   <Sunrise className="h-5 w-5" />
-                  <span className="text-sm">Opening Stock Count</span>
+                  {label("Opening Stock Count", "text-sm")}
                 </Button>
               )}
             </div>
@@ -128,7 +139,7 @@ export function StockReportsSection({
               onClick={openMorningReport}
             >
               <Sunrise className="h-6 w-6" />
-              <span>Start Morning Report</span>
+              {label("Start Morning Report")}
             </Button>
           )}
         </div>
@@ -147,7 +158,7 @@ export function StockReportsSection({
                   onClick={() => setEveningDialog("count")}
                 >
                   <Sunset className="h-5 w-5" />
-                  <span className="text-sm">Closing Stock Count</span>
+                  {label("Closing Stock Count", "text-sm")}
                 </Button>
               )}
               {stockCaps.eveningAvailability && (
@@ -158,7 +169,7 @@ export function StockReportsSection({
                   onClick={() => setEveningDialog("availability")}
                 >
                   <Sunset className="h-5 w-5" />
-                  <span className="text-sm">Stock Availability</span>
+                  {label("Stock Availability", "text-sm")}
                 </Button>
               )}
             </div>
@@ -170,7 +181,7 @@ export function StockReportsSection({
               onClick={openEveningReport}
             >
               <Sunset className="h-6 w-6" />
-              <span>Start Evening Report</span>
+              {label("Start Evening Report")}
             </Button>
           )}
         </div>
@@ -187,7 +198,7 @@ export function StockReportsSection({
       onClick={() => setShowPriceReport(true)}
     >
       <DollarSign className="h-6 w-6" />
-      <span>Start Price Report</span>
+      {label("Start Price Report")}
     </Button>
   ) : null;
 

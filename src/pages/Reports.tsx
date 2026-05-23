@@ -10,6 +10,7 @@ import { Camera, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { PriceReportsSection } from "@/components/attendance/PriceReportsSection";
 import { StockReportsSection } from "@/components/attendance/StockReportsSection";
 import { toast } from "sonner";
 
@@ -123,6 +124,8 @@ function ReportsPageBody({
   setImages: (v: File[]) => void;
   handleUploadImages: () => void;
 }) {
+  const [stockLevels, setStockLevels] = useState<Record<string, string>>({});
+
   return (
     <>
       <div className="bg-primary text-primary-foreground p-4">
@@ -133,7 +136,11 @@ function ReportsPageBody({
       </div>
 
       <div className="p-4 space-y-6">
-        <StockReportsSection />
+        <StockReportsSection
+          includePriceReport={false}
+          onStockLevelsChange={setStockLevels}
+        />
+        <PriceReportsSection stockLevels={stockLevels} />
 
         <NotesAndImagesSection
           notes={notes}
