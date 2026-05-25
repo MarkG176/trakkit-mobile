@@ -15,14 +15,27 @@ import { workspaceService } from '@/services/workspaceService';
 import { ImageCaptionInput } from '@/components/ImageCaptionInput';
 import { PermissionGuidance } from '@/components/PermissionGuidance';
 
+type StorageBucket = 'agent-selfies' | 'store_images';
+
 interface CameraCaptureProps {
   onCapture?: (imageData: string) => void;
   mode?: 'status' | 'general'; // 'status' for check-in/out, 'general' for other uses
   variant?: 'floating' | 'inline'; // 'floating' for bottom nav, 'inline' for top bar
   onImagesList?: (images: string[]) => void; // Callback to get list of images in current workspace/project
+  /** Storage bucket for uploads. Defaults to agent-selfies (check-in). */
+  storageBucket?: StorageBucket;
+  /** Path layout: default = workspace/project/user; reports = userId/reports */
+  uploadFolder?: 'default' | 'reports';
 }
 
-export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({ onCapture, mode = 'status', variant = 'floating', onImagesList }, ref) => {
+export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
+  onCapture,
+  mode = 'status',
+  variant = 'floating',
+  onImagesList,
+  storageBucket = 'agent-selfies',
+  uploadFolder = 'default',
+}, ref) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [captionDialogOpen, setCaptionDialogOpen] = useState(false);
@@ -45,39 +58,43 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
     click: () => fileInputRef.current?.click()
   }));
 
+  const buildFolderPath = async (): Promise<string> => {
+    if (!user) return '';
+
+    if (uploadFolder === 'reports') {
+      return `${user.id}/reports`;
+    }
+
+    const workspaceName = workspaceService.getWorkspaceName();
+    const projectName = await workspaceService.getProjectNameAsync();
+
+    let folderPath = '';
+
+    if (workspaceName && workspaceName !== 'Unknown Workspace') {
+      const sanitizedWorkspaceName = workspaceName.replace(/[^a-zA-Z0-9-_]/g, '_');
+      folderPath += sanitizedWorkspaceName;
+    } else {
+      folderPath = user.id;
+    }
+
+    if (projectName && projectName !== 'No Project') {
+      const sanitizedProjectName = projectName.replace(/[^a-zA-Z0-9-_]/g, '_');
+      folderPath += `/${sanitizedProjectName}`;
+    }
+
+    folderPath += `/${user.id}`;
+    return folderPath;
+  };
+
   // Function to list images in current workspace/project/agent context
   const listWorkspaceImages = async (): Promise<string[]> => {
     if (!user) return [];
 
     try {
-      // Get workspace and project names to build folder path
-      const workspaceName = workspaceService.getWorkspaceName();
-      const projectName = await workspaceService.getProjectNameAsync();
+      const folderPath = await buildFolderPath();
 
-      // Build the folder path: workspaceName/projectName/userId
-      let folderPath = '';
-      
-      if (workspaceName && workspaceName !== 'Unknown Workspace') {
-        // Sanitize workspace name for folder path
-        const sanitizedWorkspaceName = workspaceName.replace(/[^a-zA-Z0-9-_]/g, '_');
-        folderPath += sanitizedWorkspaceName;
-      } else {
-        // Fallback to user ID if no workspace
-        folderPath = user.id;
-      }
-      
-      if (projectName && projectName !== 'No Project') {
-        // Sanitize project name for folder path
-        const sanitizedProjectName = projectName.replace(/[^a-zA-Z0-9-_]/g, '_');
-        folderPath += `/${sanitizedProjectName}`;
-      }
-      
-      // Always include agent (user) as the final level
-      folderPath += `/${user.id}`;
-
-      // List files in the workspace/project/agent folder
       const { data, error } = await supabase.storage
-        .from('agent-selfies')
+        .from(storageBucket)
         .list(folderPath, {
           limit: 100,
           sortBy: { column: 'created_at', order: 'desc' }
@@ -88,10 +105,9 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
         return [];
       }
 
-      // Get public URLs for all images
       const imageUrls = data?.map(file => {
         const { data: { publicUrl } } = supabase.storage
-          .from('agent-selfies')
+          .from(storageBucket)
           .getPublicUrl(`${folderPath}/${file.name}`);
         return publicUrl;
       }) || [];
@@ -152,22 +168,7 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
       throw new Error('Failed to process image overlay. Please try with a smaller image or different format.');
     }
 
-    // Create folder structure: workspaceName/projectName/userId
-    let folderPath = '';
-    
-    if (workspaceName && workspaceName !== 'Unknown Workspace') {
-      const sanitizedWorkspaceName = workspaceName.replace(/[^a-zA-Z0-9-_]/g, '_');
-      folderPath += sanitizedWorkspaceName;
-    } else {
-      folderPath = user.id;
-    }
-    
-    if (projectName && projectName !== 'No Project') {
-      const sanitizedProjectName = projectName.replace(/[^a-zA-Z0-9-_]/g, '_');
-      folderPath += `/${sanitizedProjectName}`;
-    }
-    
-    folderPath += `/${user.id}`;
+    const folderPath = await buildFolderPath();
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const agentName = overlayData.agentName.replace(/[^a-zA-Z0-9-_]/g, '_');
@@ -178,12 +179,12 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
         const { error } = await supabase.storage
-          .from('agent-selfies')
+          .from(storageBucket)
           .upload(fileName, imageWithOverlay);
 
         if (!error) {
           const { data: { publicUrl } } = supabase.storage
-            .from('agent-selfies')
+            .from(storageBucket)
             .getPublicUrl(fileName);
           return publicUrl;
         }

@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { PriceReportsSection } from "@/components/attendance/PriceReportsSection";
 import { StockReportsSection } from "@/components/attendance/StockReportsSection";
+import { CameraCapture } from "@/components/CameraCapture";
 import { toast } from "sonner";
 
 export const Reports = () => {
@@ -21,6 +22,7 @@ export const Reports = () => {
   const [submitting, setSubmitting] = useState(false);
   const [notes, setNotes] = useState("");
   const [images, setImages] = useState<File[]>([]);
+  const [capturedImageUrls, setCapturedImageUrls] = useState<string[]>([]);
   useEffect(() => {
     return () => {
       document.body.style.removeProperty("overflow");
@@ -60,6 +62,11 @@ export const Reports = () => {
     }
   };
 
+  const handleReportCameraCapture = (imageUrl: string) => {
+    setCapturedImageUrls((prev) => [...prev, imageUrl]);
+    toast.success("Photo captured with location overlay");
+  };
+
   const handleUploadImages = async () => {
     if (!user || images.length === 0) {
       toast.error("Please select images to upload");
@@ -75,7 +82,7 @@ export const Reports = () => {
           const filePath = `${user.id}/reports/${fileName}`;
 
           const { error } = await supabase.storage
-            .from("agent-selfies")
+            .from("store_images")
             .upload(filePath, image, { cacheControl: "3600", upsert: false });
 
           if (error) throw error;
@@ -101,6 +108,8 @@ export const Reports = () => {
         handleSaveNotes={handleSaveNotes}
         images={images}
         setImages={setImages}
+        capturedImageUrls={capturedImageUrls}
+        onReportCameraCapture={handleReportCameraCapture}
         handleUploadImages={handleUploadImages}
       />
     </MobileLayout>
@@ -114,6 +123,8 @@ function ReportsPageBody({
   handleSaveNotes,
   images,
   setImages,
+  capturedImageUrls,
+  onReportCameraCapture,
   handleUploadImages,
 }: {
   notes: string;
@@ -122,6 +133,8 @@ function ReportsPageBody({
   handleSaveNotes: () => void;
   images: File[];
   setImages: (v: File[]) => void;
+  capturedImageUrls: string[];
+  onReportCameraCapture: (imageUrl: string) => void;
   handleUploadImages: () => void;
 }) {
   const [stockLevels, setStockLevels] = useState<Record<string, string>>({});
@@ -149,6 +162,8 @@ function ReportsPageBody({
           handleSaveNotes={handleSaveNotes}
           images={images}
           setImages={setImages}
+          capturedImageUrls={capturedImageUrls}
+          onReportCameraCapture={onReportCameraCapture}
           handleUploadImages={handleUploadImages}
         />
       </div>
@@ -164,6 +179,8 @@ function NotesAndImagesSection({
   handleSaveNotes,
   images,
   setImages,
+  capturedImageUrls,
+  onReportCameraCapture,
   handleUploadImages,
 }: {
   notes: string;
@@ -172,6 +189,8 @@ function NotesAndImagesSection({
   handleSaveNotes: () => void;
   images: File[];
   setImages: (v: File[]) => void;
+  capturedImageUrls: string[];
+  onReportCameraCapture: (imageUrl: string) => void;
   handleUploadImages: () => void;
 }) {
   return (
@@ -201,9 +220,18 @@ function NotesAndImagesSection({
       </Card>
 
       <Card>
-        <CardContent className="p-6">
-          <h3 className="text-h3 mb-6 text-black">Attach Images</h3>
-          
+        <CardContent className="p-6 relative">
+          <div className="absolute top-4 right-4 z-10">
+            <CameraCapture
+              mode="general"
+              variant="inline"
+              storageBucket="store_images"
+              uploadFolder="reports"
+              onCapture={onReportCameraCapture}
+            />
+          </div>
+          <h3 className="text-h3 mb-6 pr-12 text-black">Attach Images</h3>
+
               <div className="space-y-4">
               <Label className="text-sm block">Select images to upload</Label>
               <Input
@@ -218,9 +246,14 @@ function NotesAndImagesSection({
                   }
                 }}
               />
-              {images.length > 0 && (
-                <div className="text-sm text-muted-foreground">
-                  {images.length} image(s) selected
+              {(images.length > 0 || capturedImageUrls.length > 0) && (
+                <div className="text-sm text-muted-foreground space-y-1">
+                  {images.length > 0 && (
+                    <p>{images.length} file(s) selected for upload</p>
+                  )}
+                  {capturedImageUrls.length > 0 && (
+                    <p>{capturedImageUrls.length} photo(s) captured with overlay</p>
+                  )}
                 </div>
               )}
               <Button
