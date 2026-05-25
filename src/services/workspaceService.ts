@@ -4,6 +4,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
+import { getCurrencyCodeFromCountry } from '@/utils/currency';
 
 interface Workspace {
   id: string;
@@ -59,6 +60,7 @@ class WorkspaceService {
   private currentWorkspaceId: string | null = null;
   private currentProjectId: string | null = null;
   private currentWorkspaceLabel: string | null = null;
+  private currentProjectCountry: string | null = null;
   private userWorkspaces: UserWorkspace[] = [];
   private user: User | null = null;
   private initialized: boolean = false;
@@ -252,21 +254,43 @@ class WorkspaceService {
    */
   private async loadCurrentWorkspaceLabel(): Promise<void> {
     this.currentWorkspaceLabel = null;
-    if (!this.currentProjectId) return;
+    this.currentProjectCountry = null;
+    if (!this.currentWorkspaceId && !this.currentProjectId) return;
+
     try {
-      const { data, error } = await supabase
-        .from('project_plans')
-        .select('team_label')
-        .eq('id', this.currentProjectId)
-        .single() as any;
-      if (error) {
-        console.error('Error loading current workspace label:', error);
-        return;
+      let data: { team_label?: string | null; country?: string | null } | null = null;
+
+      if (this.currentProjectId) {
+        const { data: byId, error: byIdError } = await supabase
+          .from('project_plans')
+          .select('team_label, country')
+          .eq('id', this.currentProjectId)
+          .maybeSingle();
+        if (!byIdError && byId) {
+          data = byId;
+        }
       }
+
+      if (!data && this.currentWorkspaceId) {
+        const { data: byWorkspace, error: byWorkspaceError } = await supabase
+          .from('project_plans')
+          .select('team_label, country')
+          .eq('workspace_id', this.currentWorkspaceId)
+          .eq('status', 'active')
+          .eq('is_deleted', false)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (!byWorkspaceError && byWorkspace) {
+          data = byWorkspace;
+        }
+      }
+
       this.currentWorkspaceLabel = data?.team_label ?? null;
-      console.log('🏷️ Workspace label set to:', this.currentWorkspaceLabel);
+      this.currentProjectCountry = data?.country ?? null;
+      console.log('🏷️ Workspace label:', this.currentWorkspaceLabel, 'country:', this.currentProjectCountry);
     } catch (error) {
-      console.error('Error loading current workspace label:', error);
+      console.error('Error loading project metadata:', error);
     }
   }
 
@@ -275,6 +299,14 @@ class WorkspaceService {
    */
   getCurrentWorkspaceLabel(): string | null {
     return this.currentWorkspaceLabel;
+  }
+
+  getCurrentProjectCountry(): string | null {
+    return this.currentProjectCountry;
+  }
+
+  getProjectCurrencyCode(): string {
+    return getCurrencyCodeFromCountry(this.currentProjectCountry);
   }
 
   /**
