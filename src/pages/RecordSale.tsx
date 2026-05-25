@@ -490,7 +490,7 @@ export const RecordSale = () => {
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-base break-words whitespace-normal leading-snug">{formatProductName(item.name, item.sku)}</h3>
                         {!hideInventoryCounts && "amount_issued" in item && (
-                          <p className="text-sm text-muted-foreground">Available: {item.amount_issued}</p>
+                          <p className="text-sm text-muted-foreground">Available: {(item as any).amount_issued}</p>
                         )}
                         {item.price > 0 && (
                           <p className="text-sm font-medium text-primary">KES {item.price}</p>

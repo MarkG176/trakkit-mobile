@@ -126,99 +126,138 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
     fileInputRef.current?.click();
   };
 
-  const uploadToStorage = async (file: File, coordinates: { lat: number; lng: number }, imageCaption?: string): Promise<string | null> => {
-    if (!user) return null;
+  const uploadToStorage = async (file: File, coordinates: { lat: number; lng: number }, imageCaption?: string): Promise<string> => {
+    if (!user) throw new Error('Not authenticated');
 
+    // Get workspace and project names
+    const workspaceName = workspaceService.getWorkspaceName();
+    const projectName = await workspaceService.getProjectNameAsync();
+
+    // Create overlay data
+    const overlayData: ImageOverlayData = {
+      agentName: displayName || user.email?.split('@')[0] || 'Unknown Agent',
+      coordinates,
+      timestamp: formatTimestamp(new Date()),
+      workspaceName: workspaceName || 'Unknown Workspace',
+      projectName: projectName || 'No Project',
+      caption: imageCaption || undefined
+    };
+
+    // Add text overlay to image
+    let imageWithOverlay: File;
     try {
-      // Get workspace and project names
-      const workspaceName = workspaceService.getWorkspaceName();
-      const projectName = await workspaceService.getProjectNameAsync();
-
-      // Create overlay data
-      const overlayData: ImageOverlayData = {
-        agentName: displayName || user.email?.split('@')[0] || 'Unknown Agent',
-        coordinates,
-        timestamp: formatTimestamp(new Date()),
-        workspaceName: workspaceName || 'Unknown Workspace',
-        projectName: projectName || 'No Project',
-        caption: imageCaption || undefined
-      };
-
-      // Add text overlay to image
-      const imageWithOverlay = await addTextOverlayToImage(file, overlayData);
-
-      // Create folder structure: workspaceName/projectName/userId
-      let folderPath = '';
-      
-      if (workspaceName && workspaceName !== 'Unknown Workspace') {
-        // Sanitize workspace name for folder path
-        const sanitizedWorkspaceName = workspaceName.replace(/[^a-zA-Z0-9-_]/g, '_');
-        folderPath += sanitizedWorkspaceName;
-      } else {
-        // Fallback to user ID if no workspace
-        folderPath = user.id;
-      }
-      
-      if (projectName && projectName !== 'No Project') {
-        // Sanitize project name for folder path
-        const sanitizedProjectName = projectName.replace(/[^a-zA-Z0-9-_]/g, '_');
-        folderPath += `/${sanitizedProjectName}`;
-      }
-      
-      // Always include agent (user) as the final level
-      folderPath += `/${user.id}`;
-
-      // Create filename with agent name and timestamp
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const agentName = overlayData.agentName.replace(/[^a-zA-Z0-9-_]/g, '_');
-      const fileName = `${folderPath}/${agentName}_${timestamp}.jpg`;
-      
-      const { data, error } = await supabase.storage
-        .from('agent-selfies')
-        .upload(fileName, imageWithOverlay);
-
-      if (error) {
-        console.error('Upload error:', error);
-        return null;
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('agent-selfies')
-        .getPublicUrl(fileName);
-
-      return publicUrl;
-    } catch (error) {
-      console.error('Error processing image with overlay:', error);
-      return null;
+      imageWithOverlay = await addTextOverlayToImage(file, overlayData);
+    } catch (overlayError) {
+      console.error('Image overlay error:', overlayError);
+      throw new Error('Failed to process image overlay. Please try with a smaller image or different format.');
     }
+
+    // Create folder structure: workspaceName/projectName/userId
+    let folderPath = '';
+    
+    if (workspaceName && workspaceName !== 'Unknown Workspace') {
+      const sanitizedWorkspaceName = workspaceName.replace(/[^a-zA-Z0-9-_]/g, '_');
+      folderPath += sanitizedWorkspaceName;
+    } else {
+      folderPath = user.id;
+    }
+    
+    if (projectName && projectName !== 'No Project') {
+      const sanitizedProjectName = projectName.replace(/[^a-zA-Z0-9-_]/g, '_');
+      folderPath += `/${sanitizedProjectName}`;
+    }
+    
+    folderPath += `/${user.id}`;
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const agentName = overlayData.agentName.replace(/[^a-zA-Z0-9-_]/g, '_');
+    const fileName = `${folderPath}/${agentName}_${timestamp}.jpg`;
+
+    // Upload with retry
+    let lastUploadError: any = null;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const { error } = await supabase.storage
+          .from('agent-selfies')
+          .upload(fileName, imageWithOverlay);
+
+        if (!error) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('agent-selfies')
+            .getPublicUrl(fileName);
+          return publicUrl;
+        }
+
+        lastUploadError = error;
+        console.warn(`Upload attempt ${attempt} failed:`, error);
+
+        if (attempt < 2) {
+          // Wait before retry (1 second)
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      } catch (uploadError) {
+        lastUploadError = uploadError;
+        console.warn(`Upload attempt ${attempt} threw:`, uploadError);
+        if (attempt < 2) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+    }
+
+    console.error('All upload attempts failed:', lastUploadError);
+    throw new Error('Failed to upload image. Please check your connection and try again.');
   };
 
-  const getCurrentLocation = (): Promise<{ lat: number; lng: number }> => {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error('Geolocation not supported'));
-        return;
+  const getCurrentLocation = async (): Promise<{ lat: number; lng: number }> => {
+    if (!navigator.geolocation) {
+      throw new Error('Geolocation not supported by this device');
+    }
+
+    const attemptLocation = (options: PositionOptions): Promise<{ lat: number; lng: number }> => {
+      return new Promise((resolve, reject) => {
+        const timeoutMs = options.timeout || 15000;
+        const timeoutId = setTimeout(() => {
+          reject(new Error('Location request timed out'));
+        }, timeoutMs);
+
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            clearTimeout(timeoutId);
+            resolve({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            });
+          },
+          (error) => {
+            clearTimeout(timeoutId);
+            reject(error);
+          },
+          options
+        );
+      });
+    };
+
+    // First attempt: high accuracy (for GPS chips that need warmup, this may fail)
+    try {
+      return await attemptLocation({ enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+    } catch (firstError) {
+      console.log('High-accuracy location failed, retrying with low accuracy:', firstError);
+      // Fallback: low accuracy, longer timeout, fresh fix (maximumAge: 10s to still allow cached)
+      try {
+        return await attemptLocation({ enableHighAccuracy: false, timeout: 20000, maximumAge: 10000 });
+      } catch (secondError) {
+        const err = secondError as GeolocationPositionError;
+        let message = 'Unable to get your location';
+        if (err.code === err.PERMISSION_DENIED) {
+          message = 'Location access denied. Please enable location permissions and try again.';
+        } else if (err.code === err.POSITION_UNAVAILABLE) {
+          message = 'Location unavailable. Please ensure GPS is enabled and try again.';
+        } else if (err.code === err.TIMEOUT) {
+          message = 'Location request timed out. Please try again in an open area with clear sky.';
+        }
+        throw new Error(message);
       }
-
-      const timeoutId = setTimeout(() => {
-        reject(new Error('Location request timed out. Please try again.'));
-      }, 15000);
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          clearTimeout(timeoutId);
-          resolve({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-        },
-        (error) => {
-          clearTimeout(timeoutId);
-          reject(error);
-        },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
-      );
-    });
+    }
   };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -259,11 +298,22 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
     setCaption('');
 
     try {
-      const location = await getCurrentLocation();
-      const imageUrl = await uploadToStorage(currentFile, location, currentCaption || undefined);
+      // Step 1: Get location
+      let location: { lat: number; lng: number };
+      try {
+        location = await getCurrentLocation();
+      } catch (locError) {
+        console.error('Location step failed:', locError);
+        throw locError; // Already has a human-friendly message from getCurrentLocation
+      }
 
-      if (!imageUrl) {
-        throw new Error('Failed to upload image');
+      // Step 2: Process overlay and upload
+      let imageUrl: string;
+      try {
+        imageUrl = await uploadToStorage(currentFile, location, currentCaption || undefined);
+      } catch (uploadError) {
+        console.error('Upload step failed:', uploadError);
+        throw uploadError; // Already has a human-friendly message from uploadToStorage
       }
 
       if (mode === 'status' && !onCapture) {
@@ -291,10 +341,11 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
         onCapture(imageUrl);
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Check-in flow error:', error);
+      const message = error instanceof Error ? error.message : 'Something went wrong. Please try again.';
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to process image',
+        title: 'Check-in failed',
+        description: message,
         variant: 'destructive',
       });
     } finally {

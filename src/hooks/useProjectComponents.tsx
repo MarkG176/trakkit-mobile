@@ -27,7 +27,7 @@ export const useProjectComponents = (_currentProjectId?: string | null) => {
   }, [userWorkspaces, currentWorkspaceId]);
 
   const isEnabled = useCallback(
-    (code: string): boolean => codes[code] ?? DEFAULT_MOBILE_COMPONENTS[code] ?? true,
+    (code: string): boolean => !!(codes[code] ?? DEFAULT_MOBILE_COMPONENTS[code] ?? true),
     [codes],
   );
 
