@@ -193,32 +193,56 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
     }
   };
 
-  const getCurrentLocation = (): Promise<{ lat: number; lng: number }> => {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error('Geolocation not supported'));
-        return;
+  const getCurrentLocation = async (): Promise<{ lat: number; lng: number }> => {
+    if (!navigator.geolocation) {
+      throw new Error('Geolocation not supported by this device');
+    }
+
+    const attemptLocation = (options: PositionOptions): Promise<{ lat: number; lng: number }> => {
+      return new Promise((resolve, reject) => {
+        const timeoutMs = options.timeout || 15000;
+        const timeoutId = setTimeout(() => {
+          reject(new Error('Location request timed out'));
+        }, timeoutMs);
+
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            clearTimeout(timeoutId);
+            resolve({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            });
+          },
+          (error) => {
+            clearTimeout(timeoutId);
+            reject(error);
+          },
+          options
+        );
+      });
+    };
+
+    // First attempt: high accuracy (for GPS chips that need warmup, this may fail)
+    try {
+      return await attemptLocation({ enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+    } catch (firstError) {
+      console.log('High-accuracy location failed, retrying with low accuracy:', firstError);
+      // Fallback: low accuracy, longer timeout, fresh fix (maximumAge: 10s to still allow cached)
+      try {
+        return await attemptLocation({ enableHighAccuracy: false, timeout: 20000, maximumAge: 10000 });
+      } catch (secondError) {
+        const err = secondError as GeolocationPositionError;
+        let message = 'Unable to get your location';
+        if (err.code === err.PERMISSION_DENIED) {
+          message = 'Location access denied. Please enable location permissions and try again.';
+        } else if (err.code === err.POSITION_UNAVAILABLE) {
+          message = 'Location unavailable. Please ensure GPS is enabled and try again.';
+        } else if (err.code === err.TIMEOUT) {
+          message = 'Location request timed out. Please try again in an open area with clear sky.';
+        }
+        throw new Error(message);
       }
-
-      const timeoutId = setTimeout(() => {
-        reject(new Error('Location request timed out. Please try again.'));
-      }, 15000);
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          clearTimeout(timeoutId);
-          resolve({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-        },
-        (error) => {
-          clearTimeout(timeoutId);
-          reject(error);
-        },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
-      );
-    });
+    }
   };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
