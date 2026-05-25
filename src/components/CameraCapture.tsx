@@ -298,11 +298,22 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
     setCaption('');
 
     try {
-      const location = await getCurrentLocation();
-      const imageUrl = await uploadToStorage(currentFile, location, currentCaption || undefined);
+      // Step 1: Get location
+      let location: { lat: number; lng: number };
+      try {
+        location = await getCurrentLocation();
+      } catch (locError) {
+        console.error('Location step failed:', locError);
+        throw locError; // Already has a human-friendly message from getCurrentLocation
+      }
 
-      if (!imageUrl) {
-        throw new Error('Failed to upload image');
+      // Step 2: Process overlay and upload
+      let imageUrl: string;
+      try {
+        imageUrl = await uploadToStorage(currentFile, location, currentCaption || undefined);
+      } catch (uploadError) {
+        console.error('Upload step failed:', uploadError);
+        throw uploadError; // Already has a human-friendly message from uploadToStorage
       }
 
       if (mode === 'status' && !onCapture) {
@@ -330,10 +341,11 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
         onCapture(imageUrl);
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Check-in flow error:', error);
+      const message = error instanceof Error ? error.message : 'Something went wrong. Please try again.';
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to process image',
+        title: 'Check-in failed',
+        description: message,
         variant: 'destructive',
       });
     } finally {
