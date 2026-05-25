@@ -87,7 +87,7 @@ export const GiveProducts = () => {
         name: formatProductName(item.name, item.sku),
         sku: item.sku || null,
         quantity: 1,
-        maxQuantity: isWholesale ? 999 : item.amount_issued, // High limit for wholesale
+        maxQuantity: isWholesale ? 999 : ('amount_issued' in item ? (item as any).amount_issued : 999),
         productVariantId: item.product_variant_id
       }]);
     }
@@ -292,7 +292,7 @@ export const GiveProducts = () => {
 
       {/* Product Grid */}
       <div className="p-4">
-        {loading ? (
+        {currentLoading ? (
           <div className="flex items-center justify-center h-32">
             <div className="text-muted-foreground">Loading inventory...</div>
           </div>

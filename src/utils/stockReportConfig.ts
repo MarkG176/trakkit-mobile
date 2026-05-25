@@ -92,7 +92,7 @@ function capabilitiesFromModeKeys(raw: Record<string, unknown>): StockReportCapa
 
 /** Fallback when only CRM toggles exist (legacy mobile_components shape). */
 function capabilitiesFromCrmCodes(raw: Record<string, boolean>): StockReportCapabilities {
-  const codes = mergeWithDefaults(raw);
+  const codes = mergeWithDefaults(raw) as Record<string, boolean>;
   const stockReport = codes["CRM-0022"] ?? false;
   const morningCount = codes["CRM-0021"] ?? false;
   const eveningCount = codes["CRM-0020"] ?? false;
@@ -134,7 +134,7 @@ export function getStockReportCapabilities(
   const modeKeys = capabilitiesFromModeKeys(raw);
   const base = booleanFlags ?? modeKeys ?? capabilitiesFromCrmCodes(raw as Record<string, boolean>);
 
-  const codes = mergeWithDefaults(raw as Record<string, boolean>);
+  const codes = mergeWithDefaults(raw as Record<string, boolean>) as Record<string, boolean>;
   return applyCrmGates(base, codes);
 }
 
