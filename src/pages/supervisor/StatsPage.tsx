@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { useProjectCurrency } from "@/hooks/useProjectCurrency";
 
 interface WorkspaceMember {
   user_id: string;
@@ -29,8 +30,6 @@ const formatWorkTime = (minutes: number) => {
   if (hours === 0) return `${mins}m`;
   return `${hours}h ${mins}m`;
 };
-
-const formatCurrency = (amount: number) => `KES ${amount.toLocaleString()}`;
 
 const MetricRow = ({ label, value, icon: Icon }: { label: string; value: string | number; icon?: React.ElementType }) => (
   <div className="flex items-center justify-between py-2.5 border-b border-border last:border-b-0">
@@ -57,6 +56,7 @@ export const StatsPage = () => {
 
   const stats = useAgentProfileStats(selectedUserId || undefined);
   const { isEnabled } = useProjectComponents();
+  const { formatAmount: formatCurrency } = useProjectCurrency();
   const isWholesale = isEnabled('CRM-0034');
   const isSeeding = isEnabled('CRM-0024') || isEnabled('CRM-0023');
 

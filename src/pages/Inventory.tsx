@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { supabase } from "@/integrations/supabase/client";
 import { useInStoreWorkLocation } from "@/hooks/useInStoreWorkLocation";
+import { useProjectCurrency } from "@/hooks/useProjectCurrency";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -32,6 +33,7 @@ export const Inventory = () => {
   const { currentWorkspaceId } = useWorkspace();
   const { toast } = useToast();
   const hideInventoryCounts = useInStoreWorkLocation();
+  const { currencyCode } = useProjectCurrency();
 
   const [isSupervisor, setIsSupervisor] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
@@ -175,7 +177,7 @@ export const Inventory = () => {
                     <h3 className="text-h3 mb-1">{formatProductName(item.name, item.sku)}</h3>
                     
                     <div className="flex items-center justify-between">
-                      <span className="text-body font-medium">KES {item.price || 0}</span>
+                      <span className="text-body font-medium">{currencyCode} {item.price || 0}</span>
                       <span className={`text-sm font-medium ${hideInventoryCounts ? 'text-muted-foreground' : item.amount_issued < 5 ? "text-destructive" : item.amount_issued < 10 ? "text-warning" : "text-success"}`}>
                         {hideInventoryCounts ? 'Assigned' : `${item.amount_issued} in stock`}
                       </span>

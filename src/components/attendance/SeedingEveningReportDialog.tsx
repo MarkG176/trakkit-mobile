@@ -16,6 +16,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Package, Camera, X, ImageIcon } from "lucide-react";
+import { useProjectCurrency } from "@/hooks/useProjectCurrency";
 
 interface SalesSummaryItem {
   product_name: string;
@@ -33,6 +34,7 @@ export const SeedingEveningReportDialog = ({ open, onOpenChange, onComplete }: S
   const { user } = useAuth();
   const { currentWorkspaceId } = useWorkspace();
   const { toast } = useToast();
+  const { currencyCode } = useProjectCurrency();
 
   const [salesSummary, setSalesSummary] = useState<SalesSummaryItem[]>([]);
   const [images, setImages] = useState<File[]>([]);
@@ -240,7 +242,7 @@ export const SeedingEveningReportDialog = ({ open, onOpenChange, onComplete }: S
                 </div>
                 <div className="flex justify-between items-center text-sm font-medium">
                   <span>Total Value</span>
-                  <span className="text-primary">KES {totalValue.toLocaleString()}</span>
+                  <span className="text-primary">{currencyCode} {totalValue.toLocaleString()}</span>
                 </div>
               </div>
             )}

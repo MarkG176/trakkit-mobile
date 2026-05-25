@@ -16,6 +16,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { DollarSign, Loader2, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
+import { useProjectCurrency } from "@/hooks/useProjectCurrency";
 
 interface PriceReportDialogProps {
   open: boolean;
@@ -36,6 +37,7 @@ export const PriceReportDialog = ({
   const { currentWorkspaceId } = useWorkspace();
   const { inventory, loading: inventoryLoading, refetch: refetchInventory } = useInventory();
   const { toast } = useToast();
+  const { currencyCode } = useProjectCurrency();
   const [prices, setPrices] = useState<Record<string, string>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -196,7 +198,7 @@ export const PriceReportDialog = ({
               </div>
 
               <div className="space-y-2 pt-2">
-                <Label className="text-sm text-muted-foreground">Selling Price (KES)</Label>
+                <Label className="text-sm text-muted-foreground">Selling Price ({currencyCode})</Label>
                 <Input
                   type="text"
                   placeholder="Enter price..."

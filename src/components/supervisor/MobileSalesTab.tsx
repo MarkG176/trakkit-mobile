@@ -9,6 +9,7 @@ import { ShoppingCart, Search, ChevronRight, Calendar, Package } from "lucide-re
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
+import { useProjectCurrency } from "@/hooks/useProjectCurrency";
 
 interface SaleItem {
   id: string;
@@ -36,6 +37,7 @@ interface MobileSalesTabProps {
 }
 
 export function MobileSalesTab({ workspaceId, startDate, endDate }: MobileSalesTabProps) {
+  const { format: formatCurrency } = useProjectCurrency();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSale, setSelectedSale] = useState<AggregatedSale | null>(null);
 
@@ -103,9 +105,6 @@ export function MobileSalesTab({ workspaceId, startDate, endDate }: MobileSalesT
     sale.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     sale.products.some(p => p.toLowerCase().includes(searchQuery.toLowerCase()))
   );
-
-  const formatCurrency = (value: number) => 
-    new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(value);
 
   if (isLoading) {
     return (

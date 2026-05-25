@@ -21,6 +21,7 @@ import { useProductFocusInventory, ProductFocusItem } from "@/hooks/useProductFo
 import { SaleFeedbackDialog, FeedbackData } from "@/components/dashboard/SaleFeedbackDialog";
 import { useToast } from "@/hooks/use-toast";
 import { formatProductName } from "@/utils/formatProductName";
+import { useProjectCurrency } from "@/hooks/useProjectCurrency";
 interface CartItem {
   id: string;
   name: string;
@@ -63,6 +64,7 @@ export const RecordSale = () => {
   const { inventory, loading: inventoryLoading } = useInventory();
   const { products: productFocusProducts, loading: productFocusLoading } = useProductFocusInventory();
   const hideInventoryCounts = useInStoreWorkLocation();
+  const { currencyCode } = useProjectCurrency();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -493,7 +495,7 @@ export const RecordSale = () => {
                           <p className="text-sm text-muted-foreground">Available: {(item as any).amount_issued}</p>
                         )}
                         {item.price > 0 && (
-                          <p className="text-sm font-medium text-primary">KES {item.price}</p>
+                          <p className="text-sm font-medium text-primary">{currencyCode} {item.price}</p>
                         )}
                       </div>
 
@@ -521,7 +523,7 @@ export const RecordSale = () => {
               onClick={() => setShowCart(true)}
               className="w-full h-14 text-lg bg-primary hover:bg-primary/90"
             >
-              Complete Sale • KES {totalAmount.toFixed(2)}
+              Complete Sale • {currencyCode} {totalAmount.toFixed(2)}
             </Button>
           </div>
         )}
@@ -564,7 +566,7 @@ export const RecordSale = () => {
                     <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
                     <div className="flex items-center gap-2">
                       <Label className="text-sm text-muted-foreground shrink-0">Total</Label>
-                      <span className="text-sm text-muted-foreground">KES</span>
+                      <span className="text-sm text-muted-foreground">{currencyCode}</span>
                       <Input
                         type="number"
                         min="0"
@@ -593,7 +595,7 @@ export const RecordSale = () => {
                 )}
                 <div className="flex justify-between items-center text-xl font-bold">
                   <span>Total:</span>
-                  <span>KES {totalAmount.toFixed(2)}</span>
+                  <span>{currencyCode} {totalAmount.toFixed(2)}</span>
                 </div>
               </SheetHeader>
 
@@ -613,7 +615,7 @@ export const RecordSale = () => {
                         <h4 className="font-medium">{item.name}</h4>
                         {isWholesale && editingPriceId === item.id ? (
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="text-sm text-muted-foreground">KES</span>
+                            <span className="text-sm text-muted-foreground">{currencyCode}</span>
                             <Input
                               type="number"
                               min="0"
@@ -635,7 +637,7 @@ export const RecordSale = () => {
                         ) : (
                           <div className="flex flex-col gap-0.5">
                             <div className="flex items-center gap-2">
-                              <p className="text-sm text-muted-foreground">KES {item.price}</p>
+                              <p className="text-sm text-muted-foreground">{currencyCode} {item.price}</p>
                               {isWholesale && (
                                 <Button
                                   size="icon"
@@ -649,7 +651,7 @@ export const RecordSale = () => {
                             </div>
                             {hasDeal && (
                               <p className="text-sm font-medium text-primary">
-                                Line total: KES {getLineTotal(item).toFixed(2)}
+                                Line total: {currencyCode} {getLineTotal(item).toFixed(2)}
                               </p>
                             )}
                           </div>
@@ -839,7 +841,7 @@ export const RecordSale = () => {
               {isWholesale && !salePhotoUrl ? (
                 'Photo Required to Complete'
               ) : (
-                `Complete Sale • KES ${totalAmount.toFixed(2)}`
+                `Complete Sale • ${currencyCode} ${totalAmount.toFixed(2)}`
               )}
             </Button>
             <Button

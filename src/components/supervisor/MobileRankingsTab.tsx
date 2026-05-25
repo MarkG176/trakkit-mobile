@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Trophy, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useProjectCurrency } from "@/hooks/useProjectCurrency";
 
 interface AgentRanking {
   agent_id: string;
@@ -21,6 +22,7 @@ interface MobileRankingsTabProps {
 }
 
 export function MobileRankingsTab({ workspaceId }: MobileRankingsTabProps) {
+  const { format: formatCurrency } = useProjectCurrency();
   const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch rankings
@@ -71,9 +73,6 @@ export function MobileRankingsTab({ workspaceId }: MobileRankingsTabProps) {
   const filteredRankings = rankings.filter(agent =>
     agent.agent_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(value);
 
   const getRankBadge = (index: number) => {
     if (index === 0) return { color: "bg-yellow-500", icon: "🥇" };

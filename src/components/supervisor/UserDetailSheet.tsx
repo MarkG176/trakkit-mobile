@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { toast } from "sonner";
+import { useProjectCurrency } from "@/hooks/useProjectCurrency";
 
 interface UserDetailSheetProps {
   open: boolean;
@@ -92,6 +93,7 @@ export const UserDetailSheet = ({
   open, onOpenChange, userId, displayName, email, role 
 }: UserDetailSheetProps) => {
   const { currentWorkspaceId } = useWorkspace();
+  const { formatAmount } = useProjectCurrency();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [lastCheckIn, setLastCheckIn] = useState<CheckIn | null>(null);
@@ -417,7 +419,7 @@ export const UserDetailSheet = ({
               <ShoppingCart className="w-4 h-4" /> Today's Sales
               {recentSales.length > 0 && totalSalesValue > 0 && (
                 <Badge variant="secondary" className="ml-auto text-xs">
-                  KES {totalSalesValue.toLocaleString()}
+                  {formatAmount(totalSalesValue)}
                 </Badge>
               )}
             </h3>
@@ -439,7 +441,7 @@ export const UserDetailSheet = ({
                       </div>
                       <div className="text-right">
                         {sale.sale_value != null && (
-                          <p className="font-medium text-primary">KES {sale.sale_value.toLocaleString()}</p>
+                          <p className="font-medium text-primary">{formatAmount(sale.sale_value)}</p>
                         )}
                         <p className="text-xs text-muted-foreground">{format(new Date(sale.created_at), 'HH:mm')}</p>
                       </div>

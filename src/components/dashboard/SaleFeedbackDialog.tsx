@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Star, CheckCircle2 } from "lucide-react";
+import { useProjectCurrency } from "@/hooks/useProjectCurrency";
 
 interface SaleFeedbackDialogProps {
   open: boolean;
@@ -44,6 +45,7 @@ export const SaleFeedbackDialog = ({
   itemCount,
   customerName,
 }: SaleFeedbackDialogProps) => {
+  const { currencyCode } = useProjectCurrency();
   const [engagementType, setEngagementType] = useState("direct");
   const [notes, setNotes] = useState("");
   const [sentiment, setSentiment] = useState(0);
@@ -85,7 +87,7 @@ export const SaleFeedbackDialog = ({
             <div>
               <DialogTitle className="text-left">Sale Recorded!</DialogTitle>
               <DialogDescription className="text-left">
-                KES {totalAmount.toFixed(2)} • {itemCount} item{itemCount > 1 ? "s" : ""}
+                {currencyCode} {totalAmount.toFixed(2)} • {itemCount} item{itemCount > 1 ? "s" : ""}
                 {customerName && ` • ${customerName}`}
               </DialogDescription>
             </div>

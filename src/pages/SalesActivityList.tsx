@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { formatProductName } from "@/utils/formatProductName";
+import { useProjectCurrency } from "@/hooks/useProjectCurrency";
 
 interface SaleActivity {
   id: string;
@@ -24,6 +25,7 @@ interface SaleActivity {
 export const SalesActivityList = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { formatAmount } = useProjectCurrency();
   const [activities, setActivities] = useState<SaleActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -118,7 +120,7 @@ export const SalesActivityList = () => {
                     </p>
                   </div>
                   <p className="font-bold text-lg text-foreground">
-                    KES {activity.sale_value?.toLocaleString() || 0}
+                    {formatAmount(activity.sale_value || 0)}
                   </p>
                 </div>
 

@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { formatProductName } from "@/utils/formatProductName";
+import { useProjectCurrency } from "@/hooks/useProjectCurrency";
 
 interface ActivityData {
   id: string;
@@ -35,6 +36,7 @@ export const ActivityDetail = () => {
   const navigate = useNavigate();
   const { activityId } = useParams();
   const { currentWorkspaceId } = useWorkspace();
+  const { formatAmount } = useProjectCurrency();
   const [activity, setActivity] = useState<ActivityData | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
   const [images, setImages] = useState<string[]>([]);
@@ -226,7 +228,7 @@ export const ActivityDetail = () => {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Amount:</span>
                 <span className="text-foreground font-bold text-lg">
-                  KES {activity.sale_value.toLocaleString()}
+                  {formatAmount(activity.sale_value)}
                 </span>
               </div>
             )}

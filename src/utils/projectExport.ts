@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { formatCurrencySimple } from "@/utils/currency";
 
 export interface ProjectExportData {
   project: {
@@ -43,7 +44,7 @@ export interface ProjectExportData {
   }>;
 }
 
-export function generateCSV(data: ProjectExportData): string {
+export function generateCSV(data: ProjectExportData, currencyCode = "KES"): string {
   const lines: string[] = [];
   const separator = ",";
   
@@ -70,7 +71,7 @@ export function generateCSV(data: ProjectExportData): string {
   lines.push("=== SUMMARY METRICS ===");
   lines.push(`Metric${separator}Value`);
   lines.push(`Total Sales (Units)${separator}${data.summary.totalSales}`);
-  lines.push(`Total Revenue (KES)${separator}${data.summary.totalRevenue}`);
+  lines.push(`Total Revenue (${currencyCode})${separator}${data.summary.totalRevenue}`);
   lines.push(`Total Giveaways${separator}${data.summary.totalGiveaways}`);
   lines.push(`Total Surveys${separator}${data.summary.totalSurveys}`);
   lines.push(`Active Agents${separator}${data.summary.activeAgents}`);
@@ -80,7 +81,7 @@ export function generateCSV(data: ProjectExportData): string {
   // Daily Breakdown Section
   if (data.dailyBreakdown.length > 0) {
     lines.push("=== DAILY BREAKDOWN ===");
-    lines.push(`Date${separator}Sales${separator}Revenue (KES)${separator}Giveaways${separator}Surveys${separator}Active Agents`);
+    lines.push(`Date${separator}Sales${separator}Revenue (${currencyCode})${separator}Giveaways${separator}Surveys${separator}Active Agents`);
     data.dailyBreakdown.forEach(day => {
       lines.push(`${day.date}${separator}${day.sales}${separator}${day.revenue}${separator}${day.giveaways}${separator}${day.surveys}${separator}${day.activeAgents}`);
     });
@@ -90,7 +91,7 @@ export function generateCSV(data: ProjectExportData): string {
   // Agent Performance Section
   if (data.agentPerformance.length > 0) {
     lines.push("=== AGENT PERFORMANCE ===");
-    lines.push(`Agent Name${separator}Sales${separator}Revenue (KES)${separator}Giveaways${separator}Surveys${separator}Check-ins`);
+    lines.push(`Agent Name${separator}Sales${separator}Revenue (${currencyCode})${separator}Giveaways${separator}Surveys${separator}Check-ins`);
     data.agentPerformance.forEach(agent => {
       lines.push(`${escapeCSV(agent.agentName)}${separator}${agent.totalSales}${separator}${agent.totalRevenue}${separator}${agent.giveaways}${separator}${agent.surveys}${separator}${agent.checkIns}`);
     });
@@ -100,7 +101,7 @@ export function generateCSV(data: ProjectExportData): string {
   // Product Breakdown Section
   if (data.productBreakdown.length > 0) {
     lines.push("=== PRODUCT BREAKDOWN ===");
-    lines.push(`Product${separator}Units Sold${separator}Revenue (KES)${separator}% of Total`);
+    lines.push(`Product${separator}Units Sold${separator}Revenue (${currencyCode})${separator}% of Total`);
     data.productBreakdown.forEach(product => {
       lines.push(`${escapeCSV(product.productName)}${separator}${product.unitsSold}${separator}${product.revenue}${separator}${product.percentOfTotal.toFixed(1)}%`);
     });
@@ -109,7 +110,7 @@ export function generateCSV(data: ProjectExportData): string {
   return lines.join("\n");
 }
 
-export function generateTXT(data: ProjectExportData): string {
+export function generateTXT(data: ProjectExportData, currencyCode = "KES"): string {
   const lines: string[] = [];
   const divider = "─".repeat(60);
   
@@ -144,7 +145,7 @@ export function generateTXT(data: ProjectExportData): string {
   lines.push("SUMMARY METRICS");
   lines.push(divider);
   lines.push(formatRow("Total Sales", `${data.summary.totalSales.toLocaleString()} units`));
-  lines.push(formatRow("Total Revenue", `KES ${data.summary.totalRevenue.toLocaleString()}`));
+  lines.push(formatRow("Total Revenue", formatCurrencySimple(data.summary.totalRevenue, currencyCode)));
   lines.push(formatRow("Total Giveaways", data.summary.totalGiveaways.toLocaleString()));
   lines.push(formatRow("Total Surveys", data.summary.totalSurveys.toLocaleString()));
   lines.push(formatRow("Active Agents", data.summary.activeAgents.toString()));
@@ -217,7 +218,7 @@ export function generateTXT(data: ProjectExportData): string {
       lines.push(formatTableRow([
         truncate(product.productName, 23),
         product.unitsSold.toString(),
-        `KES ${product.revenue.toLocaleString()}`,
+        formatCurrencySimple(product.revenue, currencyCode),
         `${product.percentOfTotal.toFixed(1)}%`
       ], colWidths));
     });

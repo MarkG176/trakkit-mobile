@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MapPin, Clock, ShoppingCart, Gift, ClipboardCheck, LogIn, LogOut, Coffee } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { useProjectCurrency } from "@/hooks/useProjectCurrency";
 
 interface ActivityCardProps {
   activity: {
@@ -30,6 +31,7 @@ const activityConfig = {
 };
 
 export const ActivityCard = ({ activity }: ActivityCardProps) => {
+  const { formatAmount } = useProjectCurrency();
   const config = activityConfig[activity.type] || activityConfig.check_in;
   const Icon = config.icon;
 
@@ -75,7 +77,7 @@ export const ActivityCard = ({ activity }: ActivityCardProps) => {
             )}
             {activity.value !== undefined && (
               <span className="font-medium text-primary ml-auto">
-                KES {activity.value.toLocaleString()}
+                {formatAmount(activity.value)}
               </span>
             )}
           </div>

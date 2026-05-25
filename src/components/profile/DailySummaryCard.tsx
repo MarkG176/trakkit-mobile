@@ -1,6 +1,7 @@
 // [CMP-2eb170] DailySummaryCard — daily summary card component
 import { Card, CardContent } from "@/components/ui/card";
 import { Store, TrendingUp, ClipboardList, Gift, Clock } from "lucide-react";
+import { useProjectCurrency } from "@/hooks/useProjectCurrency";
 
 interface DailySummaryCardProps {
   storesAdded: number;
@@ -21,15 +22,12 @@ export const DailySummaryCard = ({
   giveawayItems,
   workMinutes,
 }: DailySummaryCardProps) => {
+  const { formatAmount: formatCurrency } = useProjectCurrency();
   const formatWorkTime = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     if (hours === 0) return `${mins}m`;
     return `${hours}h ${mins}m`;
-  };
-
-  const formatCurrency = (amount: number) => {
-    return `KES ${amount.toLocaleString()}`;
   };
 
   return (

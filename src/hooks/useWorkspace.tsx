@@ -6,6 +6,7 @@ interface WorkspaceContextType {
   currentWorkspaceId: string | null;
   currentProjectId: string | null;
   currentWorkspaceLabel: string | null;
+  currentProjectCountry: string | null;
   userWorkspaces: UserWorkspace[];
   currentWorkspaceRole: 'admin' | 'member' | 'viewer' | null;
   isLoading: boolean;
@@ -21,6 +22,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   const [currentWorkspaceId, setCurrentWorkspaceId] = useState<string | null>(null);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [currentWorkspaceLabel, setCurrentWorkspaceLabel] = useState<string | null>(null);
+  const [currentProjectCountry, setCurrentProjectCountry] = useState<string | null>(null);
   const [userWorkspaces, setUserWorkspaces] = useState<UserWorkspace[]>([]);
   const [currentWorkspaceRole, setCurrentWorkspaceRole] = useState<'admin' | 'member' | 'viewer' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -78,6 +80,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     setCurrentWorkspaceId(workspaceService.getCurrentWorkspaceId());
     setCurrentProjectId(workspaceService.getCurrentProjectId());
     setCurrentWorkspaceLabel(workspaceService.getCurrentWorkspaceLabel());
+    setCurrentProjectCountry(workspaceService.getCurrentProjectCountry());
     setUserWorkspaces(workspaceService.getUserWorkspaces());
     setCurrentWorkspaceRole(workspaceService.getCurrentWorkspaceRole());
     setIsInitialized(workspaceService.isInitialized());
@@ -116,6 +119,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
       currentWorkspaceId,
       currentProjectId,
       currentWorkspaceLabel,
+      currentProjectCountry,
       userWorkspaces,
       currentWorkspaceRole,
       isLoading,

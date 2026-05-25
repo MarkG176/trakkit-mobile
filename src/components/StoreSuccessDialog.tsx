@@ -16,6 +16,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { StockReportsSection } from "@/components/attendance/StockReportsSection";
 import { PriceReportDialog } from "@/components/attendance/PriceReportDialog";
 import { formatProductName } from "@/utils/formatProductName";
+import { useProjectCurrency } from "@/hooks/useProjectCurrency";
 
 interface StoreSuccessDialogProps {
   open: boolean;
@@ -59,6 +60,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
   const { toast } = useToast();
   const { currentWorkspaceId, currentProjectId } = useWorkspace();
   const hideInventoryCounts = useInStoreWorkLocation();
+  const { currencyCode } = useProjectCurrency();
   const [activeAction, setActiveAction] = useState<ActionType>(null);
   const [loading, setLoading] = useState(false);
   const [showPriceReport, setShowPriceReport] = useState(false);
@@ -389,7 +391,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
 
       toast({
         title: "Sale Recorded",
-        description: `${saleCartItems.length} item(s) recorded. Total: KES ${saleTotalAmount.toFixed(2)}`,
+        description: `${saleCartItems.length} item(s) recorded. Total: ${currencyCode} ${saleTotalAmount.toFixed(2)}`,
       });
       
       // Reset and return to actions
@@ -785,7 +787,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                               <p className="text-xs text-muted-foreground">Available: {product.amount_issued}</p>
                             )}
                             {product.product_variants?.price > 0 && (
-                              <p className="text-xs font-medium text-primary">KES {product.product_variants.price}</p>
+                              <p className="text-xs font-medium text-primary">{currencyCode} {product.product_variants.price}</p>
                             )}
                           </div>
                           <div className="flex items-center">
@@ -802,7 +804,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                 {/* Cart indicator */}
                 {saleCartItems.length > 0 && (
                   <Button onClick={() => setShowSaleCart(true)} className="w-full">
-                    View Cart ({saleCartItems.reduce((s, i) => s + i.quantity, 0)} items) • KES {saleTotalAmount.toFixed(2)}
+                    View Cart ({saleCartItems.reduce((s, i) => s + i.quantity, 0)} items) • {currencyCode} {saleTotalAmount.toFixed(2)}
                   </Button>
                 )}
               </>
@@ -822,7 +824,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                       <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
                       <div className="flex items-center gap-2">
                         <Label className="text-sm text-muted-foreground shrink-0">Total</Label>
-                        <span className="text-sm text-muted-foreground">KES</span>
+                        <span className="text-sm text-muted-foreground">{currencyCode}</span>
                         <Input
                           type="number"
                           min="0"
@@ -855,7 +857,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                   )}
                   <div className="flex justify-between items-center text-xl font-bold mt-1">
                     <span>Total:</span>
-                    <span>KES {saleTotalAmount.toFixed(2)}</span>
+                    <span>{currencyCode} {saleTotalAmount.toFixed(2)}</span>
                   </div>
                 </div>
 
@@ -875,7 +877,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                           <h4 className="font-medium text-sm">{item.name}</h4>
                           {editingSalePriceId === item.productVariantId ? (
                             <div className="flex items-center gap-1 mt-1">
-                              <span className="text-xs text-muted-foreground">KES</span>
+                              <span className="text-xs text-muted-foreground">{currencyCode}</span>
                               <Input
                                 type="number"
                                 min="0"
@@ -897,7 +899,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                           ) : (
                             <div className="flex flex-col gap-0.5">
                               <div className="flex items-center gap-1">
-                                <p className="text-xs text-muted-foreground">KES {item.price}</p>
+                                <p className="text-xs text-muted-foreground">{currencyCode} {item.price}</p>
                                 <Button
                                   size="icon"
                                   variant="ghost"
@@ -909,7 +911,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                               </div>
                               {hasDeal && (
                                 <p className="text-xs font-medium text-primary">
-                                  Line total: KES {getSaleLineTotal(item).toFixed(2)}
+                                  Line total: {currencyCode} {getSaleLineTotal(item).toFixed(2)}
                                 </p>
                               )}
                             </div>
@@ -954,7 +956,7 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
                 </Button>
 
                 <Button onClick={handleSubmitSale} disabled={saleCartItems.length === 0 || loading} className="w-full">
-                  {loading ? "Recording..." : `Record Sale • KES ${saleTotalAmount.toFixed(2)}`}
+                  {loading ? "Recording..." : `Record Sale • ${currencyCode} ${saleTotalAmount.toFixed(2)}`}
                 </Button>
               </>
             )}

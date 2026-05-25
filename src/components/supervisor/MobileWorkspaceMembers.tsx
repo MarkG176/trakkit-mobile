@@ -37,6 +37,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { isInStoreWorkLocation } from '@/services/workspaceService';
+import { useProjectCurrency } from '@/hooks/useProjectCurrency';
 
 interface WorkspaceMember {
   id: string;
@@ -66,6 +67,7 @@ interface ProductVariant {
 export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string }) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { formatAmount } = useProjectCurrency();
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -641,7 +643,7 @@ export const MobileWorkspaceMembers = ({ workspaceId }: { workspaceId: string })
                       <p className="text-xs text-muted-foreground">Units Sold</p>
                     </div>
                     <div className="text-center p-3 bg-muted/50 rounded-lg">
-                      <p className="text-2xl font-bold">KES {memberDetails.sales.value.toLocaleString()}</p>
+                      <p className="text-2xl font-bold">{formatAmount(memberDetails.sales.value)}</p>
                       <p className="text-xs text-muted-foreground">Total Value</p>
                     </div>
                   </div>

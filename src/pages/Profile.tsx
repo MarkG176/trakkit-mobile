@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAgentProfileStats } from "@/hooks/useAgentProfileStats";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useProjectComponents } from "@/hooks/useProjectComponents";
+import { useProjectCurrency } from "@/hooks/useProjectCurrency";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useState, useEffect } from "react";
@@ -21,10 +22,6 @@ const formatWorkTime = (minutes: number) => {
   const mins = minutes % 60;
   if (hours === 0) return `${mins}m`;
   return `${hours}h ${mins}m`;
-};
-
-const formatCurrency = (amount: number) => {
-  return `KES ${amount.toLocaleString()}`;
 };
 
 const MetricRow = ({ label, value, icon: Icon }: { label: string; value: string | number; icon?: React.ElementType }) => (
@@ -68,6 +65,7 @@ export const Profile = () => {
   }, [user?.id, currentWorkspaceId]);
   // Drive feature visibility from CRM active components
   const { isEnabled } = useProjectComponents();
+  const { formatAmount: formatCurrency } = useProjectCurrency();
   const showDailySummary = isEnabled('CRM-0063');
   const showWeeklySummary = isEnabled('CRM-0064');
   const showWorkHours = isEnabled('CRM-0053');
