@@ -126,71 +126,86 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
     fileInputRef.current?.click();
   };
 
-  const uploadToStorage = async (file: File, coordinates: { lat: number; lng: number }, imageCaption?: string): Promise<string | null> => {
-    if (!user) return null;
+  const uploadToStorage = async (file: File, coordinates: { lat: number; lng: number }, imageCaption?: string): Promise<string> => {
+    if (!user) throw new Error('Not authenticated');
 
+    // Get workspace and project names
+    const workspaceName = workspaceService.getWorkspaceName();
+    const projectName = await workspaceService.getProjectNameAsync();
+
+    // Create overlay data
+    const overlayData: ImageOverlayData = {
+      agentName: displayName || user.email?.split('@')[0] || 'Unknown Agent',
+      coordinates,
+      timestamp: formatTimestamp(new Date()),
+      workspaceName: workspaceName || 'Unknown Workspace',
+      projectName: projectName || 'No Project',
+      caption: imageCaption || undefined
+    };
+
+    // Add text overlay to image
+    let imageWithOverlay: File;
     try {
-      // Get workspace and project names
-      const workspaceName = workspaceService.getWorkspaceName();
-      const projectName = await workspaceService.getProjectNameAsync();
-
-      // Create overlay data
-      const overlayData: ImageOverlayData = {
-        agentName: displayName || user.email?.split('@')[0] || 'Unknown Agent',
-        coordinates,
-        timestamp: formatTimestamp(new Date()),
-        workspaceName: workspaceName || 'Unknown Workspace',
-        projectName: projectName || 'No Project',
-        caption: imageCaption || undefined
-      };
-
-      // Add text overlay to image
-      const imageWithOverlay = await addTextOverlayToImage(file, overlayData);
-
-      // Create folder structure: workspaceName/projectName/userId
-      let folderPath = '';
-      
-      if (workspaceName && workspaceName !== 'Unknown Workspace') {
-        // Sanitize workspace name for folder path
-        const sanitizedWorkspaceName = workspaceName.replace(/[^a-zA-Z0-9-_]/g, '_');
-        folderPath += sanitizedWorkspaceName;
-      } else {
-        // Fallback to user ID if no workspace
-        folderPath = user.id;
-      }
-      
-      if (projectName && projectName !== 'No Project') {
-        // Sanitize project name for folder path
-        const sanitizedProjectName = projectName.replace(/[^a-zA-Z0-9-_]/g, '_');
-        folderPath += `/${sanitizedProjectName}`;
-      }
-      
-      // Always include agent (user) as the final level
-      folderPath += `/${user.id}`;
-
-      // Create filename with agent name and timestamp
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const agentName = overlayData.agentName.replace(/[^a-zA-Z0-9-_]/g, '_');
-      const fileName = `${folderPath}/${agentName}_${timestamp}.jpg`;
-      
-      const { data, error } = await supabase.storage
-        .from('agent-selfies')
-        .upload(fileName, imageWithOverlay);
-
-      if (error) {
-        console.error('Upload error:', error);
-        return null;
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('agent-selfies')
-        .getPublicUrl(fileName);
-
-      return publicUrl;
-    } catch (error) {
-      console.error('Error processing image with overlay:', error);
-      return null;
+      imageWithOverlay = await addTextOverlayToImage(file, overlayData);
+    } catch (overlayError) {
+      console.error('Image overlay error:', overlayError);
+      throw new Error('Failed to process image overlay. Please try with a smaller image or different format.');
     }
+
+    // Create folder structure: workspaceName/projectName/userId
+    let folderPath = '';
+    
+    if (workspaceName && workspaceName !== 'Unknown Workspace') {
+      const sanitizedWorkspaceName = workspaceName.replace(/[^a-zA-Z0-9-_]/g, '_');
+      folderPath += sanitizedWorkspaceName;
+    } else {
+      folderPath = user.id;
+    }
+    
+    if (projectName && projectName !== 'No Project') {
+      const sanitizedProjectName = projectName.replace(/[^a-zA-Z0-9-_]/g, '_');
+      folderPath += `/${sanitizedProjectName}`;
+    }
+    
+    folderPath += `/${user.id}`;
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const agentName = overlayData.agentName.replace(/[^a-zA-Z0-9-_]/g, '_');
+    const fileName = `${folderPath}/${agentName}_${timestamp}.jpg`;
+
+    // Upload with retry
+    let lastUploadError: any = null;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const { error } = await supabase.storage
+          .from('agent-selfies')
+          .upload(fileName, imageWithOverlay);
+
+        if (!error) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('agent-selfies')
+            .getPublicUrl(fileName);
+          return publicUrl;
+        }
+
+        lastUploadError = error;
+        console.warn(`Upload attempt ${attempt} failed:`, error);
+
+        if (attempt < 2) {
+          // Wait before retry (1 second)
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      } catch (uploadError) {
+        lastUploadError = uploadError;
+        console.warn(`Upload attempt ${attempt} threw:`, uploadError);
+        if (attempt < 2) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+    }
+
+    console.error('All upload attempts failed:', lastUploadError);
+    throw new Error('Failed to upload image. Please check your connection and try again.');
   };
 
   const getCurrentLocation = async (): Promise<{ lat: number; lng: number }> => {
