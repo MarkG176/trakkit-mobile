@@ -9,7 +9,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
-import { calculateDistance, formatDistance, debugDistanceCalculation } from "@/utils/distanceCalculator";
 import { reverseGeocode } from "@/utils/googleMapsGeocoding";
 import { useAgentActions } from "@/hooks/useAgentActions";
 import { StoreSuccessDialog } from "@/components/StoreSuccessDialog";
