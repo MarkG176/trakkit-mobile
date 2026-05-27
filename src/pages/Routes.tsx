@@ -435,6 +435,26 @@ export const Routes = () => {
           <Card className="p-4">
             <h2 className="text-h2 mb-4">Set Your Assigned Location</h2>
 
+            {/* Current Location Display */}
+            <div className="mb-4 p-3 bg-muted rounded-lg">
+              <p className="text-sm font-medium text-foreground mb-2">Current Location</p>
+              {isLoadingLocation && <p className="text-xs text-muted-foreground">Getting your location...</p>}
+              {locationError && (
+                <div>
+                  <p className="text-xs text-destructive mb-2">{locationError}</p>
+                  <Button size="sm" variant="outline" onClick={requestLocation}>
+                    Retry
+                  </Button>
+                </div>
+              )}
+              {currentLocation && !isLoadingLocation && (
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p>Latitude: {currentLocation.latitude.toFixed(6)}</p>
+                  <p>Longitude: {currentLocation.longitude.toFixed(6)}</p>
+                </div>
+              )}
+            </div>
+
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">Country</label>
