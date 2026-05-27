@@ -67,7 +67,6 @@ export const Routes = () => {
     }
 
     fetchStores();
-    requestLocation();
     setSelectedCountry("");
     setSelectedStore("all");
     setStoreSearchText("");
