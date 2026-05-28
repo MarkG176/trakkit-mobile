@@ -458,22 +458,6 @@ export const Routes = () => {
 
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-foreground mb-2 block">Country</label>
-                <Select value={selectedCountry} onValueChange={(val) => { setSelectedCountry(val); setSelectedStore("all"); setStoreSearchText(""); }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select country" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countries.map((country) => (
-                      <SelectItem key={country} value={country}>
-                        {country}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">Store</label>
                 <div className="relative">
                   <Input
