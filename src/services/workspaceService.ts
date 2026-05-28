@@ -258,12 +258,12 @@ class WorkspaceService {
     if (!this.currentWorkspaceId && !this.currentProjectId) return;
 
     try {
-      let data: { team_label?: string | null; country?: string | null } | null = null;
+      let data: { project_type?: string | null; country?: string | null } | null = null;
 
       if (this.currentProjectId) {
         const { data: byId, error: byIdError } = await supabase
           .from('project_plans')
-          .select('team_label, country')
+          .select('project_type, country')
           .eq('id', this.currentProjectId)
           .maybeSingle();
         if (!byIdError && byId) {
@@ -274,7 +274,7 @@ class WorkspaceService {
       if (!data && this.currentWorkspaceId) {
         const { data: byWorkspace, error: byWorkspaceError } = await supabase
           .from('project_plans')
-          .select('team_label, country')
+          .select('project_type, country')
           .eq('workspace_id', this.currentWorkspaceId)
           .eq('status', 'active')
           .eq('is_deleted', false)
@@ -286,7 +286,7 @@ class WorkspaceService {
         }
       }
 
-      this.currentWorkspaceLabel = data?.team_label ?? null;
+      this.currentWorkspaceLabel = data?.project_type ?? null;
       this.currentProjectCountry = data?.country ?? null;
       console.log('🏷️ Workspace label:', this.currentWorkspaceLabel, 'country:', this.currentProjectCountry);
     } catch (error) {
