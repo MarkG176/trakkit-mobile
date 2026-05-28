@@ -2,7 +2,7 @@
 import { HelpFAQDialog } from "@/components/profile/HelpFAQDialog";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/hooks/useLanguage";
-import { Globe } from "lucide-react";
+import { Shield, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ProfileHeaderProps {
@@ -11,9 +11,15 @@ interface ProfileHeaderProps {
   totalPoints: number;
   teamType?: string;
   teamName?: string | null;
+  onOpenPermissions?: () => void;
 }
 
-export const ProfileHeader = ({ displayName, teamType, teamName }: ProfileHeaderProps) => {
+export const ProfileHeader = ({
+  displayName,
+  teamType,
+  teamName,
+  onOpenPermissions,
+}: ProfileHeaderProps) => {
   const { language, setLanguage } = useLanguage();
   const today = new Date();
   const formattedDate = today.toLocaleDateString(language === 'sw' ? 'sw-KE' : 'en-US', {
@@ -51,6 +57,16 @@ export const ProfileHeader = ({ displayName, teamType, teamName }: ProfileHeader
         )}
       </div>
       <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-primary-foreground hover:bg-primary-foreground/10"
+          onClick={onOpenPermissions}
+          title="Permissions"
+          disabled={!onOpenPermissions}
+        >
+          <Shield className="w-5 h-5" />
+        </Button>
         <Button
           variant="ghost"
           size="icon"

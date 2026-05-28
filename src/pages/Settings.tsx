@@ -1,12 +1,12 @@
 // [CMP-a4a4ba] Settings — app settings page
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Bell, Moon, Globe, Database, MapPin, Mic, Trash2, Info, Camera, HardDrive, Loader } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
 import { PermissionGuidance } from "@/components/PermissionGuidance";
@@ -15,9 +15,16 @@ import { PermissionStatus } from "@/utils/permissionUtils";
 
 export const Settings = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { permissions, requestPermission, browserType } = usePermissions();
   const [requestingPermission, setRequestingPermission] = useState<string | null>(null);
+
+  const permissionsCardRef = useRef<HTMLDivElement | null>(null);
+  const focusCard = useMemo(() => {
+    const state = location.state as { focusCard?: string } | null;
+    return state?.focusCard ?? null;
+  }, [location.state]);
   
   const [notifications, setNotifications] = useState({
     newTasks: true,
@@ -35,6 +42,14 @@ export const Settings = () => {
       description: "App cache has been successfully cleared"
     });
   };
+
+  useEffect(() => {
+    if (focusCard !== "permissions") return;
+    const id = window.setTimeout(() => {
+      permissionsCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [focusCard]);
 
   const getStatusBadge = (status: PermissionStatus | null) => {
     switch (status) {
@@ -266,56 +281,58 @@ export const Settings = () => {
         </Card>
 
         {/* Privacy & Permissions */}
-        <Card>
-          <CardContent className="p-4">
-            <h3 className="text-h3 mb-4 text-black">Permissions</h3>
-            
-            <div className="space-y-4">
-              <PermissionRow
-                type="camera"
-                title="Camera"
-                description="For check-in selfies and photo captures"
-                icon={<Camera className="w-5 h-5 text-gray-600" />}
-              />
+        <div ref={permissionsCardRef}>
+          <Card>
+            <CardContent className="p-4">
+              <h3 className="text-h3 mb-4 text-black">Permissions</h3>
+              
+              <div className="space-y-4">
+                <PermissionRow
+                  type="camera"
+                  title="Camera"
+                  description="For check-in selfies and photo captures"
+                  icon={<Camera className="w-5 h-5 text-gray-600" />}
+                />
 
-              <div className="border-t border-gray-200 pt-4" />
+                <div className="border-t border-gray-200 pt-4" />
 
-              <PermissionRow
-                type="location"
-                title="Location Services"
-                description="For tracking visits and route optimization"
-                icon={<MapPin className="w-5 h-5 text-gray-600" />}
-              />
+                <PermissionRow
+                  type="location"
+                  title="Location Services"
+                  description="For tracking visits and route optimization"
+                  icon={<MapPin className="w-5 h-5 text-gray-600" />}
+                />
 
-              <div className="border-t border-gray-200 pt-4" />
+                <div className="border-t border-gray-200 pt-4" />
 
-              <PermissionRow
-                type="microphone"
-                title="Microphone"
-                description="For audio recording during interactions"
-                icon={<Mic className="w-5 h-5 text-gray-600" />}
-              />
+                <PermissionRow
+                  type="microphone"
+                  title="Microphone"
+                  description="For audio recording during interactions"
+                  icon={<Mic className="w-5 h-5 text-gray-600" />}
+                />
 
-              <div className="border-t border-gray-200 pt-4" />
+                <div className="border-t border-gray-200 pt-4" />
 
-              <PermissionRow
-                type="storage"
-                title="Storage"
-                description="For offline data and app caching"
-                icon={<HardDrive className="w-5 h-5 text-gray-600" />}
-              />
+                <PermissionRow
+                  type="storage"
+                  title="Storage"
+                  description="For offline data and app caching"
+                  icon={<HardDrive className="w-5 h-5 text-gray-600" />}
+                />
 
-              <div className="border-t border-gray-200 pt-4" />
+                <div className="border-t border-gray-200 pt-4" />
 
-              <PermissionRow
-                type="notification"
-                title="Notifications"
-                description="For important alerts and reminders"
-                icon={<Bell className="w-5 h-5 text-gray-600" />}
-              />
-            </div>
-          </CardContent>
-        </Card>
+                <PermissionRow
+                  type="notification"
+                  title="Notifications"
+                  description="For important alerts and reminders"
+                  icon={<Bell className="w-5 h-5 text-gray-600" />}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* About App */}
         <Card>

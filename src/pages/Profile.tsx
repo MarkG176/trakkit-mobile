@@ -138,6 +138,7 @@ export const Profile = () => {
         currentRank={stats.currentRank}
         totalPoints={stats.totalPoints}
         teamName={teamName}
+        onOpenPermissions={() => navigate("/settings", { state: { focusCard: "permissions" } })}
       />
 
       <div className="p-4 space-y-4 -mt-4">
