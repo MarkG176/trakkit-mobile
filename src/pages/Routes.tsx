@@ -368,10 +368,6 @@ export const Routes = () => {
         return;
       }
 
-      let userLocation = currentLocation;
-      if (!userLocation) {
-        userLocation = await getCurrentLocation();
-      }
       const selectedStoreData = stores.find((s) => s.id === selectedStore);
 
       if (!selectedStoreData) {
@@ -383,86 +379,34 @@ export const Routes = () => {
         return;
       }
 
-      // Round both device and store locations to 1 decimal place for calculation
-      const roundedUserLat = Math.round(userLocation.latitude * 10) / 10;
-      const roundedUserLng = Math.round(userLocation.longitude * 10) / 10;
-      const roundedStoreLat = Math.round(selectedStoreData.store_lat * 10) / 10;
-      const roundedStoreLng = Math.round(selectedStoreData.store_long * 10) / 10;
-
-      console.log("📍 Location coordinates:", {
-        original: {
-          user: { lat: userLocation.latitude, lng: userLocation.longitude },
-          store: { lat: selectedStoreData.store_lat, lng: selectedStoreData.store_long },
-        },
-        rounded: {
-          user: { lat: roundedUserLat, lng: roundedUserLng },
-          store: { lat: roundedStoreLat, lng: roundedStoreLng },
-        },
-      });
-
-      // Calculate distance using Haversine formula with rounded coordinates
-      const distance = await calculateDistance(roundedUserLat, roundedUserLng, roundedStoreLat, roundedStoreLng);
-
-      console.log("✅ Haversine distance calculation:", {
-        distanceMeters: Math.round(distance),
-        distanceText: formatDistance(distance),
-        roundedUserCoords: { lat: roundedUserLat, lng: roundedUserLng },
-        roundedStoreCoords: { lat: roundedStoreLat, lng: roundedStoreLng },
-        store: selectedStoreData.store_name,
-      });
-
-      // Enhanced debug logging
-      await debugDistanceCalculation(
-        roundedUserLat,
-        roundedUserLng,
-        roundedStoreLat,
-        roundedStoreLng,
-        "Set Location (Haversine with 1dp Rounded Coords)",
-      );
-
-      const inRange = distance <= 100;
-
       const { error } = await supabase.from("agent_status_log").insert({
         agent_id: user.id,
         status: "set_location",
-        location_lat: userLocation.latitude,
-        location_lng: userLocation.longitude,
         assigned_location_lat: selectedStoreData.store_lat,
         assigned_location_lng: selectedStoreData.store_long,
-        distance_from_assigned: distance,
-        in_range: inRange,
         workspace_id: currentWorkspaceId,
         store_id: selectedStoreData.id,
       });
 
       if (error) throw error;
 
-      if (!inRange) {
-        toast({
-          title: "Out of Range",
-          description: `You are ${Math.round(distance)}m from ${selectedStoreData.store_name}. Please move within 100m to check in.`,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Location set successfully",
-          description: `Your assigned location is ${selectedStoreData.store_name}. You are ${Math.round(distance)}m from the store.`,
-        });
+      toast({
+        title: "Location set successfully",
+        description: `Your assigned location is ${selectedStoreData.store_name}.`,
+      });
 
-        // Record location setting action
-        await recordLocationSet(
-          user.id,
-          { lat: userLocation.latitude, lng: userLocation.longitude },
-          selectedStoreData.store_name,
-          {
-            distance_from_store: distance,
-            store_coordinates: {
-              lat: selectedStoreData.store_lat,
-              lng: selectedStoreData.store_long,
-            },
+      // Record location setting action
+      await recordLocationSet(
+        user.id,
+        { lat: selectedStoreData.store_lat, lng: selectedStoreData.store_long },
+        selectedStoreData.store_name,
+        {
+          store_coordinates: {
+            lat: selectedStoreData.store_lat,
+            lng: selectedStoreData.store_long,
           },
-        );
-      }
+        },
+      );
 
       setSelectedStore("all");
       setStoreSearchText("");
@@ -513,22 +457,6 @@ export const Routes = () => {
             </div>
 
             <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-foreground mb-2 block">Country</label>
-                <Select value={selectedCountry} onValueChange={(val) => { setSelectedCountry(val); setSelectedStore("all"); setStoreSearchText(""); }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select country" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countries.map((country) => (
-                      <SelectItem key={country} value={country}>
-                        {country}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">Store</label>
                 <div className="relative">
