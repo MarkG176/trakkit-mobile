@@ -1,0 +1,1 @@
+UPDATE public.project_plans SET project_type = 'hybrid' WHERE project_type IS DISTINCT FROM 'hybrid';
