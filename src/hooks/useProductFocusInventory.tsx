@@ -10,6 +10,13 @@ export interface ProductFocusItem {
   sku: string | null;
 }
 
+const quotePostgrestFilterValue = (value: string) => {
+  if (/[",()]/.test(value) || /\s/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+};
+
 export const useProductFocusInventory = () => {
   const { currentWorkspaceId, currentProjectId, currentWorkspaceLabel } = useWorkspace();
   const [products, setProducts] = useState<ProductFocusItem[]>([]);
@@ -25,7 +32,6 @@ export const useProductFocusInventory = () => {
     try {
       setLoading(true);
 
-      // First get the product_focus from the project_plans
       const { data: projectData, error: projectError } = await supabase
         .from("project_plans")
         .select("product_focus")
@@ -39,44 +45,37 @@ export const useProductFocusInventory = () => {
         return;
       }
 
-      // Parse product_focus - assuming it's a comma-separated list of product names
-      const productNames = projectData.product_focus.split(',').map(name => name.trim());
+      const focusTokens = projectData.product_focus
+        .split(",")
+        .map((token) => token.trim())
+        .filter(Boolean);
 
-      if (productNames.length === 0) {
+      if (focusTokens.length === 0) {
         setProducts([]);
         setLoading(false);
         return;
       }
 
-      // Get product variants that match the product names
+      const quotedTokens = focusTokens.map(quotePostgrestFilterValue).join(",");
       const { data: productVariants, error: variantsError } = await supabase
         .from("product_variants")
-        .select(`
-          id,
-          name,
-          sku,
-          price,
-          products!inner (
-            name
-          )
-        `)
+        .select("id, name, sku, price")
         .eq("workspace_id", currentWorkspaceId)
-        .in("products.name", productNames);
+        .or(`name.in.(${quotedTokens}),sku.in.(${quotedTokens})`);
 
       if (variantsError) throw variantsError;
 
-      // Transform the data to match our interface
-      const transformedProducts = (productVariants || []).map((variant: any) => ({
+      const transformedProducts = (productVariants || []).map((variant) => ({
         id: variant.id,
-        name: variant.name || variant.products?.name || 'Unknown Product',
+        name: variant.name || "Unknown Product",
         product_variant_id: variant.id,
         price: variant.price || 0,
-        sku: variant.sku
+        sku: variant.sku,
       }));
 
       setProducts(transformedProducts);
     } catch (error) {
-      console.error('Error fetching product focus inventory:', error);
+      console.error("Error fetching product focus inventory:", error);
       setProducts([]);
     } finally {
       setLoading(false);
