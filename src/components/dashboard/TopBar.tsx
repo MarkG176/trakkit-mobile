@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
+import { SyncIndicator } from "@/components/SyncIndicator";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -92,12 +93,13 @@ export const TopBar = () => {
       </div>
       
       {/* Workspace Switcher */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <WorkspaceSwitcher onWorkspaceChange={(workspaceId) => {
           // Workspace context will automatically update via useWorkspace hook
           // No need to reload the page - React state management handles this
           console.log('Workspace changed to:', workspaceId);
         }} />
+        <SyncIndicator />
       </div>
     </div>
   );

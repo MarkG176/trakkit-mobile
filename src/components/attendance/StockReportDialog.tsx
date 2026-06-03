@@ -148,50 +148,41 @@ export const StockReportDialog = ({
 
     try {
       const today = new Date().toISOString().split("T")[0];
-      
-      if (reportType === "morning") {
-        const reports = inventory.map((item) => ({
-          agent_id: user.id,
-          product_variant_id: item.product_variant_id,
-          stock_level: stockLevels[item.product_variant_id],
-          opening_stock: null,
-          quantity_sold: null,
-          closing_stock: null,
-          report_type: reportType,
-          work_date: today,
-          workspace_id: currentWorkspaceId,
-          store_id: storeId || null,
-        }));
+      const { submitStockReport } = await import("@/services/inventoryWriteService");
 
-        const { error } = await supabase
-          .from("daily_stock_reports")
-          .insert(reports);
+      const rows =
+        reportType === "morning"
+          ? inventory.map((item) => ({
+              product_variant_id: item.product_variant_id,
+              stock_level: stockLevels[item.product_variant_id],
+              opening_stock: null,
+              quantity_sold: null,
+              closing_stock: null,
+            }))
+          : inventory.map((item) => ({
+              product_variant_id: item.product_variant_id,
+              stock_level: null,
+              opening_stock: null,
+              quantity_sold: salesData[item.product_variant_id] || 0,
+              closing_stock: null,
+            }));
 
-        if (error) throw error;
-      } else {
-        const reports = inventory.map((item) => ({
-          agent_id: user.id,
-          product_variant_id: item.product_variant_id,
-          stock_level: null,
-          opening_stock: null,
-          quantity_sold: salesData[item.product_variant_id] || 0,
-          closing_stock: null,
-          report_type: reportType,
-          work_date: today,
-          workspace_id: currentWorkspaceId,
-          store_id: storeId || null,
-        }));
-
-        const { error } = await supabase
-          .from("daily_stock_reports")
-          .insert(reports);
-
-        if (error) throw error;
-      }
+      const result = await submitStockReport({
+        workspaceId: currentWorkspaceId,
+        agentId: user.id,
+        payload: {
+          reportType,
+          workDate: today,
+          storeId: storeId || null,
+          rows,
+        },
+      });
 
       toast({
-        title: "Stock Report Submitted",
-        description: `${reportType === "morning" ? "Morning" : "Evening"} stock report saved successfully`,
+        title: result.queued ? "Report saved on device" : "Stock Report Submitted",
+        description: result.queued
+          ? result.message
+          : `${reportType === "morning" ? "Morning" : "Evening"} stock report saved successfully`,
       });
 
       // Reset state and close

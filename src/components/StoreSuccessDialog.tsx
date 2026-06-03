@@ -334,67 +334,38 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
+      if (!currentWorkspaceId) throw new Error("No workspace selected");
 
       const location = await getCurrentLocation();
 
-      // Create or get customer
-      const { data: customer, error: customerError } = await supabase
-        .from('customers')
-        .upsert({
-          name: storeName,
-          county: storeCounty,
-          location_lat: location.latitude,
-          location_lng: location.longitude,
-        }, {
-          onConflict: 'phone',
-          ignoreDuplicates: false
-        })
-        .select()
-        .single();
-
-      if (customerError) throw customerError;
-
-      const projectId = currentProjectId || null;
-
-      // Record each cart item as a separate interaction + customer purchase
-      for (const item of saleCartItems) {
-        const { error: interactionError } = await supabase.from('interactions').insert({
-          task_id: null,
-          agent_id: user.id,
-          interaction_type: 'sale',
-          store_id: storeId,
-          customer_name: storeName,
-          product_variant_id: item.productVariantId,
-          quantity_sold: item.quantity,
-          sale_value: getSaleLineTotal(item),
-          outcome: 'completed',
+      const { submitSaleBatch } = await import('@/services/inventoryWriteService');
+      const result = await submitSaleBatch({
+        workspaceId: currentWorkspaceId,
+        agentId: user.id,
+        payload: {
+          items: saleCartItems.map((item) => ({
+            productVariantId: item.productVariantId,
+            quantity: item.quantity,
+            price: item.price,
+            lineTotal: getSaleLineTotal(item),
+          })),
+          storeId,
+          storeName,
+          storeCounty,
           latitude: location.latitude,
           longitude: location.longitude,
-          timestamp: new Date().toISOString(),
-          workspace_id: currentWorkspaceId
-        } as any);
-
-        if (interactionError) throw interactionError;
-
-        await supabase.from('customer_purchases').insert({
-          customer_id: customer.id,
-          agent_id: user.id,
-          product_variant_id: item.productVariantId,
-          quantity: item.quantity,
-          total_value: getSaleLineTotal(item),
-          location_lat: location.latitude,
-          location_lng: location.longitude,
-          workspace_id: currentWorkspaceId,
-          project_id: projectId,
-        } as any);
-      }
+          includeCustomerPurchase: true,
+          projectId: currentProjectId || null,
+        },
+      });
 
       toast({
-        title: "Sale Recorded",
-        description: `${saleCartItems.length} item(s) recorded. Total: ${currencyCode} ${saleTotalAmount.toFixed(2)}`,
+        title: result.queued ? "Sale saved on device" : "Sale Recorded",
+        description: result.queued
+          ? result.message
+          : `${saleCartItems.length} item(s) recorded. Total: ${currencyCode} ${saleTotalAmount.toFixed(2)}`,
       });
       
-      // Reset and return to actions
       setActiveAction(null);
       setSaleCartItems([]);
     } catch (error: any) {
@@ -415,34 +386,35 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
+      if (!currentWorkspaceId) throw new Error("No workspace selected");
 
       const location = await getCurrentLocation();
 
-      const { error } = await supabase.from('giveaways').insert({
-        agent_id: user.id,
-        store_id: storeId,
-        recipient_name: storeName,
-        products_given: selectedProducts.map(p => ({
-          product_variant_id: p.productVariantId,
-          quantity: p.quantity,
-          name: p.name
-        })),
-        total_items: selectedProducts.reduce((sum, p) => sum + p.quantity, 0),
-        notes: giveawayNotes,
-        location_lat: location.latitude,
-        location_lng: location.longitude,
-        recorded_at: new Date().toISOString(),
-        workspace_id: currentWorkspaceId
+      const { submitGiveaway } = await import('@/services/inventoryWriteService');
+      const result = await submitGiveaway({
+        workspaceId: currentWorkspaceId,
+        agentId: user.id,
+        payload: {
+          productsGiven: selectedProducts.map((p) => ({
+            product_variant_id: p.productVariantId,
+            name: p.name,
+            quantity: p.quantity,
+          })),
+          totalItems: selectedProducts.reduce((sum, p) => sum + p.quantity, 0),
+          recipientName: storeName,
+          notes: giveawayNotes,
+          locationLat: location.latitude,
+          locationLng: location.longitude,
+          storeId,
+          projectId: currentProjectId || null,
+        },
       });
-
-      if (error) throw error;
 
       toast({
-        title: "Giveaway Recorded",
-        description: "Giveaway has been recorded successfully.",
+        title: result.queued ? "Giveaway saved on device" : "Giveaway Recorded",
+        description: result.message,
       });
       
-      // Reset and return to actions
       setActiveAction(null);
       setSelectedProducts([]);
       setGiveawayNotes("");

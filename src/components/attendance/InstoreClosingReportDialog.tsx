@@ -145,37 +145,40 @@ export const InstoreClosingReportDialog = ({
     setIsSubmitting(true);
     try {
       const today = new Date().toISOString().split("T")[0];
+      const { submitStockReport } = await import("@/services/inventoryWriteService");
 
-      const reportsToInsert = products
+      const rows = products
         .filter((p) => p.opening_stock !== "" || p.quantity_sold !== "" || p.closing_stock !== "")
         .map((p) => ({
-          agent_id: user.id,
           product_variant_id: p.product_variant_id,
           opening_stock: parseInt(p.opening_stock) || 0,
           quantity_sold: parseInt(p.quantity_sold) || 0,
           closing_stock: parseInt(p.closing_stock) || 0,
-          report_type: "evening",
-          work_date: today,
-          workspace_id: currentWorkspaceId,
-          store_id: storeId || null,
         }));
 
-      const { error } = await supabase
-        .from("daily_stock_reports")
-        .insert(reportsToInsert);
-
-      if (error) throw error;
+      const result = await submitStockReport({
+        workspaceId: currentWorkspaceId,
+        agentId: user.id,
+        payload: {
+          reportType: "evening",
+          workDate: today,
+          storeId: storeId || null,
+          rows,
+        },
+      });
 
       logActivity({
         action: "closing_report",
         category: "stock_report",
-        details: { productsCount: reportsToInsert.length, storeId },
+        details: { productsCount: rows.length, storeId, queued: result.queued },
         workspaceId: currentWorkspaceId,
       });
 
       toast({
-        title: "Success",
-        description: "Closing report submitted successfully",
+        title: result.queued ? "Saved on device" : "Success",
+        description: result.queued
+          ? result.message
+          : "Closing report submitted successfully",
       });
 
       onOpenChange(false);

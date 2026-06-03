@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
-import { logActivity, logFailedActivity } from '@/utils/activityLogger';
 import { workspaceService } from '@/services/workspaceService';
+import { submitSaleBatch } from '@/services/inventoryWriteService';
+import type { SaleBatchPayload } from '@/services/offline/types';
+import { useSync } from './useSync';
 
 interface SaleItem {
   productVariantId: string;
@@ -11,9 +12,6 @@ interface SaleItem {
   price: number;
   lineTotal?: number;
 }
-
-const getSaleLineTotal = (item: SaleItem) =>
-  item.lineTotal ?? item.price * item.quantity;
 
 interface SaleFormData {
   items: SaleItem[];
@@ -23,13 +21,18 @@ interface SaleFormData {
   engagementType: string;
   notes: string;
   sentiment: number;
-  imageUrl?: string; // Sale photo URL for wholesale
+  imageUrl?: string;
+  customerId?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  projectId?: string | null;
 }
 
 export const useSalesForm = () => {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { refreshCounts } = useSync();
 
   const submitSale = async (formData: SaleFormData) => {
     if (!user) {
@@ -41,99 +44,58 @@ export const useSalesForm = () => {
       return false;
     }
 
+    const workspaceId = workspaceService.getCurrentWorkspaceId();
+    if (!workspaceId) {
+      toast({
+        title: "Workspace Required",
+        description: "Please select a workspace first",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     try {
       setLoading(true);
 
-      // Get the current user's active task (optional)
-      const { data: currentTask } = await supabase
-        .from('agent_tasks')
-        .select('id')
-        .eq('agent_id', user.id)
-        .eq('status', 'pending')
-        .maybeSingle();
+      const payload: SaleBatchPayload = {
+        items: formData.items,
+        customerName: formData.customerName,
+        customerPhone: formData.customerPhone,
+        customerEmail: formData.customerEmail,
+        engagementType: formData.engagementType,
+        notes: formData.notes,
+        sentiment: formData.sentiment,
+        imageUrl: formData.imageUrl,
+        customerId: formData.customerId,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+        projectId: formData.projectId ?? workspaceService.getCurrentProjectId(),
+      };
 
-      const totalValue = formData.items.reduce(
-        (sum, item) => sum + getSaleLineTotal(item),
-        0
-      );
-
-      // Record each sale item as separate interactions
-      for (const item of formData.items) {
-        await supabase
-          .from('interactions')
-          .insert({
-            task_id: currentTask?.id || null,
-            agent_id: user.id,
-            interaction_type: 'sale',
-            customer_name: formData.customerName,
-            customer_phone: formData.customerPhone,
-            product_variant_id: item.productVariantId,
-            quantity_sold: item.quantity,
-            sale_value: getSaleLineTotal(item),
-            outcome: 'sale',
-            workspace_id: workspaceService.getCurrentWorkspaceId(),
-            image_url: formData.imageUrl || null, // Sale photo for wholesale
-            image_metadata: formData.imageUrl ? {
-              type: 'sale_photo',
-              captured_at: new Date().toISOString(),
-              team_label: workspaceService.getCurrentWorkspaceLabel() || null
-            } : null,
-            metadata: {
-              engagement_type: formData.engagementType,
-              notes: formData.notes,
-              sentiment: formData.sentiment,
-              customer_email: formData.customerEmail
-            }
-          });
-
-        // Update inventory with workspace context
-        await supabase
-          .from('inventory_transactions')
-          .insert(workspaceService.ensureWorkspaceContext({
-            agent_id: user.id,
-            product_id: item.productVariantId,
-            qty: -item.quantity, // Negative for sale
-            type: 'sale',
-            reference: `Sale to ${formData.customerName || 'Customer'}`,
-            metadata: {
-              task_id: currentTask?.id || null,
-              sale_value: getSaleLineTotal(item)
-            }
-          }));
-      }
-
-      // Award points for sale with workspace context
-      const pointsEarned = Math.floor(totalValue / 10) * 5; // 5 points per 10 currency units
-      await supabase
-        .from('agent_actions')
-        .insert(workspaceService.ensureWorkspaceContext({
-          agent_id: user.id,
-          action_type: 'sale_recorded',
-          points_earned: Math.max(pointsEarned, 25), // Minimum 25 points
-          action_data: {
-            total_value: totalValue,
-            customer_name: formData.customerName,
-            items_count: formData.items.length,
-            project: workspaceService.getProjectName()
-          }
-        }));
-
-      logActivity({
-        action: 'sale_recorded',
-        category: 'sales',
-        details: { totalValue, itemsCount: formData.items.length, customerName: formData.customerName },
-        workspaceId: workspaceService.getCurrentWorkspaceId(),
+      const result = await submitSaleBatch({
+        workspaceId,
+        agentId: user.id,
+        payload,
       });
 
+      await refreshCounts();
+
+      const totalValue = formData.items.reduce(
+        (sum, item) => sum + (item.lineTotal ?? item.price * item.quantity),
+        0
+      );
+      const pointsEarned = Math.max(Math.floor(totalValue / 10) * 5, 25);
+
       toast({
-        title: "Sale recorded successfully!",
-        description: `+${Math.max(pointsEarned, 25)} points earned. Engagement logged.`,
+        title: result.queued ? "Sale saved on device" : "Sale recorded successfully!",
+        description: result.queued
+          ? result.message
+          : `+${pointsEarned} points will apply after sync. Engagement logged.`,
       });
 
       return true;
     } catch (error) {
       console.error('Error submitting sale:', error);
-      logFailedActivity('sale_recorded', 'sales', error, { itemsCount: formData.items.length }, workspaceService.getCurrentWorkspaceId());
       toast({
         title: "Error",
         description: "Failed to record sale. Please try again.",

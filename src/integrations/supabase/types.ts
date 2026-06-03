@@ -4584,6 +4584,46 @@ export type Database = {
         }
         Returns: string
       }
+      sync_record_sale_batch: {
+        Args: {
+          p_client_operation_id: string
+          p_workspace_id: string
+          p_payload: Json
+        }
+        Returns: Json
+      }
+      sync_record_giveaway: {
+        Args: {
+          p_client_operation_id: string
+          p_workspace_id: string
+          p_payload: Json
+        }
+        Returns: Json
+      }
+      sync_daily_stock_reports: {
+        Args: {
+          p_client_operation_id: string
+          p_workspace_id: string
+          p_payload: Json
+        }
+        Returns: Json
+      }
+      sync_inventory_assign: {
+        Args: {
+          p_client_operation_id: string
+          p_workspace_id: string
+          p_payload: Json
+        }
+        Returns: Json
+      }
+      get_agent_available_qty: {
+        Args: {
+          p_agent_id: string
+          p_product_id: string
+          p_workspace_id: string
+        }
+        Returns: number
+      }
       refresh_agent_report_summary: {
         Args: { p_agent_id: string; p_date?: string }
         Returns: undefined

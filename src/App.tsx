@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { WorkspaceProvider } from "@/hooks/useWorkspace";
+import { SyncProvider } from "@/hooks/useSync";
 import { LanguageProvider } from "@/hooks/useLanguage";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
@@ -57,6 +58,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <WorkspaceProvider>
+        <SyncProvider>
         <LanguageProvider>
           <TooltipProvider>
             <Toaster />
@@ -255,6 +257,7 @@ const App = () => (
             </BrowserRouter>
           </TooltipProvider>
         </LanguageProvider>
+        </SyncProvider>
       </WorkspaceProvider>
     </AuthProvider>
   </QueryClientProvider>
