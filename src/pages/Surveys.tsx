@@ -510,14 +510,11 @@ export const Surveys = () => {
         ? Math.floor((endTime.getTime() - surveyStartTime.getTime()) / 1000)
         : 0;
 
-      const { data: currentTask } = await supabase
-        .from('agent_tasks')
-        .select('id')
-        .eq('agent_id', user.id)
-        .eq('status', 'pending')
-        .maybeSingle();
+      const { submitSurveyResponse: queueSurvey, resolvePendingTaskId } = await import(
+        '@/services/surveyWriteService'
+      );
+      const taskId = await resolvePendingTaskId(user.id);
 
-      const { submitSurveyResponse: queueSurvey } = await import('@/services/surveyWriteService');
       const result = await queueSurvey({
         workspaceId: currentWorkspaceId,
         agentId: user.id,
@@ -534,7 +531,7 @@ export const Surveys = () => {
           audioUrl: audioUrl || recordingUrlRef.current || undefined,
           points: activeSurvey.points,
           source: 'surveys_page',
-          taskId: currentTask?.id ?? null,
+          taskId,
         },
       });
 

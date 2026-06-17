@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart, Gift, ClipboardList, Star, Plus, Minus, CheckCircle2, Trash2, Edit2, Search, Camera, X, ImageIcon, MessageSquare } from "lucide-react";
 import { ImageCaptionInput } from "@/components/ImageCaptionInput";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useInStoreWorkLocation } from "@/hooks/useInStoreWorkLocation";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -58,6 +59,7 @@ interface InventoryItem {
 
 export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, storeCounty }: StoreSuccessDialogProps) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const { currentWorkspaceId, currentProjectId } = useWorkspace();
   const hideInventoryCounts = useInStoreWorkLocation();
   const { currencyCode } = useProjectCurrency();
@@ -214,13 +216,10 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
   };
 
   const handleSubmitSurvey = async () => {
-    if (!selectedSurvey || !currentWorkspaceId) return;
+    if (!selectedSurvey || !currentWorkspaceId || !user) return;
     
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
       let locationLat: number | null = null;
       let locationLng: number | null = null;
       try {
