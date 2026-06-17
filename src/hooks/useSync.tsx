@@ -74,6 +74,9 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
 
   const clearOfflineCache = useCallback(async () => {
     await clearStore(STORES.outbox);
+    await clearStore(STORES.attachments);
+    await clearStore(STORES.entityAliases);
+    await clearStore(STORES.surveyTemplates);
     await refreshCounts();
   }, [refreshCounts]);
 

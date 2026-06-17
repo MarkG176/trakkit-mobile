@@ -1,0 +1,1121 @@
+component_code,component_name,file_path,line,text_type,translation_key,english,kiswahili,translated
+CRM-0060,Activity Card,src/components/supervisor/ActivityCard.tsx,0,component_name,,Activity Card,,no
+CRM-0060,Activity Card,src/components/supervisor/ActivityCard.tsx,30,label,,Back from Break,,no
+CRM-0060,Activity Card,src/components/supervisor/ActivityCard.tsx,0,component_description,,Card summarising a recent agent activity.,,no
+CRM-0060,Activity Card,src/components/supervisor/ActivityCard.tsx,24,label,,Checked In,,no
+CRM-0060,Activity Card,src/components/supervisor/ActivityCard.tsx,25,label,,Checked Out,,no
+CRM-0060,Activity Card,src/components/supervisor/ActivityCard.tsx,27,label,,Giveaway,,no
+CRM-0060,Activity Card,src/components/supervisor/ActivityCard.tsx,29,label,,On Break,,no
+CRM-0060,Activity Card,src/components/supervisor/ActivityCard.tsx,26,label,,Sale,,no
+CRM-0060,Activity Card,src/components/supervisor/ActivityCard.tsx,28,label,,Survey,,no
+CRM-0092,Activity Detail,src/pages/ActivityDetail.tsx,0,component_name,,Activity Detail,,no
+CRM-0092,Activity Detail,src/pages/ActivityDetail.tsx,195,label,,Activity Details,,no
+CRM-0092,Activity Detail,src/pages/ActivityDetail.tsx,195,heading,,Activity Details,,no
+CRM-0092,Activity Detail,src/pages/ActivityDetail.tsx,178,label,,Activity not found,,no
+CRM-0092,Activity Detail,src/pages/ActivityDetail.tsx,311,placeholder,,Add a caption before uploading...,,no
+CRM-0092,Activity Detail,src/pages/ActivityDetail.tsx,277,placeholder,,Add notes about this interaction...,,no
+CRM-0092,Activity Detail,src/pages/ActivityDetail.tsx,229,label,,Amount:,,no
+CRM-0092,Activity Detail,src/pages/ActivityDetail.tsx,291,label,,Attached Pictures,,no
+CRM-0092,Activity Detail,src/pages/ActivityDetail.tsx,210,label,,Date & Time:,,no
+CRM-0092,Activity Detail,src/pages/ActivityDetail.tsx,0,component_description,,Drill-down view for a single activity record.,,no
+CRM-0092,Activity Detail,src/pages/ActivityDetail.tsx,241,label,,Interaction Notes,,no
+CRM-0092,Activity Detail,src/pages/ActivityDetail.tsx,170,label,,Loading...,,no
+CRM-0092,Activity Detail,src/pages/ActivityDetail.tsx,326,label,,No pictures attached yet,,no
+CRM-0092,Activity Detail,src/pages/ActivityDetail.tsx,217,label,,Phone:,,no
+CRM-0092,Activity Detail,src/pages/ActivityDetail.tsx,223,label,,Product:,,no
+CRM-0061,Agent Status Item,src/components/supervisor/AgentStatusItem.tsx,0,component_name,,Agent Status Item,,no
+CRM-0061,Agent Status Item,src/components/supervisor/AgentStatusItem.tsx,26,label,,Checked In,,no
+CRM-0061,Agent Status Item,src/components/supervisor/AgentStatusItem.tsx,27,label,,Checked Out,,no
+CRM-0061,Agent Status Item,src/components/supervisor/AgentStatusItem.tsx,0,component_description,,Live agent status row used in supervisor lists.,,no
+CRM-0061,Agent Status Item,src/components/supervisor/AgentStatusItem.tsx,28,label,,On Break,,no
+CRM-0005,Background Location Tracker,src/components/BackgroundLocationTracker.tsx,0,component_description,,Background GPS tracker for agent location.,,no
+CRM-0005,Background Location Tracker,src/components/BackgroundLocationTracker.tsx,0,component_name,,Background Location Tracker,,no
+CRM-0001,Bottom Navigation,src/components/BottomNavigation.tsx,0,component_name,,Bottom Navigation,,no
+CRM-0001,Bottom Navigation,src/components/BottomNavigation.tsx,0,component_description,,Bottom tab bar for agent navigation.,,no
+CRM-0001,Bottom Navigation,src/components/BottomNavigation.tsx,28,label,,Chat,,no
+CRM-0001,Bottom Navigation,src/components/BottomNavigation.tsx,23,label,,Dashboard,,no
+CRM-0001,Bottom Navigation,src/components/BottomNavigation.tsx,27,label,,Inventory,,no
+CRM-0001,Bottom Navigation,src/components/BottomNavigation.tsx,29,label,,Profile,,no
+CRM-0001,Bottom Navigation,src/components/BottomNavigation.tsx,24,label,,Reports,,no
+CRM-0001,Bottom Navigation,src/components/BottomNavigation.tsx,26,label,,Routes,,no
+CRM-0001,Bottom Navigation,src/components/BottomNavigation.tsx,25,label,,Surveys,,no
+CRM-0010,Check-in / Check-out,src/components/dashboard/CheckInOutDialog.tsx,289,placeholder,,Add a caption to your selfie...,,no
+CRM-0010,Check-in / Check-out,src/components/dashboard/CheckInOutDialog.tsx,250,label,,Check In,,no
+CRM-0010,Check-in / Check-out,src/components/dashboard/CheckInOutDialog.tsx,251,label,,Check Out,,no
+CRM-0010,Check-in / Check-out,src/components/dashboard/CheckInOutDialog.tsx,0,component_name,,Check-in / Check-out,,no
+CRM-0010,Check-in / Check-out,src/components/dashboard/CheckInOutDialog.tsx,0,component_description,,Lets agents check in and out of a store visit with location capture.,,no
+CRM-0010,Check-in / Check-out,src/components/dashboard/CheckInOutDialog.tsx,252,label,,Lunch,,no
+CRM-0010,Check-in / Check-out,src/components/dashboard/CheckInOutDialog.tsx,247,placeholder,,Select status,,no
+CRM-0010,Check-in / Check-out,src/components/dashboard/CheckInOutDialog.tsx,244,label,,Status,,no
+CRM-0010,Check-in / Check-out,src/components/dashboard/CheckInOutDialog.tsx,258,label,,Upload Selfie,,no
+CRM-0010,Check-in / Check-out,src/components/dashboard/CheckInOutDialog.tsx,94,error,,User not authenticated,,no
+CRM-0062,Check-in Thumbnail,src/components/supervisor/CheckInThumbnail.tsx,22,label,,Active,,no
+CRM-0062,Check-in Thumbnail,src/components/supervisor/CheckInThumbnail.tsx,23,label,,Break,,no
+CRM-0062,Check-in Thumbnail,src/components/supervisor/CheckInThumbnail.tsx,0,component_name,,Check-in Thumbnail,,no
+CRM-0062,Check-in Thumbnail,src/components/supervisor/CheckInThumbnail.tsx,24,label,,Out,,no
+CRM-0062,Check-in Thumbnail,src/components/supervisor/CheckInThumbnail.tsx,0,component_description,,Thumbnail preview of an agent check-in photo.,,no
+CRM-0062,Check-in Thumbnail,src/components/supervisor/CheckInThumbnail.tsx,74,label,,View Details,,no
+CRM-0020,Closing Report,src/components/attendance/InstoreClosingReportDialog.tsx,237,label,,Close,,no
+CRM-0020,Closing Report,src/components/attendance/InstoreClosingReportDialog.tsx,0,component_name,,Closing Report,,no
+CRM-0020,Closing Report,src/components/attendance/InstoreClosingReportDialog.tsx,216,label,,Closing Report,,no
+CRM-0020,Closing Report,src/components/attendance/InstoreClosingReportDialog.tsx,108,toast_title,,Error,,no
+CRM-0020,Closing Report,src/components/attendance/InstoreClosingReportDialog.tsx,109,toast_description,,Failed to load products,,no
+CRM-0020,Closing Report,src/components/attendance/InstoreClosingReportDialog.tsx,202,toast_description,,Failed to submit closing report,,no
+CRM-0020,Closing Report,src/components/attendance/InstoreClosingReportDialog.tsx,0,component_description,,In-store closing report capturing day totals and notes.,,no
+CRM-0020,Closing Report,src/components/attendance/InstoreClosingReportDialog.tsx,250,label,,No products assigned,,no
+CRM-0020,Closing Report,src/components/attendance/InstoreClosingReportDialog.tsx,229,label,,Open,,no
+CRM-0020,Closing Report,src/components/attendance/InstoreClosingReportDialog.tsx,149,toast_description,,Please fill in at least one product's data,,no
+CRM-0020,Closing Report,src/components/attendance/InstoreClosingReportDialog.tsx,233,label,,Sales,,no
+CRM-0020,Closing Report,src/components/attendance/InstoreClosingReportDialog.tsx,136,toast_description,,You must be logged in to submit a report,,no
+CRM-0089,Dashboard,src/components/onboarding/TourOverlay.tsx,18,title,,Dashboard,,no
+CRM-0089,Dashboard,src/components/onboarding/TourOverlay.tsx,34,description,,Head back and check in to start your day.,,no
+CRM-0089,Dashboard,src/components/onboarding/TourOverlay.tsx,28,title,,Help & FAQ,,no
+CRM-0089,Dashboard,src/components/onboarding/TourOverlay.tsx,24,description,,Log customer feedback and competitor activity here.,,no
+CRM-0089,Dashboard,src/components/onboarding/TourOverlay.tsx,23,title,,Reports,,no
+CRM-0089,Dashboard,src/components/onboarding/TourOverlay.tsx,29,description,,Tap the help icon on your Profile page for guides and FAQs about your team.,,no
+CRM-0089,Dashboard,src/components/onboarding/TourOverlay.tsx,19,description,,This is your home base. Check in by taking a selfie and track your work hours here.,,no
+CRM-0089,Dashboard,src/components/onboarding/TourOverlay.tsx,33,title,,You're all set! 🎉,,no
+CRM-0089,Dashboard,src/pages/Dashboard.tsx,0,component_description,,"Agent home with KPIs, schedule and quick actions.",,no
+CRM-0089,Dashboard,src/pages/Dashboard.tsx,0,component_name,,Dashboard,,no
+CRM-0030,Engagement,src/components/EngagementModal.tsx,99,placeholder,,Add details about the interaction...,,no
+CRM-0030,Engagement,src/components/EngagementModal.tsx,107,label,,Customer Sentiment,,no
+CRM-0030,Engagement,src/components/EngagementModal.tsx,0,component_name,,Engagement,,no
+CRM-0030,Engagement,src/components/EngagementModal.tsx,80,label,,Engagement Type,,no
+CRM-0030,Engagement,src/components/EngagementModal.tsx,96,label,,Interaction Notes,,no
+CRM-0030,Engagement,src/components/EngagementModal.tsx,75,label,,Log Engagement,,no
+CRM-0030,Engagement,src/components/EngagementModal.tsx,0,component_description,,"Quick customer engagement capture (demo, taste, pitch).",,no
+CRM-0030,Engagement,src/components/EngagementModal.tsx,83,placeholder,,Select engagement type,,no
+CRM-0019,Evening Report,src/components/attendance/EveningReportDialog.tsx,0,component_description,,End-of-day summary submitted by the agent.,,no
+CRM-0019,Evening Report,src/components/attendance/EveningReportDialog.tsx,29,toast_title,,Error,,no
+CRM-0019,Evening Report,src/components/attendance/EveningReportDialog.tsx,0,component_name,,Evening Report,,no
+CRM-0019,Evening Report,src/components/attendance/EveningReportDialog.tsx,50,label,,Evening Report,,no
+CRM-0019,Evening Report,src/components/attendance/EveningReportDialog.tsx,39,toast_description,,Evening report submitted successfully,,no
+CRM-0019,Evening Report,src/components/attendance/EveningReportDialog.tsx,51,label,,Submit your evening report to complete your day,,no
+CRM-0019,Evening Report,src/components/attendance/EveningReportDialog.tsx,38,toast_title,,Success,,no
+CRM-0019,Evening Report,src/components/attendance/EveningReportDialog.tsx,30,toast_description,,You must be logged in to submit a report,,no
+CRM-0119,Feedback,src/pages/supervisor/FeedbackPage.tsx,0,component_description,,Customer feedback aggregation across agents.,,no
+CRM-0119,Feedback,src/pages/supervisor/FeedbackPage.tsx,19,label,,Customer notes and feedback,,no
+CRM-0119,Feedback,src/pages/supervisor/FeedbackPage.tsx,0,component_name,,Feedback,,no
+CRM-0119,Feedback,src/pages/supervisor/FeedbackPage.tsx,18,label,,Feedback,,no
+CRM-0119,Feedback,src/pages/supervisor/FeedbackPage.tsx,18,heading,,Feedback,,no
+CRM-0120,Gallery,src/pages/supervisor/GalleryPage.tsx,19,label,,Agent photos and check-in selfies,,no
+CRM-0120,Gallery,src/pages/supervisor/GalleryPage.tsx,0,component_name,,Gallery,,no
+CRM-0120,Gallery,src/pages/supervisor/GalleryPage.tsx,18,label,,Gallery,,no
+CRM-0120,Gallery,src/pages/supervisor/GalleryPage.tsx,18,heading,,Gallery,,no
+CRM-0120,Gallery,src/pages/supervisor/GalleryPage.tsx,0,component_description,,Photo gallery from agent submissions.,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,285,label,,📦,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,408,placeholder,,Add customer feedback...,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,384,label,,Customer Feedback,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,384,heading,,Customer Feedback,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,355,label,,Customer Information,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,355,heading,,Customer Information,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,358,label,,Customer Name *,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,129,toast_title,,Customer Name Required,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,363,placeholder,,Enter customer name,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,372,placeholder,,Enter phone number,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,211,toast_title,,Error,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,212,toast_description,,Failed to save giveaway data.,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,405,label,,Feedback,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,0,component_name,,Give Products,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,237,label,,Give Products,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,237,heading,,Give Products,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,280,label,,Loading inventory...,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,120,toast_title,,No Products Selected,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,171,error,,No workspace selected,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,367,label,,Phone Number,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,130,toast_description,,Please enter the customer's name,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,121,toast_description,,Please select at least one product to give away,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,0,component_description,,Record promotional giveaways or samples handed to customers.,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,248,placeholder,,Search products by name or SKU...,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,260,label,,Selected Products,,no
+CRM-0034G,Give Products,src/pages/GiveProducts.tsx,260,heading,,Selected Products,,no
+CRM-0095,Give Products Page,src/pages/GiveProducts.tsx,0,component_description,,Full-page giveaway recording flow.,,no
+CRM-0095,Give Products Page,src/pages/GiveProducts.tsx,0,component_name,,Give Products Page,,no
+CRM-0107,Giveaway Activity List,src/pages/GiveawayActivityList.tsx,0,component_description,,Detailed list of giveaways.,,no
+CRM-0107,Giveaway Activity List,src/pages/GiveawayActivityList.tsx,0,component_name,,Giveaway Activity List,,no
+CRM-0107,Giveaway Activity List,src/pages/GiveawayActivityList.tsx,92,label,,Loading...,,no
+CRM-0107,Giveaway Activity List,src/pages/GiveawayActivityList.tsx,86,label,,My Giveaway Activities,,no
+CRM-0107,Giveaway Activity List,src/pages/GiveawayActivityList.tsx,86,heading,,My Giveaway Activities,,no
+CRM-0107,Giveaway Activity List,src/pages/GiveawayActivityList.tsx,94,label,,No giveaway activities found,,no
+CRM-0107,Giveaway Activity List,src/pages/GiveawayActivityList.tsx,118,label,,Notes,,no
+CRM-0107,Giveaway Activity List,src/pages/GiveawayActivityList.tsx,124,label,,Pictures,,no
+CRM-0130,Giveaways Tab,src/components/supervisor/MobileGiveawaysTab.tsx,80,label,,Giveaways,,no
+CRM-0130,Giveaways Tab,src/components/supervisor/MobileGiveawaysTab.tsx,0,component_name,,Giveaways Tab,,no
+CRM-0130,Giveaways Tab,src/components/supervisor/MobileGiveawaysTab.tsx,91,label,,No giveaways recorded,,no
+CRM-0130,Giveaways Tab,src/components/supervisor/MobileGiveawaysTab.tsx,157,label,,Quality,,no
+CRM-0130,Giveaways Tab,src/components/supervisor/MobileGiveawaysTab.tsx,0,component_description,,Supervisor giveaways tab.,,no
+CRM-0130,Giveaways Tab,src/components/supervisor/MobileGiveawaysTab.tsx,151,label,,Total Items,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,106,faq_answer,,"Check your internet connection. Make sure you've given the app camera permissions in your phone settings. Try switching between front and back camera, then switch back.",,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,111,faq_answer,,Close the app completely and reopen it. Clear your browser cache if you're using the web version. Make sure you have a stable internet connection.,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,59,faq_answer,,Go to Routes and use Set Assigned Location to confirm where you're working.,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,64,faq_answer,,Go to the Inventory page to view and track your assigned stock.,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,89,faq_answer,,Go to the Inventory page to view your assigned stock and log distributions.,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,116,faq_answer,,"Go to the Profile tab. You can see Today's metrics, This Week's summary, and your Report tab for work hours and activity details.",,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,48,faq_answer,,Go to the Reports page to log customer feedback and competitor activity throughout your shift.,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,53,faq_answer,,Go to the Routes page and use the Add Location form to register stores you visit.,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,78,faq_answer,,"Go to the Routes page and use the Add Location form. After adding a store, you'll be asked to complete a Stock Report.",,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,169,label,,Help & FAQ,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,53,faq_question,,How do I add stores?,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,52,faq_question,,How do I check in?,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,68,faq_question,,How do I complete surveys?,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,83,faq_question,,How do I log interactions?,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,64,faq_question,,How do I manage inventory?,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,63,faq_question,,How do I record a sale?,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,46,faq_question,,How do I record attendance?,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,88,faq_question,,How do I record engagements?,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,59,faq_question,,How do I set my assigned location?,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,47,faq_question,,How do I set my location?,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,48,faq_question,,How do I submit reports?,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,49,faq_question,,How do I track my work hours?,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,115,faq_question,,How do I view my stats?,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,95,faq_question,,How to install?,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,105,faq_question,,My selfie won't upload — what do I do?,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,96,faq_answer,,"Open this link: trakkit-mobile.lovable.app in Google Chrome. Wait for the install pop up to appear. Press the Install button. Once complete, TraKKiT will appear on your home screen.",,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,58,faq_answer,,Quick Actions on the Dashboard let you log sales and giveaways quickly.,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,52,faq_answer,,"Tap Record Attendance on the Dashboard, allow location access, and take a selfie.",,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,57,faq_answer,,Tap Record Attendance on the Dashboard. Allow location access and take a selfie.,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,46,faq_answer,,Tap the Record Attendance button on the Dashboard. Allow location access when prompted and take a selfie to confirm you've arrived at the store.,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,101,faq_answer,,Tap the Record Attendance button on the Dashboard. Allow location access when prompted and take a selfie. Make sure you are within range of your assigned location and that GPS is turned on.,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,110,faq_question,,The app feels slow or is stuck,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,88,faq_answer,,Use Quick Actions on the Dashboard to log sales and giveaways.,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,83,faq_answer,,Use the Log Interaction page to record each door-to-door visit.,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,63,faq_answer,,Use the Record Sale option from Quick Actions on the Dashboard.,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,47,faq_answer,,Use the Set Location button on the Dashboard to select which store you're working at today.,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,68,faq_answer,,Use the Surveys page to fill out assigned survey forms for each interaction.,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,58,faq_question,,What are Quick Actions?,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,74,faq_answer,,Your hours are tracked automatically between check-in and check-out.,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,54,faq_answer,,Your hours are tracked automatically between check-in and check-out. View them on the Dashboard Work Hours card.,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,69,faq_answer,,Your hours are tracked automatically between check-in and check-out. View them on the Dashboard.,,no
+CRM-0109,Help & Support,src/components/profile/HelpFAQDialog.tsx,49,faq_answer,,Your work hours are automatically tracked from when you check in to when you check out. View the Work Hours card on the Dashboard.,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,27,title,,Call Support,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,44,description,,Chat with our support team in real-time,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,52,description,,Create a detailed support request,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,35,title,,Email Support,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,185,label,,Emergency Contact,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,185,heading,,Emergency Contact,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,93,label,,Get assistance when you need it,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,0,component_name,,Help & Support,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,90,label,,Help & Support,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,90,heading,,Help & Support,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,0,component_description,,Help articles and contact options.,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,139,label,,Help Center,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,139,heading,,Help Center,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,125,label,,Help us improve the app,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,61,title,,How to record a sale,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,43,title,,Live Chat,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,73,title,,Managing offline data,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,15,toast_title,,Opening Support,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,162,label,,Popular Help Topics,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,162,heading,,Popular Help Topics,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,124,label,,Report a Bug,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,124,heading,,Report a Bug,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,36,description,,Send us an email and we'll respond within 24 hours,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,28,description,,Speak directly with our support team,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,51,title,,Submit a Ticket,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,65,title,,Troubleshooting recording issues,,no
+CRM-0109,Help & Support,src/pages/HelpSupport.tsx,69,title,,Understanding point system,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,310,label,,Agent support tickets,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,543,alt,,Attachment,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,609,label,,Attachment,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,62,label,,Bug Support,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,415,label,,Cancel,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,416,label,,Delete,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,411,label,,Delete this message?,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,638,label,,Delete this ticket?,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,281,toast_title,,Failed to delete,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,250,toast_title,,Failed to send,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,590,label,,From,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,191,toast_title,,Geolocation not supported,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,0,component_name,,Inbox,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,309,label,,Inbox,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,309,heading,,Inbox,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,63,label,,Inventory,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,599,label,,Issue Type,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,333,label,,Loading...,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,205,toast_title,,Location error,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,604,label,,Message,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,299,toast_title,,Message deleted,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,241,toast_title,,Message sent,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,64,label,,Missing Stats,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,490,label,,No agents found,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,390,label,,No sent messages yet,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,337,label,,No tickets found,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,424,label,,Read,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,482,placeholder,,Search agents...,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,321,placeholder,,"Search tickets by agent, type, or content...",,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,382,label,,Sent Messages,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,382,heading,,Sent Messages,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,614,label,,Status,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,594,label,,Submitted,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,0,component_description,,Supervisor inbox and messages.,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,412,label,,This will remove the message from your sent view.,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,639,label,,This will remove the ticket from the inbox.,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,610,alt,,Ticket attachment,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,285,toast_title,,Ticket deleted,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,461,label,,To,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,515,placeholder,,Type your message...,,no
+CRM-0126,Inbox,src/pages/supervisor/InboxPage.tsx,426,label,,Unread,,no
+CRM-0105,Interaction History,src/pages/InteractionHistory.tsx,149,label,,All recorded interactions in Capwell,,no
+CRM-0105,Interaction History,src/pages/InteractionHistory.tsx,134,toast_title,,Error,,no
+CRM-0105,Interaction History,src/pages/InteractionHistory.tsx,135,toast_description,,Failed to load interaction history,,no
+CRM-0105,Interaction History,src/pages/InteractionHistory.tsx,0,component_name,,Interaction History,,no
+CRM-0105,Interaction History,src/pages/InteractionHistory.tsx,148,label,,Interaction History,,no
+CRM-0105,Interaction History,src/pages/InteractionHistory.tsx,148,heading,,Interaction History,,no
+CRM-0105,Interaction History,src/pages/InteractionHistory.tsx,197,label,,No interactions have been logged in this workspace,,no
+CRM-0105,Interaction History,src/pages/InteractionHistory.tsx,196,label,,No interactions yet,,no
+CRM-0105,Interaction History,src/pages/InteractionHistory.tsx,196,heading,,No interactions yet,,no
+CRM-0105,Interaction History,src/pages/InteractionHistory.tsx,0,component_description,,Past customer interactions log.,,no
+CRM-0105,Interaction History,src/pages/InteractionHistory.tsx,117,name,,Unknown,,no
+CRM-0093,Inventory,src/pages/Inventory.tsx,0,component_description,,Assigned stock items the agent carries.,,no
+CRM-0093,Inventory,src/pages/Inventory.tsx,276,label,,Cancel,,no
+CRM-0093,Inventory,src/pages/Inventory.tsx,128,toast_title,,Failed to assign,,no
+CRM-0093,Inventory,src/pages/Inventory.tsx,0,component_name,,Inventory,,no
+CRM-0093,Inventory,src/pages/Inventory.tsx,140,label,,Inventory,,no
+CRM-0093,Inventory,src/pages/Inventory.tsx,140,heading,,Inventory,,no
+CRM-0093,Inventory,src/pages/Inventory.tsx,144,label,,Loading inventory...,,no
+CRM-0093,Inventory,src/pages/Inventory.tsx,175,label,,No inventory assigned yet,,no
+CRM-0093,Inventory,src/pages/Inventory.tsx,214,label,,No products available in this workspace,,no
+CRM-0093,Inventory,src/pages/Inventory.tsx,104,error,,No workspace selected,,no
+CRM-0093,Inventory,src/pages/Inventory.tsx,276,button,,setAssignDialogOpen(false)}>Cancel,,no
+CRM-0093,Inventory,src/pages/Inventory.tsx,141,label,,Your assigned products,,no
+CRM-0096,Log Interaction,src/pages/LogInteraction.tsx,87,placeholder,,Add details about the interaction...,,no
+CRM-0096,Log Interaction,src/pages/LogInteraction.tsx,99,label,,Customer Information,,no
+CRM-0096,Log Interaction,src/pages/LogInteraction.tsx,99,heading,,Customer Information,,no
+CRM-0096,Log Interaction,src/pages/LogInteraction.tsx,103,label,,Customer Name *,,no
+CRM-0096,Log Interaction,src/pages/LogInteraction.tsx,128,label,,Customer Sentiment,,no
+CRM-0096,Log Interaction,src/pages/LogInteraction.tsx,128,heading,,Customer Sentiment,,no
+CRM-0096,Log Interaction,src/pages/LogInteraction.tsx,108,placeholder,,Enter customer name,,no
+CRM-0096,Log Interaction,src/pages/LogInteraction.tsx,118,placeholder,,Enter phone number,,no
+CRM-0096,Log Interaction,src/pages/LogInteraction.tsx,81,label,,Interaction Details,,no
+CRM-0096,Log Interaction,src/pages/LogInteraction.tsx,81,heading,,Interaction Details,,no
+CRM-0096,Log Interaction,src/pages/LogInteraction.tsx,84,label,,Interaction Notes,,no
+CRM-0096,Log Interaction,src/pages/LogInteraction.tsx,0,component_description,,"Log a customer engagement, feedback or note.",,no
+CRM-0096,Log Interaction,src/pages/LogInteraction.tsx,0,component_name,,Log Interaction,,no
+CRM-0096,Log Interaction,src/pages/LogInteraction.tsx,71,label,,Log Interaction,,no
+CRM-0096,Log Interaction,src/pages/LogInteraction.tsx,71,heading,,Log Interaction,,no
+CRM-0096,Log Interaction,src/pages/LogInteraction.tsx,113,label,,Phone Number,,no
+CRM-0096,Log Interaction,src/pages/LogInteraction.tsx,154,label,,Recording,,no
+CRM-0096,Log Interaction,src/pages/LogInteraction.tsx,154,heading,,Recording,,no
+CRM-0096,Log Interaction,src/pages/LogInteraction.tsx,181,label,,Recording saved ✓,,no
+CRM-0111,Manage Agents,src/pages/ManageAgents.tsx,102,label,,Agents in the selected workspace,,no
+CRM-0111,Manage Agents,src/pages/ManageAgents.tsx,67,toast_title,,Error,,no
+CRM-0111,Manage Agents,src/pages/ManageAgents.tsx,68,toast_description,,Failed to load agents,,no
+CRM-0111,Manage Agents,src/pages/ManageAgents.tsx,0,component_description,,Lead-agent tools for managing peers.,,no
+CRM-0111,Manage Agents,src/pages/ManageAgents.tsx,0,component_name,,Manage Agents,,no
+CRM-0111,Manage Agents,src/pages/ManageAgents.tsx,101,label,,Manage Agents,,no
+CRM-0111,Manage Agents,src/pages/ManageAgents.tsx,101,heading,,Manage Agents,,no
+CRM-0111,Manage Agents,src/pages/ManageAgents.tsx,158,label,,No agents found in this workspace,,no
+CRM-0125,Map,src/pages/supervisor/MapPage.tsx,0,component_description,,Live agent locations on a map.,,no
+CRM-0125,Map,src/pages/supervisor/MapPage.tsx,178,label,,Loading map...,,no
+CRM-0125,Map,src/pages/supervisor/MapPage.tsx,0,component_name,,Map,,no
+CRM-0125,Map,src/pages/supervisor/MapPage.tsx,171,alt,,Selfie,,no
+CRM-0100,More,src/pages/More.tsx,36,toast_description,,An unexpected error occurred.,,no
+CRM-0100,More,src/pages/More.tsx,45,label,,Documentation,,no
+CRM-0100,More,src/pages/More.tsx,35,toast_title,,Error,,no
+CRM-0100,More,src/pages/More.tsx,47,label,,Help & Support,,no
+CRM-0100,More,src/pages/More.tsx,48,label,,Interaction History,,no
+CRM-0100,More,src/pages/More.tsx,49,label,,Logout,,no
+CRM-0100,More,src/pages/More.tsx,0,component_name,,More,,no
+CRM-0100,More,src/pages/More.tsx,57,label,,More,,no
+CRM-0100,More,src/pages/More.tsx,57,heading,,More,,no
+CRM-0100,More,src/pages/More.tsx,0,component_description,,Overflow menu of less common pages.,,no
+CRM-0100,More,src/pages/More.tsx,43,label,,Profile,,no
+CRM-0100,More,src/pages/More.tsx,44,label,,Reports,,no
+CRM-0100,More,src/pages/More.tsx,46,label,,Settings,,no
+CRM-0100,More,src/pages/More.tsx,24,toast_title,,Sign out failed,,no
+CRM-0100,More,src/pages/More.tsx,30,toast_title,,Signed out successfully,,no
+CRM-0021,Morning Stock Count,src/components/attendance/InstoreMorningStockCountDialog.tsx,101,toast_title,,Error,,no
+CRM-0021,Morning Stock Count,src/components/attendance/InstoreMorningStockCountDialog.tsx,102,toast_description,,Failed to load products,,no
+CRM-0021,Morning Stock Count,src/components/attendance/InstoreMorningStockCountDialog.tsx,188,toast_description,,Failed to submit stock count,,no
+CRM-0021,Morning Stock Count,src/components/attendance/InstoreMorningStockCountDialog.tsx,0,component_name,,Morning Stock Count,,no
+CRM-0021,Morning Stock Count,src/components/attendance/InstoreMorningStockCountDialog.tsx,219,label,,No products assigned,,no
+CRM-0021,Morning Stock Count,src/components/attendance/InstoreMorningStockCountDialog.tsx,0,component_description,,Opening stock check at the start of an in-store shift.,,no
+CRM-0021,Morning Stock Count,src/components/attendance/InstoreMorningStockCountDialog.tsx,135,toast_description,,Please enter stock count for at least one product,,no
+CRM-0021,Morning Stock Count,src/components/attendance/InstoreMorningStockCountDialog.tsx,125,toast_description,,You must be logged in to submit,,no
+CRM-0025,Price Report,src/components/attendance/PriceReportDialog.tsx,0,component_description,,Capture competitor or shelf prices observed in store.,,no
+CRM-0025,Price Report,src/components/attendance/PriceReportDialog.tsx,208,placeholder,,Enter price...,,no
+CRM-0025,Price Report,src/components/attendance/PriceReportDialog.tsx,112,toast_title,,Error,,no
+CRM-0025,Price Report,src/components/attendance/PriceReportDialog.tsx,158,toast_description,,Failed to submit price report.,,no
+CRM-0025,Price Report,src/components/attendance/PriceReportDialog.tsx,118,toast_title,,Incomplete Report,,no
+CRM-0025,Price Report,src/components/attendance/PriceReportDialog.tsx,112,toast_description,,Missing user or workspace context,,no
+CRM-0025,Price Report,src/components/attendance/PriceReportDialog.tsx,0,component_name,,Price Report,,no
+CRM-0090,Profile,src/components/onboarding/WorkspaceOnboarding.tsx,127,label,,Choose your language,,no
+CRM-0090,Profile,src/components/onboarding/WorkspaceOnboarding.tsx,171,label,,Experience,,no
+CRM-0090,Profile,src/components/onboarding/WorkspaceOnboarding.tsx,150,label,,Your Team,,no
+CRM-0090,Profile,src/components/profile/ProfileHeader.tsx,65,title,,Permissions,,no
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,account,Account,Akaunti,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,activity_attendance,Activity & Attendance,Shughuli & Mahudhurio,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,all_time,All Time,Jumla Yote,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,check_ins,Check-ins,Kuingia Kazini,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,completed,Completed,Zilizokamilika,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,engagement,Engagement,Mawasiliano,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,giveaways,Giveaways,Zawadi/Sampuli,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,interactions,Interactions,Maingiliano,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,items_given,Items Given,Vitu Vilivyotolewa,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,logout,Logout,Toka,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,notes,Notes,Maelezo,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,pending,Pending,Zinazosubiri,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,points_rank,Points & Rank,Pointi & Cheo,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,products_sold,Products Sold,Bidhaa Zilizouzwa,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,rank,Rank,Cheo,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,revenue,Revenue,Mapato,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,sales_revenue,Sales & Revenue,Mauzo & Mapato,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,sales_made,Sales Made,Mauzo Yaliyofanywa,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,store_visits,Store Visits,Ziara za Duka,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,stores_added,Stores Added,Maduka Yaliyoongezwa,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,surveys_done,Surveys Done,Utafiti Uliofanywa,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,tasks,Tasks,Kazi,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,today,Today,Leo,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,total_points,Total Points,Pointi Zote,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,total_tasks,Total Tasks,Kazi Zote,yes
+CRM-0090,Profile,src/hooks/useLanguage.tsx,0,translation_key,work_time,Work Time,Muda wa Kazi,yes
+CRM-0090,Profile,src/pages/Profile.tsx,300,label,account,Account,Akaunti,yes
+CRM-0090,Profile,src/pages/Profile.tsx,158,label,activity_attendance,Activity & Attendance,Shughuli & Mahudhurio,yes
+CRM-0090,Profile,src/pages/Profile.tsx,0,component_description,,"Agent profile, summaries and settings.",,no
+CRM-0090,Profile,src/pages/Profile.tsx,148,label,all_time,All Time,Jumla Yote,yes
+CRM-0090,Profile,src/pages/Profile.tsx,160,label,check_ins,Check-ins,Kuingia Kazini,yes
+CRM-0090,Profile,src/pages/Profile.tsx,172,label,completed,Completed,Zilizokamilika,yes
+CRM-0090,Profile,src/pages/Profile.tsx,207,label,engagement,Engagement,Mawasiliano,yes
+CRM-0090,Profile,src/pages/Profile.tsx,186,label,giveaways,Giveaways,Zawadi/Sampuli,yes
+CRM-0090,Profile,src/pages/Profile.tsx,208,label,interactions,Interactions,Maingiliano,yes
+CRM-0090,Profile,src/pages/Profile.tsx,211,label,items_given,Items Given,Vitu Vilivyotolewa,yes
+CRM-0090,Profile,src/pages/Profile.tsx,312,label,logout,Logout,Toka,yes
+CRM-0090,Profile,src/pages/Profile.tsx,212,label,notes,Notes,Maelezo,yes
+CRM-0090,Profile,src/pages/Profile.tsx,173,label,pending,Pending,Zinazosubiri,yes
+CRM-0090,Profile,src/pages/Profile.tsx,287,label,points_rank,Points & Rank,Pointi & Cheo,yes
+CRM-0090,Profile,src/pages/Profile.tsx,237,label,products_sold,Products Sold,Bidhaa Zilizouzwa,yes
+CRM-0090,Profile,src/pages/Profile.tsx,0,component_name,,Profile,,no
+CRM-0090,Profile,src/pages/Profile.tsx,288,label,rank,Rank,Cheo,yes
+CRM-0090,Profile,src/pages/Profile.tsx,197,label,,Reports,,no
+CRM-0090,Profile,src/pages/Profile.tsx,198,label,,Reports Submitted,,no
+CRM-0090,Profile,src/pages/Profile.tsx,185,label,revenue,Revenue,Mapato,yes
+CRM-0090,Profile,src/pages/Profile.tsx,182,label,sales_revenue,Sales & Revenue,Mauzo & Mapato,yes
+CRM-0090,Profile,src/pages/Profile.tsx,184,label,sales_made,Sales Made,Mauzo Yaliyofanywa,yes
+CRM-0090,Profile,src/pages/Profile.tsx,159,label,store_visits,Store Visits,Ziara za Duka,yes
+CRM-0090,Profile,src/pages/Profile.tsx,162,label,stores_added,Stores Added,Maduka Yaliyoongezwa,yes
+CRM-0090,Profile,src/pages/Profile.tsx,209,label,surveys_done,Surveys Done,Utafiti Uliofanywa,yes
+CRM-0090,Profile,src/pages/Profile.tsx,170,label,tasks,Tasks,Kazi,yes
+CRM-0090,Profile,src/pages/Profile.tsx,147,label,today,Today,Leo,yes
+CRM-0090,Profile,src/pages/Profile.tsx,289,label,total_points,Total Points,Pointi Zote,yes
+CRM-0090,Profile,src/pages/Profile.tsx,171,label,total_tasks,Total Tasks,Kazi Zote,yes
+CRM-0090,Profile,src/pages/Profile.tsx,161,label,work_time,Work Time,Muda wa Kazi,yes
+CRM-0004,PWA Install Prompt,src/components/PWAInstallPrompt.tsx,149,label,,"""Add page to""",,no
+CRM-0004,PWA Install Prompt,src/components/PWAInstallPrompt.tsx,133,label,,"""Add to Home Screen""",,no
+CRM-0004,PWA Install Prompt,src/components/PWAInstallPrompt.tsx,149,label,,"""Home screen""",,no
+CRM-0004,PWA Install Prompt,src/components/PWAInstallPrompt.tsx,149,label,,"(⋮), then",,no
+CRM-0004,PWA Install Prompt,src/components/PWAInstallPrompt.tsx,133,label,,□↑,,no
+CRM-0004,PWA Install Prompt,src/components/PWAInstallPrompt.tsx,133,label,,"at the bottom of your browser, then tap",,no
+CRM-0004,PWA Install Prompt,src/components/PWAInstallPrompt.tsx,111,label,,Install TraKKiT,,no
+CRM-0004,PWA Install Prompt,src/components/PWAInstallPrompt.tsx,111,heading,,Install TraKKiT,,no
+CRM-0004,PWA Install Prompt,src/components/PWAInstallPrompt.tsx,0,component_description,,Prompt encouraging install to home screen.,,no
+CRM-0004,PWA Install Prompt,src/components/PWAInstallPrompt.tsx,0,component_name,,PWA Install Prompt,,no
+CRM-0004,PWA Install Prompt,src/components/PWAInstallPrompt.tsx,133,label,,Share,,no
+CRM-0051,Quick Actions,src/components/dashboard/QuickActions.tsx,14,label,,Give Products,,no
+CRM-0051,Quick Actions,src/components/dashboard/QuickActions.tsx,0,component_description,,Grid of one-tap actions on the dashboard.,,no
+CRM-0051,Quick Actions,src/components/dashboard/QuickActions.tsx,15,label,,Log Interaction,,no
+CRM-0051,Quick Actions,src/components/dashboard/QuickActions.tsx,0,component_name,,Quick Actions,,no
+CRM-0051,Quick Actions,src/components/dashboard/QuickActions.tsx,22,label,,Quick Actions,,no
+CRM-0051,Quick Actions,src/components/dashboard/QuickActions.tsx,22,heading,,Quick Actions,,no
+CRM-0051,Quick Actions,src/components/dashboard/QuickActions.tsx,13,label,,Record Sale,,no
+CRM-0051,Quick Actions,src/components/dashboard/QuickActions.tsx,12,label,,Start Survey,,no
+CRM-0122,Rankings,src/pages/supervisor/RankingsPage.tsx,0,component_description,,Agent leaderboard rankings.,,no
+CRM-0122,Rankings,src/pages/supervisor/RankingsPage.tsx,14,label,,Agent performance leaderboard,,no
+CRM-0122,Rankings,src/pages/supervisor/RankingsPage.tsx,0,component_name,,Rankings,,no
+CRM-0122,Rankings,src/pages/supervisor/RankingsPage.tsx,13,label,,Rankings,,no
+CRM-0122,Rankings,src/pages/supervisor/RankingsPage.tsx,13,heading,,Rankings,,no
+CRM-0026,Record Attendance,src/components/attendance/RecordAttendanceForm.tsx,260,label,,Camera will open automatically for selfie verification,,no
+CRM-0026,Record Attendance,src/components/attendance/RecordAttendanceForm.tsx,178,label,,Checked In,,no
+CRM-0026,Record Attendance,src/components/attendance/RecordAttendanceForm.tsx,182,label,,Checked Out,,no
+CRM-0026,Record Attendance,src/components/attendance/RecordAttendanceForm.tsx,142,toast_description,,"Could not get exact location, proceeding with approximate data.",,no
+CRM-0026,Record Attendance,src/components/attendance/RecordAttendanceForm.tsx,162,toast_description,,"Could not get location, proceeding without coordinates.",,no
+CRM-0026,Record Attendance,src/components/attendance/RecordAttendanceForm.tsx,237,label,,Current Status:,,no
+CRM-0026,Record Attendance,src/components/attendance/RecordAttendanceForm.tsx,106,toast_title,,Error,,no
+CRM-0026,Record Attendance,src/components/attendance/RecordAttendanceForm.tsx,115,toast_description,,Failed to update status. Please try again.,,no
+CRM-0026,Record Attendance,src/components/attendance/RecordAttendanceForm.tsx,141,toast_title,,Location Warning,,no
+CRM-0026,Record Attendance,src/components/attendance/RecordAttendanceForm.tsx,264,label,,Location will be captured automatically,,no
+CRM-0026,Record Attendance,src/components/attendance/RecordAttendanceForm.tsx,180,label,,On Lunch,,no
+CRM-0026,Record Attendance,src/components/attendance/RecordAttendanceForm.tsx,0,component_name,,Record Attendance,,no
+CRM-0026,Record Attendance,src/components/attendance/RecordAttendanceForm.tsx,0,component_description,,Selfie + geo attendance check-in for the workday.,,no
+CRM-0026,Record Attendance,src/components/attendance/RecordAttendanceForm.tsx,89,toast_title,,Success,,no
+CRM-0026,Record Attendance,src/components/attendance/RecordAttendanceForm.tsx,184,label,,Unknown,,no
+CRM-0034,Record Sale,src/components/dashboard/SalesTrackingForm.tsx,0,component_description,,Capture units sold and amounts per product during a visit.,,no
+CRM-0034,Record Sale,src/components/dashboard/SalesTrackingForm.tsx,74,placeholder,,Qty,,no
+CRM-0034,Record Sale,src/components/dashboard/SalesTrackingForm.tsx,0,component_name,,Record Sale,,no
+CRM-0034,Record Sale,src/components/dashboard/SalesTrackingForm.tsx,59,placeholder,,Select product,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,773,placeholder,,Add a caption for this sale photo...,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,224,toast_description,,Could not upload sale photo. Please try again.,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,707,label,,Customer Information,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,712,label,,Customer Name,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,534,label,,Deals,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,717,placeholder,,Enter customer name,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,728,placeholder,,Enter phone number,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,0,component_description,,Full-page sale recording flow.,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,452,label,,Loading products...,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,456,label,,No products available,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,723,label,,Phone Number,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,257,toast_title,,Photo Captured,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,277,toast_title,,Photo Required,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,278,toast_description,,Please capture a photo of the sale before completing.,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,431,label,,Record a Sale,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,431,heading,,Record a Sale,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,0,component_name,,Record Sale Page,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,566,label,,Sale Items,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,748,alt,,Sale photo,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,258,toast_description,,Sale photo uploaded successfully.,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,440,placeholder,,Search products...,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,793,label,,Take a photo of the sale,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,792,label,,Tap to capture photo,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,546,label,,Total,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,575,label,,Total:,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,223,toast_title,,Upload Failed,,no
+CRM-0094,Record Sale Page,src/pages/RecordSale.tsx,787,label,,Uploading...,,no
+CRM-0099,Reports,src/components/attendance/PriceReportsSection.tsx,38,label,,Start Price Report,,no
+CRM-0099,Reports,src/components/attendance/StockReportsSection.tsx,150,label,,Evening,,no
+CRM-0099,Reports,src/components/attendance/StockReportsSection.tsx,110,label,,Morning,,no
+CRM-0099,Reports,src/pages/Reports.tsx,234,placeholder,,Add your notes here...,,no
+CRM-0099,Reports,src/pages/Reports.tsx,265,label,,Attach Images,,no
+CRM-0099,Reports,src/pages/Reports.tsx,265,heading,,Attach Images,,no
+CRM-0099,Reports,src/pages/Reports.tsx,231,label,,Notes,,no
+CRM-0099,Reports,src/pages/Reports.tsx,231,heading,,Notes,,no
+CRM-0099,Reports,src/pages/Reports.tsx,0,component_name,,Reports,,no
+CRM-0099,Reports,src/pages/Reports.tsx,174,label,,Reports,,no
+CRM-0099,Reports,src/pages/Reports.tsx,174,heading,,Reports,,no
+CRM-0099,Reports,src/pages/Reports.tsx,0,component_description,,Reports the agent has submitted or needs to submit.,,no
+CRM-0099,Reports,src/pages/Reports.tsx,268,label,,Select images to upload,,no
+CRM-0098,Routes,src/pages/Routes.tsx,561,label,,(Pending sync),,no
+CRM-0098,Routes,src/pages/Routes.tsx,585,label,,Add Store,,no
+CRM-0098,Routes,src/pages/Routes.tsx,585,heading,,Add Store,,no
+CRM-0098,Routes,src/pages/Routes.tsx,511,label,,Current Location,,no
+CRM-0098,Routes,src/pages/Routes.tsx,626,placeholder,,Enter contact number,,no
+CRM-0098,Routes,src/pages/Routes.tsx,612,placeholder,,Enter store name,,no
+CRM-0098,Routes,src/pages/Routes.tsx,407,toast_title,,Error adding location,,no
+CRM-0098,Routes,src/pages/Routes.tsx,486,toast_title,,Error setting location,,no
+CRM-0098,Routes,src/pages/Routes.tsx,512,label,,Getting your location...,,no
+CRM-0098,Routes,src/pages/Routes.tsx,332,toast_title,,Location Required,,no
+CRM-0098,Routes,src/pages/Routes.tsx,464,toast_title,,Location set successfully,,no
+CRM-0098,Routes,src/pages/Routes.tsx,499,label,,Manage and optimize your routes,,no
+CRM-0098,Routes,src/pages/Routes.tsx,262,toast_title,,Missing Information,,no
+CRM-0098,Routes,src/pages/Routes.tsx,547,label,,No stores found,,no
+CRM-0098,Routes,src/pages/Routes.tsx,272,toast_description,,No workspace selected. Please select a workspace first.,,no
+CRM-0098,Routes,src/pages/Routes.tsx,434,toast_title,,Not authenticated,,no
+CRM-0098,Routes,src/pages/Routes.tsx,292,error,,Not authenticated,,no
+CRM-0098,Routes,src/pages/Routes.tsx,0,component_description,,Planned route and stops for the day.,,no
+CRM-0098,Routes,src/pages/Routes.tsx,263,toast_description,,Please enter a store name.,,no
+CRM-0098,Routes,src/pages/Routes.tsx,435,toast_description,,Please log in to set your location.,,no
+CRM-0098,Routes,src/pages/Routes.tsx,420,toast_description,,Please select a specific store to set as your location.,,no
+CRM-0098,Routes,src/pages/Routes.tsx,0,component_name,,Routes,,no
+CRM-0098,Routes,src/pages/Routes.tsx,498,label,,Routes & Planning,,no
+CRM-0098,Routes,src/pages/Routes.tsx,498,heading,,Routes & Planning,,no
+CRM-0098,Routes,src/pages/Routes.tsx,534,placeholder,,Search stores...,,no
+CRM-0098,Routes,src/pages/Routes.tsx,419,toast_title,,Select a store,,no
+CRM-0098,Routes,src/pages/Routes.tsx,507,label,,Set Your Assigned Location,,no
+CRM-0098,Routes,src/pages/Routes.tsx,507,heading,,Set Your Assigned Location,,no
+CRM-0098,Routes,src/pages/Routes.tsx,531,label,,Store,,no
+CRM-0098,Routes,src/pages/Routes.tsx,445,toast_title,,Store not found,,no
+CRM-0098,Routes,src/pages/Routes.tsx,321,toast_title,,Store saved on device,,no
+CRM-0098,Routes,src/pages/Routes.tsx,446,toast_description,,The selected store could not be found.,,no
+CRM-0098,Routes,src/pages/Routes.tsx,322,toast_description,,Will sync when you're back online.,,no
+CRM-0098,Routes,src/pages/Routes.tsx,271,toast_title,,Workspace Required,,no
+CRM-0054,Sale Feedback,src/components/dashboard/SaleFeedbackDialog.tsx,158,placeholder,,Add any notes about this sale or customer interaction...,,no
+CRM-0054,Sale Feedback,src/components/dashboard/SaleFeedbackDialog.tsx,119,label,,Customer Sentiment,,no
+CRM-0054,Sale Feedback,src/components/dashboard/SaleFeedbackDialog.tsx,108,label,,Direct Sale,,no
+CRM-0054,Sale Feedback,src/components/dashboard/SaleFeedbackDialog.tsx,112,label,,Event,,no
+CRM-0054,Sale Feedback,src/components/dashboard/SaleFeedbackDialog.tsx,110,label,,Follow-up,,no
+CRM-0054,Sale Feedback,src/components/dashboard/SaleFeedbackDialog.tsx,111,label,,Promotion,,no
+CRM-0054,Sale Feedback,src/components/dashboard/SaleFeedbackDialog.tsx,0,component_description,,Prompt for customer feedback right after a sale.,,no
+CRM-0054,Sale Feedback,src/components/dashboard/SaleFeedbackDialog.tsx,109,label,,Referral,,no
+CRM-0054,Sale Feedback,src/components/dashboard/SaleFeedbackDialog.tsx,0,component_name,,Sale Feedback,,no
+CRM-0054,Sale Feedback,src/components/dashboard/SaleFeedbackDialog.tsx,88,label,,Sale Recorded!,,no
+CRM-0054,Sale Feedback,src/components/dashboard/SaleFeedbackDialog.tsx,105,placeholder,,Select engagement type,,no
+CRM-0121,Sales,src/pages/supervisor/SalesPage.tsx,0,component_name,,Sales,,no
+CRM-0121,Sales,src/pages/supervisor/SalesPage.tsx,22,label,,Sales & Giveaways,,no
+CRM-0121,Sales,src/pages/supervisor/SalesPage.tsx,22,heading,,Sales & Giveaways,,no
+CRM-0121,Sales,src/pages/supervisor/SalesPage.tsx,0,component_description,,Sales overview for supervisors.,,no
+CRM-0121,Sales,src/pages/supervisor/SalesPage.tsx,23,label,,Track sales and product distributions,,no
+CRM-0106,Sales Activity List,src/pages/SalesActivityList.tsx,0,component_description,,Detailed list of recorded sales.,,no
+CRM-0106,Sales Activity List,src/pages/SalesActivityList.tsx,99,label,,Loading...,,no
+CRM-0106,Sales Activity List,src/pages/SalesActivityList.tsx,93,label,,My Sales Activities,,no
+CRM-0106,Sales Activity List,src/pages/SalesActivityList.tsx,93,heading,,My Sales Activities,,no
+CRM-0106,Sales Activity List,src/pages/SalesActivityList.tsx,101,label,,No sales activities found,,no
+CRM-0106,Sales Activity List,src/pages/SalesActivityList.tsx,131,label,,Notes,,no
+CRM-0106,Sales Activity List,src/pages/SalesActivityList.tsx,137,label,,Pictures,,no
+CRM-0106,Sales Activity List,src/pages/SalesActivityList.tsx,0,component_name,,Sales Activity List,,no
+CRM-0024,Seeding Evening Report,src/components/attendance/SeedingEveningReportDialog.tsx,287,label,,0 && uploadProgress,,no
+CRM-0024,Seeding Evening Report,src/components/attendance/SeedingEveningReportDialog.tsx,120,toast_title,,Error,,no
+CRM-0024,Seeding Evening Report,src/components/attendance/SeedingEveningReportDialog.tsx,210,label,,Evening Report,,no
+CRM-0024,Seeding Evening Report,src/components/attendance/SeedingEveningReportDialog.tsx,194,toast_description,,Evening report submitted successfully,,no
+CRM-0024,Seeding Evening Report,src/components/attendance/SeedingEveningReportDialog.tsx,0,component_description,,Evening report variant for product-seeding projects.,,no
+CRM-0024,Seeding Evening Report,src/components/attendance/SeedingEveningReportDialog.tsx,226,label,,No sales recorded today,,no
+CRM-0024,Seeding Evening Report,src/components/attendance/SeedingEveningReportDialog.tsx,187,toast_title,,Partial Success,,no
+CRM-0024,Seeding Evening Report,src/components/attendance/SeedingEveningReportDialog.tsx,211,label,,Review your sales and upload engagement photos,,no
+CRM-0024,Seeding Evening Report,src/components/attendance/SeedingEveningReportDialog.tsx,0,component_name,,Seeding Evening Report,,no
+CRM-0024,Seeding Evening Report,src/components/attendance/SeedingEveningReportDialog.tsx,188,toast_description,,Some photos failed to upload. Please try uploading photos again.,,no
+CRM-0024,Seeding Evening Report,src/components/attendance/SeedingEveningReportDialog.tsx,193,toast_title,,Success,,no
+CRM-0024,Seeding Evening Report,src/components/attendance/SeedingEveningReportDialog.tsx,217,label,,Today's Sales Summary,,no
+CRM-0024,Seeding Evening Report,src/components/attendance/SeedingEveningReportDialog.tsx,240,label,,Total Units Sold,,no
+CRM-0024,Seeding Evening Report,src/components/attendance/SeedingEveningReportDialog.tsx,244,label,,Total Value,,no
+CRM-0024,Seeding Evening Report,src/components/attendance/SeedingEveningReportDialog.tsx,257,label,,Upload photos from today's field engagement,,no
+CRM-0024,Seeding Evening Report,src/components/attendance/SeedingEveningReportDialog.tsx,144,toast_description,,You must be logged in to submit a report,,no
+CRM-0101,Settings,src/pages/Settings.tsx,83,label,,? Need to grant,,no
+CRM-0101,Settings,src/pages/Settings.tsx,79,label,,✓ Granted,,no
+CRM-0101,Settings,src/pages/Settings.tsx,81,label,,✗ Denied,,no
+CRM-0101,Settings,src/pages/Settings.tsx,367,label,,About App,,no
+CRM-0101,Settings,src/pages/Settings.tsx,367,heading,,About App,,no
+CRM-0101,Settings,src/pages/Settings.tsx,231,label,,Achievement Alerts,,no
+CRM-0101,Settings,src/pages/Settings.tsx,221,label,,App Reminders,,no
+CRM-0101,Settings,src/pages/Settings.tsx,371,label,,App Version,,no
+CRM-0101,Settings,src/pages/Settings.tsx,49,toast_title,,Cache Cleared,,no
+CRM-0101,Settings,src/pages/Settings.tsx,319,title,,Camera,,no
+CRM-0101,Settings,src/pages/Settings.tsx,300,label,,Clear Cache,,no
+CRM-0101,Settings,src/pages/Settings.tsx,192,label,,Customize your app experience,,no
+CRM-0101,Settings,src/pages/Settings.tsx,246,label,,Dark Mode,,no
+CRM-0101,Settings,src/pages/Settings.tsx,278,label,,Data & Storage,,no
+CRM-0101,Settings,src/pages/Settings.tsx,278,heading,,Data & Storage,,no
+CRM-0101,Settings,src/pages/Settings.tsx,265,label,,English,,no
+CRM-0101,Settings,src/pages/Settings.tsx,107,toast_title,,Error,,no
+CRM-0101,Settings,src/pages/Settings.tsx,108,toast_description,,Failed to request permission,,no
+CRM-0101,Settings,src/pages/Settings.tsx,338,description,,For audio recording during interactions,,no
+CRM-0101,Settings,src/pages/Settings.tsx,320,description,,For check-in selfies and photo captures,,no
+CRM-0101,Settings,src/pages/Settings.tsx,356,description,,For important alerts and reminders,,no
+CRM-0101,Settings,src/pages/Settings.tsx,347,description,,For offline data and app caching,,no
+CRM-0101,Settings,src/pages/Settings.tsx,329,description,,For tracking visits and route optimization,,no
+CRM-0101,Settings,src/pages/Settings.tsx,267,label,,French,,no
+CRM-0101,Settings,src/pages/Settings.tsx,199,label,,General Settings,,no
+CRM-0101,Settings,src/pages/Settings.tsx,199,heading,,General Settings,,no
+CRM-0101,Settings,src/pages/Settings.tsx,258,label,,Language,,no
+CRM-0101,Settings,src/pages/Settings.tsx,328,title,,Location Services,,no
+CRM-0101,Settings,src/pages/Settings.tsx,337,title,,Microphone,,no
+CRM-0101,Settings,src/pages/Settings.tsx,0,component_description,,Mobile app settings.,,no
+CRM-0101,Settings,src/pages/Settings.tsx,211,label,,New Task Assignment,,no
+CRM-0101,Settings,src/pages/Settings.tsx,206,label,,Notification Preferences,,no
+CRM-0101,Settings,src/pages/Settings.tsx,355,title,,Notifications,,no
+CRM-0101,Settings,src/pages/Settings.tsx,284,label,,Offline Mode,,no
+CRM-0101,Settings,src/pages/Settings.tsx,50,toast_description,,Offline queue and app caches cleared,,no
+CRM-0101,Settings,src/pages/Settings.tsx,100,toast_title,,Permission Denied,,no
+CRM-0101,Settings,src/pages/Settings.tsx,95,toast_title,,Permission Granted,,no
+CRM-0101,Settings,src/pages/Settings.tsx,314,label,,Permissions,,no
+CRM-0101,Settings,src/pages/Settings.tsx,314,heading,,Permissions,,no
+CRM-0101,Settings,src/pages/Settings.tsx,377,label,,Privacy Policy,,no
+CRM-0101,Settings,src/pages/Settings.tsx,0,component_name,,Settings,,no
+CRM-0101,Settings,src/pages/Settings.tsx,189,label,,Settings,,no
+CRM-0101,Settings,src/pages/Settings.tsx,189,heading,,Settings,,no
+CRM-0101,Settings,src/pages/Settings.tsx,346,title,,Storage,,no
+CRM-0101,Settings,src/pages/Settings.tsx,266,label,,Swahili,,no
+CRM-0101,Settings,src/pages/Settings.tsx,381,label,,Terms of Service,,no
+CRM-0101,Settings,src/pages/Settings.tsx,85,label,,Unknown,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,187,label,,Activity & Attendance,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,105,label,,Agent Stats,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,105,heading,,Agent Stats,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,178,label,,All Time,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,188,label,,Check-ins,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,200,label,,Completed,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,232,label,,Engagement,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,218,label,,Giveaways,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,233,label,,Interactions,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,238,label,,Items Given,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,252,label,,Lunch Time,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,130,label,,No agents found,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,239,label,,Notes,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,201,label,,Pending,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,297,label,,Points & Rank,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,211,label,,Products Sold,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,298,label,,Rank,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,212,label,,Revenue,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,208,label,,Sales & Revenue,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,216,label,,Sales Made,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,122,placeholder,,Search agents...,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,164,label,,Select an agent to view stats,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,0,component_name,,Stats,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,189,label,,Store Visits,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,191,label,,Stores Added,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,235,label,,Surveys Done,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,198,label,,Tasks,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,177,label,,This Week,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,176,label,,Today,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,300,label,,Total Points,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,199,label,,Total Tasks,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,106,label,,View individual agent performance,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,299,label,,Weekly Points,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,190,label,,Work Time,,no
+CRM-0124,Stats,src/pages/supervisor/StatsPage.tsx,0,component_description,,Workspace performance stats.,,no
+CRM-0003,Status Bar,src/components/StatusBar.tsx,27,label,,Checked In,,no
+CRM-0003,Status Bar,src/components/StatusBar.tsx,42,label,,Checked Out,,no
+CRM-0003,Status Bar,src/components/StatusBar.tsx,68,toast_title,,Error,,no
+CRM-0003,Status Bar,src/components/StatusBar.tsx,77,toast_description,,Failed to update status. Please try again.,,no
+CRM-0003,Status Bar,src/components/StatusBar.tsx,0,component_description,,"In-app status bar (sync, connectivity).",,no
+CRM-0003,Status Bar,src/components/StatusBar.tsx,117,label,,Loading...,,no
+CRM-0003,Status Bar,src/components/StatusBar.tsx,34,label,,On Lunch,,no
+CRM-0003,Status Bar,src/components/StatusBar.tsx,0,component_name,,Status Bar,,no
+CRM-0003,Status Bar,src/components/StatusBar.tsx,63,toast_title,,Success,,no
+CRM-0022,Stock Report,src/components/attendance/StockReportDialog.tsx,93,toast_title,,Error,,no
+CRM-0022,Stock Report,src/components/attendance/StockReportDialog.tsx,94,toast_description,,Failed to load sales data,,no
+CRM-0022,Stock Report,src/components/attendance/StockReportDialog.tsx,206,toast_description,,Failed to submit stock report. Please try again.,,no
+CRM-0022,Stock Report,src/components/attendance/StockReportDialog.tsx,147,toast_title,,Incomplete Report,,no
+CRM-0022,Stock Report,src/components/attendance/StockReportDialog.tsx,133,toast_description,,Missing user or workspace context,,no
+CRM-0022,Stock Report,src/components/attendance/StockReportDialog.tsx,303,label,,Number sold:,,no
+CRM-0022,Stock Report,src/components/attendance/StockReportDialog.tsx,268,placeholder,,Select stock level...,,no
+CRM-0022,Stock Report,src/components/attendance/StockReportDialog.tsx,0,component_name,,Stock Report,,no
+CRM-0022,Stock Report,src/components/attendance/StockReportDialog.tsx,0,component_description,,Submit a stock-on-hand report for a store.,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,1055,placeholder,,Add a caption...,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,999,placeholder,,Add notes...,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,642,placeholder,,Choose a survey,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,1144,label,,Collect Feedback,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,0,component_description,,Confirmation shown after a successful store action.,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,799,label,,Deals,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,799,heading,,Deals,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,1017,placeholder,,Enter feedback about this store...,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,723,placeholder,,Enter your response...,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,265,toast_title,,Error,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,1013,label,,Feedback Notes,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,525,toast_title,,Feedback Submitted,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,1134,label,,Give Products,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,350,error,,No workspace selected,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,222,error,,Not authenticated,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,995,label,,Notes,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,1154,label,,Price Report,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,1108,label,,Quick Actions for this store:,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,1126,label,,Record Sale,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,835,label,,Sale Items,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,835,heading,,Sale Items,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,753,placeholder,,Search products...,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,955,label,,Select Products,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,639,label,,Select Survey,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,1116,label,,Start Survey,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,1096,label,,Store Added Successfully!,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,0,component_name,,Store Success Dialog,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,811,label,,Total,,no
+CRM-0055,Store Success Dialog,src/components/StoreSuccessDialog.tsx,844,label,,Total:,,no
+CRM-0002,Supervisor Bottom Nav,src/components/supervisor/SupervisorBottomNav.tsx,0,component_description,,Bottom tab bar for supervisor mode.,,no
+CRM-0002,Supervisor Bottom Nav,src/components/supervisor/SupervisorBottomNav.tsx,13,label,,Dashboard,,no
+CRM-0002,Supervisor Bottom Nav,src/components/supervisor/SupervisorBottomNav.tsx,16,label,,Inbox,,no
+CRM-0002,Supervisor Bottom Nav,src/components/supervisor/SupervisorBottomNav.tsx,15,label,,Map,,no
+CRM-0002,Supervisor Bottom Nav,src/components/supervisor/SupervisorBottomNav.tsx,17,label,,Stats,,no
+CRM-0002,Supervisor Bottom Nav,src/components/supervisor/SupervisorBottomNav.tsx,0,component_name,,Supervisor Bottom Nav,,no
+CRM-0002,Supervisor Bottom Nav,src/components/supervisor/SupervisorBottomNav.tsx,14,label,,Users,,no
+CRM-0118,Supervisor Dashboard,src/pages/SupervisorDashboard.tsx,187,label,,Activity Feed,,no
+CRM-0118,Supervisor Dashboard,src/pages/SupervisorDashboard.tsx,105,label,,Agent activity log,,no
+CRM-0118,Supervisor Dashboard,src/pages/SupervisorDashboard.tsx,160,placeholder,,All Teams,,no
+CRM-0118,Supervisor Dashboard,src/pages/SupervisorDashboard.tsx,164,label,,All Teams,,no
+CRM-0118,Supervisor Dashboard,src/pages/SupervisorDashboard.tsx,31,label,,Back,,no
+CRM-0118,Supervisor Dashboard,src/pages/SupervisorDashboard.tsx,26,label,,Checked In,,no
+CRM-0118,Supervisor Dashboard,src/pages/SupervisorDashboard.tsx,27,label,,Checked Out,,no
+CRM-0118,Supervisor Dashboard,src/pages/SupervisorDashboard.tsx,257,alt,,Full size,,no
+CRM-0118,Supervisor Dashboard,src/pages/SupervisorDashboard.tsx,196,label,,Loading activities...,,no
+CRM-0118,Supervisor Dashboard,src/pages/SupervisorDashboard.tsx,201,label,,No activity found,,no
+CRM-0118,Supervisor Dashboard,src/pages/SupervisorDashboard.tsx,236,label,,No selfies for this date,,no
+CRM-0118,Supervisor Dashboard,src/pages/SupervisorDashboard.tsx,29,label,,On Break,,no
+CRM-0118,Supervisor Dashboard,src/pages/SupervisorDashboard.tsx,0,component_description,,Realtime supervisor overview of the workspace.,,no
+CRM-0118,Supervisor Dashboard,src/pages/SupervisorDashboard.tsx,175,placeholder,,"Search by name, email or outlet...",,no
+CRM-0118,Supervisor Dashboard,src/pages/SupervisorDashboard.tsx,28,label,,Set Location,,no
+CRM-0118,Supervisor Dashboard,src/pages/SupervisorDashboard.tsx,0,component_name,,Supervisor Dashboard,,no
+CRM-0118,Supervisor Dashboard,src/pages/SupervisorDashboard.tsx,104,label,,Supervisor Dashboard,,no
+CRM-0118,Supervisor Dashboard,src/pages/SupervisorDashboard.tsx,104,heading,,Supervisor Dashboard,,no
+CRM-0118,Supervisor Dashboard,src/pages/SupervisorDashboard.tsx,202,label,,Try selecting a different date,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,503,label,,→ Open in Maps,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,593,label,,A screenshot is required for bug reports,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,494,alt,,Attachment,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,67,label,,Bug Support,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,485,label,,Cancel,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,451,label,,Chat,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,451,heading,,Chat,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,453,label,,Choose the type of issue you're experiencing,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,486,label,,Delete,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,481,label,,Delete this message?,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,659,label,,Delete this ticket?,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,321,toast_title,,Failed to delete,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,412,toast_title,,Failed to send,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,305,toast_title,,Failed to submit ticket,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,354,toast_title,,Geolocation not supported,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,555,label,,Incorrect Details,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,76,label,,Inventory Request,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,634,label,,Loading...,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,368,toast_title,,Location error,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,338,toast_title,,Message deleted,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,404,toast_title,,Message sent,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,463,label,,Messages,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,463,heading,,Messages,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,554,label,,Missing Inventory,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,85,label,,Missing Stats,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,630,label,,My Requests,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,630,heading,,My Requests,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,713,label,,No members found,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,636,label,,No requests yet,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,579,placeholder,,Please provide as much detail as possible...,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,596,alt,,Preview,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,68,description,,Report app bugs or technical issues,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,86,description,,Report missing or inaccurate statistics,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,77,description,,Report missing or incorrect inventory,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,705,placeholder,,Search...,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,0,component_description,,Submit and track support tickets.,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,0,component_name,,Support Ticket,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,607,label,,Tap to upload image,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,435,label,,Thank you!,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,435,heading,,Thank you!,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,482,label,,This will remove the message from your view.,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,660,label,,This will remove the ticket from your view.,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,324,toast_title,,Ticket deleted,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,430,label,,Ticket Submitted,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,430,heading,,Ticket Submitted,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,687,label,,To,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,737,placeholder,,Type your message...,,no
+CRM-0110,Support Ticket,src/pages/SupportTicket.tsx,551,label,,What's the issue?,,no
+CRM-0108,Survey Activity List,src/pages/SurveyActivityList.tsx,0,component_description,,Detailed list of completed surveys.,,no
+CRM-0108,Survey Activity List,src/pages/SurveyActivityList.tsx,93,label,,Loading...,,no
+CRM-0108,Survey Activity List,src/pages/SurveyActivityList.tsx,87,label,,My Survey Activities,,no
+CRM-0108,Survey Activity List,src/pages/SurveyActivityList.tsx,87,heading,,My Survey Activities,,no
+CRM-0108,Survey Activity List,src/pages/SurveyActivityList.tsx,95,label,,No survey activities found,,no
+CRM-0108,Survey Activity List,src/pages/SurveyActivityList.tsx,119,label,,Notes,,no
+CRM-0108,Survey Activity List,src/pages/SurveyActivityList.tsx,125,label,,Pictures,,no
+CRM-0108,Survey Activity List,src/pages/SurveyActivityList.tsx,0,component_name,,Survey Activity List,,no
+CRM-0023,Survey Closing Report,src/components/attendance/SurveyClosingReportDialog.tsx,209,placeholder,,Add any closing notes for the day...,,no
+CRM-0023,Survey Closing Report,src/components/attendance/SurveyClosingReportDialog.tsx,167,label,,Closing Report,,no
+CRM-0023,Survey Closing Report,src/components/attendance/SurveyClosingReportDialog.tsx,146,toast_description,,Closing report submitted successfully,,no
+CRM-0023,Survey Closing Report,src/components/attendance/SurveyClosingReportDialog.tsx,0,component_description,,End-of-day report for survey-only projects.,,no
+CRM-0023,Survey Closing Report,src/components/attendance/SurveyClosingReportDialog.tsx,154,toast_title,,Error,,no
+CRM-0023,Survey Closing Report,src/components/attendance/SurveyClosingReportDialog.tsx,155,toast_description,,Failed to submit report. Please try again.,,no
+CRM-0023,Survey Closing Report,src/components/attendance/SurveyClosingReportDialog.tsx,145,toast_title,,Success,,no
+CRM-0023,Survey Closing Report,src/components/attendance/SurveyClosingReportDialog.tsx,0,component_name,,Survey Closing Report,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,779,label,,📋,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,288,toast_description,,An unexpected error occurred while loading surveys.,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,781,label,,Check back later for new surveys,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,766,label,,Choose a Survey,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,766,heading,,Choose a Survey,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,177,toast_description,,Could not load available surveys.,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,717,placeholder,,Enter your response...,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,287,toast_title,,Error,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,176,toast_title,,Error loading surveys,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,558,toast_title,,Error submitting survey,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,559,toast_description,,Failed to save survey responses. Please try again.,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,774,label,,Loading surveys...,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,385,toast_title,,Microphone Access Denied,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,729,label,,No questions available for this survey.,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,780,label,,No surveys available,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,298,toast_title,,Photo captured,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,386,toast_description,,Please allow microphone access to record audio.,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,585,label,,Ready to Start?,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,585,heading,,Ready to Start?,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,365,toast_title,,Recording saved & uploaded!,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,338,toast_title,,Recording saved on device,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,381,toast_title,,Recording started,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,0,component_description,,Run assigned surveys and submit responses from the field.,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,768,label,,Select a survey to complete and earn points,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,299,toast_description,,Survey photo captured successfully!,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,0,component_name,,Take Survey,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,480,toast_description,,Unable to submit survey. Please try again.,,no
+CRM-0097,Take Survey,src/pages/Surveys.tsx,351,toast_title,,Upload failed,,no
+CRM-0050,Top Bar,src/components/dashboard/TopBar.tsx,0,component_name,,Top Bar,,no
+CRM-0050,Top Bar,src/components/dashboard/TopBar.tsx,0,component_description,,Top bar with workspace switcher and notifications.,,no
+CRM-0052,Upcoming Schedule,src/components/dashboard/UpcomingSchedule.tsx,0,component_description,,List of upcoming visits/tasks on the dashboard.,,no
+CRM-0052,Upcoming Schedule,src/components/dashboard/UpcomingSchedule.tsx,51,label,,No upcoming tasks,,no
+CRM-0052,Upcoming Schedule,src/components/dashboard/UpcomingSchedule.tsx,0,component_name,,Upcoming Schedule,,no
+CRM-0052,Upcoming Schedule,src/components/dashboard/UpcomingSchedule.tsx,28,label,,Upcoming Schedule,,no
+CRM-0052,Upcoming Schedule,src/components/dashboard/UpcomingSchedule.tsx,28,heading,,Upcoming Schedule,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,606,toast_title,,Added to team!,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,389,label,,Agent,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,458,placeholder,,Choose a team...,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,367,label,,Display Name,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,337,label,,Email Address *,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,204,toast_title,,Email required,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,493,placeholder,,Enter team name...,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,117,toast_title,,Error,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,118,toast_description,,Failed to load users,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,251,toast_title,,Invitation sent!,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,371,placeholder,,John Doe,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,299,title,,Manage Teams,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,292,label,,Manage workspace members,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,491,label,,New Team Name,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,213,toast_title,,No workspace selected,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,537,toast_description,,Please enter a name for the new team,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,205,toast_description,,Please enter an email address,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,572,toast_description,,Please select a team or create a new one,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,214,toast_description,,Please select a workspace first,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,379,label,,Role,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,571,toast_title,,Select a team,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,451,label,,Select Team,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,390,label,,Supervisor,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,536,toast_title,,Team name required,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,615,toast_description,,The user will need to be added to the team after they accept the invitation,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,223,toast_description,,This user is already in your workspace,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,222,toast_title,,User already exists,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,357,label,,User already exists,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,342,placeholder,,user@example.com,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,0,component_name,,Users,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,291,label,,Users,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,291,heading,,Users,,no
+CRM-0123,Users,src/pages/supervisor/UsersPage.tsx,0,component_description,,Workspace user management page.,,no
+CRM-0064,Weekly Summary,src/components/profile/WeeklySummaryCard.tsx,62,label,,Giveaways,,no
+CRM-0064,Weekly Summary,src/components/profile/WeeklySummaryCard.tsx,0,component_description,,Rolling weekly summary card.,,no
+CRM-0064,Weekly Summary,src/components/profile/WeeklySummaryCard.tsx,50,label,,Sales,,no
+CRM-0064,Weekly Summary,src/components/profile/WeeklySummaryCard.tsx,44,label,,Stores,,no
+CRM-0064,Weekly Summary,src/components/profile/WeeklySummaryCard.tsx,56,label,,Surveys,,no
+CRM-0064,Weekly Summary,src/components/profile/WeeklySummaryCard.tsx,0,component_name,,Weekly Summary,,no
+,,src/components/attendance/WorkHoursCard.tsx,74,label,,= startOfDay && logDate,,no
+,,src/components/attendance/WorkHoursCard.tsx,80,label,,= startOfWeek && logDate,,no
+,,src/components/attendance/WorkHoursCard.tsx,165,label,,Loading...,,no
+,,src/components/attendance/WorkHoursCard.tsx,187,label,,Today,,no
+,,src/components/CameraCapture.tsx,426,placeholder,,Add a caption...,,no
+,,src/components/CameraCapture.tsx,445,label,,Camera Permission Denied,,no
+,,src/components/CameraCapture.tsx,445,heading,,Camera Permission Denied,,no
+,,src/components/CameraCapture.tsx,365,toast_title,,Check-in failed,,no
+,,src/components/CameraCapture.tsx,352,toast_title,,Error,,no
+,,src/components/CameraCapture.tsx,173,error,,Failed to process image overlay. Please try with a smaller image or different format.,,no
+,,src/components/CameraCapture.tsx,219,error,,Failed to upload image. Please check your connection and try again.,,no
+,,src/components/CameraCapture.tsx,224,error,,Geolocation not supported by this device,,no
+,,src/components/CameraCapture.tsx,328,toast_description,,Image saved on device — upload from Reports when ready,,no
+,,src/components/CameraCapture.tsx,355,toast_description,,Image uploaded successfully with agent details,,no
+,,src/components/CameraCapture.tsx,155,error,,Not authenticated,,no
+,,src/components/CameraCapture.tsx,396,label,,Open Camera,,no
+,,src/components/CameraCapture.tsx,328,toast_title,,Photo captured,,no
+,,src/components/CameraCapture.tsx,421,alt,,Preview,,no
+,,src/components/CameraCapture.tsx,429,label,,Skip,,no
+,,src/components/CameraCapture.tsx,429,button,,Skip,,no
+,,src/components/CameraCapture.tsx,350,toast_title,,Success,,no
+,,src/components/dashboard/PerformanceCards.tsx,48,label,,Completed,,no
+,,src/components/dashboard/PerformanceCards.tsx,21,label,,Performance,,no
+,,src/components/dashboard/PerformanceCards.tsx,21,heading,,Performance,,no
+,,src/components/dashboard/PerformanceCards.tsx,66,label,,Sales Target,,no
+,,src/components/dashboard/PerformanceCards.tsx,50,label,,Surveys Completed,,no
+,,src/components/dashboard/PerformanceCards.tsx,34,label,,Tasks for Today,,no
+,,src/components/dashboard/PerformanceCards.tsx,32,label,,Today,,no
+,,src/components/DistanceDebugger.tsx,217,label,,= 400 && calculatedDistance,,no
+,,src/components/DistanceDebugger.tsx,208,label,,Analysis:,,no
+,,src/components/DistanceDebugger.tsx,208,heading,,Analysis:,,no
+,,src/components/DistanceDebugger.tsx,15,name,,Cleanshelf Langata,,no
+,,src/components/DistanceDebugger.tsx,210,label,,Expected Range: 400-600m,,no
+,,src/components/DistanceDebugger.tsx,190,label,,Google Maps API Result:,,no
+,,src/components/DistanceDebugger.tsx,190,heading,,Google Maps API Result:,,no
+,,src/components/DistanceDebugger.tsx,179,label,,Haversine Formula Result:,,no
+,,src/components/DistanceDebugger.tsx,179,heading,,Haversine Formula Result:,,no
+,,src/components/DistanceDebugger.tsx,137,label,,Latitude,,no
+,,src/components/DistanceDebugger.tsx,146,label,,Longitude,,no
+,,src/components/DistanceDebugger.tsx,119,label,,Target Location (Cleanshelf Langata),,no
+,,src/components/DistanceDebugger.tsx,134,label,,Your Device Location,,no
+,,src/components/GoogleMapsStatus.tsx,25,label,,API Key Status:,,no
+,,src/components/GoogleMapsStatus.tsx,45,label,,API Key:,,no
+,,src/components/GoogleMapsStatus.tsx,70,label,,Distance Calculation Active,,no
+,,src/components/GoogleMapsStatus.tsx,56,label,,Google Maps API Key Required,,no
+,,src/components/GoogleMapsStatus.tsx,58,label,,VITE_GOOGLE_MAPS_API_KEY,,no
+,,src/components/ImageCaptionInput.tsx,15,placeholder,,Add a caption...,,no
+,,src/components/InviteAgentDialog.tsx,130,label,,Agent,,no
+,,src/components/InviteAgentDialog.tsx,106,placeholder,,agent@example.com,,no
+,,src/components/InviteAgentDialog.tsx,113,label,,Display Name,,no
+,,src/components/InviteAgentDialog.tsx,102,label,,Email Address *,,no
+,,src/components/InviteAgentDialog.tsx,30,toast_title,,Email required,,no
+,,src/components/InviteAgentDialog.tsx,79,toast_title,,Error,,no
+,,src/components/InviteAgentDialog.tsx,67,toast_title,,Invitation sent!,,no
+,,src/components/InviteAgentDialog.tsx,117,placeholder,,John Doe,,no
+,,src/components/InviteAgentDialog.tsx,39,toast_title,,No workspace selected,,no
+,,src/components/InviteAgentDialog.tsx,31,toast_description,,Please enter an email address,,no
+,,src/components/InviteAgentDialog.tsx,40,toast_description,,Please select a workspace first,,no
+,,src/components/InviteAgentDialog.tsx,124,label,,Role,,no
+,,src/components/InviteAgentDialog.tsx,131,label,,Supervisor,,no
+,,src/components/PermissionGuidance.tsx,183,label,,To re-enable:,,no
+,,src/components/PermissionRequestDialog.tsx,48,label,,? Need to ask,,no
+,,src/components/PermissionRequestDialog.tsx,44,label,,✓ Granted,,no
+,,src/components/PermissionRequestDialog.tsx,46,label,,✗ Denied,,no
+,,src/components/PermissionRequestDialog.tsx,102,label,,Permissions Required,,no
+,,src/components/PermissionRequestDialog.tsx,50,label,,Unknown,,no
+,,src/components/profile/DailySummaryCard.tsx,69,label,,Giveaways,,no
+,,src/components/profile/DailySummaryCard.tsx,52,label,,Sales Made,,no
+,,src/components/profile/DailySummaryCard.tsx,45,label,,Stores Added,,no
+,,src/components/profile/DailySummaryCard.tsx,62,label,,Surveys Done,,no
+,,src/components/profile/DailySummaryCard.tsx,81,label,,worked today,,no
+,,src/components/RecordingIndicator.tsx,25,label,,Recording,,no
+,,src/components/RouteErrorBoundary.tsx,34,label,,Page failed to load,,no
+,,src/components/RouteErrorBoundary.tsx,34,heading,,Page failed to load,,no
+,,src/components/RouteErrorBoundary.tsx,38,label,,Refresh app,,no
+,,src/components/RouteErrorBoundary.tsx,38,button,,Refresh app,,no
+,,src/components/StoreCoordinateChecker.tsx,129,label,,Check the browser console for detailed coordinate analysis,,no
+,,src/components/StoreCoordinateChecker.tsx,128,label,,"Click ""Debug coordinates in console"" for any store",,no
+,,src/components/StoreCoordinateChecker.tsx,126,label,,Instructions:,,no
+,,src/components/StoreCoordinateChecker.tsx,94,label,,Latitude:,,no
+,,src/components/StoreCoordinateChecker.tsx,66,label,,Loading stores...,,no
+,,src/components/StoreCoordinateChecker.tsx,98,label,,Longitude:,,no
+,,src/components/StoreCoordinateChecker.tsx,130,label,,Look for any coordinate discrepancies or precision issues,,no
+,,src/components/supervisor/MobileFeedbackTab.tsx,92,label,,No feedback found,,no
+,,src/components/supervisor/MobileFeedbackTab.tsx,76,placeholder,,Search feedback...,,no
+,,src/components/supervisor/MobileGalleryTab.tsx,115,alt,,Full size,,no
+,,src/components/supervisor/MobileGalleryTab.tsx,79,label,,No photos found,,no
+,,src/components/supervisor/MobileGalleryTab.tsx,68,label,,Photo Gallery,,no
+,,src/components/supervisor/MobileRankingsTab.tsx,117,label,,No agents found,,no
+,,src/components/supervisor/MobileRankingsTab.tsx,101,placeholder,,Search agents...,,no
+,,src/components/supervisor/MobileSalesTab.tsx,142,label,,No sales found,,no
+,,src/components/supervisor/MobileSalesTab.tsx,209,label,,Products Purchased,,no
+,,src/components/supervisor/MobileSalesTab.tsx,126,placeholder,,Search by customer or product...,,no
+,,src/components/supervisor/MobileSalesTab.tsx,200,label,,Total Value,,no
+,,src/components/supervisor/MobileSalesTab.tsx,204,label,,Units Sold,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,675,label,,Cancel,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,318,toast_title,,Email updated,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,181,toast_title,,Failed to assign,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,370,toast_title,,Failed to send message,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,314,toast_title,,Failed to update email,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,338,toast_title,,Failed to update team,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,176,toast_title,,Inventory assigned,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,372,toast_title,,Message sent,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,626,label,,No inventory assigned,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,591,label,,No location data,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,419,label,,No members found,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,699,label,,No products available in this workspace,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,567,label,,No team assigned,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,557,label,,No teams available,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,407,placeholder,,Search members...,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,542,label,,Select a team to assign:,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,140,toast_title,,Select at least one product,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,748,button,,setAssignInventoryOpen(false)}>Cancel,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,675,button,,setContactDialogOpen(false)}>Cancel,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,400,label,,Team Members,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,400,heading,,Team Members,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,340,toast_title,,Team updated,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,647,label,,Total Value,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,668,placeholder,,Type your message...,,no
+,,src/components/supervisor/MobileWorkspaceMembers.tsx,643,label,,Units Sold,,no
+,,src/components/supervisor/TeamManagementDialog.tsx,142,label,,"Create, rename, or remove teams",,no
+,,src/components/supervisor/TeamManagementDialog.tsx,89,toast_title,,Error,,no
+,,src/components/supervisor/TeamManagementDialog.tsx,148,placeholder,,New team name...,,no
+,,src/components/supervisor/TeamManagementDialog.tsx,166,label,,No teams yet. Create one above.,,no
+,,src/components/supervisor/TeamManagementDialog.tsx,84,toast_title,,Team created,,no
+,,src/components/supervisor/TeamManagementDialog.tsx,124,toast_title,,Team deleted,,no
+,,src/components/supervisor/TeamManagementDialog.tsx,104,toast_title,,Team renamed,,no
+,,src/components/supervisor/UserCard.tsx,22,label,,Admin,,no
+,,src/components/supervisor/UserCard.tsx,24,label,,Member,,no
+,,src/components/supervisor/UserCard.tsx,26,label,,Viewer,,no
+,,src/components/supervisor/UserDetailSheet.tsx,391,alt,,Check-in selfie,,no
+,,src/components/supervisor/UserDetailSheet.tsx,371,label,,Giveaways,,no
+,,src/components/supervisor/UserDetailSheet.tsx,375,label,,Interactions,,no
+,,src/components/supervisor/UserDetailSheet.tsx,412,label,,No check-in recorded,,no
+,,src/components/supervisor/UserDetailSheet.tsx,484,label,,No giveaways today,,no
+,,src/components/supervisor/UserDetailSheet.tsx,520,label,,No interactions today,,no
+,,src/components/supervisor/UserDetailSheet.tsx,561,label,,No notes today,,no
+,,src/components/supervisor/UserDetailSheet.tsx,453,label,,No sales recorded today,,no
+,,src/components/supervisor/UserDetailSheet.tsx,367,label,,Sales,,no
+,,src/components/SyncIndicator.tsx,61,label,,Sync status,,no
+,,src/components/WorkspaceContext.tsx,79,label,,Capwell Instore Activation Active,,no
+,,src/components/WorkspaceContext.tsx,62,label,,Project:,,no
+,,src/components/WorkspaceContext.tsx,45,label,,Workspace:,,no
+,,src/components/WorkspaceSwitcher.tsx,69,label,,Admin,,no
+,,src/components/WorkspaceSwitcher.tsx,39,toast_title,,Error,,no
+,,src/components/WorkspaceSwitcher.tsx,58,toast_description,,Failed to refresh workspaces,,no
+,,src/components/WorkspaceSwitcher.tsx,40,toast_description,,Failed to switch workspace,,no
+,,src/components/WorkspaceSwitcher.tsx,71,label,,Member,,no
+,,src/components/WorkspaceSwitcher.tsx,83,label,,No workspaces available,,no
+,,src/components/WorkspaceSwitcher.tsx,123,title,,Refresh workspaces,,no
+,,src/components/WorkspaceSwitcher.tsx,51,toast_title,,Refreshed,,no
+,,src/components/WorkspaceSwitcher.tsx,105,placeholder,,Select workspace,,no
+,,src/components/WorkspaceSwitcher.tsx,73,label,,Viewer,,no
+,,src/components/WorkspaceSwitcher.tsx,34,toast_title,,Workspace Changed,,no
+,,src/components/WorkspaceSwitcher.tsx,52,toast_description,,Workspace data updated,,no
+,,src/hooks/useAudioRecorder.tsx,133,toast_description,,Could not upload the recording. Please try again.,,no
+,,src/hooks/useAudioRecorder.tsx,61,toast_title,,Microphone Access Denied,,no
+,,src/hooks/useAudioRecorder.tsx,62,toast_description,,Please allow microphone access to record audio.,,no
+,,src/hooks/useAudioRecorder.tsx,10,label,,Promise,,no
+,,src/hooks/useAudioRecorder.tsx,132,toast_title,,Upload Failed,,no
+,,src/hooks/useAuth.tsx,11,label,,Promise,,no
+,,src/hooks/useAuth.tsx,106,error,,useAuth must be used within an AuthProvider,,no
+,,src/hooks/useInteractionForm.tsx,88,toast_description,,+10 points earned.,,no
+,,src/hooks/useInteractionForm.tsx,25,toast_title,,Authentication Error,,no
+,,src/hooks/useInteractionForm.tsx,96,toast_title,,Error,,no
+,,src/hooks/useInteractionForm.tsx,97,toast_description,,Failed to log interaction. Please try again.,,no
+,,src/hooks/useInteractionForm.tsx,87,toast_title,,Interaction logged successfully!,,no
+,,src/hooks/useInteractionForm.tsx,26,toast_description,,Please log in to submit interactions,,no
+,,src/hooks/useLanguage.tsx,73,error,,useLanguage must be used within a LanguageProvider,,no
+,,src/hooks/usePagination.tsx,25,label,,): UsePaginationReturn,,no
+,,src/hooks/usePermissions.tsx,27,label,,Promise,,no
+,,src/hooks/useProducts.tsx,61,name,,All Products,,no
+,,src/hooks/useSalesForm.tsx,40,toast_title,,Authentication Error,,no
+,,src/hooks/useSalesForm.tsx,100,toast_title,,Error,,no
+,,src/hooks/useSalesForm.tsx,101,toast_description,,Failed to record sale. Please try again.,,no
+,,src/hooks/useSalesForm.tsx,41,toast_description,,Please log in to record sales,,no
+,,src/hooks/useSalesForm.tsx,51,toast_description,,Please select a workspace first,,no
+,,src/hooks/useSalesForm.tsx,50,toast_title,,Workspace Required,,no
+,,src/hooks/useSync.tsx,25,label,,Promise,,no
+,,src/hooks/useSync.tsx,152,error,,useSync must be used within SyncProvider,,no
+,,src/hooks/useWorkspace.tsx,13,label,,Promise,,no
+,,src/hooks/useWorkspace.tsx,138,error,,useWorkspace must be used within a WorkspaceProvider,,no
+,,src/pages/Activity.tsx,206,label,,Activity Feed,,no
+,,src/pages/Activity.tsx,206,heading,,Activity Feed,,no
+,,src/pages/Activity.tsx,170,toast_title,,Error,,no
+,,src/pages/Activity.tsx,171,toast_description,,Failed to load activities,,no
+,,src/pages/Activity.tsx,282,label,,No activities found,,no
+,,src/pages/Activity.tsx,207,label,,Real-time agent activities,,no
+,,src/pages/DebugKit.tsx,258,label,,Accuracy:,,no
+,,src/pages/DebugKit.tsx,268,label,,Calculate Distance to Store,,no
+,,src/pages/DebugKit.tsx,275,placeholder,,Choose a store,,no
+,,src/pages/DebugKit.tsx,243,label,,Current Location:,,no
+,,src/pages/DebugKit.tsx,334,title,,Debug Camera Test,,no
+,,src/pages/DebugKit.tsx,167,label,,Debug Kit,,no
+,,src/pages/DebugKit.tsx,167,heading,,Debug Kit,,no
+,,src/pages/DebugKit.tsx,290,label,,Distance to Store:,,no
+,,src/pages/DebugKit.tsx,310,label,,Getting location...,,no
+,,src/pages/DebugKit.tsx,246,label,,Latitude:,,no
+,,src/pages/DebugKit.tsx,250,label,,Longitude:,,no
+,,src/pages/DebugKit.tsx,214,label,,Recorded Audio:,,no
+,,src/pages/DebugKit.tsx,254,label,,Rounded (1dp):,,no
+,,src/pages/DebugKit.tsx,272,label,,Select Store:,,no
+,,src/pages/DebugKit.tsx,179,label,,Test camera capture functionality,,no
+,,src/pages/DebugKit.tsx,168,label,,"Test device capabilities: camera, microphone, and location",,no
+,,src/pages/DebugKit.tsx,228,label,,Test geolocation functionality,,no
+,,src/pages/DebugKit.tsx,196,label,,Test microphone and audio recording,,no
+,,src/pages/Documentation.tsx,172,label,,"Access guides, resources, and support materials",,no
+,,src/pages/Documentation.tsx,18,title,,Agent Onboarding Guide,,no
+,,src/pages/Documentation.tsx,57,faq_answer,,"Check your microphone permissions in Settings. If issues persist, contact support.",,no
+,,src/pages/Documentation.tsx,31,title,,Customer Interaction Guidelines,,no
+,,src/pages/Documentation.tsx,169,label,,Documentation,,no
+,,src/pages/Documentation.tsx,169,heading,,Documentation,,no
+,,src/pages/Documentation.tsx,225,label,,FAQs,,no
+,,src/pages/Documentation.tsx,225,heading,,FAQs,,no
+,,src/pages/Documentation.tsx,20,title,,First Day Checklist,,no
+,,src/pages/Documentation.tsx,139,label,,Frequently Asked Questions,,no
+,,src/pages/Documentation.tsx,139,heading,,Frequently Asked Questions,,no
+,,src/pages/Documentation.tsx,14,title,,Getting Started Guides,,no
+,,src/pages/Documentation.tsx,61,faq_question,,How are points calculated?,,no
+,,src/pages/Documentation.tsx,51,faq_question,,How do I start a new survey?,,no
+,,src/pages/Documentation.tsx,29,title,,How to Conduct a Survey,,no
+,,src/pages/Documentation.tsx,25,title,,How-To Guides,,no
+,,src/pages/Documentation.tsx,42,title,,LED Product Catalog,,no
+,,src/pages/Documentation.tsx,19,title,,Mobile App Basics,,no
+,,src/pages/Documentation.tsx,52,faq_answer,,Navigate to the Surveys page and tap 'Start Survey'. Select your survey template and begin.,,no
+,,src/pages/Documentation.tsx,62,faq_answer,,"Points are awarded based on activity type: Sales (25pts), Surveys (15pts), Giveaways (8pts), Interactions (10pts).",,no
+,,src/pages/Documentation.tsx,43,title,,Pricing Guide 2024,,no
+,,src/pages/Documentation.tsx,37,title,,Product Catalogs,,no
+,,src/pages/Documentation.tsx,30,title,,Recording Best Practices,,no
+,,src/pages/Documentation.tsx,180,placeholder,,Search documentation...,,no
+,,src/pages/Documentation.tsx,41,title,,Solar Panel Specifications,,no
+,,src/pages/Documentation.tsx,32,title,,Troubleshooting Guide,,no
+,,src/pages/Documentation.tsx,56,faq_question,,What if I can't record audio?,,no
+,,src/pages/Index.tsx,9,label,,Start building your amazing project here!,,no
+,,src/pages/Index.tsx,8,label,,Welcome to Your Blank App,,no
+,,src/pages/Index.tsx,8,heading,,Welcome to Your Blank App,,no
+,,src/pages/Login.tsx,92,toast_title,,Account not found,,no
+,,src/pages/Login.tsx,200,toast_description,,An unexpected error occurred.,,no
+,,src/pages/Login.tsx,125,toast_description,,An unexpected error occurred. Please try again.,,no
+,,src/pages/Login.tsx,194,toast_description,,Check your email for a new 6-digit code.,,no
+,,src/pages/Login.tsx,119,toast_description,,Check your email for the 6-digit code.,,no
+,,src/pages/Login.tsx,193,toast_title,,Code resent!,,no
+,,src/pages/Login.tsx,118,toast_title,,Code sent!,,no
+,,src/pages/Login.tsx,295,label,,Email address,,no
+,,src/pages/Login.tsx,65,toast_title,,Email required,,no
+,,src/pages/Login.tsx,216,label,,Enter verification code,,no
+,,src/pages/Login.tsx,299,placeholder,,Enter your email,,no
+,,src/pages/Login.tsx,81,toast_title,,Error,,no
+,,src/pages/Login.tsx,186,toast_title,,Failed to resend,,no
+,,src/pages/Login.tsx,333,toast_title,,Google sign in failed,,no
+,,src/pages/Login.tsx,136,toast_title,,Invalid code,,no
+,,src/pages/Login.tsx,321,label,,Or continue with,,no
+,,src/pages/Login.tsx,93,toast_description,,Please contact your administrator.,,no
+,,src/pages/Login.tsx,137,toast_description,,Please enter the full 6-digit code.,,no
+,,src/pages/Login.tsx,66,toast_description,,Please enter your email address.,,no
+,,src/pages/Login.tsx,110,toast_title,,Sign in failed,,no
+,,src/pages/Login.tsx,279,alt,,TraKKiT Logo,,no
+,,src/pages/Login.tsx,82,toast_description,,Unable to verify account. Please try again.,,no
+,,src/pages/Login.tsx,155,toast_title,,Verification failed,,no
+,,src/pages/Login.tsx,281,label,,Welcome back,,no
+,,src/pages/NotFound.tsx,16,label,,Oops! Page not found,,no
+,,src/services/googleMapsService.ts,62,error,,Google Maps API key is not configured,,no
+,,src/services/googleMapsService.ts,99,error,,No route found between the specified locations,,no
+,,src/services/offline/backgroundSync.ts,9,label,,Promise,,no
+,,src/services/offline/indexedDb.ts,59,label,,"(storeName: string, key: IDBValidKey): Promise",,no
+,,src/services/offline/indexedDb.ts,79,label,,"(storeName: string, value: T): Promise",,no
+,,src/services/offline/indexedDb.ts,69,label,,(storeName: string): Promise,,no
+,,src/services/offline/syncHandlers.ts,120,error,,Not authenticated,,no
+,,src/services/workspaceService.ts,291,label,,", this.currentWorkspaceLabel,",,no
+,,src/services/workspaceService.ts,402,error,,No workspace selected. Please select a workspace first.,,no

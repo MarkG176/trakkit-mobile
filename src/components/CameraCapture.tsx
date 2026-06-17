@@ -18,6 +18,9 @@ import { PermissionGuidance } from '@/components/PermissionGuidance';
 type StorageBucket = 'agent-selfies' | 'store_images';
 
 interface CameraCaptureProps {
+  /** When true, skip Storage upload and pass the processed file to the parent */
+  deferUpload?: boolean;
+  onCapturedFile?: (file: File, previewUrl: string) => void;
   onCapture?: (imageData: string) => void;
   mode?: 'status' | 'general'; // 'status' for check-in/out, 'general' for other uses
   variant?: 'floating' | 'inline'; // 'floating' for bottom nav, 'inline' for top bar
@@ -30,6 +33,8 @@ interface CameraCaptureProps {
 
 export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
   onCapture,
+  onCapturedFile,
+  deferUpload = false,
   mode = 'status',
   variant = 'floating',
   onImagesList,
@@ -142,36 +147,41 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
     fileInputRef.current?.click();
   };
 
-  const uploadToStorage = async (file: File, coordinates: { lat: number; lng: number }, imageCaption?: string): Promise<string> => {
+  const processCaptureFile = async (
+    file: File,
+    coordinates: { lat: number; lng: number },
+    imageCaption?: string
+  ): Promise<File> => {
     if (!user) throw new Error('Not authenticated');
 
-    // Get workspace and project names
     const workspaceName = workspaceService.getWorkspaceName();
     const projectName = await workspaceService.getProjectNameAsync();
 
-    // Create overlay data
     const overlayData: ImageOverlayData = {
       agentName: displayName || user.email?.split('@')[0] || 'Unknown Agent',
       coordinates,
       timestamp: formatTimestamp(new Date()),
       workspaceName: workspaceName || 'Unknown Workspace',
       projectName: projectName || 'No Project',
-      caption: imageCaption || undefined
+      caption: imageCaption || undefined,
     };
 
-    // Add text overlay to image
-    let imageWithOverlay: File;
     try {
-      imageWithOverlay = await addTextOverlayToImage(file, overlayData);
+      return await addTextOverlayToImage(file, overlayData);
     } catch (overlayError) {
       console.error('Image overlay error:', overlayError);
       throw new Error('Failed to process image overlay. Please try with a smaller image or different format.');
     }
+  };
 
+  const uploadToStorage = async (file: File, coordinates: { lat: number; lng: number }, imageCaption?: string): Promise<string> => {
+    if (!user) throw new Error('Not authenticated');
+
+    const imageWithOverlay = await processCaptureFile(file, coordinates, imageCaption);
     const folderPath = await buildFolderPath();
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const agentName = overlayData.agentName.replace(/[^a-zA-Z0-9-_]/g, '_');
+    const agentName = (displayName || user.email?.split('@')[0] || 'Unknown_Agent').replace(/[^a-zA-Z0-9-_]/g, '_');
     const fileName = `${folderPath}/${agentName}_${timestamp}.jpg`;
 
     // Upload with retry
@@ -308,16 +318,23 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
         throw locError; // Already has a human-friendly message from getCurrentLocation
       }
 
-      // Step 2: Process overlay and upload
-      let imageUrl: string;
+      // Step 2: Process overlay (and upload unless deferred)
+      let imageUrl: string | undefined;
       try {
-        imageUrl = await uploadToStorage(currentFile, location, currentCaption || undefined);
+        if (deferUpload && onCapturedFile) {
+          const processedFile = await processCaptureFile(currentFile, location, currentCaption || undefined);
+          const previewUrl = URL.createObjectURL(processedFile);
+          onCapturedFile(processedFile, previewUrl);
+          toast({ title: 'Photo captured', description: 'Image saved on device — upload from Reports when ready' });
+        } else {
+          imageUrl = await uploadToStorage(currentFile, location, currentCaption || undefined);
+        }
       } catch (uploadError) {
         console.error('Upload step failed:', uploadError);
-        throw uploadError; // Already has a human-friendly message from uploadToStorage
+        throw uploadError;
       }
 
-      if (mode === 'status' && !onCapture) {
+      if (mode === 'status' && !onCapture && !deferUpload) {
         let nextStatus = currentStatus;
         if (currentStatus === 'checked_out') {
           nextStatus = 'checked_in';
@@ -327,18 +344,18 @@ export const CameraCapture = forwardRef<HTMLInputElement, CameraCaptureProps>(({
           nextStatus = 'checked_in';
         }
 
-        const result = await updateStatus(nextStatus, imageUrl, location.lat, location.lng);
+        const result = await updateStatus(nextStatus, imageUrl!, location.lat, location.lng);
 
         if (result.success) {
           toast({ title: 'Success', description: result.message });
         } else {
           toast({ title: 'Error', description: result.message, variant: 'destructive' });
         }
-      } else if (!onCapture) {
+      } else if (!onCapture && !deferUpload) {
         toast({ title: 'Photo captured', description: 'Image uploaded successfully with agent details' });
       }
 
-      if (onCapture) {
+      if (onCapture && imageUrl) {
         onCapture(imageUrl);
       }
     } catch (error) {

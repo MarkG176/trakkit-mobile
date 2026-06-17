@@ -15,6 +15,7 @@ import { useAgentActions } from "@/hooks/useAgentActions";
 import { StoreSuccessDialog } from "@/components/StoreSuccessDialog";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useProjectComponents } from "@/hooks/useProjectComponents";
+import { subscribeOutboxFlush } from "@/services/offline/flushOutbox";
 
 interface Store {
   id: string;
@@ -24,6 +25,13 @@ interface Store {
   store_lat: number;
   store_long: number;
   contact?: string;
+  pendingSync?: boolean;
+}
+
+interface PendingStore {
+  clientStoreId: string;
+  storeName: string;
+  createdAt: number;
 }
 
 export const Routes = () => {
@@ -48,6 +56,7 @@ export const Routes = () => {
   const [isSubmittingStore, setIsSubmittingStore] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [addedStore, setAddedStore] = useState<{ id: string; name: string; county: string } | null>(null);
+  const [pendingStores, setPendingStores] = useState<PendingStore[]>([]);
   const { toast } = useToast();
   const { recordLocationSet } = useAgentActions();
   const { currentWorkspaceId } = useWorkspace();
@@ -64,14 +73,25 @@ export const Routes = () => {
       setSelectedCountry("");
       setSelectedStore("all");
       setStoreSearchText("");
+      setPendingStores([]);
       return;
     }
 
     fetchStores();
+    void refreshPendingStores();
     requestLocation();
     setSelectedCountry("");
     setSelectedStore("all");
     setStoreSearchText("");
+  }, [currentWorkspaceId]);
+
+  useEffect(() => {
+    if (!currentWorkspaceId) return;
+    const unsub = subscribeOutboxFlush(() => {
+      void refreshPendingStores();
+      void fetchStores();
+    });
+    return unsub;
   }, [currentWorkspaceId]);
 
   const requestLocation = () => {
@@ -101,6 +121,15 @@ export const Routes = () => {
         maximumAge: 0,
       },
     );
+  };
+
+  const refreshPendingStores = async () => {
+    if (!currentWorkspaceId) {
+      setPendingStores([]);
+      return;
+    }
+    const { listPendingStores } = await import("@/services/offline/stockReportProjection");
+    setPendingStores(await listPendingStores(currentWorkspaceId));
   };
 
   const fetchStores = async () => {
@@ -135,7 +164,18 @@ export const Routes = () => {
     selectedCountry ? stores.filter((store) => store.country === selectedCountry) : stores
   ).sort((a, b) => a.store_name.localeCompare(b.store_name));
 
-  const storeSearchResults = filteredStores.filter((store) =>
+  const pendingAsStores: Store[] = pendingStores.map((p) => ({
+    id: p.clientStoreId,
+    store_name: p.storeName,
+    county: "Pending sync",
+    store_lat: currentLocation?.latitude ?? 0,
+    store_long: currentLocation?.longitude ?? 0,
+    pendingSync: true,
+  }));
+
+  const allStoresForSearch = [...pendingAsStores, ...filteredStores];
+
+  const storeSearchResults = allStoresForSearch.filter((store) =>
     store.store_name.toLowerCase().includes(storeSearchText.toLowerCase())
   );
 
@@ -244,6 +284,46 @@ export const Routes = () => {
         setCurrentLocation(location);
       }
 
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        throw new Error("Not authenticated");
+      }
+
+      const offline = !navigator.onLine;
+
+      if (offline) {
+        const { submitStoreCreate } = await import("@/services/storeWriteService");
+        const result = await submitStoreCreate({
+          workspaceId: currentWorkspaceId,
+          agentId: user.id,
+          payload: {
+            storeName: newStoreName.trim(),
+            contact: newStoreContact.trim() || null,
+            latitude: location.latitude,
+            longitude: location.longitude,
+          },
+        });
+
+        setAddedStore({
+          id: result.clientStoreId,
+          name: newStoreName.trim(),
+          county: "Pending sync",
+        });
+        setShowSuccessDialog(true);
+        setNewStoreName("");
+        setNewStoreContact("");
+        setShowAddLocationForm(false);
+        await refreshPendingStores();
+        toast({
+          title: "Store saved on device",
+          description: "Will sync when you're back online.",
+        });
+        return;
+      }
+
       let locationDetails: { county: string; country: string };
       try {
         locationDetails = await resolveCountyAndCountry(location);
@@ -259,11 +339,6 @@ export const Routes = () => {
         return;
       }
 
-      // Get current user for added_by field
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
       const { data: insertedStore, error } = await supabase
         .from("stores")
         .insert({
@@ -272,7 +347,7 @@ export const Routes = () => {
           store_lat: location.latitude,
           store_long: location.longitude,
           contact: newStoreContact.trim() || null,
-          added_by: user?.id || null,
+          added_by: user.id,
           workspace_id: currentWorkspaceId,
           country: locationDetails.country,
         })
@@ -295,14 +370,12 @@ export const Routes = () => {
           .single();
 
         if (activeProject && insertedStore) {
-          // Fetch current target_stores and append the new store UUID
           const { data: currentProject } = await supabase
             .from("project_plans")
             .select("target_stores")
             .eq("id", activeProject.id)
             .single();
 
-          // Ensure we work with a proper array of UUID strings
           const rawStores = currentProject?.target_stores;
           const currentStores: string[] = Array.isArray(rawStores)
             ? rawStores.filter((s): s is string => typeof s === "string")
@@ -316,7 +389,6 @@ export const Routes = () => {
         }
       }
 
-      // Store the added store info and show success dialog
       setAddedStore({
         id: insertedStore.id,
         name: newStoreName.trim(),
@@ -324,12 +396,10 @@ export const Routes = () => {
       });
       setShowSuccessDialog(true);
 
-      // Reset form
       setNewStoreName("");
       setNewStoreContact("");
       setShowAddLocationForm(false);
 
-      // Refresh stores list
       await fetchStores();
     } catch (error: any) {
       console.error("Error adding store:", error);
@@ -487,6 +557,9 @@ export const Routes = () => {
                               }}
                             >
                               {store.store_name}
+                              {store.pendingSync && (
+                                <span className="ml-2 text-xs text-amber-600">(Pending sync)</span>
+                              )}
                             </div>
                           ))
                       )}

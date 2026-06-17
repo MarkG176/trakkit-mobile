@@ -4616,6 +4616,38 @@ export type Database = {
         }
         Returns: Json
       }
+      sync_store_price_reports: {
+        Args: {
+          p_client_operation_id: string
+          p_workspace_id: string
+          p_payload: Json
+        }
+        Returns: Json
+      }
+      sync_field_note: {
+        Args: {
+          p_client_operation_id: string
+          p_workspace_id: string
+          p_payload: Json
+        }
+        Returns: Json
+      }
+      sync_record_survey: {
+        Args: {
+          p_client_operation_id: string
+          p_workspace_id: string
+          p_payload: Json
+        }
+        Returns: Json
+      }
+      sync_create_store: {
+        Args: {
+          p_client_operation_id: string
+          p_workspace_id: string
+          p_payload: Json
+        }
+        Returns: Json
+      }
       get_agent_available_qty: {
         Args: {
           p_agent_id: string

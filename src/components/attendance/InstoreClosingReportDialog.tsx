@@ -81,6 +81,16 @@ export const InstoreClosingReportDialog = ({
           }
         });
 
+        const { getProjectedMorningOpeningStock } = await import("@/services/offline/stockReportProjection");
+        const projected = await getProjectedMorningOpeningStock(
+          currentWorkspaceId,
+          today,
+          storeId
+        );
+        Object.entries(projected).forEach(([id, qty]) => {
+          if (!morningStockMap.has(id)) morningStockMap.set(id, qty);
+        });
+
         setProducts(
           inventory.map((item) => ({
             product_variant_id: item.product_variant_id,
@@ -161,6 +171,7 @@ export const InstoreClosingReportDialog = ({
         agentId: user.id,
         payload: {
           reportType: "evening",
+          reportKind: "count",
           workDate: today,
           storeId: storeId || null,
           rows,

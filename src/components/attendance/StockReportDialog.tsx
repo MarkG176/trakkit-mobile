@@ -62,7 +62,7 @@ export const StockReportDialog = ({
       setLoadingSales(true);
       try {
         const today = new Date().toISOString().split("T")[0];
-        
+
         const { data, error } = await supabase
           .from("daily_sales_tracking")
           .select("product_variant_id, quantity_sold")
@@ -78,6 +78,14 @@ export const StockReportDialog = ({
           salesByProduct[sale.product_variant_id] = currentQty + sale.quantity_sold;
         });
 
+        if (currentWorkspaceId) {
+          const { getProjectedDailySales } = await import("@/services/offline/stockReportProjection");
+          const projected = await getProjectedDailySales(currentWorkspaceId);
+          Object.entries(projected).forEach(([id, qty]) => {
+            salesByProduct[id] = (salesByProduct[id] ?? 0) + qty;
+          });
+        }
+
         setSalesData(salesByProduct);
       } catch (error) {
         console.error("Error fetching sales data:", error);
@@ -92,7 +100,7 @@ export const StockReportDialog = ({
     };
 
     fetchSalesData();
-  }, [open, reportType, user]);
+  }, [open, reportType, user, currentWorkspaceId, toast]);
 
   const handleStockLevelChange = (productVariantId: string, level: StockLevel) => {
     const newLevels = {
@@ -172,6 +180,7 @@ export const StockReportDialog = ({
         agentId: user.id,
         payload: {
           reportType,
+          reportKind: 'availability',
           workDate: today,
           storeId: storeId || null,
           rows,

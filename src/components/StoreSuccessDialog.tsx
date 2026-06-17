@@ -115,28 +115,54 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
     
     // Load data based on action
     if (action === "survey") {
-      let query = supabase
-        .from('survey_templates')
-        .select('*')
-        .eq('is_published', true)
-        .eq('status', 'active')
-        .neq('is_deleted', true);
-      
-      if (currentWorkspaceId) {
-        query = query.eq('workspace_id', currentWorkspaceId);
+      let publishedSurveys: any[] = [];
+
+      if (!navigator.onLine && currentWorkspaceId) {
+        const { getCachedSurveyTemplatesForWorkspace } = await import('@/services/offline/surveyTemplateStore');
+        publishedSurveys = await getCachedSurveyTemplatesForWorkspace(currentWorkspaceId);
+      } else {
+        let query = supabase
+          .from('survey_templates')
+          .select('*')
+          .eq('is_published', true)
+          .eq('status', 'active')
+          .neq('is_deleted', true);
+        
+        if (currentWorkspaceId) {
+          query = query.eq('workspace_id', currentWorkspaceId);
+        }
+        if (currentProjectId) {
+          query = query.eq('project_id', currentProjectId);
+        }
+        
+        const { data, error } = await query;
+        if (error) {
+          console.error('Error loading surveys:', error);
+          if (currentWorkspaceId) {
+            const { getCachedSurveyTemplatesForWorkspace } = await import('@/services/offline/surveyTemplateStore');
+            publishedSurveys = await getCachedSurveyTemplatesForWorkspace(currentWorkspaceId);
+          }
+        } else {
+          publishedSurveys = data || [];
+          if (currentWorkspaceId && publishedSurveys.length > 0) {
+            const { cacheSurveyTemplates } = await import('@/services/offline/surveyTemplateStore');
+            await cacheSurveyTemplates(
+              currentWorkspaceId,
+              publishedSurveys.map((s: any) => ({
+                id: s.id,
+                projectId: s.project_id,
+                title: s.title,
+                description: s.description,
+                questions: Array.isArray(s.questions) ? s.questions : [],
+                estimated_duration_minutes: s.estimated_duration_minutes,
+              }))
+            );
+          }
+        }
       }
-      if (currentProjectId) {
-        query = query.eq('project_id', currentProjectId);
-      }
-      
-      const { data, error } = await query;
-      if (error) {
-        console.error('Error loading surveys:', error);
-      }
-      const publishedSurveys = data || [];
+
       setSurveys(publishedSurveys);
       
-      // Auto-select if there's exactly one survey
       if (publishedSurveys.length === 1) {
         const survey = publishedSurveys[0];
         setSelectedSurvey(survey.id);
@@ -188,62 +214,49 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
   };
 
   const handleSubmitSurvey = async () => {
-    if (!selectedSurvey) return;
+    if (!selectedSurvey || !currentWorkspaceId) return;
     
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const location = await getCurrentLocation();
+      let locationLat: number | null = null;
+      let locationLng: number | null = null;
+      try {
+        const location = await getCurrentLocation();
+        locationLat = location.latitude;
+        locationLng = location.longitude;
+      } catch {
+        // GPS optional for queued survey
+      }
 
-      // Create interaction record
-      const { data: interaction, error: interactionError } = await supabase
-        .from('interactions')
-        .insert({
-          task_id: null,
-          agent_id: user.id,
-          interaction_type: 'survey',
-          survey_template_id: selectedSurvey,
-          store_id: storeId,
-          customer_name: storeName,
-          outcome: 'completed',
-          quantity_sold: 0,
-          latitude: location.latitude,
-          longitude: location.longitude,
-          timestamp: new Date().toISOString(),
-          workspace_id: currentWorkspaceId
-        } as any)
-        .select()
-        .single();
-
-      if (interactionError) throw interactionError;
-
-      // Save survey responses
-      const { error: surveyResponseError } = await supabase
-        .from('survey_responses')
-        .insert({
-          agent_id: user.id,
-          survey_template_id: selectedSurvey,
-          interaction_id: interaction.id,
+      const completedAt = new Date().toISOString();
+      const { submitSurveyResponse } = await import('@/services/surveyWriteService');
+      const result = await submitSurveyResponse({
+        workspaceId: currentWorkspaceId,
+        agentId: user.id,
+        payload: {
+          surveyTemplateId: selectedSurvey,
           responses: surveyResponses,
-          started_at: new Date().toISOString(),
-          completed_at: new Date().toISOString(),
-          is_completed: true,
-          completion_status: 'completed',
-          location_lat: location.latitude,
-          location_lng: location.longitude,
-          workspace_id: currentWorkspaceId
-        });
-
-      if (surveyResponseError) throw surveyResponseError;
+          startedAt: completedAt,
+          completedAt,
+          durationSeconds: 0,
+          storeId: storeId ?? null,
+          storeName,
+          locationLat,
+          locationLng,
+          source: 'store_success',
+        },
+      });
 
       toast({
-        title: "Survey Completed",
-        description: "Survey responses have been recorded successfully.",
+        title: result.queued ? "Survey saved on device" : "Survey Completed",
+        description: result.queued
+          ? "Will sync when you're back online."
+          : "Survey responses have been recorded successfully.",
       });
       
-      // Reset and close
       setActiveAction(null);
       setSurveyResponses({});
       setSurveyQuestions([]);

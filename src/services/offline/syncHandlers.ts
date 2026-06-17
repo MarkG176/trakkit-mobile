@@ -1,12 +1,20 @@
 import { supabase } from '@/integrations/supabase/client';
 import { workspaceService } from '@/services/workspaceService';
 import { logActivity, logFailedActivity } from '@/utils/activityLogger';
+import { reverseGeocode } from '@/utils/googleMapsGeocoding';
+import { saveEntityAlias } from './entityAliasStore';
+import { getAttachment, deleteAttachment } from './attachmentStore';
 import type {
+  FieldNotePayload,
   GiveawayPayload,
   InventoryAssignPayload,
   OutboxItem,
+  PriceReportPayload,
+  ReportImagesPayload,
   SaleBatchPayload,
   StockReportPayload,
+  StoreCreatePayload,
+  SurveyResponsePayload,
 } from './types';
 
 const MAX_ATTEMPTS = 5;
@@ -28,6 +36,15 @@ function isRpcMissing(error: unknown): boolean {
 
 export async function syncOutboxItem(item: OutboxItem): Promise<void> {
   switch (item.type) {
+    case 'store_create':
+      await syncStoreCreate(item);
+      break;
+    case 'report_images':
+      await syncReportImages(item);
+      break;
+    case 'field_note':
+      await syncFieldNote(item);
+      break;
     case 'sale_batch':
       await syncSaleBatch(item);
       break;
@@ -37,12 +54,38 @@ export async function syncOutboxItem(item: OutboxItem): Promise<void> {
     case 'stock_report':
       await syncStockReport(item);
       break;
+    case 'price_report':
+      await syncPriceReport(item);
+      break;
     case 'inventory_assign':
       await syncInventoryAssign(item);
+      break;
+    case 'survey_response':
+      await syncSurveyResponse(item);
       break;
     default:
       throw new Error(`Unknown outbox type: ${(item as OutboxItem).type}`);
   }
+}
+
+async function uploadAttachmentToStorage(
+  attachmentId: string,
+  bucket: string,
+  folder: string
+): Promise<string> {
+  const record = await getAttachment(attachmentId);
+  if (!record) throw new Error(`Attachment ${attachmentId} not found`);
+
+  const filePath = `${folder}/${record.fileName}`;
+  const { error } = await supabase.storage.from(bucket).upload(filePath, record.blob, {
+    contentType: record.mimeType,
+    upsert: false,
+  });
+  if (error) throw error;
+
+  const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
+  await deleteAttachment(attachmentId);
+  return data.publicUrl;
 }
 
 async function syncSaleBatch(item: OutboxItem): Promise<void> {
@@ -330,6 +373,7 @@ async function syncStockReportLegacy(item: OutboxItem): Promise<void> {
     quantity_sold: row.quantity_sold ?? null,
     closing_stock: row.closing_stock ?? null,
     report_type: payload.reportType,
+    report_kind: payload.reportKind ?? 'availability',
     work_date: payload.workDate,
     workspace_id: item.workspaceId,
     store_id: payload.storeId ?? null,
@@ -380,6 +424,250 @@ async function syncInventoryAssignLegacy(item: OutboxItem): Promise<void> {
 
   const { error } = await supabase.from('agent_task_inventory').insert(inserts);
   if (error) throw error;
+}
+
+async function syncStoreCreate(item: OutboxItem): Promise<void> {
+  const payload = item.payload as StoreCreatePayload;
+  let county = payload.county ?? '';
+  let country = payload.country ?? '';
+
+  if ((!county || !country) && payload.latitude && payload.longitude) {
+    try {
+      const geo = await reverseGeocode(payload.latitude, payload.longitude);
+      county = geo.county;
+      country = geo.country;
+    } catch (e) {
+      console.warn('[sync] Geocode failed for store create:', e);
+    }
+  }
+
+  const syncPayload = { ...payload, county, country };
+  const { data, error } = await supabase.rpc('sync_create_store', {
+    p_client_operation_id: item.id,
+    p_workspace_id: item.workspaceId,
+    p_payload: syncPayload as unknown as Record<string, unknown>,
+  });
+
+  if (error) {
+    if (!isRpcMissing(error)) throw error;
+    await syncStoreCreateLegacy(item, county, country);
+    return;
+  }
+
+  if (data && typeof data === 'object' && (data as { success?: boolean }).success === false) {
+    throw new Error((data as { error?: string }).error || 'Store create rejected');
+  }
+
+  const storeId = (data as { store_id?: string })?.store_id;
+  if (storeId) {
+    await saveEntityAlias(item.id, storeId, 'store');
+  }
+}
+
+async function syncStoreCreateLegacy(
+  item: OutboxItem,
+  county: string,
+  country: string
+): Promise<void> {
+  const payload = item.payload as StoreCreatePayload;
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData.user;
+  if (!user) throw new Error('Not authenticated');
+
+  const { data: existing } = await supabase
+    .from('stores')
+    .select('id')
+    .eq('client_operation_id', item.id)
+    .maybeSingle();
+  if (existing) {
+    await saveEntityAlias(item.id, existing.id, 'store');
+    return;
+  }
+
+  const { data: inserted, error } = await supabase
+    .from('stores')
+    .insert({
+      store_name: payload.storeName,
+      county: county || null,
+      store_lat: payload.latitude,
+      store_long: payload.longitude,
+      contact: payload.contact ?? null,
+      added_by: user.id,
+      workspace_id: item.workspaceId,
+      country: country || null,
+    })
+    .select('id')
+    .single();
+  if (error) throw error;
+  if (inserted) await saveEntityAlias(item.id, inserted.id, 'store');
+}
+
+async function syncReportImages(item: OutboxItem): Promise<void> {
+  const payload = item.payload as ReportImagesPayload;
+  for (const attachmentId of payload.attachmentIds) {
+    await uploadAttachmentToStorage(attachmentId, payload.bucket, payload.folder);
+  }
+}
+
+async function syncFieldNote(item: OutboxItem): Promise<void> {
+  const payload = item.payload as FieldNotePayload;
+  const { data, error } = await supabase.rpc('sync_field_note', {
+    p_client_operation_id: item.id,
+    p_workspace_id: item.workspaceId,
+    p_payload: payload as unknown as Record<string, unknown>,
+  });
+
+  if (!error) {
+    if (data && typeof data === 'object' && (data as { success?: boolean }).success === false) {
+      throw new Error((data as { error?: string }).error || 'Note sync rejected');
+    }
+    return;
+  }
+
+  if (!isRpcMissing(error)) throw error;
+
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData.user;
+  if (!user) throw new Error('Not authenticated');
+
+  const { error: insertError } = await supabase.from('notes').insert({
+    agent_id: user.id,
+    workspace_id: item.workspaceId,
+    content: payload.content,
+    note_type: payload.noteType ?? 'field',
+  });
+  if (insertError) throw insertError;
+}
+
+async function syncPriceReport(item: OutboxItem): Promise<void> {
+  const payload = item.payload as PriceReportPayload;
+  const { data, error } = await supabase.rpc('sync_store_price_reports', {
+    p_client_operation_id: item.id,
+    p_workspace_id: item.workspaceId,
+    p_payload: payload as unknown as Record<string, unknown>,
+  });
+
+  if (!error) {
+    if (data && typeof data === 'object' && (data as { success?: boolean }).success === false) {
+      throw new Error((data as { error?: string }).error || 'Price report sync rejected');
+    }
+    return;
+  }
+
+  if (!isRpcMissing(error)) throw error;
+  await syncPriceReportLegacy(item);
+}
+
+async function syncPriceReportLegacy(item: OutboxItem): Promise<void> {
+  const payload = item.payload as PriceReportPayload;
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData.user;
+  if (!user) throw new Error('Not authenticated');
+
+  const rows = payload.rows.map((row) => ({
+    agent_id: user.id,
+    store_id: payload.storeId ?? null,
+    product_variant_id: row.product_variant_id,
+    price: row.price,
+    stock_level: row.stock_level ?? null,
+    work_date: payload.workDate,
+    workspace_id: item.workspaceId,
+  }));
+
+  const { error } = await supabase.from('store_price_reports' as 'giveaways').insert(rows as never);
+  if (error) throw error;
+}
+
+async function syncSurveyResponse(item: OutboxItem): Promise<void> {
+  const payload = { ...(item.payload as SurveyResponsePayload) };
+
+  if (payload.audioAttachmentId && !payload.audioUrl) {
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData.user;
+    if (!user) throw new Error('Not authenticated');
+    payload.audioUrl = await uploadAttachmentToStorage(
+      payload.audioAttachmentId,
+      'sale-recordings',
+      user.id
+    );
+  }
+
+  const { data, error } = await supabase.rpc('sync_record_survey', {
+    p_client_operation_id: item.id,
+    p_workspace_id: item.workspaceId,
+    p_payload: payload as unknown as Record<string, unknown>,
+  });
+
+  if (!error) {
+    if (data && typeof data === 'object' && (data as { success?: boolean }).success === false) {
+      throw new Error((data as { error?: string }).error || 'Survey sync rejected');
+    }
+    return;
+  }
+
+  if (!isRpcMissing(error)) throw error;
+  await syncSurveyResponseLegacy(item, payload);
+}
+
+async function syncSurveyResponseLegacy(
+  item: OutboxItem,
+  payload: SurveyResponsePayload
+): Promise<void> {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData.user;
+  if (!user) throw new Error('Not authenticated');
+
+  const { data: interaction, error: interactionError } = await supabase
+    .from('interactions')
+    .insert({
+      task_id: payload.taskId ?? null,
+      agent_id: user.id,
+      interaction_type: 'survey',
+      outcome: 'completed',
+      quantity_sold: 0,
+      workspace_id: item.workspaceId,
+      store_id: payload.storeId ?? null,
+      customer_name: payload.storeName,
+      latitude: payload.locationLat,
+      longitude: payload.locationLng,
+      metadata: {
+        survey_template_id: payload.surveyTemplateId,
+        recordingUrl: payload.audioUrl,
+      },
+    })
+    .select()
+    .single();
+  if (interactionError) throw interactionError;
+
+  const { error: surveyError } = await supabase.from('survey_responses').insert({
+    agent_id: user.id,
+    survey_template_id: payload.surveyTemplateId,
+    interaction_id: interaction.id,
+    responses: payload.responses,
+    started_at: payload.startedAt,
+    completed_at: payload.completedAt,
+    duration_seconds: payload.durationSeconds,
+    completion_time_seconds: payload.durationSeconds,
+    is_completed: true,
+    completion_status: 'completed',
+    location_lat: payload.locationLat,
+    location_lng: payload.locationLng,
+    workspace_id: item.workspaceId,
+  });
+  if (surveyError) throw surveyError;
+
+  await supabase.from('agent_actions').insert(
+    workspaceService.ensureWorkspaceContext({
+      agent_id: user.id,
+      action_type: 'survey_completed',
+      points_earned: payload.points ?? 20,
+      action_data: {
+        survey_type: payload.surveyName,
+        survey_template_id: payload.surveyTemplateId,
+        interaction_id: interaction.id,
+      },
+    })
+  );
 }
 
 export function classifySyncError(error: unknown): 'blocked' | 'failed' {

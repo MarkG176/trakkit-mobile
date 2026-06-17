@@ -11,7 +11,6 @@ import { ArrowLeft, ArrowRight, Mic, MicOff, Star, Square, Loader2 } from "lucid
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { useAgentActions } from "@/hooks/useAgentActions";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,13 +66,55 @@ const calculatePoints = (questions: any[], duration: number | null): number => {
   return Math.max(5, Math.min(30, questionCount * 2 + Math.floor(durationMinutes / 5)));
 };
 
+const parseQuestionsArray = (questions: unknown): any[] => {
+  if (Array.isArray(questions)) return questions;
+  if (typeof questions === 'string') {
+    try {
+      return JSON.parse(questions);
+    } catch {
+      return [];
+    }
+  }
+  if (questions && typeof questions === 'object') {
+    return Object.values(questions as Record<string, unknown>);
+  }
+  return [];
+};
+
+const cachedTemplateToSurvey = (template: {
+  id: string;
+  title: string;
+  description?: string | null;
+  questions: unknown;
+  points?: number;
+  estimated_duration_minutes?: number | null;
+  target_department?: string | null;
+}): Survey => {
+  const questionsArray = parseQuestionsArray(template.questions);
+  return {
+    id: template.id,
+    name: template.title,
+    description: template.description || 'No description available',
+    category: template.target_department || 'General',
+    categoryColor: getCategoryColor(template.target_department ?? null),
+    duration: template.estimated_duration_minutes
+      ? `${template.estimated_duration_minutes} min`
+      : '10 min',
+    questions: questionsArray,
+    totalQuestions: questionsArray.length,
+    points: template.points ?? calculatePoints(questionsArray, template.estimated_duration_minutes ?? null),
+    responses: 0,
+    progress: 0,
+    currentQuestion: 1,
+  };
+};
+
 export const Surveys = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { displayName: agentName } = useUserProfile();
   const { user } = useAuth();
   const { currentWorkspaceId, currentProjectId } = useWorkspace();
-  const { recordSurvey } = useAgentActions();
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSurvey, setActiveSurvey] = useState<Survey | null>(null);
@@ -95,8 +136,19 @@ export const Surveys = () => {
   }, [surveys, loading]);
 
   const fetchSurveyTemplates = async () => {
+    if (!currentWorkspaceId) return;
+
     try {
       setLoading(true);
+
+      if (!navigator.onLine) {
+        const { getCachedSurveyTemplatesForWorkspace } = await import('@/services/offline/surveyTemplateStore');
+        const cached = await getCachedSurveyTemplatesForWorkspace(currentWorkspaceId);
+        if (cached.length > 0) {
+          setSurveys(cached.map((t) => cachedTemplateToSurvey(t)));
+          return;
+        }
+      }
       
       let query = supabase
         .from('survey_templates')
@@ -114,6 +166,12 @@ export const Surveys = () => {
 
       if (error) {
         console.error('Error fetching survey templates:', error);
+        const { getCachedSurveyTemplatesForWorkspace } = await import('@/services/offline/surveyTemplateStore');
+        const cached = await getCachedSurveyTemplatesForWorkspace(currentWorkspaceId);
+        if (cached.length > 0) {
+          setSurveys(cached.map((t) => cachedTemplateToSurvey(t)));
+          return;
+        }
         toast({
           title: "Error loading surveys",
           description: "Could not load available surveys.",
@@ -205,6 +263,23 @@ export const Surveys = () => {
 
         console.log('✅ Final transformed surveys:', surveysWithResponses);
         setSurveys(surveysWithResponses);
+
+        const { cacheSurveyTemplates } = await import('@/services/offline/surveyTemplateStore');
+        await cacheSurveyTemplates(
+          currentWorkspaceId,
+          surveyTemplates.map((template) => {
+            const questionsArray = parseQuestionsArray(template.questions);
+            return {
+              id: template.id,
+              projectId: template.project_id,
+              title: template.title,
+              description: template.description,
+              questions: questionsArray,
+              points: calculatePoints(questionsArray, template.estimated_duration_minutes),
+              estimated_duration_minutes: template.estimated_duration_minutes,
+            };
+          })
+        );
       }
     } catch (error) {
       console.error('Error:', error);
@@ -233,6 +308,7 @@ export const Surveys = () => {
   const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
   const durationTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const recordingUrlRef = useRef<string | null>(null);
+  const recordingAttachmentIdRef = useRef<string | null>(null);
 
   const startRecording = async () => {
     try {
@@ -252,7 +328,17 @@ export const Surveys = () => {
         setRecordedAudio(url);
 
         setRecordingUploading(true);
-        // Build folder path: recordings/projectId/userId
+
+        if (!navigator.onLine) {
+          const { saveAttachment } = await import('@/services/offline/attachmentStore');
+          const attachmentId = await saveAttachment(blob, `survey-${Date.now()}.webm`, 'audio/webm');
+          recordingAttachmentIdRef.current = attachmentId;
+          recordingUrlRef.current = null;
+          setRecordingUploading(false);
+          toast({ title: "Recording saved on device" });
+          return;
+        }
+
         const projectFolder = currentProjectId || 'no-project';
         const userFolder = user?.id || 'unknown';
         const fileName = `recordings/${projectFolder}/${userFolder}/survey-recording-${Date.now()}.webm`;
@@ -388,7 +474,7 @@ export const Surveys = () => {
   };
 
   const submitSurveyResponse = async (engagementData: any, audioUrl?: string | null) => {
-    if (!user || !activeSurvey) {
+    if (!user || !activeSurvey || !currentWorkspaceId) {
       toast({
         title: "Error",
         description: "Unable to submit survey. Please try again.",
@@ -400,107 +486,72 @@ export const Surveys = () => {
     try {
       setIsSubmitting(true);
 
-      // Get current location if available
-      let location = null;
+      let location: { lat: number; lng: number } | null = null;
       if (navigator.geolocation) {
         try {
           const position = await new Promise<GeolocationPosition>((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(resolve, reject, {
               enableHighAccuracy: true,
               timeout: 5000,
-              maximumAge: 0
+              maximumAge: 0,
             });
           });
           location = {
             lat: position.coords.latitude,
-            lng: position.coords.longitude
+            lng: position.coords.longitude,
           };
         } catch (error) {
           console.log('Location not available:', error);
         }
       }
 
-      // Calculate survey duration
       const endTime = new Date();
-      const durationSeconds = surveyStartTime 
+      const durationSeconds = surveyStartTime
         ? Math.floor((endTime.getTime() - surveyStartTime.getTime()) / 1000)
         : 0;
 
-      // Get the current user's active task
       const { data: currentTask } = await supabase
         .from('agent_tasks')
         .select('id')
         .eq('agent_id', user.id)
         .eq('status', 'pending')
-        .single();
+        .maybeSingle();
 
-      // Create interaction record
-      const { data: interaction, error: interactionError } = await supabase
-        .from('interactions')
-        .insert({
-          task_id: currentTask?.id,
-          agent_id: user.id,
-          interaction_type: 'survey',
-          outcome: 'completed',
-          quantity_sold: 0,
-          metadata: {
-            survey_template_id: activeSurvey.id,
-            recording_duration: recordingDuration,
-            recordingUrl: audioUrl || undefined,
-            project_id: currentProjectId || undefined,
-          },
-          workspace_id: currentWorkspaceId
-        })
-        .select()
-        .single();
-
-      if (interactionError) {
-        throw interactionError;
-      }
-
-      // Save survey response to survey_responses table
-      const { error: surveyResponseError } = await supabase
-        .from('survey_responses')
-        .insert({
-          agent_id: user.id,
-          survey_template_id: activeSurvey.id,
-          interaction_id: interaction.id,
-          responses: surveyResponses,
-          started_at: surveyStartTime?.toISOString(),
-          completed_at: endTime.toISOString(),
-          duration_seconds: durationSeconds,
-          completion_time_seconds: durationSeconds,
-          is_completed: true,
-          completion_status: 'completed',
-          location_lat: location?.lat || null,
-          location_lng: location?.lng || null,
-          workspace_id: currentWorkspaceId
-        });
-
-      if (surveyResponseError) {
-        throw surveyResponseError;
-      }
-
-      // Record survey action for points
-      await recordSurvey(user.id, activeSurvey.name, {
-        survey_template_id: activeSurvey.id,
-        duration_seconds: durationSeconds,
-        questions_answered: Object.keys(surveyResponses).length,
-        interaction_id: interaction.id
+      const { submitSurveyResponse: queueSurvey } = await import('@/services/surveyWriteService');
+      const result = await queueSurvey({
+        workspaceId: currentWorkspaceId,
+        agentId: user.id,
+        payload: {
+          surveyTemplateId: activeSurvey.id,
+          surveyName: activeSurvey.name,
+          responses: { ...surveyResponses, ...engagementData },
+          startedAt: surveyStartTime?.toISOString(),
+          completedAt: endTime.toISOString(),
+          durationSeconds,
+          locationLat: location?.lat ?? null,
+          locationLng: location?.lng ?? null,
+          audioAttachmentId: recordingAttachmentIdRef.current ?? undefined,
+          audioUrl: audioUrl || recordingUrlRef.current || undefined,
+          points: activeSurvey.points,
+          source: 'surveys_page',
+          taskId: currentTask?.id ?? null,
+        },
       });
 
       toast({
-        title: "Survey completed!",
-        description: `+${activeSurvey.points} points earned. Survey responses saved.`,
+        title: result.queued ? "Survey saved on device" : "Survey completed!",
+        description: result.queued
+          ? "Will sync when you're back online."
+          : `+${activeSurvey.points} points earned. Survey responses saved.`,
       });
 
-      // Reset state and navigate back
       setActiveSurvey(null);
       setSurveyResponses({});
       setSurveyStartTime(null);
-      
-      navigate("/");
+      recordingAttachmentIdRef.current = null;
+      recordingUrlRef.current = null;
 
+      navigate("/");
     } catch (error) {
       console.error('Error submitting survey:', error);
       toast({

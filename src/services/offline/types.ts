@@ -1,11 +1,18 @@
-/** Inventory-related outbox operation types */
+/** Outbox operation types */
 export type OutboxOperationType =
   | 'sale_batch'
   | 'giveaway'
   | 'stock_report'
-  | 'inventory_assign';
+  | 'price_report'
+  | 'inventory_assign'
+  | 'field_note'
+  | 'report_images'
+  | 'survey_response'
+  | 'store_create';
 
 export type OutboxStatus = 'pending' | 'syncing' | 'done' | 'failed' | 'blocked';
+
+export type ReportKind = 'availability' | 'count';
 
 export interface SaleLineItem {
   productVariantId: string;
@@ -23,7 +30,6 @@ export interface SaleBatchPayload {
   notes?: string;
   sentiment?: number;
   imageUrl?: string;
-  /** Store-visit flow */
   storeId?: string | null;
   storeName?: string;
   storeCounty?: string;
@@ -32,7 +38,6 @@ export interface SaleBatchPayload {
   includeCustomerPurchase?: boolean;
   projectId?: string | null;
   taskId?: string | null;
-  /** RecordSale flow: link purchases to an existing customer row */
   customerId?: string | null;
 }
 
@@ -52,7 +57,6 @@ export interface GiveawayPayload {
   storeId?: string | null;
   projectId?: string | null;
   recordedAt?: string;
-  /** Also log interaction after giveaway (GiveProducts page) */
   logInteraction?: {
     interactionType: string;
     customerName: string;
@@ -78,9 +82,23 @@ export interface StockReportRow {
 
 export interface StockReportPayload {
   reportType: 'morning' | 'evening';
+  reportKind: ReportKind;
   workDate: string;
   storeId?: string | null;
   rows: StockReportRow[];
+}
+
+export interface PriceReportRow {
+  product_variant_id: string;
+  price: number;
+  stock_level?: string | null;
+  measurement?: string | null;
+}
+
+export interface PriceReportPayload {
+  workDate: string;
+  storeId?: string | null;
+  rows: PriceReportRow[];
 }
 
 export interface InventoryAssignPayload {
@@ -91,11 +109,54 @@ export interface InventoryAssignPayload {
   }>;
 }
 
+export interface FieldNotePayload {
+  content: string;
+  noteType?: string;
+}
+
+export interface ReportImagesPayload {
+  attachmentIds: string[];
+  bucket: string;
+  folder: string;
+}
+
+export interface SurveyResponsePayload {
+  surveyTemplateId: string;
+  surveyName?: string;
+  responses: Record<string, unknown>;
+  startedAt?: string;
+  completedAt: string;
+  durationSeconds: number;
+  storeId?: string | null;
+  storeName?: string;
+  locationLat?: number | null;
+  locationLng?: number | null;
+  audioAttachmentId?: string;
+  audioUrl?: string;
+  points?: number;
+  source: 'surveys_page' | 'store_success';
+  taskId?: string | null;
+}
+
+export interface StoreCreatePayload {
+  storeName: string;
+  contact?: string | null;
+  latitude: number;
+  longitude: number;
+  county?: string | null;
+  country?: string | null;
+}
+
 export type OutboxPayload =
   | SaleBatchPayload
   | GiveawayPayload
   | StockReportPayload
-  | InventoryAssignPayload;
+  | PriceReportPayload
+  | InventoryAssignPayload
+  | FieldNotePayload
+  | ReportImagesPayload
+  | SurveyResponsePayload
+  | StoreCreatePayload;
 
 export interface OutboxItem {
   id: string;
@@ -124,10 +185,53 @@ export interface InventorySnapshot {
   updatedAt: number;
 }
 
-/** Tables touched per operation — see INVENTORY_WRITE_PATHS.md */
-export const INVENTORY_WRITE_PATHS = {
+export interface AttachmentRecord {
+  id: string;
+  blob: Blob;
+  mimeType: string;
+  fileName: string;
+  createdAt: number;
+}
+
+export interface EntityAlias {
+  clientId: string;
+  serverId: string;
+  entityType: 'store';
+  createdAt: number;
+}
+
+export interface CachedSurveyTemplate {
+  id: string;
+  workspaceId: string;
+  projectId?: string | null;
+  title: string;
+  description?: string | null;
+  questions: unknown[];
+  points?: number;
+  estimated_duration_minutes?: number | null;
+  cachedAt: number;
+}
+
+export const FLUSH_PRIORITY: Record<OutboxOperationType, number> = {
+  store_create: 0,
+  report_images: 1,
+  field_note: 2,
+  stock_report: 3,
+  price_report: 3,
+  survey_response: 4,
+  sale_batch: 5,
+  giveaway: 5,
+  inventory_assign: 5,
+};
+
+export const OFFLINE_WRITE_PATHS = {
   sale_batch: ['interactions', 'inventory_transactions', 'agent_actions', 'customer_purchases?'],
   giveaway: ['giveaways', 'inventory_transactions', 'customers?', 'interactions?'],
   stock_report: ['daily_stock_reports'],
+  price_report: ['store_price_reports'],
   inventory_assign: ['agent_task_inventory'],
+  field_note: ['notes'],
+  report_images: ['storage:store_images'],
+  survey_response: ['interactions', 'survey_responses', 'agent_actions'],
+  store_create: ['stores', 'project_plans.target_stores'],
 } as const;

@@ -4,3 +4,8 @@ export * from './outboxStore';
 export * from './flushOutbox';
 export * from './inventoryProjection';
 export * from './inventorySnapshotStore';
+export * from './attachmentStore';
+export * from './entityAliasStore';
+export * from './surveyTemplateStore';
+export * from './stockReportProjection';
+export * from './submitOperation';

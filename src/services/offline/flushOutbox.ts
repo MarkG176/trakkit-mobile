@@ -2,6 +2,8 @@ import { isOnline, isSyncPaused } from './connectivity';
 import { listPendingOutbox, updateOutboxItem, removeOutboxItem } from './outboxStore';
 import { syncOutboxItem, classifySyncError, MAX_ATTEMPTS } from './syncHandlers';
 import { registerBackgroundSync } from './backgroundSync';
+import { resolveOutboxItemPayload } from './entityResolver';
+import { FLUSH_PRIORITY, type OutboxItem } from './types';
 
 let flushing = false;
 const listeners = new Set<() => void>();
@@ -13,6 +15,15 @@ export function subscribeOutboxFlush(listener: () => void): () => void {
 
 function notifyListeners(): void {
   listeners.forEach((l) => l());
+}
+
+function sortForFlush(items: OutboxItem[]): OutboxItem[] {
+  return [...items].sort((a, b) => {
+    const pa = FLUSH_PRIORITY[a.type] ?? 99;
+    const pb = FLUSH_PRIORITY[b.type] ?? 99;
+    if (pa !== pb) return pa - pb;
+    return a.createdAt - b.createdAt;
+  });
 }
 
 export async function flushOutbox(workspaceId?: string): Promise<{
@@ -38,11 +49,12 @@ export async function flushOutbox(workspaceId?: string): Promise<{
     for (const item of pending.filter((i) => i.status === 'failed')) {
       await updateOutboxItem(item.id, { status: 'pending', lastError: undefined });
     }
-    const toProcess = await listPendingOutbox(workspaceId);
+    const toProcess = sortForFlush(await listPendingOutbox(workspaceId));
 
-    for (const item of toProcess) {
+    for (const rawItem of toProcess) {
       if (!isOnline() || isSyncPaused()) break;
 
+      const item = await resolveOutboxItemPayload(rawItem);
       await updateOutboxItem(item.id, { status: 'syncing' });
 
       try {

@@ -157,6 +157,7 @@ export const InstoreMorningStockCountDialog = ({
         agentId: user.id,
         payload: {
           reportType: "morning",
+          reportKind: "count",
           workDate: today,
           storeId: storeId || null,
           rows,

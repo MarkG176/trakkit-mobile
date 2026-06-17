@@ -7,6 +7,18 @@ import {
   PopoverTrigger,
 } from './ui/popover';
 
+const OPERATION_LABELS: Record<string, string> = {
+  sale_batch: 'Sale',
+  giveaway: 'Giveaway',
+  stock_report: 'Stock report',
+  price_report: 'Price report',
+  inventory_assign: 'Inventory',
+  field_note: 'Field note',
+  report_images: 'Report images',
+  survey_response: 'Survey',
+  store_create: 'New store',
+};
+
 export const SyncIndicator = () => {
   const {
     online,
@@ -49,7 +61,7 @@ export const SyncIndicator = () => {
           <p className="font-medium">Sync status</p>
           <p className="text-muted-foreground">
             {online
-              ? 'Connected — inventory actions upload automatically.'
+              ? 'Connected — field actions upload automatically.'
               : 'Offline — actions are saved on this device.'}
           </p>
           {pendingCount > 0 && <p>{pendingCount} waiting to upload</p>}
@@ -61,7 +73,7 @@ export const SyncIndicator = () => {
             <ul className="max-h-32 overflow-y-auto text-xs text-muted-foreground">
               {activeItems.slice(0, 5).map((item) => (
                 <li key={item.id}>
-                  {item.type} — {item.status}
+                  {OPERATION_LABELS[item.type] ?? item.type} — {item.status}
                   {item.lastError ? `: ${item.lastError.slice(0, 40)}` : ''}
                 </li>
               ))}

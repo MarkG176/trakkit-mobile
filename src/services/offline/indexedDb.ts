@@ -1,10 +1,12 @@
 const DB_NAME = 'trakkit-offline';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export const STORES = {
   outbox: 'outbox',
   inventorySnapshots: 'inventorySnapshots',
   attachments: 'attachments',
+  entityAliases: 'entityAliases',
+  surveyTemplates: 'surveyTemplates',
 } as const;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -20,6 +22,7 @@ function openDb(): Promise<IDBDatabase> {
 
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
+      const oldVersion = event.oldVersion;
 
       if (!db.objectStoreNames.contains(STORES.outbox)) {
         const outbox = db.createObjectStore(STORES.outbox, { keyPath: 'id' });
@@ -33,7 +36,19 @@ function openDb(): Promise<IDBDatabase> {
       }
 
       if (!db.objectStoreNames.contains(STORES.attachments)) {
-        db.createObjectStore(STORES.attachments, { keyPath: 'outboxId' });
+        db.createObjectStore(STORES.attachments, { keyPath: 'id' });
+      } else if (oldVersion < 2) {
+        db.deleteObjectStore(STORES.attachments);
+        db.createObjectStore(STORES.attachments, { keyPath: 'id' });
+      }
+
+      if (!db.objectStoreNames.contains(STORES.entityAliases)) {
+        db.createObjectStore(STORES.entityAliases, { keyPath: 'clientId' });
+      }
+
+      if (!db.objectStoreNames.contains(STORES.surveyTemplates)) {
+        const templates = db.createObjectStore(STORES.surveyTemplates, { keyPath: 'id' });
+        templates.createIndex('workspaceId', 'workspaceId', { unique: false });
       }
     };
   });
