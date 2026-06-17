@@ -168,7 +168,7 @@ async function syncSaleBatchLegacy(item: OutboxItem): Promise<void> {
         customer_email: payload.customerEmail,
         client_operation_id: item.id,
       },
-    } as Record<string, unknown>);
+    } as any);
     if (interactionError) throw interactionError;
 
     const { error: invError } = await supabase.from('inventory_transactions').insert(
@@ -196,7 +196,7 @@ async function syncSaleBatchLegacy(item: OutboxItem): Promise<void> {
         location_lng: payload.longitude,
         workspace_id: item.workspaceId,
         project_id: payload.projectId,
-      } as Record<string, unknown>);
+      } as any);
     }
   } else if (payload.includeCustomerPurchase && payload.storeName) {
     const { data: customer, error: customerError } = await supabase
@@ -224,7 +224,7 @@ async function syncSaleBatchLegacy(item: OutboxItem): Promise<void> {
           location_lng: payload.longitude,
           workspace_id: item.workspaceId,
           project_id: payload.projectId,
-        } as Record<string, unknown>);
+        } as any);
       }
     }
   }
