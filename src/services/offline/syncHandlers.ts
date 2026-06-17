@@ -653,7 +653,7 @@ async function syncSurveyResponseLegacy(
     location_lat: payload.locationLat,
     location_lng: payload.locationLng,
     workspace_id: item.workspaceId,
-  });
+  } as any);
   if (surveyError) throw surveyError;
 
   await supabase.from('agent_actions').insert(
