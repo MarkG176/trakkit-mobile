@@ -92,18 +92,6 @@ export const useAudioRecorder = (): UseAudioRecorderReturn => {
           return;
         }
 
-        if (!navigator.onLine) {
-          const { saveAttachment } = await import('@/services/offline/attachmentStore');
-          const attachmentId = await saveAttachment(
-            blob,
-            `${user.id}/${Date.now()}.webm`,
-            blob.type
-          );
-          setUploading(false);
-          resolve(`attachment:${attachmentId}`);
-          return;
-        }
-
         // Upload to Supabase
         setUploading(true);
         try {

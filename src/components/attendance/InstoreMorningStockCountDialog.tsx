@@ -141,41 +141,37 @@ export const InstoreMorningStockCountDialog = ({
     setIsSubmitting(true);
     try {
       const today = new Date().toISOString().split("T")[0];
-      const { submitStockReport } = await import("@/services/inventoryWriteService");
 
-      const rows = products
+      const reportsToInsert = products
         .filter((p) => p.opening_stock !== "")
         .map((p) => ({
+          agent_id: user.id,
           product_variant_id: p.product_variant_id,
           opening_stock: parseInt(p.opening_stock) || 0,
           quantity_sold: 0,
           closing_stock: 0,
+          report_type: "morning",
+          work_date: today,
+          workspace_id: currentWorkspaceId,
+          store_id: storeId || null,
         }));
 
-      const result = await submitStockReport({
-        workspaceId: currentWorkspaceId,
-        agentId: user.id,
-        payload: {
-          reportType: "morning",
-          reportKind: "count",
-          workDate: today,
-          storeId: storeId || null,
-          rows,
-        },
-      });
+      const { error } = await supabase
+        .from("daily_stock_reports")
+        .insert(reportsToInsert);
+
+      if (error) throw error;
 
       logActivity({
         action: "morning_stock_count",
         category: "stock_report",
-        details: { productsCount: rows.length, storeId, queued: result.queued },
+        details: { productsCount: reportsToInsert.length, storeId },
         workspaceId: currentWorkspaceId,
       });
 
       toast({
-        title: result.queued ? "Saved on device" : "Success",
-        description: result.queued
-          ? result.message
-          : "Morning stock count submitted successfully",
+        title: "Success",
+        description: "Morning stock count submitted successfully",
       });
 
       onOpenChange(false);

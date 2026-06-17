@@ -291,21 +291,18 @@ const requestNotificationPermission = async (): Promise<boolean> => {
  */
 const getStoragePermissionStatus = async (): Promise<PermissionStatus> => {
   try {
-    if (!navigator.storage?.persisted) {
+    if (!navigator.storage?.estimate) {
       return 'unknown';
     }
 
-    // Ask the browser whether persistent storage has actually been granted.
-    const alreadyPersisted = await navigator.storage.persisted();
-    if (alreadyPersisted) {
-      savePermissionState('storage', 'granted');
+    // Check if persistent storage is already granted
+    if (navigator.storage.getDirectory) {
       return 'granted';
     }
 
-    // Fall back to cached status (e.g. user previously dismissed/denied)
+    // Check cached status
     const cached = getPermissionStateFromStorage('storage');
-    if (cached?.status === 'denied') return 'denied';
-    return 'prompt';
+    return cached?.status || 'prompt';
   } catch (error) {
     return 'prompt';
   }
@@ -318,32 +315,7 @@ const requestStoragePermission = async (): Promise<boolean> => {
       return false;
     }
 
-    // If already persisted, no prompt is needed — surface as granted.
-    if (navigator.storage.persisted) {
-      const already = await navigator.storage.persisted();
-      if (already) {
-        savePermissionState('storage', 'granted');
-        return true;
-      }
-    }
-
-    // Trigger the browser's persistent-storage prompt. In Chromium this is
-    // auto-decided by heuristics; in Firefox it surfaces a user prompt.
-    // Must be called from a user gesture (button click), which the dialog provides.
     const persisted = await navigator.storage.persist();
-
-    // Some browsers (Chromium) silently deny without prompting when heuristics
-    // are not met. As a fallback, request the Notifications permission is NOT
-    // appropriate here — instead we attempt to nudge the browser by also
-    // requesting a small estimate so the user sees activity, then re-check.
-    if (!persisted && navigator.storage.persisted) {
-      const recheck = await navigator.storage.persisted();
-      if (recheck) {
-        savePermissionState('storage', 'granted');
-        return true;
-      }
-    }
-
     savePermissionState('storage', persisted ? 'granted' : 'denied');
     return persisted;
   } catch (error) {

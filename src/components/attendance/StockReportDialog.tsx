@@ -62,7 +62,7 @@ export const StockReportDialog = ({
       setLoadingSales(true);
       try {
         const today = new Date().toISOString().split("T")[0];
-
+        
         const { data, error } = await supabase
           .from("daily_sales_tracking")
           .select("product_variant_id, quantity_sold")
@@ -78,14 +78,6 @@ export const StockReportDialog = ({
           salesByProduct[sale.product_variant_id] = currentQty + sale.quantity_sold;
         });
 
-        if (currentWorkspaceId) {
-          const { getProjectedDailySales } = await import("@/services/offline/stockReportProjection");
-          const projected = await getProjectedDailySales(currentWorkspaceId);
-          Object.entries(projected).forEach(([id, qty]) => {
-            salesByProduct[id] = (salesByProduct[id] ?? 0) + qty;
-          });
-        }
-
         setSalesData(salesByProduct);
       } catch (error) {
         console.error("Error fetching sales data:", error);
@@ -100,7 +92,7 @@ export const StockReportDialog = ({
     };
 
     fetchSalesData();
-  }, [open, reportType, user, currentWorkspaceId, toast]);
+  }, [open, reportType, user]);
 
   const handleStockLevelChange = (productVariantId: string, level: StockLevel) => {
     const newLevels = {
@@ -156,42 +148,50 @@ export const StockReportDialog = ({
 
     try {
       const today = new Date().toISOString().split("T")[0];
-      const { submitStockReport } = await import("@/services/inventoryWriteService");
+      
+      if (reportType === "morning") {
+        const reports = inventory.map((item) => ({
+          agent_id: user.id,
+          product_variant_id: item.product_variant_id,
+          stock_level: stockLevels[item.product_variant_id],
+          opening_stock: null,
+          quantity_sold: null,
+          closing_stock: null,
+          report_type: reportType,
+          work_date: today,
+          workspace_id: currentWorkspaceId,
+          store_id: storeId || null,
+        }));
 
-      const rows =
-        reportType === "morning"
-          ? inventory.map((item) => ({
-              product_variant_id: item.product_variant_id,
-              stock_level: stockLevels[item.product_variant_id],
-              opening_stock: null,
-              quantity_sold: null,
-              closing_stock: null,
-            }))
-          : inventory.map((item) => ({
-              product_variant_id: item.product_variant_id,
-              stock_level: null,
-              opening_stock: null,
-              quantity_sold: salesData[item.product_variant_id] || 0,
-              closing_stock: null,
-            }));
+        const { error } = await supabase
+          .from("daily_stock_reports")
+          .insert(reports);
 
-      const result = await submitStockReport({
-        workspaceId: currentWorkspaceId,
-        agentId: user.id,
-        payload: {
-          reportType,
-          reportKind: 'availability',
-          workDate: today,
-          storeId: storeId || null,
-          rows,
-        },
-      });
+        if (error) throw error;
+      } else {
+        const reports = inventory.map((item) => ({
+          agent_id: user.id,
+          product_variant_id: item.product_variant_id,
+          stock_level: null,
+          opening_stock: null,
+          quantity_sold: salesData[item.product_variant_id] || 0,
+          closing_stock: null,
+          report_type: reportType,
+          work_date: today,
+          workspace_id: currentWorkspaceId,
+          store_id: storeId || null,
+        }));
+
+        const { error } = await supabase
+          .from("daily_stock_reports")
+          .insert(reports);
+
+        if (error) throw error;
+      }
 
       toast({
-        title: result.queued ? "Report saved on device" : "Stock Report Submitted",
-        description: result.queued
-          ? result.message
-          : `${reportType === "morning" ? "Morning" : "Evening"} stock report saved successfully`,
+        title: "Stock Report Submitted",
+        description: `${reportType === "morning" ? "Morning" : "Evening"} stock report saved successfully`,
       });
 
       // Reset state and close

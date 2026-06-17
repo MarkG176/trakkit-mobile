@@ -15,6 +15,7 @@ import { useInStoreWorkLocation } from "@/hooks/useInStoreWorkLocation";
 import { useInventory, InventoryItem } from "@/hooks/useInventory";
 import { useProductFocusInventory, ProductFocusItem } from "@/hooks/useProductFocusInventory";
 import { formatProductName } from "@/utils/formatProductName";
+import { useInteractionForm } from "@/hooks/useInteractionForm";
 import { supabase } from "@/integrations/supabase/client";
 
 interface SelectedProduct {
@@ -32,6 +33,7 @@ export const GiveProducts = () => {
   const { currentWorkspaceId, currentProjectId, currentWorkspaceLabel } = useWorkspace();
   const { inventory, loading: inventoryLoading } = useInventory();
   const { products: productFocusProducts, loading: productFocusLoading } = useProductFocusInventory();
+  const { submitInteraction } = useInteractionForm();
   const hideInventoryCounts = useInStoreWorkLocation();
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
   const [recipientName, setRecipientName] = useState("");
@@ -167,42 +169,57 @@ export const GiveProducts = () => {
 
       const totalItems = selectedProducts.reduce((sum, p) => sum + p.quantity, 0);
 
-      if (!currentWorkspaceId) {
-        throw new Error('No workspace selected');
+      // Save to giveaways table
+      const { error } = await supabase
+        .from('giveaways')
+        .insert({
+          agent_id: user.id,
+          products_given: productsGiven,
+          total_items: totalItems,
+          recipient_name: recipientName || null,
+          recipient_phone: recipientPhone || null,
+          notes: notes || null,
+          location_lat: location.latitude,
+          location_lng: location.longitude,
+          workspace_id: currentWorkspaceId,
+          project_id: currentProjectId || null,
+        });
+
+      if (error) {
+        console.error('Error saving giveaway:', error);
+        throw error;
       }
 
-      const { submitGiveaway } = await import('@/services/inventoryWriteService');
-      const result = await submitGiveaway({
-        workspaceId: currentWorkspaceId,
-        agentId: user.id,
-        payload: {
-          productsGiven,
-          totalItems,
-          recipientName,
-          recipientPhone,
-          notes,
-          locationLat: location.latitude,
-          locationLng: location.longitude,
-          projectId: currentProjectId || null,
-          saveCustomer: {
-            name: recipientName,
-            phone: recipientPhone || null,
-            location_lat: location.latitude,
-            location_lng: location.longitude,
-          },
-          logInteraction: {
-            interactionType: 'give_products',
-            customerName: recipientName,
-            customerPhone: recipientPhone,
-            notes,
-            sentiment,
-          },
-        },
+      // Save customer to customers table
+      const customerData = {
+        name: recipientName,
+        phone: recipientPhone || null,
+        location_lat: location.latitude,
+        location_lng: location.longitude,
+        workspace_id: currentWorkspaceId,
+      };
+      const customerResult = recipientPhone
+        ? await supabase.from('customers').upsert(customerData, { onConflict: 'phone' })
+        : await supabase.from('customers').insert(customerData);
+      if (customerResult.error) {
+        console.error('Error saving customer:', customerResult.error);
+      }
+
+      // Save feedback (sentiment) to interactions table
+      const interactionSuccess = await submitInteraction({
+        interactionType: 'give_products',
+        customerName: recipientName,
+        customerPhone: recipientPhone,
+        notes: notes,
+        sentiment,
       });
+      if (!interactionSuccess) {
+        console.error('Error saving interaction feedback');
+      }
 
       toast({
-        title: result.queued ? "Giveaway saved on device" : "Giveaway recorded successfully!",
-        description: result.message,
+        title: "Giveaway recorded successfully!",
+        description: "+8 points earned.",
       });
       navigate("/");
     } catch (error) {

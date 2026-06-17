@@ -101,27 +101,17 @@ export const Inventory = () => {
 
     setAssigning(true);
     try {
-      if (!currentWorkspaceId) throw new Error('No workspace selected');
+      const inserts = entries.map(([productId, qty]) => ({
+        agent_id: user.id,
+        product_variant_id: productId,
+        amount_issued: qty,
+        name: products.find(p => p.id === productId)?.name || null,
+      }));
 
-      const { submitInventoryAssign } = await import('@/services/inventoryWriteService');
-      const result = await submitInventoryAssign({
-        workspaceId: currentWorkspaceId,
-        agentId: user.id,
-        payload: {
-          entries: entries.map(([productId, qty]) => ({
-            productVariantId: productId,
-            quantity: qty,
-            name: products.find((p) => p.id === productId)?.name || null,
-          })),
-        },
-      });
+      const { error } = await supabase.from('agent_task_inventory').insert(inserts);
+      if (error) throw error;
 
-      toast({
-        title: result.queued ? "Saved on device" : "Inventory assigned",
-        description: result.queued
-          ? result.message
-          : `${entries.length} product(s) added`,
-      });
+      toast({ title: "Inventory assigned", description: `${entries.length} product(s) added` });
       setAssignDialogOpen(false);
       refetch();
     } catch (err: any) {

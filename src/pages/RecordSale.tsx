@@ -378,11 +378,33 @@ export const RecordSale = () => {
         notes: feedbackData.notes,
         sentiment: feedbackData.sentiment,
         imageUrl: salePhotoUrl || undefined,
-        customerId,
-        latitude: location.latitude,
-        longitude: location.longitude,
-        projectId: currentProjectId || null,
+        ...(salePhotoCaption ? {
+          imageMetadata: { caption: salePhotoCaption, type: 'sale_photo' }
+        } : {})
       });
+
+      // Record customer purchases (even if no customer was created)
+      if (success) {
+        const projectId = currentProjectId || null;
+
+        // 3️⃣ Insert purchases
+        for (const item of cartItems) {
+          await supabase
+            .from('customer_purchases')
+            .insert({
+              customer_id: customerId,
+              customer_name: customerName || 'Walk-in Customer',
+              agent_id: user?.id ?? null,
+              product_variant_id: item.id,
+              quantity: item.quantity,
+              total_value: getLineTotal(item),
+              location_lat: location.latitude,
+              location_lng: location.longitude,
+              workspace_id: currentWorkspaceId,
+              project_id: projectId,
+            } as any);
+        }
+      }
 
       if (success) {
         setShowFeedbackDialog(false);

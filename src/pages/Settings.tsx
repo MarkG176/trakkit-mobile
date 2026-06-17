@@ -12,8 +12,6 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { PermissionGuidance } from "@/components/PermissionGuidance";
 import { Badge } from "@/components/ui/badge";
 import { PermissionStatus } from "@/utils/permissionUtils";
-import { useSync } from "@/hooks/useSync";
-import { isSyncPaused } from "@/services/offline/connectivity";
 
 export const Settings = () => {
   const navigate = useNavigate();
@@ -36,32 +34,12 @@ export const Settings = () => {
   
   const [darkMode, setDarkMode] = useState(false);
   const [language, setLanguage] = useState("english");
-  const { setSyncPaused, clearOfflineCache, flush, pendingCount, failedCount } = useSync();
-  const [offlineMode, setOfflineMode] = useState(!isSyncPaused());
+  const [offlineMode, setOfflineMode] = useState(true);
 
-  const handleClearCache = async () => {
-    await clearOfflineCache();
-    if ('caches' in window) {
-      const keys = await caches.keys();
-      await Promise.all(keys.map((k) => caches.delete(k)));
-    }
+  const handleClearCache = () => {
     toast({
       title: "Cache Cleared",
-      description: "Offline queue and app caches cleared",
-    });
-  };
-
-  const handleOfflineModeChange = (enabled: boolean) => {
-    setOfflineMode(enabled);
-    setSyncPaused(!enabled);
-    if (enabled) {
-      void flush();
-    }
-    toast({
-      title: enabled ? "Offline mode on" : "Sync paused",
-      description: enabled
-        ? "Inventory actions save locally when offline and sync automatically."
-        : "New actions will queue but won't upload until you turn this back on.",
+      description: "App cache has been successfully cleared"
     });
   };
 
@@ -285,14 +263,9 @@ export const Settings = () => {
                 </div>
                 <Switch 
                   checked={offlineMode}
-                  onCheckedChange={handleOfflineModeChange}
+                  onCheckedChange={setOfflineMode}
                 />
               </div>
-              {(pendingCount > 0 || failedCount > 0) && (
-                <p className="text-xs text-muted-foreground">
-                  {pendingCount} pending, {failedCount} failed — open dashboard sync indicator to retry
-                </p>
-              )}
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">

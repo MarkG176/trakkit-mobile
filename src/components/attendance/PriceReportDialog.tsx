@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { useInventory } from "@/hooks/useInventory";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { DollarSign, Loader2, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 import { useProjectCurrency } from "@/hooks/useProjectCurrency";
@@ -125,30 +126,25 @@ export const PriceReportDialog = ({
     setSubmitting(true);
     try {
       const today = new Date().toISOString().split("T")[0];
-      const { submitPriceReport } = await import("@/services/inventoryWriteService");
-      const result = await submitPriceReport({
-        workspaceId: currentWorkspaceId,
-        agentId: user.id,
-        payload: {
-          workDate: today,
-          storeId: storeId || null,
-          rows: eligibleProducts.map((item) => {
-            const rawPrice = prices[item.product_variant_id] || "";
-            const numericPrice = parseFloat(rawPrice.replace(/[^0-9.]/g, '')) || 0;
-            return {
-              product_variant_id: item.product_variant_id,
-              price: numericPrice,
-              stock_level: stockLevels[item.product_variant_id] || null,
-              measurement: rawPrice.trim() || null,
-            };
-          }),
-        },
+      const reports = eligibleProducts.map((item) => {
+        const rawPrice = prices[item.product_variant_id] || "";
+        const numericPrice = parseFloat(rawPrice.replace(/[^0-9.]/g, '')) || 0;
+        return {
+          agent_id: user.id,
+          store_id: storeId || null,
+          product_variant_id: item.product_variant_id,
+          price: numericPrice,
+          measurement: rawPrice.trim() || null,
+          stock_level: stockLevels[item.product_variant_id] || null,
+          work_date: today,
+          workspace_id: currentWorkspaceId,
+        };
       });
 
-      toast({
-        title: result.queued ? "Saved on device" : "Price Report Submitted",
-        description: result.queued ? result.message : "Store price report saved successfully",
-      });
+      const { error } = await supabase.from("store_price_reports" as any).insert(reports);
+      if (error) throw error;
+
+      toast({ title: "Price Report Submitted", description: "Store price report saved successfully" });
       setPrices({});
       setCurrentIndex(0);
       onComplete();

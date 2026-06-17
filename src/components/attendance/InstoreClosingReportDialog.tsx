@@ -81,16 +81,6 @@ export const InstoreClosingReportDialog = ({
           }
         });
 
-        const { getProjectedMorningOpeningStock } = await import("@/services/offline/stockReportProjection");
-        const projected = await getProjectedMorningOpeningStock(
-          currentWorkspaceId,
-          today,
-          storeId
-        );
-        Object.entries(projected).forEach(([id, qty]) => {
-          if (!morningStockMap.has(id)) morningStockMap.set(id, qty);
-        });
-
         setProducts(
           inventory.map((item) => ({
             product_variant_id: item.product_variant_id,
@@ -155,41 +145,37 @@ export const InstoreClosingReportDialog = ({
     setIsSubmitting(true);
     try {
       const today = new Date().toISOString().split("T")[0];
-      const { submitStockReport } = await import("@/services/inventoryWriteService");
 
-      const rows = products
+      const reportsToInsert = products
         .filter((p) => p.opening_stock !== "" || p.quantity_sold !== "" || p.closing_stock !== "")
         .map((p) => ({
+          agent_id: user.id,
           product_variant_id: p.product_variant_id,
           opening_stock: parseInt(p.opening_stock) || 0,
           quantity_sold: parseInt(p.quantity_sold) || 0,
           closing_stock: parseInt(p.closing_stock) || 0,
+          report_type: "evening",
+          work_date: today,
+          workspace_id: currentWorkspaceId,
+          store_id: storeId || null,
         }));
 
-      const result = await submitStockReport({
-        workspaceId: currentWorkspaceId,
-        agentId: user.id,
-        payload: {
-          reportType: "evening",
-          reportKind: "count",
-          workDate: today,
-          storeId: storeId || null,
-          rows,
-        },
-      });
+      const { error } = await supabase
+        .from("daily_stock_reports")
+        .insert(reportsToInsert);
+
+      if (error) throw error;
 
       logActivity({
         action: "closing_report",
         category: "stock_report",
-        details: { productsCount: rows.length, storeId, queued: result.queued },
+        details: { productsCount: reportsToInsert.length, storeId },
         workspaceId: currentWorkspaceId,
       });
 
       toast({
-        title: result.queued ? "Saved on device" : "Success",
-        description: result.queued
-          ? result.message
-          : "Closing report submitted successfully",
+        title: "Success",
+        description: "Closing report submitted successfully",
       });
 
       onOpenChange(false);

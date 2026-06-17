@@ -10,7 +10,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart, Gift, ClipboardList, Star, Plus, Minus, CheckCircle2, Trash2, Edit2, Search, Camera, X, ImageIcon, MessageSquare } from "lucide-react";
 import { ImageCaptionInput } from "@/components/ImageCaptionInput";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useInStoreWorkLocation } from "@/hooks/useInStoreWorkLocation";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -59,7 +58,6 @@ interface InventoryItem {
 
 export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, storeCounty }: StoreSuccessDialogProps) => {
   const { toast } = useToast();
-  const { user } = useAuth();
   const { currentWorkspaceId, currentProjectId } = useWorkspace();
   const hideInventoryCounts = useInStoreWorkLocation();
   const { currencyCode } = useProjectCurrency();
@@ -117,54 +115,28 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
     
     // Load data based on action
     if (action === "survey") {
-      let publishedSurveys: any[] = [];
-
-      if (!navigator.onLine && currentWorkspaceId) {
-        const { getCachedSurveyTemplatesForWorkspace } = await import('@/services/offline/surveyTemplateStore');
-        publishedSurveys = await getCachedSurveyTemplatesForWorkspace(currentWorkspaceId);
-      } else {
-        let query = supabase
-          .from('survey_templates')
-          .select('*')
-          .eq('is_published', true)
-          .eq('status', 'active')
-          .neq('is_deleted', true);
-        
-        if (currentWorkspaceId) {
-          query = query.eq('workspace_id', currentWorkspaceId);
-        }
-        if (currentProjectId) {
-          query = query.eq('project_id', currentProjectId);
-        }
-        
-        const { data, error } = await query;
-        if (error) {
-          console.error('Error loading surveys:', error);
-          if (currentWorkspaceId) {
-            const { getCachedSurveyTemplatesForWorkspace } = await import('@/services/offline/surveyTemplateStore');
-            publishedSurveys = await getCachedSurveyTemplatesForWorkspace(currentWorkspaceId);
-          }
-        } else {
-          publishedSurveys = data || [];
-          if (currentWorkspaceId && publishedSurveys.length > 0) {
-            const { cacheSurveyTemplates } = await import('@/services/offline/surveyTemplateStore');
-            await cacheSurveyTemplates(
-              currentWorkspaceId,
-              publishedSurveys.map((s: any) => ({
-                id: s.id,
-                projectId: s.project_id,
-                title: s.title,
-                description: s.description,
-                questions: Array.isArray(s.questions) ? s.questions : [],
-                estimated_duration_minutes: s.estimated_duration_minutes,
-              }))
-            );
-          }
-        }
+      let query = supabase
+        .from('survey_templates')
+        .select('*')
+        .eq('is_published', true)
+        .eq('status', 'active')
+        .neq('is_deleted', true);
+      
+      if (currentWorkspaceId) {
+        query = query.eq('workspace_id', currentWorkspaceId);
       }
-
+      if (currentProjectId) {
+        query = query.eq('project_id', currentProjectId);
+      }
+      
+      const { data, error } = await query;
+      if (error) {
+        console.error('Error loading surveys:', error);
+      }
+      const publishedSurveys = data || [];
       setSurveys(publishedSurveys);
       
+      // Auto-select if there's exactly one survey
       if (publishedSurveys.length === 1) {
         const survey = publishedSurveys[0];
         setSelectedSurvey(survey.id);
@@ -216,46 +188,62 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
   };
 
   const handleSubmitSurvey = async () => {
-    if (!selectedSurvey || !currentWorkspaceId || !user) return;
+    if (!selectedSurvey) return;
     
     setLoading(true);
     try {
-      let locationLat: number | null = null;
-      let locationLng: number | null = null;
-      try {
-        const location = await getCurrentLocation();
-        locationLat = location.latitude;
-        locationLng = location.longitude;
-      } catch {
-        // GPS optional for queued survey
-      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
 
-      const completedAt = new Date().toISOString();
-      const { submitSurveyResponse } = await import('@/services/surveyWriteService');
-      const result = await submitSurveyResponse({
-        workspaceId: currentWorkspaceId,
-        agentId: user.id,
-        payload: {
-          surveyTemplateId: selectedSurvey,
+      const location = await getCurrentLocation();
+
+      // Create interaction record
+      const { data: interaction, error: interactionError } = await supabase
+        .from('interactions')
+        .insert({
+          task_id: null,
+          agent_id: user.id,
+          interaction_type: 'survey',
+          survey_template_id: selectedSurvey,
+          store_id: storeId,
+          customer_name: storeName,
+          outcome: 'completed',
+          quantity_sold: 0,
+          latitude: location.latitude,
+          longitude: location.longitude,
+          timestamp: new Date().toISOString(),
+          workspace_id: currentWorkspaceId
+        } as any)
+        .select()
+        .single();
+
+      if (interactionError) throw interactionError;
+
+      // Save survey responses
+      const { error: surveyResponseError } = await supabase
+        .from('survey_responses')
+        .insert({
+          agent_id: user.id,
+          survey_template_id: selectedSurvey,
+          interaction_id: interaction.id,
           responses: surveyResponses,
-          startedAt: completedAt,
-          completedAt,
-          durationSeconds: 0,
-          storeId: storeId ?? null,
-          storeName,
-          locationLat,
-          locationLng,
-          source: 'store_success',
-        },
-      });
+          started_at: new Date().toISOString(),
+          completed_at: new Date().toISOString(),
+          is_completed: true,
+          completion_status: 'completed',
+          location_lat: location.latitude,
+          location_lng: location.longitude,
+          workspace_id: currentWorkspaceId
+        });
+
+      if (surveyResponseError) throw surveyResponseError;
 
       toast({
-        title: result.queued ? "Survey saved on device" : "Survey Completed",
-        description: result.queued
-          ? "Will sync when you're back online."
-          : "Survey responses have been recorded successfully.",
+        title: "Survey Completed",
+        description: "Survey responses have been recorded successfully.",
       });
       
+      // Reset and close
       setActiveAction(null);
       setSurveyResponses({});
       setSurveyQuestions([]);
@@ -346,38 +334,67 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
-      if (!currentWorkspaceId) throw new Error("No workspace selected");
 
       const location = await getCurrentLocation();
 
-      const { submitSaleBatch } = await import('@/services/inventoryWriteService');
-      const result = await submitSaleBatch({
-        workspaceId: currentWorkspaceId,
-        agentId: user.id,
-        payload: {
-          items: saleCartItems.map((item) => ({
-            productVariantId: item.productVariantId,
-            quantity: item.quantity,
-            price: item.price,
-            lineTotal: getSaleLineTotal(item),
-          })),
-          storeId,
-          storeName,
-          storeCounty,
+      // Create or get customer
+      const { data: customer, error: customerError } = await supabase
+        .from('customers')
+        .upsert({
+          name: storeName,
+          county: storeCounty,
+          location_lat: location.latitude,
+          location_lng: location.longitude,
+        }, {
+          onConflict: 'phone',
+          ignoreDuplicates: false
+        })
+        .select()
+        .single();
+
+      if (customerError) throw customerError;
+
+      const projectId = currentProjectId || null;
+
+      // Record each cart item as a separate interaction + customer purchase
+      for (const item of saleCartItems) {
+        const { error: interactionError } = await supabase.from('interactions').insert({
+          task_id: null,
+          agent_id: user.id,
+          interaction_type: 'sale',
+          store_id: storeId,
+          customer_name: storeName,
+          product_variant_id: item.productVariantId,
+          quantity_sold: item.quantity,
+          sale_value: getSaleLineTotal(item),
+          outcome: 'completed',
           latitude: location.latitude,
           longitude: location.longitude,
-          includeCustomerPurchase: true,
-          projectId: currentProjectId || null,
-        },
-      });
+          timestamp: new Date().toISOString(),
+          workspace_id: currentWorkspaceId
+        } as any);
+
+        if (interactionError) throw interactionError;
+
+        await supabase.from('customer_purchases').insert({
+          customer_id: customer.id,
+          agent_id: user.id,
+          product_variant_id: item.productVariantId,
+          quantity: item.quantity,
+          total_value: getSaleLineTotal(item),
+          location_lat: location.latitude,
+          location_lng: location.longitude,
+          workspace_id: currentWorkspaceId,
+          project_id: projectId,
+        } as any);
+      }
 
       toast({
-        title: result.queued ? "Sale saved on device" : "Sale Recorded",
-        description: result.queued
-          ? result.message
-          : `${saleCartItems.length} item(s) recorded. Total: ${currencyCode} ${saleTotalAmount.toFixed(2)}`,
+        title: "Sale Recorded",
+        description: `${saleCartItems.length} item(s) recorded. Total: ${currencyCode} ${saleTotalAmount.toFixed(2)}`,
       });
       
+      // Reset and return to actions
       setActiveAction(null);
       setSaleCartItems([]);
     } catch (error: any) {
@@ -398,35 +415,34 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
-      if (!currentWorkspaceId) throw new Error("No workspace selected");
 
       const location = await getCurrentLocation();
 
-      const { submitGiveaway } = await import('@/services/inventoryWriteService');
-      const result = await submitGiveaway({
-        workspaceId: currentWorkspaceId,
-        agentId: user.id,
-        payload: {
-          productsGiven: selectedProducts.map((p) => ({
-            product_variant_id: p.productVariantId,
-            name: p.name,
-            quantity: p.quantity,
-          })),
-          totalItems: selectedProducts.reduce((sum, p) => sum + p.quantity, 0),
-          recipientName: storeName,
-          notes: giveawayNotes,
-          locationLat: location.latitude,
-          locationLng: location.longitude,
-          storeId,
-          projectId: currentProjectId || null,
-        },
+      const { error } = await supabase.from('giveaways').insert({
+        agent_id: user.id,
+        store_id: storeId,
+        recipient_name: storeName,
+        products_given: selectedProducts.map(p => ({
+          product_variant_id: p.productVariantId,
+          quantity: p.quantity,
+          name: p.name
+        })),
+        total_items: selectedProducts.reduce((sum, p) => sum + p.quantity, 0),
+        notes: giveawayNotes,
+        location_lat: location.latitude,
+        location_lng: location.longitude,
+        recorded_at: new Date().toISOString(),
+        workspace_id: currentWorkspaceId
       });
 
+      if (error) throw error;
+
       toast({
-        title: result.queued ? "Giveaway saved on device" : "Giveaway Recorded",
-        description: result.message,
+        title: "Giveaway Recorded",
+        description: "Giveaway has been recorded successfully.",
       });
       
+      // Reset and return to actions
       setActiveAction(null);
       setSelectedProducts([]);
       setGiveawayNotes("");
