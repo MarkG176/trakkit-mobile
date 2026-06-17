@@ -29,15 +29,20 @@ export const addTextOverlayToImage = async (
 
     const img = new Image();
     img.onload = () => {
-      // Set canvas size to match image
-      canvas.width = img.width;
-      canvas.height = img.height;
+      // Cap longest side at 1280px to keep upload sizes small
+      const MAX_DIM = 1280;
+      const scale = Math.min(1, MAX_DIM / Math.max(img.width, img.height));
+      const targetWidth = Math.round(img.width * scale);
+      const targetHeight = Math.round(img.height * scale);
 
-      // Draw the original image
-      ctx.drawImage(img, 0, 0);
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
 
-      // Set text properties
-      const fontSize = Math.max(16, img.width / 30); // Responsive font size
+      // Draw the (possibly downscaled) image
+      ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+      // Set text properties (scaled to new width)
+      const fontSize = Math.max(14, targetWidth / 30);
       ctx.font = `bold ${fontSize}px Arial, sans-serif`;
       ctx.fillStyle = 'rgba(255, 255, 255, 1)';
       ctx.strokeStyle = 'rgba(0, 0, 0, 1)';
@@ -55,7 +60,7 @@ export const addTextOverlayToImage = async (
       // Calculate text positioning
       const lineHeight = fontSize + 4;
       const padding = 10;
-      const startY = img.height - (lines.length * lineHeight) - padding;
+      const startY = targetHeight - (lines.length * lineHeight) - padding;
 
       // Draw text with outline effect
       lines.forEach((line, index) => {
@@ -80,8 +85,9 @@ export const addTextOverlayToImage = async (
         const newFile = new File([blob], newFileName, { type: 'image/jpeg' });
         
         resolve(newFile);
-      }, 'image/jpeg', 0.9);
+      }, 'image/jpeg', 0.78);
     };
+
 
     img.onerror = () => {
       reject(new Error('Could not load image'));
