@@ -93,7 +93,7 @@ async function syncSaleBatch(item: OutboxItem): Promise<void> {
   const { data, error } = await supabase.rpc('sync_record_sale_batch', {
     p_client_operation_id: item.id,
     p_workspace_id: item.workspaceId,
-    p_payload: payload as unknown as Record<string, unknown>,
+    p_payload: payload as any,
   });
 
   if (!error) {
@@ -250,7 +250,7 @@ async function syncGiveaway(item: OutboxItem): Promise<void> {
   const { data, error } = await supabase.rpc('sync_record_giveaway', {
     p_client_operation_id: item.id,
     p_workspace_id: item.workspaceId,
-    p_payload: payload as unknown as Record<string, unknown>,
+    p_payload: payload as any,
   });
 
   if (!error) {
@@ -345,7 +345,7 @@ async function syncStockReport(item: OutboxItem): Promise<void> {
   const { data, error } = await supabase.rpc('sync_daily_stock_reports', {
     p_client_operation_id: item.id,
     p_workspace_id: item.workspaceId,
-    p_payload: payload as unknown as Record<string, unknown>,
+    p_payload: payload as any,
   });
 
   if (!error) {
@@ -388,7 +388,7 @@ async function syncInventoryAssign(item: OutboxItem): Promise<void> {
   const { data, error } = await supabase.rpc('sync_inventory_assign', {
     p_client_operation_id: item.id,
     p_workspace_id: item.workspaceId,
-    p_payload: payload as unknown as Record<string, unknown>,
+    p_payload: payload as any,
   });
 
   if (!error) {
@@ -445,7 +445,7 @@ async function syncStoreCreate(item: OutboxItem): Promise<void> {
   const { data, error } = await supabase.rpc('sync_create_store', {
     p_client_operation_id: item.id,
     p_workspace_id: item.workspaceId,
-    p_payload: syncPayload as unknown as Record<string, unknown>,
+    p_payload: syncPayload as any,
   });
 
   if (error) {
@@ -514,7 +514,7 @@ async function syncFieldNote(item: OutboxItem): Promise<void> {
   const { data, error } = await supabase.rpc('sync_field_note', {
     p_client_operation_id: item.id,
     p_workspace_id: item.workspaceId,
-    p_payload: payload as unknown as Record<string, unknown>,
+    p_payload: payload as any,
   });
 
   if (!error) {
@@ -544,7 +544,7 @@ async function syncPriceReport(item: OutboxItem): Promise<void> {
   const { data, error } = await supabase.rpc('sync_store_price_reports', {
     p_client_operation_id: item.id,
     p_workspace_id: item.workspaceId,
-    p_payload: payload as unknown as Record<string, unknown>,
+    p_payload: payload as any,
   });
 
   if (!error) {
@@ -595,7 +595,7 @@ async function syncSurveyResponse(item: OutboxItem): Promise<void> {
   const { data, error } = await supabase.rpc('sync_record_survey', {
     p_client_operation_id: item.id,
     p_workspace_id: item.workspaceId,
-    p_payload: payload as unknown as Record<string, unknown>,
+    p_payload: payload as any,
   });
 
   if (!error) {
