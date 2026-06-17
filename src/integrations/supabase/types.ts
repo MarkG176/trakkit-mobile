@@ -931,6 +931,30 @@ export type Database = {
           },
         ]
       }
+      client_sync_operations: {
+        Row: {
+          agent_id: string | null
+          created_at: string
+          id: string
+          operation_type: string
+          workspace_id: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          created_at?: string
+          id: string
+          operation_type: string
+          workspace_id?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          created_at?: string
+          id?: string
+          operation_type?: string
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
       customer_purchases: {
         Row: {
           agent_id: string
@@ -3276,6 +3300,7 @@ export type Database = {
         Row: {
           added_by: string | null
           address: string | null
+          client_operation_id: string | null
           contact: string | null
           country: string | null
           county: string
@@ -3296,6 +3321,7 @@ export type Database = {
         Insert: {
           added_by?: string | null
           address?: string | null
+          client_operation_id?: string | null
           contact?: string | null
           country?: string | null
           county: string
@@ -3316,6 +3342,7 @@ export type Database = {
         Update: {
           added_by?: string | null
           address?: string | null
+          client_operation_id?: string | null
           contact?: string | null
           country?: string | null
           county?: string
@@ -4324,6 +4351,15 @@ export type Database = {
       }
     }
     Functions: {
+      _mark_sync_op: {
+        Args: {
+          p_agent_id: string
+          p_id: string
+          p_type: string
+          p_workspace_id: string
+        }
+        Returns: undefined
+      }
       approve_checkout_request: {
         Args: { request_id: string; reviewer_id: string }
         Returns: undefined
@@ -4584,78 +4620,6 @@ export type Database = {
         }
         Returns: string
       }
-      sync_record_sale_batch: {
-        Args: {
-          p_client_operation_id: string
-          p_workspace_id: string
-          p_payload: Json
-        }
-        Returns: Json
-      }
-      sync_record_giveaway: {
-        Args: {
-          p_client_operation_id: string
-          p_workspace_id: string
-          p_payload: Json
-        }
-        Returns: Json
-      }
-      sync_daily_stock_reports: {
-        Args: {
-          p_client_operation_id: string
-          p_workspace_id: string
-          p_payload: Json
-        }
-        Returns: Json
-      }
-      sync_inventory_assign: {
-        Args: {
-          p_client_operation_id: string
-          p_workspace_id: string
-          p_payload: Json
-        }
-        Returns: Json
-      }
-      sync_store_price_reports: {
-        Args: {
-          p_client_operation_id: string
-          p_workspace_id: string
-          p_payload: Json
-        }
-        Returns: Json
-      }
-      sync_field_note: {
-        Args: {
-          p_client_operation_id: string
-          p_workspace_id: string
-          p_payload: Json
-        }
-        Returns: Json
-      }
-      sync_record_survey: {
-        Args: {
-          p_client_operation_id: string
-          p_workspace_id: string
-          p_payload: Json
-        }
-        Returns: Json
-      }
-      sync_create_store: {
-        Args: {
-          p_client_operation_id: string
-          p_workspace_id: string
-          p_payload: Json
-        }
-        Returns: Json
-      }
-      get_agent_available_qty: {
-        Args: {
-          p_agent_id: string
-          p_product_id: string
-          p_workspace_id: string
-        }
-        Returns: number
-      }
       refresh_agent_report_summary: {
         Args: { p_agent_id: string; p_date?: string }
         Returns: undefined
@@ -4685,6 +4649,70 @@ export type Database = {
       submit_checkout_request: {
         Args: { agent_id: string; movements: Json; task_id: string }
         Returns: string
+      }
+      sync_create_store: {
+        Args: {
+          p_client_operation_id: string
+          p_payload: Json
+          p_workspace_id: string
+        }
+        Returns: Json
+      }
+      sync_daily_stock_reports: {
+        Args: {
+          p_client_operation_id: string
+          p_payload: Json
+          p_workspace_id: string
+        }
+        Returns: Json
+      }
+      sync_field_note: {
+        Args: {
+          p_client_operation_id: string
+          p_payload: Json
+          p_workspace_id: string
+        }
+        Returns: Json
+      }
+      sync_inventory_assign: {
+        Args: {
+          p_client_operation_id: string
+          p_payload: Json
+          p_workspace_id: string
+        }
+        Returns: Json
+      }
+      sync_record_giveaway: {
+        Args: {
+          p_client_operation_id: string
+          p_payload: Json
+          p_workspace_id: string
+        }
+        Returns: Json
+      }
+      sync_record_sale_batch: {
+        Args: {
+          p_client_operation_id: string
+          p_payload: Json
+          p_workspace_id: string
+        }
+        Returns: Json
+      }
+      sync_record_survey: {
+        Args: {
+          p_client_operation_id: string
+          p_payload: Json
+          p_workspace_id: string
+        }
+        Returns: Json
+      }
+      sync_store_price_reports: {
+        Args: {
+          p_client_operation_id: string
+          p_payload: Json
+          p_workspace_id: string
+        }
+        Returns: Json
       }
       track_magic_link_sent: {
         Args: { p_user_email: string }
