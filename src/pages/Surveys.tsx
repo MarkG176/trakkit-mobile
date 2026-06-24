@@ -131,7 +131,8 @@ export const Surveys = () => {
             const { count: responseCount } = await supabase
               .from('survey_responses')
               .select('*', { count: 'exact', head: true })
-              .eq('survey_template_id', template.id);
+              .eq('survey_template_id', template.id)
+              .eq('is_deleted', false);
 
             // Parse questions properly - handle JSONB data from Supabase
             let questionsArray: any[] = [];
