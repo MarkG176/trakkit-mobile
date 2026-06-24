@@ -11,13 +11,13 @@ export const WorkspaceContext = () => {
   const [projectId, setProjectId] = useState(workspaceService.getCurrentProjectId());
 
   useEffect(() => {
-    // Update state when workspace changes
-    const interval = setInterval(() => {
+    // Update state when workspace changes (event-driven, no polling)
+    const unsubscribe = workspaceService.subscribe(() => {
       setWorkspaceId(workspaceService.getCurrentWorkspaceId());
       setProjectId(workspaceService.getCurrentProjectId());
-    }, 1000);
+    });
 
-    return () => clearInterval(interval);
+    return unsubscribe;
   }, []);
 
   const handleLogContext = () => {

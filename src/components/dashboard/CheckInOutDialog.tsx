@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Camera, Upload } from "lucide-react";
 import { ImageCaptionInput } from "@/components/ImageCaptionInput";
 import { supabase } from "@/integrations/supabase/client";
+import { compressImage } from "@/utils/imageCompression";
 import { useAgentStatus, AgentStatus } from "@/hooks/useAgentStatus";
 import { toast } from "sonner";
 import { SalesTrackingForm } from "./SalesTrackingForm";
@@ -93,13 +94,13 @@ export const CheckInOutDialog = ({ isOpen, onClose }: CheckInOutDialogProps) => 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+    const compressed = await compressImage(file);
+    const fileName = `${user.id}/${Date.now()}.jpg`;
     const filePath = `${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('agent-selfies')
-      .upload(filePath, file);
+      .upload(filePath, compressed);
 
     if (uploadError) {
       console.error('Upload error:', uploadError);

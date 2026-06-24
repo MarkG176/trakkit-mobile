@@ -64,11 +64,36 @@ class WorkspaceService {
   private userWorkspaces: UserWorkspace[] = [];
   private user: User | null = null;
   private initialized: boolean = false;
+  private listeners: Set<() => void> = new Set();
 
   constructor() {
     // Load saved workspace from localStorage on initialization
     this.currentWorkspaceId = this.loadSavedWorkspaceId();
     this.currentProjectId = null;
+  }
+
+  /**
+   * Subscribe to workspace state changes. Returns an unsubscribe function.
+   * Replaces the previous 1Hz polling in WorkspaceProvider.
+   */
+  subscribe(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  /**
+   * Notify all subscribers that workspace state has changed.
+   */
+  private notify(): void {
+    this.listeners.forEach((listener) => {
+      try {
+        listener();
+      } catch (error) {
+        console.error('Workspace listener error:', error);
+      }
+    });
   }
 
   /**
@@ -186,6 +211,8 @@ class WorkspaceService {
     } catch (error) {
       console.error('Error loading user workspaces:', error);
       this.userWorkspaces = [];
+    } finally {
+      this.notify();
     }
   }
 
@@ -325,6 +352,7 @@ class WorkspaceService {
     
     // Load projects for the new workspace
     await this.loadProjectsForWorkspace(workspaceId);
+    this.notify();
     
     return true;
   }
@@ -361,6 +389,7 @@ class WorkspaceService {
     this.currentProjectId = projectId;
     await this.loadCurrentWorkspaceLabel();
     console.log('📋 Project changed to:', projectId);
+    this.notify();
   }
 
   /**

@@ -5,6 +5,7 @@ import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { compressImage } from "@/utils/imageCompression";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -132,7 +133,8 @@ export const InboxPage = () => {
       .select('*')
       .eq('workspace_id', currentWorkspaceId)
       .eq('is_deleted', false)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(100);
 
     if (currentProjectId) {
       query = query.eq('project_id', currentProjectId);
@@ -214,11 +216,11 @@ export const InboxPage = () => {
     try {
       let imageUrl: string | null = null;
       if (attachImage) {
-        const fileExt = attachImage.name.split('.').pop();
-        const filePath = `supervisor-messages/${user.id}/${Date.now()}.${fileExt}`;
+        const compressed = await compressImage(attachImage);
+        const filePath = `supervisor-messages/${user.id}/${Date.now()}.jpg`;
         const { error: uploadError } = await supabase.storage
           .from('check-in-selfies')
-          .upload(filePath, attachImage);
+          .upload(filePath, compressed);
         if (!uploadError) {
           const { data: urlData } = supabase.storage.from('check-in-selfies').getPublicUrl(filePath);
           imageUrl = urlData.publicUrl;

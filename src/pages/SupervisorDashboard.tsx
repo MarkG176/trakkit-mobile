@@ -1,5 +1,5 @@
 // [CMP-64d2b5] SupervisorDashboard — supervisor dashboard root
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { UserDetailSheet } from "@/components/supervisor/UserDetailSheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getThumbnailUrl, thumbnailFallback } from "@/utils/imageTransform";
 
 const statusConfig: Record<string, { color: string; label: string }> = {
   checked_in: { color: "bg-green-500", label: "Checked In" },
@@ -64,9 +65,20 @@ export const SupervisorDashboard = () => {
 
   const isToday = filterDate === new Date().toISOString().split("T")[0];
 
-  // Real-time subscription for today
+  // Real-time subscription for today. A burst of inserts (busy team checking in
+  // at once) is coalesced into a single refetch via a short debounce instead of
+  // invalidating the 50-row feed + 100-image gallery on every event.
+  const invalidateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (!currentWorkspaceId || !isToday) return;
+
+    const scheduleInvalidate = () => {
+      if (invalidateTimerRef.current) clearTimeout(invalidateTimerRef.current);
+      invalidateTimerRef.current = setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["agent-activities"] });
+        queryClient.invalidateQueries({ queryKey: ["gallery-images"] });
+      }, 1500);
+    };
 
     const channel = supabase
       .channel("supervisor-status-live")
@@ -80,12 +92,14 @@ export const SupervisorDashboard = () => {
         const name = record.agent_display_name || "Agent";
         const cfg = statusConfig[record.status] || { label: record.status };
         toast({ title: `${cfg.label}: ${name}`, description: `${name} updated status` });
-        queryClient.invalidateQueries({ queryKey: ["agent-activities"] });
-        queryClient.invalidateQueries({ queryKey: ["gallery-images"] });
+        scheduleInvalidate();
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      if (invalidateTimerRef.current) clearTimeout(invalidateTimerRef.current);
+      supabase.removeChannel(channel);
+    };
   }, [currentWorkspaceId, isToday, toast, queryClient]);
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -94,6 +108,11 @@ export const SupervisorDashboard = () => {
       setPage(0);
     }
   };
+
+  const handleAgentClick = useCallback((id: string, name: string | null) => {
+    setSelectedAgentId(id);
+    setSelectedAgentName(name);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -208,7 +227,7 @@ export const SupervisorDashboard = () => {
                     key={activity.id}
                     activity={activity}
                     onImageClick={setSelectedImage}
-                    onAgentClick={(id, name) => { setSelectedAgentId(id); setSelectedAgentName(name); }}
+                    onAgentClick={handleAgentClick}
                   />
                 ))}
 
@@ -239,7 +258,14 @@ export const SupervisorDashboard = () => {
               <div className="grid grid-cols-3 gap-2">
                 {galleryImages.map((img) => (
                   <div key={img.id} className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group" onClick={() => setSelectedImage(img.selfie_url)}>
-                    <img src={img.selfie_url!} alt={img.agent_display_name || "Selfie"} className="w-full h-full object-cover" />
+                    <img
+                      src={getThumbnailUrl(img.selfie_url, { width: 200 })}
+                      alt={img.agent_display_name || "Selfie"}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover"
+                      onError={(e) => thumbnailFallback(e, img.selfie_url!)}
+                    />
                     <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[10px] px-1 py-0.5 truncate">
                       {img.agent_display_name || "Agent"}
                     </div>
@@ -274,8 +300,9 @@ export const SupervisorDashboard = () => {
   );
 };
 
-// Activity feed card component
-function ActivityFeedCard({ activity, onImageClick, onAgentClick }: { activity: AgentActivity; onImageClick: (url: string) => void; onAgentClick?: (agentId: string, name: string | null) => void }) {
+// Activity feed card component (memoized so unrelated parent re-renders, e.g.
+// realtime toasts, don't re-render the whole 50-row feed).
+const ActivityFeedCard = memo(function ActivityFeedCard({ activity, onImageClick, onAgentClick }: { activity: AgentActivity; onImageClick: (url: string) => void; onAgentClick?: (agentId: string, name: string | null) => void }) {
   const cfg = statusConfig[activity.status] || { color: "bg-gray-500", label: activity.status };
   const initials = activity.agent_display_name
     ? activity.agent_display_name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
@@ -322,10 +349,17 @@ function ActivityFeedCard({ activity, onImageClick, onAgentClick }: { activity: 
 
         {activity.selfie_url && (
           <button onClick={(e) => { e.stopPropagation(); onImageClick(activity.selfie_url!); }} className="shrink-0">
-            <img src={activity.selfie_url} alt="" className="w-12 h-12 rounded object-cover" />
+            <img
+              src={getThumbnailUrl(activity.selfie_url, { width: 120 })}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="w-12 h-12 rounded object-cover"
+              onError={(e) => thumbnailFallback(e, activity.selfie_url!)}
+            />
           </button>
         )}
       </div>
     </Card>
   );
-}
+});

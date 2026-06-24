@@ -21,6 +21,7 @@ import { useProductFocusInventory, ProductFocusItem } from "@/hooks/useProductFo
 import { SaleFeedbackDialog, FeedbackData } from "@/components/dashboard/SaleFeedbackDialog";
 import { useToast } from "@/hooks/use-toast";
 import { formatProductName } from "@/utils/formatProductName";
+import { compressImage } from "@/utils/imageCompression";
 import { useProjectCurrency } from "@/hooks/useProjectCurrency";
 interface CartItem {
   id: string;
@@ -212,10 +213,11 @@ export const RecordSale = () => {
       
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const fileName = `${folderPath}/sale_${timestamp}.jpg`;
-      
+
+      const compressed = await compressImage(file);
       const { data, error } = await supabase.storage
         .from('sale-photos')
-        .upload(fileName, file);
+        .upload(fileName, compressed);
       
       if (error) {
         console.error('Upload error:', error);

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Camera, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { compressImage } from "@/utils/imageCompression";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { PriceReportsSection } from "@/components/attendance/PriceReportsSection";
@@ -77,13 +78,13 @@ export const Reports = () => {
     try {
       await Promise.all(
         images.map(async (image) => {
-          const fileExt = image.name.split(".").pop() ?? "jpg";
-          const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+          const compressed = await compressImage(image);
+          const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
           const filePath = `${user.id}/reports/${fileName}`;
 
           const { error } = await supabase.storage
             .from("store_images")
-            .upload(filePath, image, { cacheControl: "3600", upsert: false });
+            .upload(filePath, compressed, { cacheControl: "3600", upsert: false });
 
           if (error) throw error;
         }),

@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { supabase } from "@/integrations/supabase/client";
+import { compressImage } from "@/utils/imageCompression";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
@@ -273,11 +274,11 @@ export const SupportTicket = () => {
       let imageUrl: string | null = null;
 
       if (imageFile) {
-        const fileExt = imageFile.name.split('.').pop();
-        const filePath = `support-tickets/${user.id}/${Date.now()}.${fileExt}`;
+        const compressed = await compressImage(imageFile);
+        const filePath = `support-tickets/${user.id}/${Date.now()}.jpg`;
         const { error: uploadError } = await supabase.storage
           .from('check-in-selfies')
-          .upload(filePath, imageFile);
+          .upload(filePath, compressed);
 
         if (!uploadError) {
           const { data: urlData } = supabase.storage
@@ -377,11 +378,11 @@ export const SupportTicket = () => {
     try {
       let imageUrl: string | null = null;
       if (replyImage) {
-        const fileExt = replyImage.name.split('.').pop();
-        const filePath = `supervisor-messages/${user.id}/${Date.now()}.${fileExt}`;
+        const compressed = await compressImage(replyImage);
+        const filePath = `supervisor-messages/${user.id}/${Date.now()}.jpg`;
         const { error: uploadError } = await supabase.storage
           .from('check-in-selfies')
-          .upload(filePath, replyImage);
+          .upload(filePath, compressed);
         if (!uploadError) {
           const { data: urlData } = supabase.storage.from('check-in-selfies').getPublicUrl(filePath);
           imageUrl = urlData.publicUrl;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { supabase } from "@/integrations/supabase/client";
@@ -115,79 +115,78 @@ const hasQueryErrors = (results: Array<{ error?: unknown } | null | undefined>) 
   return true;
 };
 
+type AgentProfileStatsData = Omit<AgentProfileStats, "isLoading">;
+
+const DEFAULT_STATS_DATA: AgentProfileStatsData = {
+  displayName: "",
+  email: "",
+  currentRank: "Agent",
+  totalPoints: 0,
+  weeklyPoints: 0,
+  monthlyPoints: 0,
+  todayStoresAdded: 0,
+  todaySales: 0,
+  todayRevenue: 0,
+  todaySurveys: 0,
+  todayGiveaways: 0,
+  todayGiveawayItems: 0,
+  todayWorkMinutes: 0,
+  todayCheckIns: 0,
+  todayNotesCount: 0,
+  todayInteractionsCount: 0,
+  todayStoreVisits: 0,
+  weekStoresAdded: 0,
+  weekSales: 0,
+  weekRevenue: 0,
+  weekSurveys: 0,
+  weekGiveaways: 0,
+  weekGiveawayItems: 0,
+  weekWorkMinutes: 0,
+  weekCheckIns: 0,
+  weekNotesCount: 0,
+  weekInteractionsCount: 0,
+  weekStoreVisits: 0,
+  weekLunchMinutes: 0,
+  allTimeStoresAdded: 0,
+  allTimeSales: 0,
+  allTimeRevenue: 0,
+  allTimeSurveys: 0,
+  allTimeGiveaways: 0,
+  allTimeGiveawayItems: 0,
+  allTimeCheckIns: 0,
+  allTimeNotesCount: 0,
+  allTimeInteractionsCount: 0,
+  allTimeStoreVisits: 0,
+  allTimeWholesaleSales: 0,
+  allTimeWholesaleRevenue: 0,
+  todayTotalTasks: 0,
+  todayCompletedTasks: 0,
+  todayPendingTasks: 0,
+  reportNetWorkMinutes: 0,
+  reportTotalWorkMinutes: 0,
+  reportTotalLunchMinutes: 0,
+  reportCheckInsCount: 0,
+  reportInteractionsCount: 0,
+  reportNotesCount: 0,
+  todayWholesaleSales: 0,
+  todayWholesaleRevenue: 0,
+  weekWholesaleSales: 0,
+  weekWholesaleRevenue: 0,
+  hasSurveyAssigned: false,
+  todayReportsCount: 0,
+  allTimeReportsCount: 0,
+};
+
 export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStats => {
   const { user } = useAuth();
   const { currentWorkspaceId, currentProjectId, isInitialized } = useWorkspace();
   const agentId = overrideAgentId || user?.id;
-  const [stats, setStats] = useState<AgentProfileStats>({
-    displayName: "",
-    email: "",
-    currentRank: "Agent",
-    totalPoints: 0,
-    weeklyPoints: 0,
-    monthlyPoints: 0,
-    todayStoresAdded: 0,
-    todaySales: 0,
-    todayRevenue: 0,
-    todaySurveys: 0,
-    todayGiveaways: 0,
-    todayGiveawayItems: 0,
-    todayWorkMinutes: 0,
-    todayCheckIns: 0,
-    todayNotesCount: 0,
-    todayInteractionsCount: 0,
-    todayStoreVisits: 0,
-    weekStoresAdded: 0,
-    weekSales: 0,
-    weekRevenue: 0,
-    weekSurveys: 0,
-    weekGiveaways: 0,
-    weekGiveawayItems: 0,
-    weekWorkMinutes: 0,
-    weekCheckIns: 0,
-    weekNotesCount: 0,
-    weekInteractionsCount: 0,
-    weekStoreVisits: 0,
-    weekLunchMinutes: 0,
-    allTimeStoresAdded: 0,
-    allTimeSales: 0,
-    allTimeRevenue: 0,
-    allTimeSurveys: 0,
-    allTimeGiveaways: 0,
-    allTimeGiveawayItems: 0,
-    allTimeCheckIns: 0,
-    allTimeNotesCount: 0,
-    allTimeInteractionsCount: 0,
-    allTimeStoreVisits: 0,
-    allTimeWholesaleSales: 0,
-    allTimeWholesaleRevenue: 0,
-    todayTotalTasks: 0,
-    todayCompletedTasks: 0,
-    todayPendingTasks: 0,
-    reportNetWorkMinutes: 0,
-    reportTotalWorkMinutes: 0,
-    reportTotalLunchMinutes: 0,
-    reportCheckInsCount: 0,
-    reportInteractionsCount: 0,
-    reportNotesCount: 0,
-    todayWholesaleSales: 0,
-    todayWholesaleRevenue: 0,
-    weekWholesaleSales: 0,
-    weekWholesaleRevenue: 0,
-    hasSurveyAssigned: false,
-    todayReportsCount: 0,
-    allTimeReportsCount: 0,
-    isLoading: true,
-  });
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      if (!agentId || !currentWorkspaceId) {
-        setStats(prev => ({ ...prev, isLoading: false }));
-        return;
-      }
-
-      setStats(prev => ({ ...prev, isLoading: true }));
+  const { data, isLoading } = useQuery({
+    queryKey: ["agent-profile-stats", agentId, currentWorkspaceId, currentProjectId],
+    enabled: Boolean(isInitialized && agentId && currentWorkspaceId),
+    staleTime: 60_000,
+    queryFn: async (): Promise<AgentProfileStatsData> => {
       const todayStart = getStartOfDay();
       const weekStart = getStartOfWeek();
       const todayDate = getTodayDateString();
@@ -671,8 +670,7 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
           todayReports as any,
           allTimeReports as any,
         ])) {
-          setStats(prev => ({ ...prev, isLoading: false }));
-          return;
+          return DEFAULT_STATS_DATA;
         }
 
         // Calculate totals
@@ -778,7 +776,7 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
         const allTimeWsSales = allTimeWsPurchases.reduce((sum: number, p: any) => sum + (Number(p.quantity) || 0), 0);
         const allTimeWsRevenue = allTimeWsPurchases.reduce((sum: number, p: any) => sum + (Number(p.total_value) || 0), 0);
 
-        setStats({
+        return {
           displayName,
           email: user?.email || "",
           currentRank: rankData.data?.current_rank || "Agent",
@@ -836,18 +834,16 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
           hasSurveyAssigned: hasSurvey,
           todayReportsCount: (todayReports as any)?.count || 0,
           allTimeReportsCount: (allTimeReports as any)?.count || 0,
-          isLoading: false,
-        });
+        };
       } catch (error) {
         console.error('Error fetching agent profile stats:', error);
-        setStats(prev => ({ ...prev, isLoading: false }));
+        return DEFAULT_STATS_DATA;
       }
-    };
+    },
+  });
 
-    if (isInitialized) {
-      fetchStats();
-    }
-  }, [agentId, currentWorkspaceId, currentProjectId, isInitialized]);
-
-  return stats;
+  return {
+    ...(data ?? DEFAULT_STATS_DATA),
+    isLoading,
+  };
 };

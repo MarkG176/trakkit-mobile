@@ -1,25 +1,33 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo, createContext, useContext, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { calculateDistance, debugDistanceCalculation } from '@/utils/distanceCalculator';
-import { workspaceService } from '@/services/workspaceService';
 import { useAgentActions } from './useAgentActions';
 import { useWorkspace } from './useWorkspace';
 import { logActivity, logFailedActivity } from '@/utils/activityLogger';
 
 export type AgentStatus = 'checked_out' | 'checked_in' | 'lunch';
 
-interface StatusLog {
-  id: string;
-  status: AgentStatus;
-  timestamp: string;
-  location_lat: number | null;
-  location_lng: number | null;
-  distance_from_assigned: number | null;
-  check_in_successful: boolean | null;
+interface AgentStatusContextType {
+  currentStatus: AgentStatus;
+  loading: boolean;
+  assignedLocation: { lat: number; lng: number } | null;
+  updateStatus: (
+    newStatus: AgentStatus,
+    selfieUrl: string | null,
+    currentLat: number,
+    currentLng: number,
+  ) => Promise<{ success: boolean; message: string }>;
 }
 
-export const useAgentStatus = () => {
+const AgentStatusContext = createContext<AgentStatusContextType | undefined>(undefined);
+
+/**
+ * Holds agent status state once for the whole tree. Previously each consumer
+ * (location tracker, attendance form, camera) ran its own fetch on mount,
+ * causing 3-4 duplicate queries on the agent dashboard.
+ */
+export const AgentStatusProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const { currentWorkspaceId } = useWorkspace();
   const { recordStatusChange } = useAgentActions();
@@ -32,6 +40,7 @@ export const useAgentStatus = () => {
       fetchCurrentStatus();
       fetchAssignedLocation();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchCurrentStatus = async () => {
@@ -107,7 +116,7 @@ export const useAgentStatus = () => {
   };
 
 
-  const updateStatus = async (
+  const updateStatus = useCallback(async (
     newStatus: AgentStatus,
     selfieUrl: string | null,
     currentLat: number,
@@ -190,12 +199,24 @@ export const useAgentStatus = () => {
       logFailedActivity(`status_${newStatus}`, 'attendance', error, { lat: currentLat, lng: currentLng }, currentWorkspaceId);
       return { success: false, message: 'Failed to update status' };
     }
-  };
+  }, [user, assignedLocation, currentWorkspaceId, recordStatusChange]);
 
-  return {
-    currentStatus,
-    loading,
-    assignedLocation,
-    updateStatus,
-  };
+  const value = useMemo<AgentStatusContextType>(
+    () => ({ currentStatus, loading, assignedLocation, updateStatus }),
+    [currentStatus, loading, assignedLocation, updateStatus],
+  );
+
+  return (
+    <AgentStatusContext.Provider value={value}>
+      {children}
+    </AgentStatusContext.Provider>
+  );
+};
+
+export const useAgentStatus = (): AgentStatusContextType => {
+  const context = useContext(AgentStatusContext);
+  if (context === undefined) {
+    throw new Error('useAgentStatus must be used within an AgentStatusProvider');
+  }
+  return context;
 };

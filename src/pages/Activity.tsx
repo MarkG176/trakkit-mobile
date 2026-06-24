@@ -1,5 +1,5 @@
 // [CMP-d9d289] Activity — agent activity history list
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,19 +43,6 @@ export const Activity = () => {
       .slice(0, 2);
   };
 
-  const fetchAgentName = useCallback(async (agentId: string): Promise<{ name: string; email: string }> => {
-    const { data } = await supabase
-      .from('user_roles')
-      .select('display_name, email')
-      .eq('user_id', agentId)
-      .single();
-
-    return {
-      name: data?.display_name || data?.email || 'Unknown Agent',
-      email: data?.email || '',
-    };
-  }, []);
-
   const fetchActivities = useCallback(async (showRefresh = false) => {
     if (!currentWorkspaceId) return;
 
@@ -68,26 +55,79 @@ export const Activity = () => {
 
       const allActivities: ActivityItem[] = [];
 
-      // Fetch check-ins/check-outs
-      const { data: statusLogs } = await supabase
-        .from('agent_status_log')
-        .select('id, agent_id, status, timestamp, location_lat, location_lng, selfie_url')
-        .eq('workspace_id', currentWorkspaceId)
-        .order('timestamp', { ascending: false })
-        .limit(30);
+      // Fetch the three activity sources in parallel instead of sequentially.
+      const [statusResult, salesResult, giveawaysResult] = await Promise.all([
+        supabase
+          .from('agent_status_log')
+          .select('id, agent_id, status, timestamp, location_lat, location_lng, selfie_url')
+          .eq('workspace_id', currentWorkspaceId)
+          .order('timestamp', { ascending: false })
+          .limit(30),
+        supabase
+          .from('interactions')
+          .select(`
+            id,
+            agent_id,
+            quantity_sold,
+            sale_value,
+            created_at,
+            latitude,
+            longitude,
+            product_variants (name, sku)
+          `)
+          .eq('workspace_id', currentWorkspaceId)
+          .eq('interaction_type', 'sale')
+          .order('created_at', { ascending: false })
+          .limit(20),
+        supabase
+          .from('giveaways')
+          .select('id, agent_id, total_items, recorded_at, location_lat, location_lng, recipient_name')
+          .eq('workspace_id', currentWorkspaceId)
+          .order('recorded_at', { ascending: false })
+          .limit(20),
+      ]);
 
-      for (const log of statusLogs || []) {
-        const agent = await fetchAgentName(log.agent_id);
+      const statusLogs = statusResult.data || [];
+      const sales = salesResult.data || [];
+      const giveaways = giveawaysResult.data || [];
+
+      // Collect every agent id referenced across the three sources, then resolve
+      // all display names in a single query (was an N+1 per row before).
+      const agentIds = Array.from(
+        new Set<string>([
+          ...statusLogs.map((l) => l.agent_id),
+          ...sales.map((s) => s.agent_id),
+          ...giveaways.map((g) => g.agent_id),
+        ].filter(Boolean) as string[])
+      );
+
+      const agentNameMap = new Map<string, string>();
+      if (agentIds.length > 0) {
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('user_id, display_name, email')
+          .in('user_id', agentIds);
+
+        for (const role of roles || []) {
+          agentNameMap.set(role.user_id, role.display_name || role.email || 'Unknown Agent');
+        }
+      }
+
+      const resolveName = (agentId: string | null | undefined) =>
+        (agentId && agentNameMap.get(agentId)) || 'Unknown Agent';
+
+      for (const log of statusLogs) {
+        const name = resolveName(log.agent_id);
         let type: ActivityItem['type'] = 'check_in';
-        
+
         if (log.status === 'checked_out') type = 'check_out';
         else if (log.status === 'lunch' || log.status === 'break') type = 'break_start';
 
         allActivities.push({
           id: `status-${log.id}`,
           type,
-          agentName: agent.name,
-          agentInitials: getInitials(agent.name),
+          agentName: name,
+          agentInitials: getInitials(name),
           timestamp: log.timestamp,
           location: log.location_lat && log.location_lng 
             ? `${log.location_lat.toFixed(4)}, ${log.location_lng.toFixed(4)}`
@@ -96,35 +136,17 @@ export const Activity = () => {
         });
       }
 
-      // Fetch sales
-      const { data: sales } = await supabase
-        .from('interactions')
-        .select(`
-          id,
-          agent_id,
-          quantity_sold,
-          sale_value,
-          created_at,
-          latitude,
-          longitude,
-          product_variants (name, sku)
-        `)
-        .eq('workspace_id', currentWorkspaceId)
-        .eq('interaction_type', 'sale')
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      for (const sale of sales || []) {
+      for (const sale of sales) {
         if (!sale.agent_id) continue;
-        const agent = await fetchAgentName(sale.agent_id);
+        const name = resolveName(sale.agent_id);
         const pv = (sale.product_variants as any);
         const productName = formatProductName(pv?.name, pv?.sku, 'Product');
 
         allActivities.push({
           id: `sale-${sale.id}`,
           type: 'sale',
-          agentName: agent.name,
-          agentInitials: getInitials(agent.name),
+          agentName: name,
+          agentInitials: getInitials(name),
           timestamp: sale.created_at || new Date().toISOString(),
           details: `Sold ${sale.quantity_sold}x ${productName}`,
           value: sale.sale_value || undefined,
@@ -134,22 +156,14 @@ export const Activity = () => {
         });
       }
 
-      // Fetch giveaways
-      const { data: giveaways } = await supabase
-        .from('giveaways')
-        .select('id, agent_id, total_items, recorded_at, location_lat, location_lng, recipient_name')
-        .eq('workspace_id', currentWorkspaceId)
-        .order('recorded_at', { ascending: false })
-        .limit(20);
-
-      for (const giveaway of giveaways || []) {
-        const agent = await fetchAgentName(giveaway.agent_id);
+      for (const giveaway of giveaways) {
+        const name = resolveName(giveaway.agent_id);
 
         allActivities.push({
           id: `giveaway-${giveaway.id}`,
           type: 'giveaway',
-          agentName: agent.name,
-          agentInitials: getInitials(agent.name),
+          agentName: name,
+          agentInitials: getInitials(name),
           timestamp: giveaway.recorded_at,
           details: `Gave ${giveaway.total_items} items${giveaway.recipient_name ? ` to ${giveaway.recipient_name}` : ''}`,
           location: giveaway.location_lat && giveaway.location_lng
@@ -175,7 +189,7 @@ export const Activity = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [currentWorkspaceId, fetchAgentName, toast]);
+  }, [currentWorkspaceId, toast]);
 
   useEffect(() => {
     if (currentWorkspaceId) {
@@ -183,7 +197,7 @@ export const Activity = () => {
     }
   }, [currentWorkspaceId, fetchActivities]);
 
-  const getFilteredActivities = () => {
+  const filteredActivities = useMemo(() => {
     switch (filter) {
       case 'check_ins':
         return activities.filter(a => a.type === 'check_in' || a.type === 'check_out' || a.type === 'break_start' || a.type === 'break_end');
@@ -194,9 +208,7 @@ export const Activity = () => {
       default:
         return activities;
     }
-  };
-
-  const filteredActivities = getFilteredActivities();
+  }, [activities, filter]);
 
   return (
     <MobileLayout currentPage="more">

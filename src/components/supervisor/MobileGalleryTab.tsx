@@ -6,6 +6,7 @@ import { Image, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
+import { getThumbnailUrl, thumbnailFallback } from "@/utils/imageTransform";
 
 interface GalleryImage {
   url: string;
@@ -83,10 +84,13 @@ export function MobileGalleryTab({ workspaceId, startDate, endDate }: MobileGall
             {images.map((image, index) => (
               <div key={index} className="relative aspect-square">
                 <img
-                  src={image.url}
+                  src={getThumbnailUrl(image.url, { width: 200 })}
                   alt={`Photo ${index + 1}`}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover rounded-md cursor-pointer hover:opacity-90 transition-opacity"
                   onClick={() => setSelectedImage(image)}
+                  onError={(e) => thumbnailFallback(e, image.url)}
                 />
                 {image.agent_name && (
                   <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 rounded-b-md truncate">

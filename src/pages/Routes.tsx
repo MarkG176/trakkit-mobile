@@ -112,7 +112,7 @@ export const Routes = () => {
 
     const { data, error } = await supabase
       .from("stores")
-      .select("*")
+      .select("id, store_name, county, country, store_lat, store_long, contact")
       .eq("workspace_id", currentWorkspaceId)
       .eq("is_deleted", false);
 

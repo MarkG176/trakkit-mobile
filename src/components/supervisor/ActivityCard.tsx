@@ -1,4 +1,5 @@
 // [CMP-c285f4] ActivityCard — activity card component
+import { memo } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -30,7 +31,7 @@ const activityConfig = {
   break_end: { icon: Coffee, color: 'bg-green-500', label: 'Back from Break' },
 };
 
-export const ActivityCard = ({ activity }: ActivityCardProps) => {
+export const ActivityCard = memo(({ activity }: ActivityCardProps) => {
   const { formatAmount } = useProjectCurrency();
   const config = activityConfig[activity.type] || activityConfig.check_in;
   const Icon = config.icon;
@@ -85,4 +86,6 @@ export const ActivityCard = ({ activity }: ActivityCardProps) => {
       </div>
     </Card>
   );
-};
+});
+
+ActivityCard.displayName = "ActivityCard";

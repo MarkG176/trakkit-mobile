@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, useMemo, useCallback, createContext, useContext, ReactNode } from 'react';
 import { workspaceService, UserWorkspace } from '@/services/workspaceService';
 import { useAuth } from './useAuth';
 
@@ -27,6 +27,26 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   const [currentWorkspaceRole, setCurrentWorkspaceRole] = useState<'admin' | 'member' | 'viewer' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+
+  // Pull the latest values from the service, only triggering React state
+  // updates when a value actually changed (avoids needless re-renders).
+  const updateWorkspaceState = useCallback(() => {
+    const nextWorkspaceId = workspaceService.getCurrentWorkspaceId();
+    const nextProjectId = workspaceService.getCurrentProjectId();
+    const nextLabel = workspaceService.getCurrentWorkspaceLabel();
+    const nextCountry = workspaceService.getCurrentProjectCountry();
+    const nextWorkspaces = workspaceService.getUserWorkspaces();
+    const nextRole = workspaceService.getCurrentWorkspaceRole();
+    const nextInitialized = workspaceService.isInitialized();
+
+    setCurrentWorkspaceId((prev) => (prev === nextWorkspaceId ? prev : nextWorkspaceId));
+    setCurrentProjectId((prev) => (prev === nextProjectId ? prev : nextProjectId));
+    setCurrentWorkspaceLabel((prev) => (prev === nextLabel ? prev : nextLabel));
+    setCurrentProjectCountry((prev) => (prev === nextCountry ? prev : nextCountry));
+    setUserWorkspaces((prev) => (prev === nextWorkspaces ? prev : nextWorkspaces));
+    setCurrentWorkspaceRole((prev) => (prev === nextRole ? prev : nextRole));
+    setIsInitialized((prev) => (prev === nextInitialized ? prev : nextInitialized));
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -58,35 +78,20 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, updateWorkspaceState]);
 
-  // Continuously monitor workspace changes
+  // React to workspace changes via subscription instead of polling every second.
   useEffect(() => {
     if (!user) return;
 
-    const interval = setInterval(() => {
-      if (workspaceService.isInitialized()) {
-        const serviceWorkspaceId = workspaceService.getCurrentWorkspaceId();
-        if (serviceWorkspaceId !== currentWorkspaceId) {
-          updateWorkspaceState();
-        }
-      }
-    }, 1000);
+    const unsubscribe = workspaceService.subscribe(() => {
+      updateWorkspaceState();
+    });
 
-    return () => clearInterval(interval);
-  }, [user, currentWorkspaceId]);
+    return unsubscribe;
+  }, [user, updateWorkspaceState]);
 
-  const updateWorkspaceState = () => {
-    setCurrentWorkspaceId(workspaceService.getCurrentWorkspaceId());
-    setCurrentProjectId(workspaceService.getCurrentProjectId());
-    setCurrentWorkspaceLabel(workspaceService.getCurrentWorkspaceLabel());
-    setCurrentProjectCountry(workspaceService.getCurrentProjectCountry());
-    setUserWorkspaces(workspaceService.getUserWorkspaces());
-    setCurrentWorkspaceRole(workspaceService.getCurrentWorkspaceRole());
-    setIsInitialized(workspaceService.isInitialized());
-  };
-
-  const switchWorkspace = async (workspaceId: string): Promise<boolean> => {
+  const switchWorkspace = useCallback(async (workspaceId: string): Promise<boolean> => {
     try {
       setIsLoading(true);
       const success = await workspaceService.setCurrentWorkspace(workspaceId);
@@ -100,9 +105,9 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [updateWorkspaceState]);
 
-  const refreshWorkspaces = async (): Promise<void> => {
+  const refreshWorkspaces = useCallback(async (): Promise<void> => {
     try {
       setIsLoading(true);
       await workspaceService.refresh();
@@ -112,10 +117,10 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [updateWorkspaceState]);
 
-  return (
-    <WorkspaceContext.Provider value={{
+  const value = useMemo(
+    () => ({
       currentWorkspaceId,
       currentProjectId,
       currentWorkspaceLabel,
@@ -125,8 +130,24 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
       isLoading,
       switchWorkspace,
       refreshWorkspaces,
-      isInitialized
-    }}>
+      isInitialized,
+    }),
+    [
+      currentWorkspaceId,
+      currentProjectId,
+      currentWorkspaceLabel,
+      currentProjectCountry,
+      userWorkspaces,
+      currentWorkspaceRole,
+      isLoading,
+      switchWorkspace,
+      refreshWorkspaces,
+      isInitialized,
+    ],
+  );
+
+  return (
+    <WorkspaceContext.Provider value={value}>
       {children}
     </WorkspaceContext.Provider>
   );

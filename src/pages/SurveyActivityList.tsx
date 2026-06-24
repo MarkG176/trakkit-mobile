@@ -41,24 +41,28 @@ export const SurveyActivityList = () => {
           .select('id, timestamp, customer_name, survey_template_id, image_url')
           .eq('interaction_type', 'survey')
           .in('task_id', taskIds)
-          .order('timestamp', { ascending: false });
+          .order('timestamp', { ascending: false })
+          .limit(100);
 
         if (interactions) {
-          const activitiesWithMeta = await Promise.all(
-            interactions.map(async (interaction) => {
-              const { data: notes } = await supabase
-                .from('notes')
-                .select('id')
-                .eq('interaction_id', interaction.id)
-                .limit(1);
+          // Batch the notes lookup into a single query (was an N+1 per row).
+          const interactionIds = interactions.map((i) => i.id);
+          const interactionsWithNotes = new Set<string>();
+          if (interactionIds.length > 0) {
+            const { data: notes } = await supabase
+              .from('notes')
+              .select('interaction_id')
+              .in('interaction_id', interactionIds);
+            for (const note of notes || []) {
+              if (note.interaction_id) interactionsWithNotes.add(note.interaction_id);
+            }
+          }
 
-              return {
-                ...interaction,
-                has_notes: (notes?.length || 0) > 0,
-                has_images: !!interaction.image_url
-              };
-            })
-          );
+          const activitiesWithMeta = interactions.map((interaction) => ({
+            ...interaction,
+            has_notes: interactionsWithNotes.has(interaction.id),
+            has_images: !!interaction.image_url,
+          }));
 
           setActivities(activitiesWithMeta);
         }

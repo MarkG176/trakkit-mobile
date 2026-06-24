@@ -27,8 +27,13 @@ export const addTextOverlayToImage = async (
       return;
     }
 
+    // Load via an object URL instead of readAsDataURL: avoids inflating the
+    // file into a ~33% larger base64 string in memory before decoding.
+    const objectUrl = URL.createObjectURL(imageFile);
+
     const img = new Image();
     img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
       // Cap longest side at 1280px to keep upload sizes small
       const MAX_DIM = 1280;
       const scale = Math.min(1, MAX_DIM / Math.max(img.width, img.height));
@@ -90,15 +95,12 @@ export const addTextOverlayToImage = async (
 
 
     img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
       reject(new Error('Could not load image'));
     };
 
-    // Load the image
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      img.src = e.target?.result as string;
-    };
-    reader.readAsDataURL(imageFile);
+    // Load the image from the object URL
+    img.src = objectUrl;
   });
 };
 

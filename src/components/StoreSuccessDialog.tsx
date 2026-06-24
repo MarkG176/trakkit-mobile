@@ -16,6 +16,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { StockReportsSection } from "@/components/attendance/StockReportsSection";
 import { PriceReportDialog } from "@/components/attendance/PriceReportDialog";
 import { formatProductName } from "@/utils/formatProductName";
+import { compressImage } from "@/utils/imageCompression";
 import { useProjectCurrency } from "@/hooks/useProjectCurrency";
 
 interface StoreSuccessDialogProps {
@@ -488,23 +489,29 @@ export const StoreSuccessDialog = ({ open, onOpenChange, storeId, storeName, sto
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Upload photos FIRST (before geolocation which can block/timeout)
+      // Upload photos FIRST (before geolocation which can block/timeout).
+      // Compress each, then upload all in parallel instead of one-at-a-time.
       const uploadedCaptions: { fileName: string; caption: string }[] = [];
       if (photoCount > 0) {
-        for (const photo of selectedPhotos) {
-          const fileExt = photo.file.name.split('.').pop();
-          const fileName = `${storeId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-          console.log('📤 Uploading to store_images:', fileName);
-          const { error: uploadError } = await supabase.storage
-            .from('store_images')
-            .upload(fileName, photo.file, { contentType: photo.file.type });
-          if (uploadError) {
-            console.error('❌ Upload error:', uploadError);
-            throw uploadError;
-          }
-          console.log('✅ Upload success:', fileName);
-          if (photo.caption) {
-            uploadedCaptions.push({ fileName, caption: photo.caption });
+        const results = await Promise.all(
+          selectedPhotos.map(async (photo) => {
+            const compressed = await compressImage(photo.file);
+            const fileName = `${storeId}/${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+            console.log('📤 Uploading to store_images:', fileName);
+            const { error: uploadError } = await supabase.storage
+              .from('store_images')
+              .upload(fileName, compressed, { contentType: compressed.type });
+            if (uploadError) {
+              console.error('❌ Upload error:', uploadError);
+              throw uploadError;
+            }
+            console.log('✅ Upload success:', fileName);
+            return { fileName, caption: photo.caption };
+          })
+        );
+        for (const result of results) {
+          if (result.caption) {
+            uploadedCaptions.push({ fileName: result.fileName, caption: result.caption });
           }
         }
       }

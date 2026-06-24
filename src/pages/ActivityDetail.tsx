@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { formatProductName } from "@/utils/formatProductName";
+import { compressImage } from "@/utils/imageCompression";
 import { useProjectCurrency } from "@/hooks/useProjectCurrency";
 
 interface ActivityData {
@@ -131,12 +132,12 @@ export const ActivityDetail = () => {
     if (!file || !activityId) return;
 
     try {
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${activityId}/${Date.now()}.${fileExt}`;
+      const compressed = await compressImage(file);
+      const filePath = `${activityId}/${Date.now()}.jpg`;
 
       const { error: uploadError } = await supabase.storage
         .from('interaction-images')
-        .upload(filePath, file);
+        .upload(filePath, compressed);
 
       if (uploadError) throw uploadError;
 

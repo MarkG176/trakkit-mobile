@@ -46,25 +46,30 @@ export const SalesActivityList = () => {
           .select('id, timestamp, customer_name, sale_value, product_variant_id, image_url, product_variants(name, sku)')
           .eq('interaction_type', 'sale')
           .in('task_id', taskIds)
-          .order('timestamp', { ascending: false });
+          .order('timestamp', { ascending: false })
+          .limit(100);
 
         if (interactions) {
-          const activitiesWithMeta = await Promise.all(
-            interactions.map(async (interaction) => {
-              const { data: notes } = await supabase
-                .from('notes')
-                .select('id')
-                .eq('interaction_id', interaction.id)
-                .limit(1);
+          // Resolve which interactions have notes in a single batched query
+          // instead of one query per interaction (was an N+1).
+          const interactionIds = interactions.map((i) => i.id);
+          const interactionsWithNotes = new Set<string>();
+          if (interactionIds.length > 0) {
+            const { data: notes } = await supabase
+              .from('notes')
+              .select('interaction_id')
+              .in('interaction_id', interactionIds);
+            for (const note of notes || []) {
+              if (note.interaction_id) interactionsWithNotes.add(note.interaction_id);
+            }
+          }
 
-              return {
-                ...interaction,
-                product_name: (() => { const pv = (interaction as any).product_variants; return pv ? formatProductName(pv.name, pv.sku, 'Product') : null; })(),
-                has_notes: (notes?.length || 0) > 0,
-                has_images: !!interaction.image_url
-              };
-            })
-          );
+          const activitiesWithMeta = interactions.map((interaction) => ({
+            ...interaction,
+            product_name: (() => { const pv = (interaction as any).product_variants; return pv ? formatProductName(pv.name, pv.sku, 'Product') : null; })(),
+            has_notes: interactionsWithNotes.has(interaction.id),
+            has_images: !!interaction.image_url,
+          }));
 
           setActivities(activitiesWithMeta);
         }

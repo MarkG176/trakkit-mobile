@@ -281,7 +281,7 @@ export const Surveys = () => {
         }
       };
 
-      recorder.start();
+      recorder.start(1000); // collect in 1s chunks to avoid buffering the whole clip in memory
       setMediaRecorder(recorder);
       setIsRecording(true);
       setRecordingDuration(0);
@@ -317,21 +317,18 @@ export const Surveys = () => {
 
       const originalOnstop = mediaRecorder.onstop;
       mediaRecorder.onstop = async (ev) => {
+        // originalOnstop performs (and awaits) the upload, populating
+        // recordingUrlRef. Awaiting it here guarantees the URL is ready before
+        // we resolve, instead of polling stale `recordingUploading` state which
+        // could resolve immediately with null.
         if (originalOnstop && typeof originalOnstop === 'function') {
-          await (originalOnstop as any).call(mediaRecorder, ev);
+          try {
+            await (originalOnstop as any).call(mediaRecorder, ev);
+          } catch (err) {
+            console.error('Recording upload failed:', err);
+          }
         }
-        // Wait for upload to complete, then resolve with ref value
-        const waitForUrl = () => {
-          const checkInterval = setInterval(() => {
-            if (!recordingUploading) {
-              clearInterval(checkInterval);
-              resolve(recordingUrlRef.current);
-            }
-          }, 200);
-          // Timeout after 30s
-          setTimeout(() => { clearInterval(checkInterval); resolve(recordingUrlRef.current); }, 30000);
-        };
-        waitForUrl();
+        resolve(recordingUrlRef.current);
       };
 
       mediaRecorder.stop();

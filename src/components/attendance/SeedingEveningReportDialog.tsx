@@ -1,5 +1,5 @@
 // [CMP-10743b] SeedingEveningReportDialog — seeding evening report dialog component
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { compressImage } from "@/utils/imageCompression";
 import { Loader2, Package, Camera, X, ImageIcon } from "lucide-react";
 import { useProjectCurrency } from "@/hooks/useProjectCurrency";
 
@@ -38,12 +39,28 @@ export const SeedingEveningReportDialog = ({ open, onOpenChange, onComplete }: S
 
   const [salesSummary, setSalesSummary] = useState<SalesSummaryItem[]>([]);
   const [images, setImages] = useState<File[]>([]);
+  // Preview object URLs are created once per file and revoked on remove/reset/
+  // unmount, instead of calling URL.createObjectURL() on every render.
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const previewUrlsRef = useRef<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
+  useEffect(() => {
+    previewUrlsRef.current = previewUrls;
+  }, [previewUrls]);
+
+  useEffect(() => () => {
+    previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+  }, []);
+
   const resetFormState = () => {
     setImages([]);
+    setPreviewUrls((prev) => {
+      prev.forEach((url) => URL.revokeObjectURL(url));
+      return [];
+    });
     setUploadProgress(0);
   };
 
@@ -130,11 +147,17 @@ export const SeedingEveningReportDialog = ({ open, onOpenChange, onComplete }: S
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
       setImages((prev) => [...prev, ...newFiles]);
+      setPreviewUrls((prev) => [...prev, ...newFiles.map((f) => URL.createObjectURL(f))]);
     }
   };
 
   const removeImage = (index: number) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
+    setPreviewUrls((prev) => {
+      const url = prev[index];
+      if (url) URL.revokeObjectURL(url);
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const handleSubmit = async () => {
@@ -154,11 +177,11 @@ export const SeedingEveningReportDialog = ({ open, onOpenChange, onComplete }: S
       try {
         let uploaded = 0;
         const uploadPromises = images.map(async (image) => {
-          const fileExt = image.name.split(".").pop();
-          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+          const compressed = await compressImage(image);
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.jpg`;
           const filePath = `${user.id}/Capwell/${fileName}`;
 
-          const { error } = await supabase.storage.from("agent-selfies").upload(filePath, image, {
+          const { error } = await supabase.storage.from("agent-selfies").upload(filePath, compressed, {
             cacheControl: "3600",
             upsert: false,
           });
@@ -266,7 +289,7 @@ export const SeedingEveningReportDialog = ({ open, onOpenChange, onComplete }: S
                     <div key={index} className="relative group">
                       <div className="aspect-square rounded-md overflow-hidden bg-muted flex items-center justify-center">
                         <img
-                          src={URL.createObjectURL(file)}
+                          src={previewUrls[index]}
                           alt={`Preview ${index + 1}`}
                           className="w-full h-full object-cover"
                         />

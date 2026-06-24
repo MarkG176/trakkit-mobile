@@ -1,7 +1,9 @@
 // [CMP-ae3f23] CheckInThumbnail — check in thumbnail component
+import { memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Clock, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
+import { getThumbnailUrl, thumbnailFallback } from "@/utils/imageTransform";
 
 interface CheckInThumbnailProps {
   checkIn: {
@@ -24,7 +26,7 @@ const statusConfig = {
   checked_out: { color: 'bg-red-500', label: 'Out' },
 };
 
-export const CheckInThumbnail = ({ checkIn, onClick }: CheckInThumbnailProps) => {
+export const CheckInThumbnail = memo(({ checkIn, onClick }: CheckInThumbnailProps) => {
   const config = statusConfig[checkIn.status];
   const isOutOfRange = checkIn.distanceFromAssigned && checkIn.distanceFromAssigned > 100;
 
@@ -35,9 +37,12 @@ export const CheckInThumbnail = ({ checkIn, onClick }: CheckInThumbnailProps) =>
     >
       {checkIn.imageUrl ? (
         <img 
-          src={checkIn.imageUrl} 
+          src={getThumbnailUrl(checkIn.imageUrl, { width: 200 })} 
           alt={checkIn.agentName} 
+          loading="lazy"
+          decoding="async"
           className="w-full h-full object-cover"
+          onError={(e) => thumbnailFallback(e, checkIn.imageUrl!)}
         />
       ) : (
         <div className="w-full h-full bg-muted flex items-center justify-center">
@@ -75,4 +80,6 @@ export const CheckInThumbnail = ({ checkIn, onClick }: CheckInThumbnailProps) =>
       </div>
     </div>
   );
-};
+});
+
+CheckInThumbnail.displayName = "CheckInThumbnail";

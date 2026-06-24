@@ -1,5 +1,5 @@
 // [CMP-255781] MobileRankingsTab — mobile rankings tab component
-import { useState } from "react";
+import { useState, useRef, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Trophy, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { useProjectCurrency } from "@/hooks/useProjectCurrency";
 
 interface AgentRanking {
@@ -29,10 +30,17 @@ export function MobileRankingsTab({ workspaceId }: MobileRankingsTabProps) {
   const { data: rankings = [], isLoading } = useQuery({
     queryKey: ['mobile-rankings', workspaceId],
     queryFn: async (): Promise<AgentRanking[]> => {
+      // Bound the scan to a recent window so the query doesn't grow unbounded
+      // with workspace tenure (was fetching every row, all-time).
+      const since = new Date();
+      since.setDate(since.getDate() - 90);
+      const sinceWorkDate = since.toISOString().slice(0, 10);
+
       const { data, error } = await supabase
         .from("daily_sales_tracking")
         .select("agent_id, agent_name, quantity_sold, total_value")
-        .eq("workspace_id", workspaceId!);
+        .eq("workspace_id", workspaceId!)
+        .gte("work_date", sinceWorkDate);
       
       if (error) throw error;
       if (!data || data.length === 0) return [];
@@ -70,9 +78,21 @@ export function MobileRankingsTab({ workspaceId }: MobileRankingsTabProps) {
     enabled: !!workspaceId,
   });
 
-  const filteredRankings = rankings.filter(agent =>
-    agent.agent_name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredRankings = useMemo(
+    () =>
+      rankings.filter((agent) =>
+        agent.agent_name.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
+    [rankings, searchQuery],
   );
+
+  const scrollParentRef = useRef<HTMLDivElement>(null);
+  const rowVirtualizer = useVirtualizer({
+    count: filteredRankings.length,
+    getScrollElement: () => scrollParentRef.current,
+    estimateSize: () => 88,
+    overscan: 8,
+  });
 
   const getRankBadge = (index: number) => {
     if (index === 0) return { color: "bg-yellow-500", icon: "🥇" };
@@ -109,46 +129,58 @@ export function MobileRankingsTab({ workspaceId }: MobileRankingsTabProps) {
         </p>
       </div>
 
-      {/* Rankings List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      {/* Rankings List (virtualized) */}
+      <div ref={scrollParentRef} className="flex-1 overflow-y-auto p-4">
         {filteredRankings.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <Trophy className="w-12 h-12 mb-2 opacity-50" />
             <p className="text-sm">No agents found</p>
           </div>
         ) : (
-          filteredRankings.map((agent, index) => {
-            const badge = getRankBadge(index);
-            return (
-              <Card key={agent.agent_id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    {/* Rank Badge */}
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold ${badge.color} ${index < 3 ? 'text-white' : 'text-foreground'}`}>
-                      {badge.icon || index + 1}
-                    </div>
+          <div className="relative" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const agent = filteredRankings[virtualRow.index];
+              const index = virtualRow.index;
+              const badge = getRankBadge(index);
+              return (
+                <div
+                  key={agent.agent_id}
+                  ref={rowVirtualizer.measureElement}
+                  data-index={index}
+                  className="absolute left-0 top-0 w-full pb-3"
+                  style={{ transform: `translateY(${virtualRow.start}px)` }}
+                >
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-4">
+                        {/* Rank Badge */}
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold ${badge.color} ${index < 3 ? 'text-white' : 'text-foreground'}`}>
+                          {badge.icon || index + 1}
+                        </div>
 
-                    {/* Agent Info */}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{agent.agent_name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {agent.total_units_sold} units
-                        <span className="mx-1">•</span>
-                        {agent.sales_count} sales
-                      </p>
-                    </div>
+                        {/* Agent Info */}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{agent.agent_name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {agent.total_units_sold} units
+                            <span className="mx-1">•</span>
+                            {agent.sales_count} sales
+                          </p>
+                        </div>
 
-                    {/* Sales Value */}
-                    <div className="text-right">
-                      <p className="font-bold text-primary">
-                        {formatCurrency(agent.total_sales_value)}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })
+                        {/* Sales Value */}
+                        <div className="text-right">
+                          <p className="font-bold text-primary">
+                            {formatCurrency(agent.total_sales_value)}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>
