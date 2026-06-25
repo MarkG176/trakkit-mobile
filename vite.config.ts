@@ -58,6 +58,16 @@ export default defineConfig(({ mode }) => ({
         ]
       },
       workbox: {
+        // Purge precache entries from prior builds so mobile/PWA clients stop
+        // requesting chunk hashes that no longer exist (the blank-screen cause).
+        cleanupOutdatedCaches: true,
+        // Activate the new service worker immediately after deploy instead of
+        // waiting for all tabs to close, so clients get the fresh module graph.
+        clientsClaim: true,
+        skipWaiting: true,
+        // SPA deep links resolve to the current shell rather than a 404.
+        navigateFallback: 'index.html',
+        navigateFallbackDenylist: [/^\/auth\/callback/],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         runtimeCaching: [
@@ -84,25 +94,13 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
-        // Group React + ecosystem libs that depend on React's named exports
-        // (forwardRef, createContext, etc.) into the SAME vendor chunk to
-        // avoid a cross-chunk init-order race that left forwardRef undefined
-        // on first paint (manifested as a blank white screen on mobile).
+        // Collapse all third-party code into a single `vendor` chunk. Splitting
+        // vendors previously left React's named exports (forwardRef, etc.)
+        // undefined due to a cross-chunk init-order race, and produced many
+        // independently-hashed chunks that could go stale on mobile/PWA caches
+        // (blank white screen). One vendor chunk removes both failure modes.
         manualChunks(id) {
-          if (!id.includes("node_modules")) return undefined;
-          if (
-            /[\\/]react[\\/]/.test(id) ||
-            id.includes("react-dom") ||
-            id.includes("react-router") ||
-            id.includes("@radix-ui") ||
-            id.includes("lucide-react") ||
-            id.includes("@tanstack")
-          ) {
-            return "react-vendor";
-          }
-          if (id.includes("@supabase")) return "supabase-vendor";
-          if (id.includes("@react-google-maps") || id.includes("@googlemaps")) return "maps-vendor";
-          if (id.includes("date-fns")) return "date-vendor";
+          if (id.includes("node_modules")) return "vendor";
           return undefined;
         },
       },
