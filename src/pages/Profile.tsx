@@ -2,7 +2,7 @@
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Mail, LogOut, MapPin, Clock, ShoppingCart, FileText, MessageSquare, CheckCircle, Store, ListTodo, Trophy, Star } from "lucide-react";
+import { ArrowLeft, Mail, LogOut, MapPin, Clock, ShoppingCart, FileText, MessageSquare, CheckCircle, Store, ListTodo, Trophy, Star, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAgentProfileStats } from "@/hooks/useAgentProfileStats";
@@ -10,6 +10,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { useProjectComponents } from "@/hooks/useProjectComponents";
 import { useProjectCurrency } from "@/hooks/useProjectCurrency";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
+import { CheckInsSheet } from "@/components/profile/CheckInsSheet";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,15 +25,38 @@ const formatWorkTime = (minutes: number) => {
   return `${hours}h ${mins}m`;
 };
 
-const MetricRow = ({ label, value, icon: Icon }: { label: string; value: string | number; icon?: React.ElementType }) => (
-  <div className="flex items-center justify-between py-2.5 border-b border-border last:border-b-0">
-    <div className="flex items-center gap-2">
-      {Icon && <Icon className="w-4 h-4 text-muted-foreground" />}
-      <span className="text-sm text-muted-foreground">{label}</span>
+const MetricRow = ({ label, value, icon: Icon, onClick }: { label: string; value: string | number; icon?: React.ElementType; onClick?: () => void }) => {
+  const content = (
+    <>
+      <div className="flex items-center gap-2">
+        {Icon && <Icon className="w-4 h-4 text-muted-foreground" />}
+        <span className="text-sm text-muted-foreground">{label}</span>
+      </div>
+      <div className="flex items-center gap-1">
+        <span className="text-sm font-semibold text-foreground">{value}</span>
+        {onClick && <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+      </div>
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex w-full items-center justify-between py-2.5 border-b border-border last:border-b-0 text-left transition-colors active:bg-muted/60 hover:bg-muted/40 -mx-1 px-1 rounded"
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-between py-2.5 border-b border-border last:border-b-0">
+      {content}
     </div>
-    <span className="text-sm font-semibold text-foreground">{value}</span>
-  </div>
-);
+  );
+};
 
 const SectionTitle = ({ children }: { children: React.ReactNode }) => (
   <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
@@ -47,6 +71,7 @@ export const Profile = () => {
   const { t } = useLanguage();
   const stats = useAgentProfileStats();
   const [teamName, setTeamName] = useState<string | null>(null);
+  const [checkInRange, setCheckInRange] = useState<null | 'today' | 'all'>(null);
 
   useEffect(() => {
     const fetchTeamName = async () => {
@@ -157,7 +182,7 @@ export const Profile = () => {
               <CardContent className="p-4">
                 <SectionTitle>{t("activity_attendance")}</SectionTitle>
                 {showDailySummary && <MetricRow label={t("store_visits")} value={stats.todayStoreVisits} icon={Store} />}
-                <MetricRow label={t("check_ins")} value={stats.todayCheckIns} icon={CheckCircle} />
+                <MetricRow label={t("check_ins")} value={stats.todayCheckIns} icon={CheckCircle} onClick={() => setCheckInRange('today')} />
                 {showWorkHours && <MetricRow label={t("work_time")} value={formatWorkTime(stats.todayWorkMinutes)} icon={Clock} />}
                 {showDailySummary && <MetricRow label={t("stores_added")} value={stats.todayStoresAdded} icon={MapPin} />}
               </CardContent>
@@ -206,7 +231,7 @@ export const Profile = () => {
               <CardContent className="p-4">
                 <SectionTitle>{t("engagement")}</SectionTitle>
                 {<MetricRow label={t("interactions")} value={stats.todayInteractionsCount} icon={MessageSquare} />}
-                {showSurveys && <MetricRow label={t("surveys_done")} value={stats.todaySurveys} icon={FileText} />}
+                {showSurveys && <MetricRow label={t("surveys_done")} value={stats.todaySurveys} icon={FileText} onClick={() => navigate('/survey-activities', { state: { range: 'today' } })} />}
                 {showGiveaways && <MetricRow label={t("giveaways")} value={stats.todayGiveaways} icon={Star} />}
                 {showGiveaways && <MetricRow label={t("items_given")} value={stats.todayGiveawayItems} icon={Star} />}
                 {showDailySummary && <MetricRow label={t("notes")} value={stats.todayNotesCount} icon={FileText} />}
@@ -222,7 +247,7 @@ export const Profile = () => {
               <CardContent className="p-4">
                 <SectionTitle>{t("activity_attendance")}</SectionTitle>
                 {!isWholesale && !isSeeding && !isInstore && !isSurvey && <MetricRow label={t("store_visits")} value={stats.allTimeStoreVisits} icon={Store} />}
-                <MetricRow label={t("check_ins")} value={stats.allTimeCheckIns} icon={CheckCircle} />
+                <MetricRow label={t("check_ins")} value={stats.allTimeCheckIns} icon={CheckCircle} onClick={() => setCheckInRange('all')} />
                 {isSeeding && <MetricRow label={t("stores_added")} value={stats.allTimeStoresAdded} icon={MapPin} />}
               </CardContent>
             </Card>
@@ -271,7 +296,7 @@ export const Profile = () => {
                 <SectionTitle>{t("engagement")}</SectionTitle>
                 {(!isWholesale || isSeeding) && !isSurvey && <MetricRow label={t("interactions")} value={stats.allTimeInteractionsCount} icon={MessageSquare} />}
                 {(!isWholesale || stats.hasSurveyAssigned || isSeeding || isSurvey) && (
-                  <MetricRow label={t("surveys_done")} value={stats.allTimeSurveys} icon={FileText} />
+                  <MetricRow label={t("surveys_done")} value={stats.allTimeSurveys} icon={FileText} onClick={() => navigate('/survey-activities', { state: { range: 'all' } })} />
                 )}
                 {!isSeeding && !isSurvey && <MetricRow label={t("giveaways")} value={stats.allTimeGiveaways} icon={Star} />}
                 {!isWholesale && !isSeeding && !isSurvey && <MetricRow label={t("items_given")} value={stats.allTimeGiveawayItems} icon={Star} />}
@@ -314,6 +339,11 @@ export const Profile = () => {
           </CardContent>
         </Card>
       </div>
+
+      <CheckInsSheet
+        range={checkInRange}
+        onOpenChange={(open) => { if (!open) setCheckInRange(null); }}
+      />
     </MobileLayout>
   );
 };
