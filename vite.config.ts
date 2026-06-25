@@ -84,22 +84,29 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
-        // Split large third-party libraries into long-lived vendor chunks so
-        // app-code changes don't force re-downloading all dependencies.
+        // Group React + ecosystem libs that depend on React's named exports
+        // (forwardRef, createContext, etc.) into the SAME vendor chunk to
+        // avoid a cross-chunk init-order race that left forwardRef undefined
+        // on first paint (manifested as a blank white screen on mobile).
         manualChunks(id) {
           if (!id.includes("node_modules")) return undefined;
-          if (id.includes("react-router") || id.includes("react-dom") || /[\\/]react[\\/]/.test(id)) {
+          if (
+            /[\\/]react[\\/]/.test(id) ||
+            id.includes("react-dom") ||
+            id.includes("react-router") ||
+            id.includes("@radix-ui") ||
+            id.includes("lucide-react") ||
+            id.includes("@tanstack")
+          ) {
             return "react-vendor";
           }
           if (id.includes("@supabase")) return "supabase-vendor";
-          if (id.includes("@tanstack")) return "tanstack-vendor";
           if (id.includes("@react-google-maps") || id.includes("@googlemaps")) return "maps-vendor";
-          if (id.includes("@radix-ui")) return "radix-vendor";
           if (id.includes("date-fns")) return "date-vendor";
-          if (id.includes("lucide-react")) return "icons-vendor";
           return undefined;
         },
       },
     },
   },
+
 }));
