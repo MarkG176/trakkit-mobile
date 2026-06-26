@@ -131,9 +131,8 @@ export const Routes = () => {
     }
   };
 
-  const filteredStores = (
-    selectedCountry ? stores.filter((store) => store.country === selectedCountry) : stores
-  ).sort((a, b) => a.store_name.localeCompare(b.store_name));
+  // Show all workspace stores regardless of country (Country field is hidden)
+  const filteredStores = [...stores].sort((a, b) => a.store_name.localeCompare(b.store_name));
 
   const storeSearchResults = filteredStores.filter((store) =>
     store.store_name.toLowerCase().includes(storeSearchText.toLowerCase())
