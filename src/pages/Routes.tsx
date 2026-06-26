@@ -110,11 +110,24 @@ export const Routes = () => {
       return;
     }
 
-    const { data, error } = await supabase
+    const mainQuery = supabase
       .from("stores")
       .select("id, store_name, county, country, store_lat, store_long, contact")
       .eq("workspace_id", currentWorkspaceId)
-      .eq("is_deleted", false);
+      .or("is_deleted.eq.false,is_deleted.is.null");
+
+    const diagQuery = supabase
+      .from("stores")
+      .select("id, store_name, workspace_id, is_deleted")
+      .ilike("store_name", "%quickmart%");
+
+    const [{ data, error }, { data: diagnosticData }] = await Promise.all([
+      mainQuery,
+      diagQuery,
+    ]);
+
+    console.log(`[Routes] fetchStores: workspace_id=${currentWorkspaceId}, returned ${data?.length ?? 0} stores`, data?.map((s) => s.store_name));
+    console.log("[Routes] diagnostic - stores matching 'quickmart':", diagnosticData);
 
     if (error) {
       console.error("Error fetching stores:", error);
