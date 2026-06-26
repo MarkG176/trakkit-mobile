@@ -121,9 +121,19 @@ export const Routes = () => {
       .select("id, store_name, workspace_id, is_deleted")
       .ilike("store_name", "%quickmart%");
 
-    const [{ data, error }, { data: diagnosticData }] = await Promise.all([
+    const activeProjectQuery = supabase
+      .from("project_plans")
+      .select("id, target_stores")
+      .eq("workspace_id", currentWorkspaceId)
+      .eq("status", "active")
+      .or("is_deleted.eq.false,is_deleted.is.null")
+      .limit(1)
+      .maybeSingle();
+
+    const [{ data, error }, { data: diagnosticData }, { data: activeProject }] = await Promise.all([
       mainQuery,
       diagQuery,
+      activeProjectQuery,
     ]);
 
     console.log(`[Routes] fetchStores: workspace_id=${currentWorkspaceId}, returned ${data?.length ?? 0} stores`, data?.map((s) => s.store_name));
@@ -134,15 +144,46 @@ export const Routes = () => {
       return;
     }
 
-    if (data) {
-      setStores(data);
-      const uniqueCountries = Array.from(new Set(data.map((store) => store.country).filter(Boolean))) as string[];
-      setCountries(uniqueCountries);
-      setSelectedCountry((prev) =>
-        prev && uniqueCountries.includes(prev) ? prev : uniqueCountries[0] ?? "",
-      );
+    let merged: Store[] = data ?? [];
+
+    // Merge in any stores referenced by the active project's target_stores
+    // that aren't already present (handles workspace_id discrepancies).
+    const rawTargets = (activeProject as any)?.target_stores;
+    const targetIds: string[] = Array.isArray(rawTargets)
+      ? rawTargets.filter((v): v is string => typeof v === "string")
+      : [];
+
+    if (targetIds.length > 0) {
+      const existingIds = new Set(merged.map((s) => s.id));
+      const missingIds = targetIds.filter((id) => !existingIds.has(id));
+
+      if (missingIds.length > 0) {
+        const { data: extra, error: extraError } = await supabase
+          .from("stores")
+          .select("id, store_name, county, country, store_lat, store_long, contact")
+          .in("id", missingIds)
+          .or("is_deleted.eq.false,is_deleted.is.null");
+
+        if (extraError) {
+          console.error("[Routes] Error fetching target_stores extras:", extraError);
+        } else if (extra && extra.length > 0) {
+          console.log(`[Routes] merged ${extra.length} additional stores from target_stores`, extra.map((s) => s.store_name));
+          merged = [...merged, ...extra];
+        }
+      }
     }
+
+    // Deduplicate by id
+    const dedup = Array.from(new Map(merged.map((s) => [s.id, s])).values());
+
+    setStores(dedup);
+    const uniqueCountries = Array.from(new Set(dedup.map((store) => store.country).filter(Boolean))) as string[];
+    setCountries(uniqueCountries);
+    setSelectedCountry((prev) =>
+      prev && uniqueCountries.includes(prev) ? prev : uniqueCountries[0] ?? "",
+    );
   };
+
 
   // Show all workspace stores regardless of country (Country field is hidden)
   const filteredStores = [...stores].sort((a, b) => a.store_name.localeCompare(b.store_name));
