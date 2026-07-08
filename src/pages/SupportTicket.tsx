@@ -1,5 +1,5 @@
 // [CMP-4d41b1] SupportTicket — support ticket submission
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -136,6 +136,28 @@ export const SupportTicket = () => {
   const [replyLocation, setReplyLocation] = useState<{ lat: number; lng: number; label: string } | null>(null);
   const [gettingLocation, setGettingLocation] = useState(false);
 
+  const imagePreviewUrlRef = useRef<string | null>(null);
+  const replyPreviewUrlRef = useRef<string | null>(null);
+
+  const revokeImagePreview = () => {
+    if (imagePreviewUrlRef.current) {
+      URL.revokeObjectURL(imagePreviewUrlRef.current);
+      imagePreviewUrlRef.current = null;
+    }
+  };
+
+  const revokeReplyPreview = () => {
+    if (replyPreviewUrlRef.current) {
+      URL.revokeObjectURL(replyPreviewUrlRef.current);
+      replyPreviewUrlRef.current = null;
+    }
+  };
+
+  useEffect(() => () => {
+    revokeImagePreview();
+    revokeReplyPreview();
+  }, []);
+
   const filteredMembers = (() => {
     const filtered = members.filter(m => m.user_id !== user?.id);
     if (!recipientSearch.trim()) return filtered;
@@ -247,14 +269,16 @@ export const SupportTicket = () => {
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      revokeImagePreview();
       setImageFile(file);
-      const reader = new FileReader();
-      reader.onload = () => setImagePreview(reader.result as string);
-      reader.readAsDataURL(file);
+      const url = URL.createObjectURL(file);
+      imagePreviewUrlRef.current = url;
+      setImagePreview(url);
     }
   };
 
   const removeImage = () => {
+    revokeImagePreview();
     setImageFile(null);
     setImagePreview(null);
   };
@@ -343,10 +367,11 @@ export const SupportTicket = () => {
   const handleReplyImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      revokeReplyPreview();
       setReplyImage(file);
-      const reader = new FileReader();
-      reader.onload = () => setReplyImagePreview(reader.result as string);
-      reader.readAsDataURL(file);
+      const url = URL.createObjectURL(file);
+      replyPreviewUrlRef.current = url;
+      setReplyImagePreview(url);
     }
   };
 
@@ -407,6 +432,7 @@ export const SupportTicket = () => {
       setSelectedRecipient(null);
       setShowReplyCompose(false);
       setReplyImage(null);
+      revokeReplyPreview();
       setReplyImagePreview(null);
       setReplyLocation(null);
     } catch (err: any) {
@@ -437,7 +463,7 @@ export const SupportTicket = () => {
           <p className="text-muted-foreground mb-6">
             Our team is already working on your request. We'll get back to you as soon as possible.
           </p>
-          <Button onClick={() => { setSubmitted(false); setSelectedType(null); setMessage(""); setImageFile(null); setImagePreview(null); fetchMyTickets(); }} className="w-full">
+          <Button onClick={() => { setSubmitted(false); setSelectedType(null); setMessage(""); revokeImagePreview(); setImageFile(null); setImagePreview(null); fetchMyTickets(); }} className="w-full">
             Back to Chat
           </Button>
         </div>
@@ -764,7 +790,7 @@ export const SupportTicket = () => {
               <div className="relative inline-block">
                 <img src={replyImagePreview} alt="Attachment" className="w-24 h-24 object-cover rounded-lg border" />
                 <button
-                  onClick={() => { setReplyImage(null); setReplyImagePreview(null); }}
+                  onClick={() => { revokeReplyPreview(); setReplyImage(null); setReplyImagePreview(null); }}
                   className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1"
                 >
                   <X className="w-3 h-3" />

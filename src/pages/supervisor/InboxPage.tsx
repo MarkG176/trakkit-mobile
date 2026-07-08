@@ -1,5 +1,5 @@
 // [CMP-1aa599] InboxPage — supervisor inbox/messages page
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { SupervisorBottomNav } from "@/components/supervisor/SupervisorBottomNav";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -101,6 +101,16 @@ export const InboxPage = () => {
   // Attachment state
   const [attachImage, setAttachImage] = useState<File | null>(null);
   const [attachImagePreview, setAttachImagePreview] = useState<string | null>(null);
+  const attachPreviewUrlRef = useRef<string | null>(null);
+
+  const revokeAttachPreview = () => {
+    if (attachPreviewUrlRef.current) {
+      URL.revokeObjectURL(attachPreviewUrlRef.current);
+      attachPreviewUrlRef.current = null;
+    }
+  };
+
+  useEffect(() => () => revokeAttachPreview(), []);
   const [attachLocation, setAttachLocation] = useState<{ lat: number; lng: number; label: string } | null>(null);
   const [gettingLocation, setGettingLocation] = useState(false);
 
@@ -181,10 +191,11 @@ export const InboxPage = () => {
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      revokeAttachPreview();
       setAttachImage(file);
-      const reader = new FileReader();
-      reader.onload = () => setAttachImagePreview(reader.result as string);
-      reader.readAsDataURL(file);
+      const url = URL.createObjectURL(file);
+      attachPreviewUrlRef.current = url;
+      setAttachImagePreview(url);
     }
   };
 
@@ -245,6 +256,7 @@ export const InboxPage = () => {
       setSelectedRecipient(null);
       setShowCompose(false);
       setAttachImage(null);
+      revokeAttachPreview();
       setAttachImagePreview(null);
       setAttachLocation(null);
       fetchSentMessages();
@@ -544,7 +556,7 @@ export const InboxPage = () => {
               <div className="relative inline-block">
                 <img src={attachImagePreview} alt="Attachment" className="w-24 h-24 object-cover rounded-lg border" />
                 <button
-                  onClick={() => { setAttachImage(null); setAttachImagePreview(null); }}
+                  onClick={() => { revokeAttachPreview(); setAttachImage(null); setAttachImagePreview(null); }}
                   className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1"
                 >
                   <X className="w-3 h-3" />

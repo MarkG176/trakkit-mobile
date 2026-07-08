@@ -67,6 +67,25 @@ const calculatePoints = (questions: any[], duration: number | null): number => {
   return Math.max(5, Math.min(30, questionCount * 2 + Math.floor(durationMinutes / 5)));
 };
 
+const parseSurveyQuestions = (raw: unknown): any[] => {
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  if (raw && typeof raw === "object") {
+    return Object.values(raw as Record<string, unknown>);
+  }
+  return [];
+};
+
+const LIST_COLUMNS =
+  "id, title, description, target_department, status, estimated_duration_minutes, is_published, start_date, end_date, created_at, updated_at";
+
 export const Surveys = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -98,9 +117,10 @@ export const Surveys = () => {
     try {
       setLoading(true);
       
+      // Omit the heavy `questions` JSONB on list load; fetch per-template when starting.
       let query = supabase
         .from('survey_templates')
-        .select('*')
+        .select(LIST_COLUMNS)
         .eq('workspace_id', currentWorkspaceId)
         .eq('is_published', true)
         .eq('status', 'active');
@@ -122,89 +142,44 @@ export const Surveys = () => {
         return;
       }
 
-      console.log('📊 Raw survey templates from DB:', surveyTemplates);
-
       if (surveyTemplates) {
-        // Fetch response counts for each survey
-        const surveysWithResponses = await Promise.all(
-          surveyTemplates.map(async (template) => {
-            const { count: responseCount } = await supabase
-              .from('survey_responses')
-              .select('*', { count: 'exact', head: true })
-              .eq('survey_template_id', template.id)
-              .eq('is_deleted', false);
+        const templateIds = surveyTemplates.map((t) => t.id);
+        const responseCountMap = new Map<string, number>();
 
-            // Parse questions properly - handle JSONB data from Supabase
-            let questionsArray: any[] = [];
-            
-            console.log(`🔍 Survey "${template.title}" - Raw questions type:`, typeof template.questions);
-            console.log(`🔍 Survey "${template.title}" - Raw questions value:`, template.questions);
-            console.log(`🔍 Survey "${template.title}" - Raw questions constructor:`, template.questions?.constructor?.name);
-            console.log(`🔍 Survey "${template.title}" - Is Array:`, Array.isArray(template.questions));
-            
-            if (Array.isArray(template.questions)) {
-              // Already an array
-              questionsArray = template.questions;
-              console.log(`✅ Questions are already an array with ${questionsArray.length} items`);
-            } else if (typeof template.questions === 'string') {
-              // JSON string that needs parsing
-              try {
-                questionsArray = JSON.parse(template.questions);
-                console.log(`✅ Parsed questions from JSON string: ${questionsArray.length} items`);
-              } catch (e) {
-                console.error('❌ Error parsing questions JSON string:', e);
-                questionsArray = [];
-              }
-            } else if (template.questions && typeof template.questions === 'object') {
-              // JSONB object - might need to extract values or it might already be the array
-              if (template.questions.constructor === Object) {
-                // It's a plain object, try to get values
-                questionsArray = Object.values(template.questions);
-                console.log(`✅ Extracted questions from object: ${questionsArray.length} items`);
-              } else {
-                questionsArray = [];
-                console.log(`⚠️ Unknown object type for questions`);
-              }
-            } else {
-              console.log(`⚠️ Questions is null or undefined`);
-              questionsArray = [];
+        if (templateIds.length > 0) {
+          const { data: responseRows } = await supabase
+            .from('survey_responses')
+            .select('survey_template_id')
+            .in('survey_template_id', templateIds)
+            .eq('is_deleted', false);
+
+          for (const row of responseRows || []) {
+            if (row.survey_template_id) {
+              responseCountMap.set(
+                row.survey_template_id,
+                (responseCountMap.get(row.survey_template_id) || 0) + 1,
+              );
             }
+          }
+        }
 
-            console.log(`📋 Final questions array for "${template.title}":`, questionsArray);
-            
-            // Debug each individual question
-            questionsArray.forEach((q, i) => {
-              console.log(`   Question ${i + 1} structure:`, {
-                id: q.id,
-                type: q.type,
-                text: q.text,
-                question: q.question,
-                required: q.required,
-                options: q.options,
-                allKeys: Object.keys(q)
-              });
-            });
+        const surveysWithResponses = surveyTemplates.map((template) => ({
+          id: template.id,
+          name: template.title,
+          description: template.description || 'No description available',
+          category: template.target_department || 'General',
+          categoryColor: getCategoryColor(template.target_department),
+          duration: template.estimated_duration_minutes
+            ? `${template.estimated_duration_minutes} min`
+            : '10 min',
+          questions: [] as any[],
+          totalQuestions: 0,
+          points: calculatePoints([], template.estimated_duration_minutes),
+          responses: responseCountMap.get(template.id) || 0,
+          progress: 0,
+          currentQuestion: 1,
+        }));
 
-            return {
-              id: template.id,
-              name: template.title,
-              description: template.description || 'No description available',
-              category: template.target_department || 'General',
-              categoryColor: getCategoryColor(template.target_department),
-              duration: template.estimated_duration_minutes 
-                ? `${template.estimated_duration_minutes} min` 
-                : '10 min',
-              questions: questionsArray,
-              totalQuestions: questionsArray.length,
-              points: calculatePoints(questionsArray, template.estimated_duration_minutes),
-              responses: responseCount || 0,
-              progress: 0,
-              currentQuestion: 1
-            };
-          })
-        );
-
-        console.log('✅ Final transformed surveys:', surveysWithResponses);
         setSurveys(surveysWithResponses);
       }
     } catch (error) {
@@ -353,8 +328,38 @@ export const Surveys = () => {
   const [showEngagementModal, setShowEngagementModal] = useState(false);
   const [showPreSurvey, setShowPreSurvey] = useState(false);
 
-  const handleStartSurvey = (survey: Survey) => {
-    setActiveSurvey(survey);
+  const loadSurveyQuestions = async (survey: Survey): Promise<Survey | null> => {
+    if (survey.questions.length > 0) return survey;
+
+    const { data, error } = await supabase
+      .from('survey_templates')
+      .select('questions, estimated_duration_minutes')
+      .eq('id', survey.id)
+      .single();
+
+    if (error || !data) {
+      toast({
+        title: "Error loading survey",
+        description: "Could not load survey questions.",
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    const questions = parseSurveyQuestions(data.questions);
+    return {
+      ...survey,
+      questions,
+      totalQuestions: questions.length,
+      points: calculatePoints(questions, data.estimated_duration_minutes),
+    };
+  };
+
+  const handleStartSurvey = async (survey: Survey) => {
+    const loaded = await loadSurveyQuestions(survey);
+    if (!loaded) return;
+
+    setActiveSurvey(loaded);
     setSurveyResponses({});
     setSurveyStartTime(new Date());
     setShowPreSurvey(true);
@@ -745,7 +750,9 @@ export const Surveys = () => {
               
               <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
                 <span>⏱️ {survey.duration}</span>
-                <span>❓ {survey.totalQuestions} questions</span>
+                {survey.totalQuestions > 0 && (
+                  <span>❓ {survey.totalQuestions} questions</span>
+                )}
                 <span>🏆 {survey.points} points</span>
                 <span>📊 {survey.responses} responses</span>
               </div>

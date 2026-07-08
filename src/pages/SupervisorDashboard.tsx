@@ -1,5 +1,6 @@
 // [CMP-64d2b5] SupervisorDashboard — supervisor dashboard root
 import { useState, useEffect, useRef, useCallback, memo } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { supabase } from "@/integrations/supabase/client";
@@ -69,6 +70,15 @@ export const SupervisorDashboard = () => {
   // at once) is coalesced into a single refetch via a short debounce instead of
   // invalidating the 50-row feed + 100-image gallery on every event.
   const invalidateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const galleryScrollRef = useRef<HTMLDivElement>(null);
+  const GALLERY_COLS = 3;
+  const galleryRowCount = Math.ceil(galleryImages.length / GALLERY_COLS);
+  const galleryRowVirtualizer = useVirtualizer({
+    count: galleryRowCount,
+    getScrollElement: () => galleryScrollRef.current,
+    estimateSize: () => 112,
+    overscan: 4,
+  });
   useEffect(() => {
     if (!currentWorkspaceId || !isToday) return;
 
@@ -255,22 +265,52 @@ export const SupervisorDashboard = () => {
                 <p className="text-muted-foreground">No selfies for this date</p>
               </Card>
             ) : (
-              <div className="grid grid-cols-3 gap-2">
-                {galleryImages.map((img) => (
-                  <div key={img.id} className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group" onClick={() => setSelectedImage(img.selfie_url)}>
-                    <img
-                      src={getThumbnailUrl(img.selfie_url, { width: 200 })}
-                      alt={img.agent_display_name || "Selfie"}
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover"
-                      onError={(e) => thumbnailFallback(e, img.selfie_url!)}
-                    />
-                    <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[10px] px-1 py-0.5 truncate">
-                      {img.agent_display_name || "Agent"}
-                    </div>
-                  </div>
-                ))}
+              <div
+                ref={galleryScrollRef}
+                className="max-h-[calc(100vh-16rem)] overflow-y-auto"
+              >
+                <div
+                  style={{
+                    height: `${galleryRowVirtualizer.getTotalSize()}px`,
+                    width: "100%",
+                    position: "relative",
+                  }}
+                >
+                  {galleryRowVirtualizer.getVirtualItems().map((virtualRow) => {
+                    const rowStart = virtualRow.index * GALLERY_COLS;
+                    const rowImages = galleryImages.slice(rowStart, rowStart + GALLERY_COLS);
+                    return (
+                      <div
+                        key={virtualRow.key}
+                        className="grid grid-cols-3 gap-2 absolute left-0 right-0 px-0.5"
+                        style={{
+                          height: `${virtualRow.size}px`,
+                          transform: `translateY(${virtualRow.start}px)`,
+                        }}
+                      >
+                        {rowImages.map((img) => (
+                          <div
+                            key={img.id}
+                            className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group"
+                            onClick={() => setSelectedImage(img.selfie_url)}
+                          >
+                            <img
+                              src={getThumbnailUrl(img.selfie_url, { width: 200 })}
+                              alt={img.agent_display_name || "Selfie"}
+                              loading="lazy"
+                              decoding="async"
+                              className="w-full h-full object-cover"
+                              onError={(e) => thumbnailFallback(e, img.selfie_url!)}
+                            />
+                            <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[10px] px-1 py-0.5 truncate">
+                              {img.agent_display_name || "Agent"}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </TabsContent>

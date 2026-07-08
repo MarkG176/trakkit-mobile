@@ -117,6 +117,53 @@ const hasQueryErrors = (results: Array<{ error?: unknown } | null | undefined>) 
 
 type AgentProfileStatsData = Omit<AgentProfileStats, "isLoading">;
 
+type MetricPeriod = {
+  interaction_units: number;
+  interaction_revenue: number;
+  daily_units: number;
+  daily_revenue: number;
+  giveaway_count: number;
+  giveaway_items: number;
+  wholesale_units: number;
+  wholesale_revenue: number;
+};
+
+type MetricAggregates = {
+  today: MetricPeriod;
+  week: MetricPeriod;
+  all_time: MetricPeriod;
+};
+
+const EMPTY_METRIC_PERIOD: MetricPeriod = {
+  interaction_units: 0,
+  interaction_revenue: 0,
+  daily_units: 0,
+  daily_revenue: 0,
+  giveaway_count: 0,
+  giveaway_items: 0,
+  wholesale_units: 0,
+  wholesale_revenue: 0,
+};
+
+const parseMetricAggregates = (raw: unknown): MetricAggregates => {
+  const data = raw as Record<string, Record<string, number>> | null;
+  const parsePeriod = (key: string): MetricPeriod => ({
+    interaction_units: Number(data?.[key]?.interaction_units) || 0,
+    interaction_revenue: Number(data?.[key]?.interaction_revenue) || 0,
+    daily_units: Number(data?.[key]?.daily_units) || 0,
+    daily_revenue: Number(data?.[key]?.daily_revenue) || 0,
+    giveaway_count: Number(data?.[key]?.giveaway_count) || 0,
+    giveaway_items: Number(data?.[key]?.giveaway_items) || 0,
+    wholesale_units: Number(data?.[key]?.wholesale_units) || 0,
+    wholesale_revenue: Number(data?.[key]?.wholesale_revenue) || 0,
+  });
+  return {
+    today: parsePeriod("today"),
+    week: parsePeriod("week"),
+    all_time: parsePeriod("all_time"),
+  };
+};
+
 const DEFAULT_STATS_DATA: AgentProfileStatsData = {
   displayName: "",
   email: "",
@@ -191,8 +238,6 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
       const weekStart = getStartOfWeek();
       const todayDate = getTodayDateString();
       const weekStartDate = weekStart.split('T')[0];
-      const salesDateFilter = (startDate: string) =>
-        `timestamp.gte.${startDate},and(timestamp.is.null,created_at.gte.${startDate})`;
       const surveyDateFilter = (startDate: string) =>
         `completed_at.gte.${startDate},and(completed_at.is.null,created_at.gte.${startDate})`;
 
@@ -202,14 +247,9 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
           rankData,
           todayStores,
           weekStores,
-          todaySales,
-          weekSales,
-          todayDailySales,
-          weekDailySales,
+          metricAggregatesResult,
           todaySurveys,
           weekSurveys,
-          todayGiveaways,
-          weekGiveaways,
           todayWorkSegments,
           weekWorkSegments,
           // New queries
@@ -224,19 +264,13 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
           weekLunchSegments,
           todayTasks,
           reportSummary,
-          todayWholesalePurchases,
-          weekWholesalePurchases,
           // All Time queries
           allTimeStores,
-          allTimeSalesData,
-          allTimeDailySalesData,
           allTimeSurveyData,
-          allTimeGiveawayData,
           allTimeCheckInsData,
           allTimeNotesData,
           allTimeInteractionsData,
           allTimeStoreVisitsData,
-          allTimeWholesaleData,
           surveyCheck,
           todayReports,
           allTimeReports,
@@ -280,49 +314,17 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
             .not('is_deleted', 'is', true)
             .gte('created_at', weekStart),
           
-          // Today's sales (interaction-based)
-          supabase
-            .from('interactions')
-            .select('quantity_sold, sale_value, timestamp, created_at')
-             .eq('agent_id', agentId)
-            .eq('interaction_type', 'sale')
-            .eq('workspace_id', currentWorkspaceId)
-            .not('is_deleted', 'is', true)
-            .or(salesDateFilter(todayStart)),
-          
-          // Week's sales (interaction-based)
-          supabase
-            .from('interactions')
-            .select('quantity_sold, sale_value, timestamp, created_at')
-             .eq('agent_id', agentId)
-            .eq('interaction_type', 'sale')
-            .eq('workspace_id', currentWorkspaceId)
-            .not('is_deleted', 'is', true)
-            .or(salesDateFilter(weekStart)),
-
-          // Today's sales (daily tracking)
-          (() => {
-            let q = supabase
-              .from('daily_sales_tracking')
-              .select('quantity_sold, total_value')
-              .eq('agent_id', agentId)
-              .eq('workspace_id', currentWorkspaceId)
-              .eq('work_date', todayDate);
-            if (currentProjectId) q = q.eq('project_id', currentProjectId);
-            return q;
-          })(),
-
-          // Week's sales (daily tracking)
-          (() => {
-            let q = supabase
-              .from('daily_sales_tracking')
-              .select('quantity_sold, total_value')
-              .eq('agent_id', agentId)
-              .eq('workspace_id', currentWorkspaceId)
-              .gte('work_date', weekStartDate);
-            if (currentProjectId) q = q.eq('project_id', currentProjectId);
-            return q;
-          })(),
+          // Sales, giveaways, and wholesale totals in one SQL aggregate (was 12
+          // unbounded row fetches summed client-side).
+          supabase.rpc("get_agent_metric_aggregates", {
+            p_agent_id: agentId,
+            p_workspace_id: currentWorkspaceId,
+            p_project_id: currentProjectId,
+            p_today_start: todayStart,
+            p_week_start: weekStart,
+            p_today_date: todayDate,
+            p_week_start_date: weekStartDate,
+          }),
           
           // Today's surveys
           supabase
@@ -343,32 +345,6 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
             .eq('is_completed', true)
             .not('is_deleted', 'is', true)
             .or(surveyDateFilter(weekStart)),
-          
-          // Today's giveaways
-          (() => {
-            let q = supabase
-              .from('giveaways')
-              .select('id, total_items')
-              .eq('agent_id', agentId)
-              .eq('workspace_id', currentWorkspaceId)
-              .not('is_deleted', 'is', true)
-              .gte('recorded_at', todayStart);
-            if (currentProjectId) q = q.eq('project_id', currentProjectId);
-            return q;
-          })(),
-          
-          // Week's giveaways
-          (() => {
-            let q = supabase
-              .from('giveaways')
-              .select('id, total_items')
-              .eq('agent_id', agentId)
-              .eq('workspace_id', currentWorkspaceId)
-              .not('is_deleted', 'is', true)
-              .gte('recorded_at', weekStart);
-            if (currentProjectId) q = q.eq('project_id', currentProjectId);
-            return q;
-          })(),
           
           // Today's status logs for work time (same calculation as WorkHoursCard)
           supabase
@@ -483,30 +459,6 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
             .eq('report_date', todayDate)
             .maybeSingle(),
 
-          // Today's wholesale sales (customer_purchases)
-          (() => {
-            let q = supabase
-              .from('customer_purchases')
-              .select('quantity, total_value')
-              .eq('agent_id', agentId)
-              .eq('workspace_id', currentWorkspaceId)
-              .gte('purchase_date', todayStart);
-            if (currentProjectId) q = q.eq('project_id', currentProjectId);
-            return q;
-          })(),
-
-          // Week's wholesale sales (customer_purchases)
-          (() => {
-            let q = supabase
-              .from('customer_purchases')
-              .select('quantity, total_value')
-              .eq('agent_id', agentId)
-              .eq('workspace_id', currentWorkspaceId)
-              .gte('purchase_date', weekStart);
-            if (currentProjectId) q = q.eq('project_id', currentProjectId);
-            return q;
-          })(),
-
           // === ALL TIME QUERIES ===
 
           // All time stores
@@ -517,26 +469,6 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
             .eq('workspace_id', currentWorkspaceId)
             .not('is_deleted', 'is', true),
 
-          // All time sales (interaction-based)
-          supabase
-            .from('interactions')
-            .select('quantity_sold, sale_value')
-            .eq('agent_id', agentId)
-            .eq('interaction_type', 'sale')
-            .eq('workspace_id', currentWorkspaceId)
-            .not('is_deleted', 'is', true),
-
-          // All time sales (daily tracking)
-          (() => {
-            let q = supabase
-              .from('daily_sales_tracking')
-              .select('quantity_sold, total_value')
-              .eq('agent_id', agentId)
-              .eq('workspace_id', currentWorkspaceId);
-            if (currentProjectId) q = q.eq('project_id', currentProjectId);
-            return q;
-          })(),
-
           // All time surveys
           supabase
             .from('survey_responses')
@@ -545,18 +477,6 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
             .eq('workspace_id', currentWorkspaceId)
             .eq('is_completed', true)
             .not('is_deleted', 'is', true),
-
-          // All time giveaways
-          (() => {
-            let q = supabase
-              .from('giveaways')
-              .select('id, total_items')
-              .eq('agent_id', agentId)
-              .eq('workspace_id', currentWorkspaceId)
-              .not('is_deleted', 'is', true);
-            if (currentProjectId) q = q.eq('project_id', currentProjectId);
-            return q;
-          })(),
 
           // All time check-ins
           supabase
@@ -591,17 +511,6 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
             .eq('status', 'checked_in')
             .not('store_id', 'is', null),
 
-          // All time wholesale purchases
-          (() => {
-            let q = supabase
-              .from('customer_purchases')
-              .select('quantity, total_value')
-              .eq('agent_id', agentId)
-              .eq('workspace_id', currentWorkspaceId);
-            if (currentProjectId) q = q.eq('project_id', currentProjectId);
-            return q;
-          })(),
-
           // Check if project has survey templates assigned
           ...(currentProjectId ? [
             supabase
@@ -634,14 +543,9 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
           rankData,
           todayStores,
           weekStores,
-          todaySales,
-          weekSales,
-          todayDailySales,
-          weekDailySales,
+          metricAggregatesResult,
           todaySurveys,
           weekSurveys,
-          todayGiveaways,
-          weekGiveaways,
           todayWorkSegments,
           weekWorkSegments,
           todayCheckIns,
@@ -654,18 +558,12 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
           weekStoreVisits,
           todayTasks,
           reportSummary,
-          todayWholesalePurchases,
-          weekWholesalePurchases,
           allTimeStores,
-          allTimeSalesData,
-          allTimeDailySalesData,
           allTimeSurveyData,
-          allTimeGiveawayData,
           allTimeCheckInsData,
           allTimeNotesData,
           allTimeInteractionsData,
           allTimeStoreVisitsData,
-          allTimeWholesaleData,
           surveyCheck as any,
           todayReports as any,
           allTimeReports as any,
@@ -673,23 +571,19 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
           return DEFAULT_STATS_DATA;
         }
 
-        // Calculate totals
-        const todayInteractionSalesUnits = todaySales.data?.reduce(
-          (sum, s) => sum + (Number(s.quantity_sold) || 0), 0) || 0;
-        const weekInteractionSalesUnits = weekSales.data?.reduce(
-          (sum, s) => sum + (Number(s.quantity_sold) || 0), 0) || 0;
-        const todayDailySalesUnits = todayDailySales.data?.reduce(
-          (sum, s) => sum + (Number(s.quantity_sold) || 0), 0) || 0;
-        const weekDailySalesUnits = weekDailySales.data?.reduce(
-          (sum, s) => sum + (Number(s.quantity_sold) || 0), 0) || 0;
-        const todayRevenueTotal =
-          (todaySales.data?.reduce((sum, s) => sum + (Number(s.sale_value) || 0), 0) || 0) +
-          (todayDailySales.data?.reduce((sum, s) => sum + (Number(s.total_value) || 0), 0) || 0);
-        const weekRevenueTotal =
-          (weekSales.data?.reduce((sum, s) => sum + (Number(s.sale_value) || 0), 0) || 0) +
-          (weekDailySales.data?.reduce((sum, s) => sum + (Number(s.total_value) || 0), 0) || 0);
-        const todayGiveawayItemsTotal = todayGiveaways.data?.reduce((sum, g) => sum + (g.total_items || 0), 0) || 0;
-        const weekGiveawayItemsTotal = weekGiveaways.data?.reduce((sum, g) => sum + (g.total_items || 0), 0) || 0;
+        const metrics = metricAggregatesResult.error
+          ? { today: EMPTY_METRIC_PERIOD, week: EMPTY_METRIC_PERIOD, all_time: EMPTY_METRIC_PERIOD }
+          : parseMetricAggregates(metricAggregatesResult.data);
+
+        // Calculate totals from SQL aggregates (sales / giveaways / wholesale).
+        const todayInteractionSalesUnits = metrics.today.interaction_units;
+        const weekInteractionSalesUnits = metrics.week.interaction_units;
+        const todayDailySalesUnits = metrics.today.daily_units;
+        const weekDailySalesUnits = metrics.week.daily_units;
+        const todayRevenueTotal = metrics.today.interaction_revenue + metrics.today.daily_revenue;
+        const weekRevenueTotal = metrics.week.interaction_revenue + metrics.week.daily_revenue;
+        const todayGiveawayItemsTotal = metrics.today.giveaway_items;
+        const weekGiveawayItemsTotal = metrics.week.giveaway_items;
         // Calculate work minutes from status logs (same logic as WorkHoursCard)
         const calculateWorkMinutesFromLogs = (logs: any[] | null) => {
           if (!logs || logs.length === 0) return { work: 0, lunch: 0 };
@@ -756,25 +650,18 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
         const report = reportSummary.data;
 
         // Wholesale calculations
-        const todayWsPurchases = (todayWholesalePurchases as any)?.data || [];
-        const weekWsPurchases = (weekWholesalePurchases as any)?.data || [];
-        const todayWsSales = todayWsPurchases.reduce((sum: number, p: any) => sum + (Number(p.quantity) || 0), 0);
-        const todayWsRevenue = todayWsPurchases.reduce((sum: number, p: any) => sum + (Number(p.total_value) || 0), 0);
-        const weekWsSales = weekWsPurchases.reduce((sum: number, p: any) => sum + (Number(p.quantity) || 0), 0);
-        const weekWsRevenue = weekWsPurchases.reduce((sum: number, p: any) => sum + (Number(p.total_value) || 0), 0);
+        const todayWsSales = metrics.today.wholesale_units;
+        const todayWsRevenue = metrics.today.wholesale_revenue;
+        const weekWsSales = metrics.week.wholesale_units;
+        const weekWsRevenue = metrics.week.wholesale_revenue;
         const hasSurvey = ((surveyCheck as any)?.count || 0) > 0;
 
         // All Time calculations
-        const allTimeSalesInteraction = (allTimeSalesData as any)?.data || [];
-        const allTimeSalesDaily = (allTimeDailySalesData as any)?.data || [];
-        const allTimeSalesUnits = allTimeSalesInteraction.reduce((sum: number, s: any) => sum + (Number(s.quantity_sold) || 0), 0)
-          + allTimeSalesDaily.reduce((sum: number, s: any) => sum + (Number(s.quantity_sold) || 0), 0);
-        const allTimeRevenueTotal = allTimeSalesInteraction.reduce((sum: number, s: any) => sum + (Number(s.sale_value) || 0), 0)
-          + allTimeSalesDaily.reduce((sum: number, s: any) => sum + (Number(s.total_value) || 0), 0);
-        const allTimeGiveawayItemsTotal = (allTimeGiveawayData as any)?.data?.reduce((sum: number, g: any) => sum + (g.total_items || 0), 0) || 0;
-        const allTimeWsPurchases = (allTimeWholesaleData as any)?.data || [];
-        const allTimeWsSales = allTimeWsPurchases.reduce((sum: number, p: any) => sum + (Number(p.quantity) || 0), 0);
-        const allTimeWsRevenue = allTimeWsPurchases.reduce((sum: number, p: any) => sum + (Number(p.total_value) || 0), 0);
+        const allTimeSalesUnits = metrics.all_time.interaction_units + metrics.all_time.daily_units;
+        const allTimeRevenueTotal = metrics.all_time.interaction_revenue + metrics.all_time.daily_revenue;
+        const allTimeGiveawayItemsTotal = metrics.all_time.giveaway_items;
+        const allTimeWsSales = metrics.all_time.wholesale_units;
+        const allTimeWsRevenue = metrics.all_time.wholesale_revenue;
 
         return {
           displayName,
@@ -787,7 +674,7 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
           todaySales: todayInteractionSalesUnits + todayDailySalesUnits,
           todayRevenue: todayRevenueTotal,
           todaySurveys: todaySurveys.count || 0,
-          todayGiveaways: todayGiveaways.data?.length || 0,
+          todayGiveaways: metrics.today.giveaway_count,
           todayGiveawayItems: todayGiveawayItemsTotal,
           todayWorkMinutes: todayWorkMinutesTotal,
           todayCheckIns: todayCheckIns.count || 0,
@@ -798,7 +685,7 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
           weekSales: weekInteractionSalesUnits + weekDailySalesUnits,
           weekRevenue: weekRevenueTotal,
           weekSurveys: weekSurveys.count || 0,
-          weekGiveaways: weekGiveaways.data?.length || 0,
+          weekGiveaways: metrics.week.giveaway_count,
           weekGiveawayItems: weekGiveawayItemsTotal,
           weekWorkMinutes: weekWorkMinutesTotal,
           weekCheckIns: weekCheckIns.count || 0,
@@ -810,7 +697,7 @@ export const useAgentProfileStats = (overrideAgentId?: string): AgentProfileStat
           allTimeSales: allTimeSalesUnits,
           allTimeRevenue: allTimeRevenueTotal,
           allTimeSurveys: (allTimeSurveyData as any)?.count || 0,
-          allTimeGiveaways: (allTimeGiveawayData as any)?.data?.length || 0,
+          allTimeGiveaways: metrics.all_time.giveaway_count,
           allTimeGiveawayItems: allTimeGiveawayItemsTotal,
           allTimeCheckIns: (allTimeCheckInsData as any)?.count || 0,
           allTimeNotesCount: (allTimeNotesData as any)?.count || 0,

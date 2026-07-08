@@ -1,5 +1,6 @@
 // [CMP-5e6401] RecordSale — record sale transaction flow
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -429,10 +430,23 @@ export const RecordSale = () => {
     });
   };
 
-  const filteredInventory = currentInventory.filter(item =>
-    item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.product_variant_id.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredInventory = useMemo(
+    () =>
+      currentInventory.filter(
+        (item) =>
+          item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.product_variant_id.toLowerCase().includes(searchTerm.toLowerCase()),
+      ),
+    [currentInventory, searchTerm],
   );
+
+  const productListRef = useRef<HTMLDivElement>(null);
+  const productVirtualizer = useVirtualizer({
+    count: filteredInventory.length,
+    getScrollElement: () => productListRef.current,
+    estimateSize: () => 96,
+    overscan: 8,
+  });
 
   const totalAmount = cartItems.reduce((sum, item) => sum + getLineTotal(item), 0);
 
@@ -470,7 +484,7 @@ export const RecordSale = () => {
         </div>
 
         {/* Product List */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
+        <div ref={productListRef} className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
           {currentLoading ? (
             <div className="flex items-center justify-center h-32">
               <p className="text-muted-foreground">Loading products...</p>
@@ -480,40 +494,59 @@ export const RecordSale = () => {
               <p className="text-muted-foreground">No products available</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {filteredInventory.map((item) => (
-                <Card key={item.id} className="overflow-hidden">
-                  <CardContent className="p-4">
-                    <div className="flex gap-4">
-                      {/* Product Image */}
-                      <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center shrink-0">
-                        <ShoppingCart size={24} className="text-muted-foreground" />
-                      </div>
-                      
-                      {/* Product Info */}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-base break-words whitespace-normal leading-snug">{formatProductName(item.name, item.sku)}</h3>
-                        {!hideInventoryCounts && "amount_issued" in item && (
-                          <p className="text-sm text-muted-foreground">Available: {(item as any).amount_issued}</p>
-                        )}
-                        {item.price > 0 && (
-                          <p className="text-sm font-medium text-primary">{currencyCode} {item.price}</p>
-                        )}
-                      </div>
-
-                      {/* Add Button */}
-                      <div className="flex items-center">
-                        <Button
-                          onClick={() => addToCart(item)}
-                          className="bg-primary hover:bg-primary/90"
-                        >
-                          + Add
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+            <div
+              style={{
+                height: `${productVirtualizer.getTotalSize()}px`,
+                width: "100%",
+                position: "relative",
+              }}
+            >
+              {productVirtualizer.getVirtualItems().map((virtualRow) => {
+                const item = filteredInventory[virtualRow.index];
+                return (
+                  <div
+                    key={item.id}
+                    className="absolute left-0 right-0 pb-3"
+                    style={{
+                      height: `${virtualRow.size}px`,
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                  >
+                    <Card className="overflow-hidden h-full">
+                      <CardContent className="p-4">
+                        <div className="flex gap-4">
+                          <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center shrink-0">
+                            <ShoppingCart size={24} className="text-muted-foreground" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-base break-words whitespace-normal leading-snug">
+                              {formatProductName(item.name, item.sku)}
+                            </h3>
+                            {!hideInventoryCounts && "amount_issued" in item && (
+                              <p className="text-sm text-muted-foreground">
+                                Available: {(item as InventoryItem).amount_issued}
+                              </p>
+                            )}
+                            {item.price > 0 && (
+                              <p className="text-sm font-medium text-primary">
+                                {currencyCode} {item.price}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center">
+                            <Button
+                              onClick={() => addToCart(item)}
+                              className="bg-primary hover:bg-primary/90"
+                            >
+                              + Add
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
