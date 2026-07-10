@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { toast } from "sonner";
-import { formatProductWithVariant } from "@/utils/formatProductName";
+import { formatProductWithVariant, resolveProductVariantLabels } from "@/utils/formatProductName";
 
 export interface InventoryItem {
   id: string;
@@ -72,17 +72,21 @@ export const useInventory = () => {
           : variant?.products;
 
         const productVariantId = item.product_variant_id;
-        const variantName = variant?.name || null;
-        const productName = productRecord?.name || item.name || null;
-        const displayName = formatProductWithVariant(productName, variantName);
+        const { productName, variantLabel } = resolveProductVariantLabels({
+          catalogProductName: productRecord?.name,
+          inventoryName: item.name,
+          variantName: variant?.name,
+          sku: variant?.sku,
+        });
+        const displayName = formatProductWithVariant(productName, variantLabel);
         const existing = dedupedInventory.get(productVariantId);
 
         if (existing) {
           existing.amount_issued += Number(item.amount_issued || 0);
           if (!existing.name && displayName) existing.name = displayName;
           if (!existing.product_name && productName) existing.product_name = productName;
-          if (!existing.variant_name && variantName) existing.variant_name = variantName;
-          if (!existing.sku && variant?.sku) existing.sku = variant.sku;
+          if (!existing.variant_name && variantLabel) existing.variant_name = variantLabel;
+          if (!existing.sku && variant?.sku) existing.sku = variant.sku?.trim() || null;
           if (!existing.price && variant?.price) existing.price = Number(variant.price);
           return;
         }
@@ -91,11 +95,11 @@ export const useInventory = () => {
           id: productVariantId,
           name: displayName,
           product_name: productName,
-          variant_name: variantName,
+          variant_name: variantLabel,
           product_variant_id: productVariantId,
           amount_issued: Number(item.amount_issued || 0),
           price: Number(variant?.price || 0),
-          sku: variant?.sku || null,
+          sku: variant?.sku?.trim() || null,
         });
       });
 

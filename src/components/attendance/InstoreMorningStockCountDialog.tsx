@@ -18,6 +18,7 @@ import { useInventory } from "@/hooks/useInventory";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Package, ClipboardList } from "lucide-react";
 import { logActivity, logFailedActivity } from "@/utils/activityLogger";
+import { formatProductWithVariant } from "@/utils/formatProductName";
 
 interface ProductCount {
   product_variant_id: string;
@@ -89,7 +90,11 @@ export const InstoreMorningStockCountDialog = ({
         setProducts(
           eligibleInventory.map((item) => ({
             product_variant_id: item.product_variant_id,
-            name: item.sku ? `${item.sku} - ${item.name}` : item.name || "Unknown Product",
+            name: item.name || formatProductWithVariant(
+              item.product_name,
+              item.variant_name,
+              "Unknown Product",
+            ),
             opening_stock: existingCounts.has(item.product_variant_id)
               ? String(existingCounts.get(item.product_variant_id) ?? "")
               : "",

@@ -18,6 +18,7 @@ import { useInventory } from "@/hooks/useInventory";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Sun, DollarSign, Moon, Package } from "lucide-react";
 import { logActivity, logFailedActivity } from "@/utils/activityLogger";
+import { formatProductWithVariant } from "@/utils/formatProductName";
 
 interface ProductReport {
   product_variant_id: string;
@@ -84,7 +85,11 @@ export const InstoreClosingReportDialog = ({
         setProducts(
           inventory.map((item) => ({
             product_variant_id: item.product_variant_id,
-            name: item.sku ? `${item.sku} - ${item.name}` : item.name || "Unknown Product",
+            name: item.name || formatProductWithVariant(
+              item.product_name,
+              item.variant_name,
+              "Unknown Product",
+            ),
             opening_stock: morningStockMap.has(item.product_variant_id)
               ? String(morningStockMap.get(item.product_variant_id) ?? "")
               : "",

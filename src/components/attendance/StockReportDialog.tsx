@@ -25,7 +25,6 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Package, CheckCircle2, AlertTriangle, XCircle, Loader2 } from "lucide-react";
-import { formatProductWithVariant } from "@/utils/formatProductName";
 
 type StockLevel = "available" | "low_stock" | "unavailable" | "not_sold";
 
@@ -265,8 +264,8 @@ export const StockReportDialog = ({
                     <div className="space-y-2">
                       <div className="flex items-start gap-2">
                         {getStockIcon(stockLevels[item.product_variant_id])}
-                        <Label className="font-medium leading-tight">
-                          {formatProductWithVariant(item.product_name, item.variant_name, item.name || "Unknown Product")}
+                        <Label className="font-medium leading-snug break-words whitespace-normal">
+                          {item.name}
                         </Label>
                       </div>
                       <Select
@@ -309,7 +308,9 @@ export const StockReportDialog = ({
                   ) : (
                     // Evening layout - editable sales quantities (pre-filled from daily sales)
                     <div className="space-y-2">
-                      <Label className="font-medium leading-tight block">{item.sku ? `${item.sku} - ${item.name}` : item.name}</Label>
+                      <Label className="font-medium leading-snug break-words whitespace-normal block">
+                        {item.name}
+                      </Label>
                       <div className="flex items-center gap-2">
                         <Label className="text-sm text-muted-foreground shrink-0">Number sold:</Label>
                         <Input
