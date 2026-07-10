@@ -3,10 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { toast } from "sonner";
+import { formatProductWithVariant } from "@/utils/formatProductName";
 
 export interface InventoryItem {
   id: string;
   name: string | null;
+  product_name: string | null;
+  variant_name: string | null;
   product_variant_id: string;
   amount_issued: number;
   price: number;
@@ -40,7 +43,10 @@ export const useInventory = () => {
             name,
             sku,
             price,
-            workspace_id
+            workspace_id,
+            products:product_id (
+              name
+            )
           ),
           agent_tasks!inner (
             workspace_id,
@@ -61,14 +67,21 @@ export const useInventory = () => {
         const variant = Array.isArray(item.product_variants)
           ? item.product_variants[0]
           : item.product_variants;
+        const productRecord = Array.isArray(variant?.products)
+          ? variant.products[0]
+          : variant?.products;
 
         const productVariantId = item.product_variant_id;
-        const displayName = item.name || variant?.name || "Unknown Product";
+        const variantName = variant?.name || null;
+        const productName = productRecord?.name || item.name || null;
+        const displayName = formatProductWithVariant(productName, variantName);
         const existing = dedupedInventory.get(productVariantId);
 
         if (existing) {
           existing.amount_issued += Number(item.amount_issued || 0);
           if (!existing.name && displayName) existing.name = displayName;
+          if (!existing.product_name && productName) existing.product_name = productName;
+          if (!existing.variant_name && variantName) existing.variant_name = variantName;
           if (!existing.sku && variant?.sku) existing.sku = variant.sku;
           if (!existing.price && variant?.price) existing.price = Number(variant.price);
           return;
@@ -77,6 +90,8 @@ export const useInventory = () => {
         dedupedInventory.set(productVariantId, {
           id: productVariantId,
           name: displayName,
+          product_name: productName,
+          variant_name: variantName,
           product_variant_id: productVariantId,
           amount_issued: Number(item.amount_issued || 0),
           price: Number(variant?.price || 0),
