@@ -103,6 +103,14 @@ export const StockReportDialog = ({
     onStockLevelsChange?.(newLevels as Record<string, string>);
   };
 
+  const handleSalesQuantityChange = (productVariantId: string, value: string) => {
+    const quantity = value === "" ? 0 : Math.max(0, parseInt(value, 10) || 0);
+    setSalesData((prev) => ({
+      ...prev,
+      [productVariantId]: quantity,
+    }));
+  };
+
   const getStockIcon = (level: StockLevel | undefined) => {
     switch (level) {
       case "available":
@@ -230,7 +238,7 @@ export const StockReportDialog = ({
           <DialogDescription>
             {reportType === "morning" 
               ? "Report the current stock level for each product in your inventory."
-              : "Review the number of units sold for each product today."}
+              : "Confirm or edit the number of units sold for each product today."}
           </DialogDescription>
         </DialogHeader>
 
@@ -296,17 +304,19 @@ export const StockReportDialog = ({
                       </Select>
                     </div>
                   ) : (
-                    // Evening layout - read-only sales display
+                    // Evening layout - editable sales quantities (pre-filled from daily sales)
                     <div className="space-y-2">
                       <Label className="font-medium leading-tight block">{item.sku ? `${item.sku} - ${item.name}` : item.name}</Label>
                       <div className="flex items-center gap-2">
                         <Label className="text-sm text-muted-foreground shrink-0">Number sold:</Label>
                         <Input
                           type="number"
-                          value={salesData[item.product_variant_id] || 0}
-                          readOnly
-                          disabled
-                          className="w-24 bg-muted"
+                          min="0"
+                          value={salesData[item.product_variant_id] ?? 0}
+                          onChange={(e) =>
+                            handleSalesQuantityChange(item.product_variant_id, e.target.value)
+                          }
+                          className="w-24"
                         />
                       </div>
                     </div>
