@@ -2460,6 +2460,45 @@ export type Database = {
           },
         ]
       }
+      project_report_cache: {
+        Row: {
+          created_at: string
+          date_from: string
+          date_to: string
+          facts: Json | null
+          generated_at: string
+          id: string
+          project_id: string | null
+          report: string
+          scope_hash: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          date_from: string
+          date_to: string
+          facts?: Json | null
+          generated_at?: string
+          id?: string
+          project_id?: string | null
+          report: string
+          scope_hash?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          date_from?: string
+          date_to?: string
+          facts?: Json | null
+          generated_at?: string
+          id?: string
+          project_id?: string | null
+          report?: string
+          scope_hash?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       projects: {
         Row: {
           client_name: string | null
@@ -3534,6 +3573,44 @@ export type Database = {
           },
         ]
       }
+      survey_insight_cache: {
+        Row: {
+          created_at: string
+          data_fingerprint: string
+          generated_at: string
+          id: string
+          report: string
+          survey_template_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_fingerprint: string
+          generated_at?: string
+          id?: string
+          report: string
+          survey_template_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          data_fingerprint?: string
+          generated_at?: string
+          id?: string
+          report?: string
+          survey_template_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_insight_cache_survey_template_id_fkey"
+            columns: ["survey_template_id"]
+            isOneToOne: false
+            referencedRelation: "survey_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       survey_questions: {
         Row: {
           created_at: string | null
@@ -4425,6 +4502,18 @@ export type Database = {
           total_surveys: number
           total_tasks: number
         }[]
+      }
+      get_agent_metric_aggregates: {
+        Args: {
+          p_agent_id: string
+          p_project_id?: string
+          p_today_date?: string
+          p_today_start?: string
+          p_week_start?: string
+          p_week_start_date?: string
+          p_workspace_id: string
+        }
+        Returns: Json
       }
       get_agent_tasks: {
         Args: { p_agent_id: string }
