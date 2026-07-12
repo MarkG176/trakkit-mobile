@@ -1,5 +1,5 @@
 // [CMP-697f97] TopBar — top bar component
-import { MapPin, LogOut } from "lucide-react";
+import { MapPin, LogOut, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -85,6 +85,32 @@ export const TopBar = () => {
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign Out
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start"
+                onClick={async () => {
+                  try {
+                    if ('serviceWorker' in navigator) {
+                      const regs = await navigator.serviceWorker.getRegistrations();
+                      await Promise.all(regs.map((r) => r.unregister()));
+                    }
+                    if ('caches' in window) {
+                      const keys = await caches.keys();
+                      await Promise.all(keys.map((k) => caches.delete(k)));
+                    }
+                  } catch (err) {
+                    console.error('[Sync] cache clear failed', err);
+                  } finally {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('_sync', Date.now().toString());
+                    window.location.replace(url.toString());
+                  }
+                }}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Sync Latest
               </Button>
             </PopoverContent>
           </Popover>
