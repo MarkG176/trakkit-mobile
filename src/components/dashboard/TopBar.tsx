@@ -15,6 +15,28 @@ export const TopBar = () => {
   const showSetLocation = false;
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState<string>("");
+  const [syncing, setSyncing] = useState(false);
+
+  const handleSync = async () => {
+    if (syncing) return;
+    setSyncing(true);
+    try {
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+    } catch (err) {
+      console.error('[Sync] cache clear failed', err);
+    } finally {
+      const url = new URL(window.location.href);
+      url.searchParams.set('_sync', Date.now().toString());
+      window.location.replace(url.toString());
+    }
+  };
 
   useEffect(() => {
     const fetchDisplayName = async () => {
@@ -65,6 +87,16 @@ export const TopBar = () => {
               Set Location
             </Button>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSync}
+            disabled={syncing}
+            aria-label="Sync latest"
+            className="h-9 w-9 p-0"
+          >
+            <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+          </Button>
           <Popover>
             <PopoverTrigger asChild>
               <button className="focus:outline-none">
@@ -86,32 +118,6 @@ export const TopBar = () => {
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign Out
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start"
-                onClick={async () => {
-                  try {
-                    if ('serviceWorker' in navigator) {
-                      const regs = await navigator.serviceWorker.getRegistrations();
-                      await Promise.all(regs.map((r) => r.unregister()));
-                    }
-                    if ('caches' in window) {
-                      const keys = await caches.keys();
-                      await Promise.all(keys.map((k) => caches.delete(k)));
-                    }
-                  } catch (err) {
-                    console.error('[Sync] cache clear failed', err);
-                  } finally {
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('_sync', Date.now().toString());
-                    window.location.replace(url.toString());
-                  }
-                }}
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Sync Latest
-              </Button>
             </PopoverContent>
           </Popover>
         </div>
@@ -120,8 +126,6 @@ export const TopBar = () => {
       {/* Workspace Switcher */}
       <div className="flex items-center justify-between">
         <WorkspaceSwitcher onWorkspaceChange={(workspaceId) => {
-          // Workspace context will automatically update via useWorkspace hook
-          // No need to reload the page - React state management handles this
           console.log('Workspace changed to:', workspaceId);
         }} />
       </div>
