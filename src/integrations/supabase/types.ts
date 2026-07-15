@@ -4062,6 +4062,39 @@ export type Database = {
           },
         ]
       }
+      user_app_user_connections: {
+        Row: {
+          connection_key: string
+          connector_id: string
+          created_at: string
+          google_email: string | null
+          id: string
+          updated_at: string
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          connection_key: string
+          connector_id: string
+          created_at?: string
+          google_email?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          connection_key?: string
+          connector_id?: string
+          created_at?: string
+          google_email?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           account_locked_until: string | null
