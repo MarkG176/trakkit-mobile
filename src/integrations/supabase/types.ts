@@ -161,62 +161,6 @@ export type Database = {
           },
         ]
       }
-      agent_battery_status: {
-        Row: {
-          agent_id: string
-          app_version: string | null
-          battery_level: number | null
-          created_at: string | null
-          device_model: string | null
-          id: string
-          is_charging: boolean | null
-          last_sync: string | null
-          location_lat: number | null
-          location_lng: number | null
-          network_status: string | null
-          updated_at: string | null
-          workspace_id: string | null
-        }
-        Insert: {
-          agent_id: string
-          app_version?: string | null
-          battery_level?: number | null
-          created_at?: string | null
-          device_model?: string | null
-          id?: string
-          is_charging?: boolean | null
-          last_sync?: string | null
-          location_lat?: number | null
-          location_lng?: number | null
-          network_status?: string | null
-          updated_at?: string | null
-          workspace_id?: string | null
-        }
-        Update: {
-          agent_id?: string
-          app_version?: string | null
-          battery_level?: number | null
-          created_at?: string | null
-          device_model?: string | null
-          id?: string
-          is_charging?: boolean | null
-          last_sync?: string | null
-          location_lat?: number | null
-          location_lng?: number | null
-          network_status?: string | null
-          updated_at?: string | null
-          workspace_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "agent_battery_status_workspace_id_fkey"
-            columns: ["workspace_id"]
-            isOneToOne: false
-            referencedRelation: "workspaces"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       agent_device_status: {
         Row: {
           agent_id: string
@@ -1350,6 +1294,36 @@ export type Database = {
           id?: string
           message?: string | null
           name?: string
+        }
+        Relationships: []
+      }
+      device_push_tokens: {
+        Row: {
+          agent_id: string
+          created_at: string
+          device_info: Json | null
+          expo_push_token: string
+          id: string
+          platform: string
+          updated_at: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          device_info?: Json | null
+          expo_push_token: string
+          id?: string
+          platform: string
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          device_info?: Json | null
+          expo_push_token?: string
+          id?: string
+          platform?: string
+          updated_at?: string
         }
         Relationships: []
       }
