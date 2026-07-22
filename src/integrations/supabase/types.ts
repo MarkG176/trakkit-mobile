@@ -4672,6 +4672,8 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_supervisor: { Args: never; Returns: boolean }
       is_supervisor_def: { Args: never; Returns: boolean }
+      is_workspace_member: { Args: { _ws: string }; Returns: boolean }
+      is_workspace_supervisor: { Args: { _ws: string }; Returns: boolean }
       issue_stock_to_agent: {
         Args: {
           agent_id: string
