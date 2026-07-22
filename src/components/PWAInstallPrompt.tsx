@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Download, Smartphone, Share, MoreVertical } from 'lucide-react';
+import { Download, Smartphone, Share, MoreVertical, X } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -171,8 +171,16 @@ const PWAInstallPrompt: React.FC = () => {
 
   return (
     <div className="fixed bottom-4 left-4 right-4 z-50 max-w-sm mx-auto">
-      <Card className="bg-primary text-primary-foreground border-primary shadow-lg">
-        <CardContent className="p-4">
+      <Card className="bg-primary text-primary-foreground border-primary shadow-lg relative">
+        <button
+          type="button"
+          onClick={handleDismiss}
+          aria-label="Dismiss install prompt"
+          className="absolute top-2 right-2 p-1 rounded-md text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 focus:outline-none"
+        >
+          <X className="h-4 w-4" />
+        </button>
+        <CardContent className="p-4 pr-8">
           {renderContent()}
           <div className="flex justify-end mt-2">
             <Button
