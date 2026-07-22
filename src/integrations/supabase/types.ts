@@ -4670,6 +4670,7 @@ export type Database = {
       }
       is_account_locked: { Args: { user_email: string }; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
+      is_admin_or_supervisor: { Args: never; Returns: boolean }
       is_supervisor: { Args: never; Returns: boolean }
       is_supervisor_def: { Args: never; Returns: boolean }
       is_workspace_member: { Args: { _ws: string }; Returns: boolean }
