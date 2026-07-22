@@ -123,6 +123,9 @@ export const AgentStatusProvider = ({ children }: { children: ReactNode }) => {
     currentLng: number
   ) => {
     if (!user) return { success: false, message: 'User not authenticated' };
+    if (!currentWorkspaceId) {
+      return { success: false, message: 'Workspace still loading — please try again in a moment.' };
+    }
 
     let distance: number | null = null;
     let checkInSuccessful: boolean | null = null;
